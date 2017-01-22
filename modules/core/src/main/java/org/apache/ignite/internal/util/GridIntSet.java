@@ -21,22 +21,44 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 /**
  * Holds set of integers.
  * <p/>
+ * Structure:
+ * <p/>
+ * Each segment stores SEGMENT_SIZE values.
+ * <p/>
+ * On example, segment size 1024:
+ * <p/>
+ * segIds[0]: 0, highest bit cleared && segments[0].length < THRESHOLD, segments[0]=  [0, 5, 10, 1023] - stores present values
+ * segIds[1]: 5, highest bit set, segments[1]=  [0, 5, 10, 10243 - stores absent values
+ * segIds[2]: 10, segments[0].length == THRESHOLD, segments[2]=  [0, 5, 10, 1024] - stores values as bits
+ * <p/>
+ * <p/>
  * Note: implementation is not thread safe.
+ *
+ * TODO equals/hashcode
  */
 public class GridIntSet implements Serializable {
+    enum Mode {
+        STRAIGHT, BITSET, INVERTED
+    }
+
     /** */
     private static final long serialVersionUID = 0L;
 
-    /** Segment index. Sorted in ascending order by segment id. */
-    private short[] segIds = new short[0]; // TODO FIXME allow preallocate.
+    /**
+     * Segment index. Sorted in ascending order by segment id.
+     */
+    private short[] segIds = new short[1]; // TODO FIXME allow preallocate.
+
+    private Mode[] modes = new Mode[] {Mode.STRAIGHT};
 
     private short segmentsUsed = 0;
 
-    private short[][] segments = new short[0][0];
+    private short[][] segments = new short[1][0];
 
     public static final short SEGMENT_SIZE = 1024;
 
@@ -48,95 +70,43 @@ public class GridIntSet implements Serializable {
 
     public static final int MAX_SEGMENTS = Short.MAX_VALUE;
 
+    public static final int THRESHOLD = SEGMENT_SIZE / 8; // TODO bit shift
+
+    public static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
+
+    public static final short MASK = (short) (1 << (SHORT_BITS - 1));
+
+    private static final int WORD_MASK = 0xFFFF;
+
     public GridIntSet() {
     }
 
     public GridIntSet(int first, int cnt) {
     }
 
-    public boolean add(int v) {
-        U.debug("Add " + v);
+    public void add(int v) {
+        //U.debug("Add " + v);
 
-        short segId = (short) (v / SEGMENT_SIZE);
+        short idx = (short) (v / SEGMENT_SIZE);
 
-        short inc = (short) (v - segId * SEGMENT_SIZE); // TODO use modulo bit hack.
+        short inc = (short) (v - idx * SEGMENT_SIZE); // TODO use modulo bit hack.
 
-        return segmentAdd(segmentIndex(segId), inc);
-    }
+        // Determine addition type.
 
-    /** Add value to index using insertion sort */
-    private int indexAdd(short base) {
-        if (segIds.length == 0) {
-            segIds = new short[1];
+        int segIdx = segmentIndex(idx); // TODO binary search.
 
-            segIds[0] = base;
+        short[] segment = segments[segIdx];
 
-            segmentsUsed++;
-
-            return 0;
+        switch (modes[segIdx]) {
+            case STRAIGHT:
+                segments[segIdx] = insertArray(modes, segIdx, segment, inc);
+                break;
+            case BITSET:
+                segments[segIdx] = insertBitSet(segment, inc);
+                break;
+            case INVERTED:
+                break;
         }
-
-        int idx = Arrays.binarySearch(segIds, 0, segmentsUsed, base);
-
-        int pos = -idx;
-
-//        if (idx == segmentsUsed) {
-//            // append.
-//
-//            // need resize
-//            if (idx >= segIds.length) {
-//                int newSize = Math.min(segIds.length * 2, MAX_SEGMENTS);
-//
-//                segIds = Arrays.copyOf(segIds, newSize);
-//            }
-//        }
-
-        // Insert a segment.
-        if (pos >= 0) {
-            int newSize = segIds.length * 2;
-
-            short[] tmp = new short[newSize];
-
-            System.arraycopy(segIds, 0, tmp, 0, pos-1);
-
-            tmp[pos] = base;
-
-            int len = segIds.length - pos;
-
-            if (len > 0)
-                System.arraycopy(segIds, pos, tmp, pos+1, len);
-
-            segIds = tmp;
-        }
-        else
-            return idx;
-
-        return pos;
-    }
-
-    private void checkInvariants() {
-
-    }
-
-    private boolean segmentAdd(int segId, short bit) {
-        short[] segment = segments[segId];
-
-        int wordIdx = bit >>> WORD_SHIFT_BITS;
-
-        // Resize if needed.
-        if (wordIdx >= segment.length) {
-            int newSize = Math.min(MAX_WORDS, Math.max(segment.length * 2, wordIdx + 1));
-
-            segment = segments[segId] = Arrays.copyOf(segment, newSize);
-        }
-
-        short wordBit = (short) (bit - wordIdx * SHORT_BITS);
-
-        assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
-
-        segment[(wordIdx)] |= (1 << wordBit);
-
-        return false; // TODO
     }
 
     public boolean contains(int v) {
@@ -144,14 +114,10 @@ public class GridIntSet implements Serializable {
     }
 
     private int segmentIndex(int v) {
-        assert segIds.length > 0 && segments.length > 0 : "At least one segment";
+        //assert segIds.length > 0 && segments.length > 0 : "At least one segment";
 
         return 0;
     }
-
-//    private int insertSegment(int idx, short[] seg) {
-//
-//    }
 
     public void dump() {
         for (short[] segment : segments) {
@@ -161,21 +127,235 @@ public class GridIntSet implements Serializable {
     }
 
     public Iterator iterator() {
-        return null;
+        return new BitSetIterator(segments[0]);
     }
 
     public int size() {
         return 0;
     }
 
-    public static class Iterator {
+    /** */
+    private static class ArrayIterator implements Iterator {
+        /** Vals. */
+        private final short[] vals;
 
+        /** Word index. */
+        private short wordIdx;
+
+        /** Limit. */
+        private final int limit;
+
+        /**
+         * @param segment Segment.
+         */
+        public ArrayIterator(short[] segment) {
+            this.vals = segment;
+            this.wordIdx = 0;
+            this.limit = freeIndex(segment);
+        }
+
+        /** {@inheritDoc} */
         public boolean hasNext() {
-            return false;
+            return wordIdx < limit;
         }
 
+        /** {@inheritDoc} */
         public int next() {
-            return 0;
+            return vals[wordIdx++];
         }
+    }
+
+    /** */
+    private static class BitSetIterator implements Iterator {
+        private final short[] words;
+
+        private int bit;
+
+        /**
+         * @param words Words.
+         */
+        public BitSetIterator(short[] words) {
+            this.words = words;
+
+            this.bit = nextSetBit(words, 0);
+        }
+
+        /** {@inheritDoc} */
+        public boolean hasNext() {
+            return bit != -1;
+        }
+
+        /** {@inheritDoc} */
+        public int next() {
+            if (bit != -1) {
+                int ret = bit;
+
+                bit = nextSetBit(words, bit+1);
+
+                return ret;
+            } else
+                throw new NoSuchElementException();
+        }
+    }
+
+    /** */
+    private static short[] insertBitSet(short[] words, short bit) {
+        int wordIdx = wordIndex(bit);
+
+        short[] tmp = words;
+
+        if (wordIdx >= words.length)
+            tmp = Arrays.copyOf(words, Math.min(MAX_WORDS, Math.max(words.length * 2, wordIdx + 1)));
+
+        short wordBit = (short) (bit - wordIdx * SHORT_BITS);
+
+        assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
+
+        try {
+            tmp[(wordIdx)] |= (1 << wordBit);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return tmp;
+    }
+
+    /**
+     * @param val Value.
+     */
+    private static int wordIndex(int val) {
+        return val >> WORD_SHIFT_BITS;
+    }
+
+    /** */
+    private static int nextSetBit(short[] words, int fromIdx) {
+        int u = wordIndex(fromIdx);
+
+        if (u >= words.length)
+            return -1;
+
+        int shift = fromIdx & (SHORT_BITS - 1);
+
+        short word = (short)((words[u] & 0xFFFF) & (WORD_MASK << shift));
+
+        while (true) {
+            if (word != 0)
+                return (u * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF);
+
+            if (++u == words.length)
+                return -1;
+
+            word = words[u];
+        }
+    }
+
+    /** */
+    private static short[] insertArray(Mode[] modes, int mIdx, short[] arr, short base) {
+        assert base < SEGMENT_SIZE: base;
+
+        if (arr == null || arr.length == 0) {
+            arr = new short[1];
+
+            arr[0] = base;
+
+            return arr;
+        }
+
+        int freeIdx = freeIndex(arr);
+
+        assert 0 <= freeIdx;
+
+        int idx = Arrays.binarySearch(arr, 0, freeIdx, base);
+
+        if (idx >= 0)
+            return arr; // Already exists.
+
+        if (freeIdx == THRESHOLD - 1) { // Convert to bitset on reaching threshold.
+            ArrayIterator it = new ArrayIterator(arr);
+
+            short[] tmp = new short[THRESHOLD];
+
+            while(it.hasNext()) {
+                int val = it.next();
+
+                tmp = insertBitSet(tmp, (short) val);
+            }
+
+            tmp = insertBitSet(tmp, base);
+
+            modes[mIdx] = Mode.BITSET;
+
+            return tmp;
+        }
+
+        int pos = -(idx + 1);
+
+        // Insert a segment.
+        short[] tmp;
+
+        if (freeIdx >= arr.length) {
+            int newSize = Math.min(arr.length * 2, THRESHOLD);
+
+            tmp = new short[newSize];
+
+            System.arraycopy(arr, 0, tmp, 0, pos);
+
+            tmp[pos] = base;
+
+            int len = freeIdx - pos;
+
+            if (len > 0)
+                System.arraycopy(arr, pos, tmp, pos + 1, len);
+        } else {
+            tmp = arr;
+
+            int len = freeIdx - pos;
+
+            if (len > 0)
+                System.arraycopy(tmp, pos, tmp, pos + 1, len);
+
+            tmp[pos] = base;
+        }
+
+        return tmp;
+    }
+
+    /**
+     *
+     * @param arr Array.
+     * @return Index of first empty item in array.
+     */
+    private static int freeIndex(short[] arr) {
+        // TODO FIXME use binary search to find last used word ?
+        for (int i = 1; i < arr.length; i++) {
+            if (arr[i] == 0)
+                return i;
+        }
+
+        return arr.length;
+    }
+
+    public static void main(String[] args) {
+        GridIntSet set = new GridIntSet();
+
+        for (short val = 0; val < SEGMENT_SIZE; val++)
+            set.add(val);
+
+        Iterator it = set.iterator();
+        while(it.hasNext()) {
+            int id = it.next();
+
+            System.out.print(id);
+            System.out.print(" ");
+        }
+
+        System.out.println();
+    }
+
+    public static interface Iterator {
+
+        public boolean hasNext();
+
+        public int next();
     }
 }
