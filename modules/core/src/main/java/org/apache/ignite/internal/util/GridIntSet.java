@@ -109,6 +109,26 @@ public class GridIntSet implements Serializable {
         }
     }
 
+    public void remove(int v) {
+        short idx = (short) (v / SEGMENT_SIZE);
+
+        short inc = (short) (v - idx * SEGMENT_SIZE); // TODO use modulo bit hack.
+
+        int segIdx = segmentIndex(idx); // TODO binary search.
+
+        short[] segment = segments[segIdx];
+
+        switch (modes[segIdx]) {
+            case STRAIGHT:
+                removeArray(segment, inc);
+                break;
+            case BITSET:
+                break;
+            case INVERTED:
+                break;
+        }
+    }
+
     public boolean contains(int v) {
         return false;
     }
@@ -127,11 +147,57 @@ public class GridIntSet implements Serializable {
     }
 
     public Iterator iterator() {
+        int segIdx = 0;
+
+        switch (modes[segIdx]) {
+            case STRAIGHT:
+                return new RawIterator(segments[0]);
+            case BITSET:
+                return new BitSetIterator(segments[0]);
+            case INVERTED:
+                break;
+        }
+
         return new BitSetIterator(segments[0]);
     }
 
     public int size() {
         return 0;
+    }
+
+    /** */
+    private static class RawIterator implements Iterator {
+        /** Vals. */
+        private final short[] vals;
+
+        /** Word index. */
+        private short wordIdx;
+
+        /** Limit. */
+        private final int limit;
+
+        /**
+         * @param segment Segment.
+         */
+        public RawIterator(short[] segment) {
+            this.vals = segment;
+            this.wordIdx = 0;
+            this.limit = segment.length;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean hasNext() {
+            return wordIdx < limit;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int next() {
+            return vals[wordIdx++];
+        }
+
+        @Override public int size() {
+            return this.limit;
+        }
     }
 
     /** */
@@ -155,13 +221,18 @@ public class GridIntSet implements Serializable {
         }
 
         /** {@inheritDoc} */
-        public boolean hasNext() {
+        @Override public boolean hasNext() {
             return wordIdx < limit;
         }
 
         /** {@inheritDoc} */
-        public int next() {
+        @Override public int next() {
             return vals[wordIdx++];
+        }
+
+        /** {@inheritDoc} */
+        @Override public int size() {
+            return this.limit;
         }
     }
 
@@ -181,12 +252,12 @@ public class GridIntSet implements Serializable {
         }
 
         /** {@inheritDoc} */
-        public boolean hasNext() {
+        @Override public boolean hasNext() {
             return bit != -1;
         }
 
         /** {@inheritDoc} */
-        public int next() {
+        @Override public int next() {
             if (bit != -1) {
                 int ret = bit;
 
@@ -195,6 +266,11 @@ public class GridIntSet implements Serializable {
                 return ret;
             } else
                 throw new NoSuchElementException();
+        }
+
+        /** {@inheritDoc} */
+        @Override public int size() {
+            return 0;
         }
     }
 
@@ -291,31 +367,60 @@ public class GridIntSet implements Serializable {
         int pos = -(idx + 1);
 
         // Insert a segment.
-        short[] tmp;
 
         if (freeIdx >= arr.length) {
             int newSize = Math.min(arr.length * 2, THRESHOLD);
 
-            tmp = new short[newSize];
-
-            System.arraycopy(arr, 0, tmp, 0, pos);
-
-            tmp[pos] = base;
-
-            int len = freeIdx - pos;
-
-            if (len > 0)
-                System.arraycopy(arr, pos, tmp, pos + 1, len);
-        } else {
-            tmp = arr;
-
-            int len = freeIdx - pos;
-
-            if (len > 0)
-                System.arraycopy(tmp, pos, tmp, pos + 1, len);
-
-            tmp[pos] = base;
+            arr = Arrays.copyOf(arr, newSize);
         }
+
+        System.arraycopy(arr, pos, arr, pos + 1, freeIdx - pos);
+
+        arr[pos] = base;
+
+        return arr;
+    }
+
+    public void flip() {
+        segments[0] = flipArray(new ArrayIterator(segments[0]));
+    }
+
+    private static void removeArray(short[] arr, short base) {
+        assert base < SEGMENT_SIZE: base;
+
+        int freeIdx = freeIndex(arr);
+
+        assert 0 <= freeIdx;
+
+        int idx = Arrays.binarySearch(arr, 0, freeIdx, base);
+
+        if (idx < 0)
+            return;
+
+        int moved = freeIdx - idx - 1;
+
+        if (moved > 0)
+            System.arraycopy(arr, idx + 1, arr, idx, moved);
+
+        arr[freeIdx - 1] = 0;
+    }
+
+    private short[] flipArray(Iterator it) {
+        int i = 0;
+
+        short[] tmp = new short[0];
+
+        while(it.hasNext()) {
+            int id = it.next();
+
+            for (; i < id; i++)
+                tmp = insertArray(modes, 0, tmp, (short) i);
+
+            i = id + 1;
+        }
+
+        while(i < 128)
+            tmp = insertArray(modes, 0, tmp, (short) i++);
 
         return tmp;
     }
@@ -338,18 +443,58 @@ public class GridIntSet implements Serializable {
     public static void main(String[] args) {
         GridIntSet set = new GridIntSet();
 
-        for (short val = 0; val < SEGMENT_SIZE; val++)
-            set.add(val);
+        set.add(5);
+        set.add(10);
+        System.out.println(set.toString());
 
-        Iterator it = set.iterator();
-        while(it.hasNext()) {
-            int id = it.next();
+        set.add(15);
+        System.out.println(set.toString());
 
-            System.out.print(id);
-            System.out.print(" ");
-        }
+        set.add(30);
+        System.out.println(set.toString());
 
-        System.out.println();
+        set.add(35);
+        System.out.println(set.toString());
+
+        set.flip();
+        System.out.println(set.toString());
+
+        set.flip();
+        System.out.println(set.toString());
+
+        set.flip();
+        System.out.println(set.toString());
+
+        set.flip();
+        System.out.println(set.toString());
+
+//        set.remove(11);
+//        System.out.println(set.toString());
+//
+//        set.remove(5);
+//        System.out.println(set.toString());
+//
+//        set.remove(15);
+//        System.out.println(set.toString());
+//
+//        set.remove(10);
+//        System.out.println(set.toString());
+//
+//        set.remove(30);
+//        System.out.println(set.toString());
+
+//        for (short val = 0; val < SEGMENT_SIZE; val++)
+//            set.add(val);
+//
+//        Iterator it = set.iterator();
+//        while(it.hasNext()) {
+//            int id = it.next();
+//
+//            System.out.print(id);
+//            System.out.print(" ");
+//        }
+//
+//        System.out.println();
     }
 
     public static interface Iterator {
@@ -357,5 +502,24 @@ public class GridIntSet implements Serializable {
         public boolean hasNext();
 
         public int next();
+
+        public int size();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        StringBuilder b = new StringBuilder("[");
+
+        Iterator it = iterator();
+
+        while(it.hasNext()) {
+            b.append(it.next());
+
+            if (it.hasNext()) b.append(", ");
+        }
+
+        b.append("]");
+
+        return b.toString();
     }
 }
