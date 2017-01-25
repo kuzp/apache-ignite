@@ -17,7 +17,6 @@
 
 package org.apache.ignite.internal.util;
 
-import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 /**
@@ -25,26 +24,45 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
  */
 public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
+     * Tests array segment.
+     */
+    public void testArraySegment() {
+        GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment(GridIntSet.Segment.Mode.STRAIGHT);
+
+        assertEquals(0, seg.data().length);
+
+        for (short i = 0, c = 0; i < GridIntSet.THRESHOLD - 1; i+= 5, c += 1) {
+            seg.add(i);
+
+            int size = c + 1;
+
+            assertEquals(seg.size(), size);
+
+            assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1))); // Resize length is power of two.
+        }
+    }
+
+    /**
      * @throws Exception If failed.
      */
     public void testAdd() throws Exception {
-        GridIntSet set = new GridIntSet();
-
-        for (int i = 0; i < Short.SIZE; i++) {
-            set.add(i);
-
-            short[][] segments = U.field(set, "segments");
-
-            assertEquals("Words used", 1, segments[0].length);
-        }
-
-        set.dump();
-
-        set.add(60);
-        set.dump();
-
-        short tmp = -1;
-
-        System.out.println(Integer.toBinaryString(tmp));
+//        GridIntSet set = new GridIntSet();
+//
+//        for (int i = 0; i < Short.SIZE; i++) {
+//            set.add(i);
+//
+//            short[][] segments = U.field(set, "segments");
+//
+//            assertEquals("Words used", 1, segments[0].length);
+//        }
+//
+//        set.dump();
+//
+//        set.add(60);
+//        set.dump();
+//
+//        short tmp = -1;
+//
+//        System.out.println(Integer.toBinaryString(tmp));
     }
 }
