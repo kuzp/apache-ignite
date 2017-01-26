@@ -27,18 +27,35 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests array segment.
      */
     public void testArraySegment() {
-        GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment(GridIntSet.Segment.Mode.STRAIGHT);
+        for (short step = 1; step <= 5; step++) {
+            GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment(GridIntSet.Segment.Mode.NORMAL);
 
-        assertEquals(0, seg.data().length);
+            assertEquals(0, seg.data().length);
 
-        for (short i = 0, c = 0; i < GridIntSet.THRESHOLD - 1; i+= 5, c += 1) {
-            seg.add(i);
+            short size = 1;
+            for (short i = 0; i < GridIntSet.THRESHOLD - 1; i += step, size += 1) {
+                seg.add(i);
 
-            int size = c + 1;
+                assertEquals(seg.size(), size);
 
-            assertEquals(seg.size(), size);
+                // New length is upper power of two.
+                assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1)));
+            }
 
-            assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1))); // Resize length is power of two.
+            for (short i = 0; i < seg.size(); i ++)
+                assertEquals("Contains: " + i, i % step == 0, seg.contains(i));
+
+            for (short i = GridIntSet.THRESHOLD; i < GridIntSet.SEGMENT_SIZE - GridIntSet.THRESHOLD; i += step, size += 1) {
+                seg.add(i);
+
+                assertEquals(seg.size(), size);
+
+                // New length is upper power of two.
+                //assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1)));
+            }
+
+            for (short i = 0; i < seg.size(); i ++)
+                assertEquals("Contains: " + i, i % step == 0, seg.contains(i));
         }
     }
 

@@ -62,7 +62,7 @@ public class GridIntSet implements Serializable {
 
     public static final int MAX_SEGMENTS = Short.MAX_VALUE;
 
-    public static final int THRESHOLD = SEGMENT_SIZE / 8; // TODO bit shift
+    public static final int THRESHOLD = SEGMENT_SIZE / SHORT_BITS; // TODO bit shift
 
     public static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
 
@@ -161,95 +161,6 @@ public class GridIntSet implements Serializable {
         }
     }
 
-    /** */
-    private static class BitSetIterator implements Iterator {
-        private final short[] words;
-
-        private int bit;
-
-        /**
-         * @param words Words.
-         */
-        public BitSetIterator(short[] words) {
-            this.words = words;
-
-            this.bit = nextSetBit(words, 0);
-        }
-
-        /** {@inheritDoc} */
-        @Override public boolean hasNext() {
-            return bit != -1;
-        }
-
-        /** {@inheritDoc} */
-        @Override public int next() {
-            if (bit != -1) {
-                int ret = bit;
-
-                bit = nextSetBit(words, bit+1);
-
-                return ret;
-            } else
-                throw new NoSuchElementException();
-        }
-
-        /** {@inheritDoc} */
-        @Override public int size() {
-            return 0;
-        }
-    }
-
-    /** */
-    private static short[] insertBitSet(short[] words, short bit) {
-        int wordIdx = wordIndex(bit);
-
-        short[] tmp = words;
-
-        if (wordIdx >= words.length)
-            tmp = Arrays.copyOf(words, Math.min(MAX_WORDS, Math.max(words.length * 2, wordIdx + 1)));
-
-        short wordBit = (short) (bit - wordIdx * SHORT_BITS);
-
-        assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
-
-        try {
-            tmp[(wordIdx)] |= (1 << wordBit);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return tmp;
-    }
-
-    /**
-     * @param val Value.
-     */
-    private static int wordIndex(int val) {
-        return val >> WORD_SHIFT_BITS;
-    }
-
-    /** */
-    private static int nextSetBit(short[] words, int fromIdx) {
-        int u = wordIndex(fromIdx);
-
-        if (u >= words.length)
-            return -1;
-
-        int shift = fromIdx & (SHORT_BITS - 1);
-
-        short word = (short)((words[u] & 0xFFFF) & (WORD_MASK << shift));
-
-        while (true) {
-            if (word != 0)
-                return (u * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF);
-
-            if (++u == words.length)
-                return -1;
-
-            word = words[u];
-        }
-    }
-
     public static interface Iterator {
 
         public boolean hasNext();
@@ -281,7 +192,7 @@ public class GridIntSet implements Serializable {
 
         public int used();
 
-        public void add(short base);
+        public void add(short val);
 
         public void remove(short base);
 
@@ -297,7 +208,7 @@ public class GridIntSet implements Serializable {
 
         /** Segment mode. */
         enum Mode {
-            STRAIGHT, /** */
+            NORMAL, /** */
 
             BITSET, /** */
 
@@ -305,25 +216,84 @@ public class GridIntSet implements Serializable {
         }
     }
 
+    /**
+     * TODO store used counter.
+     */
     private static class BitSetSegment implements Segment {
-        public BitSetSegment(int size) {
+        short[] words;
 
+        public BitSetSegment() {
+            this(0);
+        }
+
+        public BitSetSegment(int size) {
+            words = new short[wordIndex(size) + 1];
         }
 
         @Override public int used() {
-            return 0;
+            return words.length;
         }
 
-        @Override public void add(short base) {
+        @Override public void add(short val) {
+            int wordIdx = wordIndex(val);
 
+            if (wordIdx >= words.length)
+                words = Arrays.copyOf(words, Math.min(MAX_WORDS, Math.max(words.length * 2, wordIdx + 1)));
+
+            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+
+            assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
+
+            words[(wordIdx)] |= (1 << wordBit);
         }
 
-        @Override public void remove(short base) {
-
+        /**
+         * @param val Value.
+         */
+        private static int wordIndex(int val) {
+            return val >> WORD_SHIFT_BITS;
         }
 
-        @Override public boolean contains(short v) {
-            return false;
+        /** */
+        private static int nextSetBit(short[] words, int fromIdx) {
+            int u = wordIndex(fromIdx);
+
+            if (u >= words.length)
+                return -1;
+
+            int shift = fromIdx & (SHORT_BITS - 1);
+
+            short word = (short)((words[u] & 0xFFFF) & (WORD_MASK << shift));
+
+            while (true) {
+                if (word != 0)
+                    return (u * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF);
+
+                if (++u == words.length)
+                    return -1;
+
+                word = words[u];
+            }
+        }
+
+        @Override public void remove(short val) {
+            int wordIdx = wordIndex(val);
+
+            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+
+            int mask = 1 << wordBit;
+
+            words[wordIdx] &= ~mask;
+        }
+
+        @Override public boolean contains(short val) {
+            int wordIdx = wordIndex(val);
+
+            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+
+            int mask = 1 << wordBit;
+
+            return (words[wordIdx] & mask) == mask;
         }
 
         @Override public void convert(Mode mode) {
@@ -331,7 +301,7 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public short[] data() {
-            return new short[0];
+            return words;
         }
 
         @Override public void flip() {
@@ -339,11 +309,56 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int size() {
-            return 0;
+            int size = 0;
+
+            int used = used();
+
+            for (int i = 0; i < used; i++)
+                size += Integer.bitCount(words[i]);
+
+            return size;
         }
 
         @Override public Iterator iterator() {
-            return null;
+            return new BitSetIterator(words);
+        }
+
+        /** */
+        private class BitSetIterator implements Iterator {
+            private final short[] words;
+
+            private int bit;
+
+            /**
+             * @param words Words.
+             */
+            public BitSetIterator(short[] words) {
+                this.words = words;
+
+                this.bit = nextSetBit(words, 0);
+            }
+
+            /** {@inheritDoc} */
+            @Override public boolean hasNext() {
+                return bit != -1;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int next() {
+                if (bit != -1) {
+                    int ret = bit;
+
+                    bit = nextSetBit(words, bit+1);
+
+                    return ret;
+                } else
+                    throw new NoSuchElementException();
+            }
+
+            /** {@inheritDoc} */
+            @Override public int size() {
+                return 0;
+            }
         }
     }
 
@@ -466,7 +481,7 @@ public class GridIntSet implements Serializable {
 
             int i = 0;
 
-            ArraySegment seg = new ArraySegment(Mode.STRAIGHT);
+            ArraySegment seg = new ArraySegment(Mode.NORMAL);
 
             while(it.hasNext()) {
                 int id = it.next();
@@ -482,7 +497,7 @@ public class GridIntSet implements Serializable {
 
             this.data = seg.data();
 
-            seg.mode = mode == Mode.STRAIGHT ? Mode.INVERTED : Mode.STRAIGHT;
+            seg.mode = mode == Mode.NORMAL ? Mode.INVERTED : Mode.NORMAL;
         }
 
         /** {@inheritDoc} */
