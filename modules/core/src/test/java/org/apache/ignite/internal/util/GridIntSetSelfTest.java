@@ -32,7 +32,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             GridIntSet set = new GridIntSet();
 
             short size = 1;
-            for (short i = 0; i < GridIntSet.THRESHOLD2; i += step, size += 1) {
+
+            for (short i = 0; i < GridIntSet.SEGMENT_SIZE; i += step, size += 1) {
                 set.add(i);
 
                 testPredicates(set, size);
@@ -40,6 +41,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
             for (short i = 0; i < set.size(); i ++)
                 assertEquals("Contains: " + i, i % step == 0, set.contains(i));
+
+            GridIntSet.Iterator it = set.iterator();
+            while(it.hasNext())
+                System.out.println(it.next());
         }
     }
 
@@ -57,7 +62,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         assertEquals(expSize, seg.size());
 
         // New length is upper power of two.
-        assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(seg.used() - 1)));
+        assertEquals(seg.data().length, seg.used() == 0 ? 0 :
+                1 << (Integer.SIZE - Integer.numberOfLeadingZeros(seg.used() - 1)));
     }
 
     /** */

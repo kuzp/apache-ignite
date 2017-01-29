@@ -189,6 +189,8 @@ public class GridIntSet implements Serializable {
     public static class BitSetSegment implements Segment {
         short[] words;
 
+        private int count;
+
         public BitSetSegment() {
             this(0);
         }
@@ -203,7 +205,7 @@ public class GridIntSet implements Serializable {
             return words.length;
         }
 
-        @Override public void add(short val) {
+        @Override public void add(short val) throws ConvertException {
             int wordIdx = wordIndex(val);
 
             if (wordIdx >= words.length)
@@ -213,7 +215,46 @@ public class GridIntSet implements Serializable {
 
             assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
 
-            words[(wordIdx)] |= (1 << wordBit);
+            int mask = (1 << wordBit);
+
+            boolean exists = (words[(wordIdx)] & mask) == mask;
+
+            if (!exists) {
+                if (count == THRESHOLD2) { // convert to inverted array set.
+                    Segment seg = convertToInvertedArraySet();
+
+                    seg.add(val);
+
+                    throw new ConvertException(seg);
+                }
+
+                count++;
+
+                words[(wordIdx)] |= mask;
+            }
+        }
+
+        /** */
+        private Segment convertToInvertedArraySet() throws ConvertException {
+            InvertedArraySegment seg = new InvertedArraySegment();
+
+            Iterator it = iterator();
+
+            int i = 0;
+
+            while (it.hasNext()) {
+                int id = it.next();
+
+                for (; i < id; i++)
+                    seg.remove((short) i);
+
+                i = id + 1;
+            }
+
+            while(i < SEGMENT_SIZE)
+                seg.remove((short) i++);
+
+            return seg;
         }
 
         /**
@@ -252,7 +293,13 @@ public class GridIntSet implements Serializable {
 
             int mask = 1 << wordBit;
 
-            words[wordIdx] &= ~mask;
+            boolean exists = (words[(wordIdx)] & mask) == mask;
+
+            if (exists) {
+                count--;
+
+                words[wordIdx] &= ~mask;
+            }
         }
 
         @Override public boolean contains(short val) {
@@ -274,14 +321,7 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int size() {
-            int size = 0;
-
-            int used = used();
-
-            for (int i = 0; i < used; i++)
-                size += Integer.bitCount(words[i] & 0xFFFF);
-
-            return size;
+            return count;
         }
 
         @Override public int first() {
@@ -423,12 +463,19 @@ public class GridIntSet implements Serializable {
             if (idx < 0)
                 return;
 
+            short[] tmp = data;
+
             int moved = used - idx - 1;
 
             if (moved > 0)
-                System.arraycopy(data, idx + 1, data, idx, moved);
+                System.arraycopy(data, idx + 1, tmp, idx, moved);
 
-            data[used - 1] = 0;
+            used--;
+
+            data[used] = 0;
+
+            if (used == (data.length >> 1))
+                data = Arrays.copyOf(data, used);
         }
 
         /** {@inheritDoc} */
@@ -491,7 +538,7 @@ public class GridIntSet implements Serializable {
         }
 
         /** */
-        private static class ArrayIterator implements Iterator {
+        static class ArrayIterator implements Iterator {
             /** Vals. */
             private final short[] vals;
 
@@ -549,7 +596,49 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int size() {
-            return THRESHOLD - super.size();
+            return SEGMENT_SIZE - super.size();
+        }
+
+        @Override public Iterator iterator() {
+            return new InvertedArrayIterator(data(), super.size());
+        }
+
+        /** */
+        private static class InvertedArrayIterator extends ArrayIterator {
+            private int skipIdx = -1;
+
+            private int val;
+
+            /**
+             * @param segment Segment.
+             */
+            InvertedArrayIterator(short[] segment, int size) {
+                super(segment, size);
+
+                if (super.hasNext())
+                    skipIdx = super.next();
+            }
+
+            /** {@inheritDoc} */
+            @Override public boolean hasNext() {
+                return val < SEGMENT_SIZE;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int next() {
+                if (val == skipIdx) {
+                    if (super.hasNext())
+                        skipIdx = super.next();
+
+                    val++;
+                }
+                return val++;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int size() {
+                return SEGMENT_SIZE - super.size();
+            }
         }
     }
 
