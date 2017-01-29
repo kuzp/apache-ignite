@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.util;
 
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 /**
@@ -24,39 +25,46 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
  */
 public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
-     * Tests array segment.
+     * Tests set grow.
      */
-    public void testArraySegment() {
+    public void testSegment() {
         for (short step = 1; step <= 5; step++) {
-            GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment(GridIntSet.Segment.Mode.NORMAL);
-
-            assertEquals(0, seg.data().length);
+            GridIntSet set = new GridIntSet();
 
             short size = 1;
-            for (short i = 0; i < GridIntSet.THRESHOLD - 1; i += step, size += 1) {
-                seg.add(i);
+            for (short i = 0; i < GridIntSet.THRESHOLD2; i += step, size += 1) {
+                set.add(i);
 
-                assertEquals(seg.size(), size);
-
-                // New length is upper power of two.
-                assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1)));
+                testPredicates(set, size);
             }
 
-            for (short i = 0; i < seg.size(); i ++)
-                assertEquals("Contains: " + i, i % step == 0, seg.contains(i));
-
-            for (short i = GridIntSet.THRESHOLD; i < GridIntSet.SEGMENT_SIZE - GridIntSet.THRESHOLD; i += step, size += 1) {
-                seg.add(i);
-
-                assertEquals(seg.size(), size);
-
-                // New length is upper power of two.
-                //assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(size - 1)));
-            }
-
-            for (short i = 0; i < seg.size(); i ++)
-                assertEquals("Contains: " + i, i % step == 0, seg.contains(i));
+            for (short i = 0; i < set.size(); i ++)
+                assertEquals("Contains: " + i, i % step == 0, set.contains(i));
         }
+    }
+
+    /** */
+    private void testPredicates(GridIntSet set, short expSize) {
+        GridIntSet.Segment seg = segment(set, 0);
+
+        if (set.size() <= GridIntSet.THRESHOLD)
+            assertTrue(seg instanceof GridIntSet.ArraySegment);
+        else if (set.size() > GridIntSet.THRESHOLD2)
+            assertTrue(seg instanceof GridIntSet.InvertedArraySegment);
+        else
+            assertTrue(seg.getClass().toString(), seg instanceof GridIntSet.BitSetSegment);
+
+        assertEquals(expSize, seg.size());
+
+        // New length is upper power of two.
+        assertEquals(seg.data().length, 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(seg.used() - 1)));
+    }
+
+    /** */
+    private GridIntSet.Segment segment(GridIntSet set, int idx) {
+        GridIntSet.Segment[] segments = U.field(set, "segments");
+
+        return segments[idx];
     }
 
     /**
