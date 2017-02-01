@@ -38,6 +38,7 @@ import java.util.NoSuchElementException;
  * Note: implementation is not thread safe.
  *
  * TODO equals/hashcode
+ * TODO FIXME cache bit masks like 1 << shift ?
  */
 public class GridIntSet implements Serializable {
     /** */
@@ -53,11 +54,9 @@ public class GridIntSet implements Serializable {
 
     public static final int MAX_SEGMENTS = Short.MAX_VALUE;
 
-    public static final int THRESHOLD = SEGMENT_SIZE / SHORT_BITS; // TODO bit shift
+    public static final int THRESHOLD = MAX_WORDS;
 
     public static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
-
-    public static final short MASK = (short) (1 << (SHORT_BITS - 1));
 
     private static final int WORD_MASK = 0xFFFF;
 
@@ -136,8 +135,6 @@ public class GridIntSet implements Serializable {
         public boolean hasNext();
 
         public int next();
-
-        public int size();
     }
 
     /** {@inheritDoc} */
@@ -158,6 +155,7 @@ public class GridIntSet implements Serializable {
     }
 
     public interface Segment {
+        /** Segment data. */
         public short[] data();
 
         /**
@@ -166,9 +164,9 @@ public class GridIntSet implements Serializable {
          */
         public int used();
 
-        public void add(short val) throws ConvertException;
+        public boolean add(short val) throws ConvertException;
 
-        public void remove(short base) throws ConvertException;
+        public boolean remove(short base) throws ConvertException;
 
         public void flip() throws ConvertException;
 
@@ -181,6 +179,8 @@ public class GridIntSet implements Serializable {
         public int last();
 
         public Iterator iterator();
+
+        public Iterator reverseIterator();
     }
 
     /**
@@ -205,7 +205,7 @@ public class GridIntSet implements Serializable {
             return words.length;
         }
 
-        @Override public void add(short val) throws ConvertException {
+        @Override public boolean add(short val) throws ConvertException {
             int wordIdx = wordIndex(val);
 
             if (wordIdx >= words.length)
@@ -232,11 +232,32 @@ public class GridIntSet implements Serializable {
 
                 words[(wordIdx)] |= mask;
             }
+            return exists;
+        }
+
+        @Override public boolean remove(short val) throws ConvertException {
+            int wordIdx = wordIndex(val);
+
+            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+
+            int mask = 1 << wordBit;
+
+            boolean exists = (words[(wordIdx)] & mask) == mask;
+
+            if (exists) {
+                count--;
+
+                words[wordIdx] &= ~mask;
+
+                if (count < THRESHOLD)
+                    throw new ConvertException(convertToArraySet());
+            }
+            return exists;
         }
 
         /** */
         private Segment convertToInvertedArraySet() throws ConvertException {
-            InvertedArraySegment seg = new InvertedArraySegment();
+            FlippedArraySegment seg = new FlippedArraySegment();
 
             Iterator it = iterator();
 
@@ -253,6 +274,20 @@ public class GridIntSet implements Serializable {
 
             while(i < SEGMENT_SIZE)
                 seg.remove((short) i++);
+
+            return seg;
+        }
+
+        private Segment convertToArraySet() throws ConvertException {
+            ArraySegment seg = new ArraySegment(THRESHOLD);
+
+            Iterator it = iterator();
+
+            while (it.hasNext()) {
+                int id = it.next();
+
+                seg.add((short) id);
+            }
 
             return seg;
         }
@@ -283,22 +318,6 @@ public class GridIntSet implements Serializable {
                     return -1;
 
                 word = words[u];
-            }
-        }
-
-        @Override public void remove(short val) {
-            int wordIdx = wordIndex(val);
-
-            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
-
-            int mask = 1 << wordBit;
-
-            boolean exists = (words[(wordIdx)] & mask) == mask;
-
-            if (exists) {
-                count--;
-
-                words[wordIdx] &= ~mask;
             }
         }
 
@@ -336,6 +355,10 @@ public class GridIntSet implements Serializable {
             return new BitSetIterator(words);
         }
 
+        @Override public Iterator reverseIterator() {
+            return new ReverseBitSetIterator(words);
+        }
+
         /** */
         private static class BitSetIterator implements Iterator {
             private final short[] words;
@@ -367,10 +390,38 @@ public class GridIntSet implements Serializable {
                 } else
                     throw new NoSuchElementException();
             }
+        }
+
+        /** */
+        private static class ReverseBitSetIterator implements Iterator {
+            private final short[] words;
+
+            private int bit;
+
+            /**
+             * @param words Words.
+             */
+            public ReverseBitSetIterator(short[] words) {
+                this.words = words;
+
+                this.bit = nextSetBit(words, 0);
+            }
 
             /** {@inheritDoc} */
-            @Override public int size() {
-                return 0;
+            @Override public boolean hasNext() {
+                return bit != -1;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int next() {
+                if (bit != -1) {
+                    int ret = bit;
+
+                    bit = nextSetBit(words, bit+1);
+
+                    return ret;
+                } else
+                    throw new NoSuchElementException();
             }
         }
     }
@@ -378,6 +429,8 @@ public class GridIntSet implements Serializable {
     /** */
     public static class ArraySegment implements Segment {
         private short[] data;
+
+        private short used;
 
         public ArraySegment() {
             this(0);
@@ -393,29 +446,24 @@ public class GridIntSet implements Serializable {
         }
 
         /**
-         *
          * @return Used items.
          */
         public int used() {
-            // TODO FIXME use binary search to find last used word ?
-            for (int i = 1; i < data.length; i++) {
-                if (data[i] == 0)
-                    return i;
-            }
-
-            return data.length;
+            return used;
         }
 
         /** */
-        public void add(short val) throws ConvertException {
+        public boolean add(short val) throws ConvertException {
             assert val < SEGMENT_SIZE: val;
 
-            if (data == null || data.length == 0) {
+            if (used == 0) {
                 data = new short[1];
 
                 data[0] = val;
 
-                return;
+                used++;
+
+                return true;
             }
 
             int freeIdx = used();
@@ -425,12 +473,10 @@ public class GridIntSet implements Serializable {
             int idx = Arrays.binarySearch(data, 0, freeIdx, val);
 
             if (idx >= 0)
-                return; // Already exists.
+                return false; // Already exists.
 
             if (freeIdx == THRESHOLD) { // Convert to bit set on reaching threshold.
-                Segment converted = toBitSetSegment();
-
-                converted.add(val);
+                Segment converted = convertToBitSetSegment(val);
 
                 throw new ConvertException(converted);
             }
@@ -448,20 +494,20 @@ public class GridIntSet implements Serializable {
             System.arraycopy(data, pos, data, pos + 1, freeIdx - pos);
 
             data[pos] = val;
+
+            used++;
+
+            return true;
         }
 
         /** {@inheritDoc} */
-        public void remove(short base) throws ConvertException {
+        public boolean remove(short base) throws ConvertException {
             assert base < SEGMENT_SIZE: base;
-
-            int used = used();
-
-            assert 0 <= used;
 
             int idx = Arrays.binarySearch(data, 0, used, base);
 
             if (idx < 0)
-                return;
+                return false;
 
             short[] tmp = data;
 
@@ -476,6 +522,8 @@ public class GridIntSet implements Serializable {
 
             if (used == (data.length >> 1))
                 data = Arrays.copyOf(data, used);
+
+            return true;
         }
 
         /** {@inheritDoc} */
@@ -488,16 +536,21 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int first() {
-            return data[0];
+            return size() == 0 ? -1 : data[0]; // TODO FIXME size issue.
         }
 
         @Override public int last() {
-            return data[used() - 1];
+            return size() == 0 ? -1 : data[used() - 1];
         }
 
         /** {@inheritDoc} */
         public Iterator iterator() {
             return new ArrayIterator(data, size());
+        }
+
+        /** {@inheritDoc} */
+        @Override public Iterator reverseIterator() {
+            return new ReverseArrayIterator(data, size());
         }
 
         /** {@inheritDoc} */
@@ -525,21 +578,24 @@ public class GridIntSet implements Serializable {
 //            seg.mode = mode == Mode.NORMAL ? Mode.INVERTED : Mode.NORMAL;
         }
 
-        /** {@inheritDoc} */
-        private Segment toBitSetSegment() throws ConvertException {
-            Segment seg = new BitSetSegment(last());
+        /** {@inheritDoc}
+         * @param val*/
+        private Segment convertToBitSetSegment(short val) throws ConvertException {
+            Segment seg = new BitSetSegment(val);
 
             Iterator it = iterator();
 
             while(it.hasNext())
                 seg.add((short) it.next());
 
+            seg.add(val);
+
             return seg;
         }
 
         /** */
         static class ArrayIterator implements Iterator {
-            /** Vals. */
+            /** Values. */
             private final short[] vals;
 
             /** Word index. */
@@ -566,29 +622,55 @@ public class GridIntSet implements Serializable {
             @Override public int next() {
                 return vals[wordIdx++];
             }
+        }
+
+        /** */
+        static class ReverseArrayIterator implements Iterator {
+            /** Values. */
+            private final short[] vals;
+
+            /** Word index. */
+            private short wordIdx;
+
+            /** Limit. */
+            private final int limit;
+
+            /**
+             * @param segment Segment.
+             */
+            ReverseArrayIterator(short[] segment, int size) {
+                this.vals = segment;
+                this.wordIdx = (short) (size - 1);
+                this.limit = 0;
+            }
 
             /** {@inheritDoc} */
-            @Override public int size() {
-                return this.limit;
+            @Override public boolean hasNext() {
+                return wordIdx >= limit;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int next() {
+                return vals[wordIdx--];
             }
         }
     }
 
-    public static class InvertedArraySegment extends ArraySegment {
-        public InvertedArraySegment() {
+    public static class FlippedArraySegment extends ArraySegment {
+        public FlippedArraySegment() {
             this(0);
         }
 
-        public InvertedArraySegment(int size) {
+        public FlippedArraySegment(int size) {
             super(size);
         }
 
-        @Override public void add(short val) throws ConvertException {
-            super.remove(val);
+        @Override public boolean add(short val) throws ConvertException {
+            return super.remove(val);
         }
 
-        @Override public void remove(short base) throws ConvertException {
-            super.add(base);
+        @Override public boolean remove(short base) throws ConvertException {
+            return super.add(base);
         }
 
         @Override public boolean contains(short v) {
@@ -599,12 +681,45 @@ public class GridIntSet implements Serializable {
             return SEGMENT_SIZE - super.size();
         }
 
+        @Override public int first() {
+            Iterator iter = iterator();
+
+            if (!iter.hasNext())
+                return -1;
+
+            return iter.next();
+        }
+
+        @Override public int last() {
+            Iterator iter = reverseIterator();
+
+            if (!iter.hasNext())
+                return -1;
+
+            return iter.next();
+        }
+
         @Override public Iterator iterator() {
-            return new InvertedArrayIterator(data(), super.size());
+            return new FlippedArrayIterator(data(), super.size());
+        }
+
+        @Override public Iterator reverseIterator() {
+            return new FlippedReverseArrayIterator(data(), super.size());
+        }
+
+        private Segment convertToBitSetSegment() throws ConvertException {
+            Segment seg = new BitSetSegment(last());
+
+            Iterator it = iterator();
+
+            while(it.hasNext())
+                seg.add((short) it.next());
+
+            return seg;
         }
 
         /** */
-        private static class InvertedArrayIterator extends ArrayIterator {
+        private static class FlippedArrayIterator extends ArrayIterator {
             private int skipIdx = -1;
 
             private int val;
@@ -612,7 +727,7 @@ public class GridIntSet implements Serializable {
             /**
              * @param segment Segment.
              */
-            InvertedArrayIterator(short[] segment, int size) {
+            FlippedArrayIterator(short[] segment, int size) {
                 super(segment, size);
 
                 if (super.hasNext())
@@ -626,24 +741,52 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public int next() {
-                if (val == skipIdx) {
-                    if (super.hasNext())
-                        skipIdx = super.next();
+                while(val == skipIdx && super.hasNext()) {
+                    skipIdx = super.next();
 
                     val++;
                 }
                 return val++;
             }
+        }
+
+        /** */
+        private static class FlippedReverseArrayIterator extends ReverseArrayIterator {
+            private int skipIdx = -1;
+
+            private int val;
+
+            /**
+             * @param segment Segment.
+             */
+            FlippedReverseArrayIterator(short[] segment, int size) {
+                super(segment, size);
+
+                if (super.hasNext())
+                    skipIdx = super.next();
+
+                val = SEGMENT_SIZE - 1;
+            }
 
             /** {@inheritDoc} */
-            @Override public int size() {
-                return SEGMENT_SIZE - super.size();
+            @Override public boolean hasNext() {
+                return val >= 0;
+            }
+
+            /** {@inheritDoc} */
+            @Override public int next() {
+                while(val == skipIdx && super.hasNext()) {
+                    skipIdx = super.next();
+
+                    val--;
+                }
+                return val--;
             }
         }
     }
 
     /** */
-    private static class ConvertException extends Exception {
+    public static class ConvertException extends Exception {
         private Segment segment;
 
         public ConvertException(Segment segment) {
