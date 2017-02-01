@@ -528,7 +528,7 @@ public class GridIntSet implements Serializable {
 
         /** {@inheritDoc} */
         public boolean contains(short v) {
-            return Arrays.binarySearch(data, v) >= 0;
+            return Arrays.binarySearch(data, 0, used, v) >= 0;
         }
 
         @Override public int size() {

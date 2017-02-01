@@ -32,22 +32,23 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array segment.
      */
-    public void testArraySegment() throws GridIntSet.ConvertException {
+    public void testAddRemoveFlippedArraySegment() throws GridIntSet.ConvertException {
+        testAddRemove0(new GridIntSet.FlippedArraySegment());
     }
 
     /**
      * Tests array segment.
      */
-    public void testFlippedArraySegment() throws GridIntSet.ConvertException {
-        GridIntSet.FlippedArraySegment segment = new GridIntSet.FlippedArraySegment();
+    private void testAddRemove0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        int len = ThreadLocalRandom8.current().nextInt(0, GridIntSet.THRESHOLD);
 
-        List<Integer> rnd = source(GridIntSet.THRESHOLD);
+        List<Integer> rnd = source(len);
 
         List<Integer> ordered = new ArrayList<>(rnd);
 
         Collections.sort(ordered);
 
-        assertEquals("Size", GridIntSet.SEGMENT_SIZE, segment.size());
+        int size = segment.size();
 
         for (Integer val : rnd) {
             assertTrue(segment.data().length <= GridIntSet.THRESHOLD);
@@ -59,7 +60,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             assertTrue(segment.data().length <= GridIntSet.THRESHOLD);
         }
 
-        assertEquals("Size", GridIntSet.THRESHOLD2, segment.size());
+        assertEquals("Size", size - len, segment.size());
 
         testSegment0(segment, rnd, ordered);
     }
@@ -72,11 +73,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
         int before = segment.size();
 
-        for (Integer v : vals) {
-            boolean val = segment.contains(v.shortValue());
-
-            assertFalse("Contains: " + v, val);
-        }
+        assertContainsNothing(segment, vals);
 
         for (Integer v : vals) {
             boolean val = segment.add(v.shortValue());
@@ -84,11 +81,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             assertTrue("Added: " + v, val);
         }
 
-        for (Integer v : vals) {
-            boolean val = segment.contains(v.shortValue());
-
-            assertTrue("Contains: " + v, val);
-        }
+        assertContainsAll(segment, vals);
 
         Collections.shuffle(vals);
 
@@ -100,18 +93,32 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             assertTrue("Removed: " + v, val);
         }
 
-        for (Integer v : vals) {
-            boolean val = segment.contains(v.shortValue());
-
-            assertFalse("Contains: " + v, val);
-        }
+        assertContainsNothing(segment, vals);
 
         assertEquals("Size", before, segment.size());
+
+
 
 //
 //        assertEquals("First", sortedVals.get(0).intValue(), segment.first());
 //
 //        assertEquals("Last", sortedVals.get(vals.size() - 1).intValue(), segment.last());
+    }
+
+    public void assertContainsNothing(GridIntSet.Segment segment, List<Integer> vals) {
+        for (Integer v : vals) {
+            boolean val = segment.contains(v.shortValue());
+
+            assertFalse("Contains: " + v, val);
+        }
+    }
+
+    public void assertContainsAll(GridIntSet.Segment segment, List<Integer> vals) {
+        for (Integer v : vals) {
+            boolean val = segment.contains(v.shortValue());
+
+            assertTrue("Contains: " + v, val);
+        }
     }
 
     /**
