@@ -39,6 +39,7 @@ import java.util.NoSuchElementException;
  *
  * TODO equals/hashcode
  * TODO FIXME cache bit masks like 1 << shift ?
+ * TODO HashSegment worth it?
  */
 public class GridIntSet implements Serializable {
     /** */
@@ -130,6 +131,7 @@ public class GridIntSet implements Serializable {
     public int size() {
         return segments[0].size();
     }
+
     public static interface Iterator {
 
         public boolean hasNext();
@@ -174,13 +176,26 @@ public class GridIntSet implements Serializable {
 
         public int size();
 
-        public int first();
+        /**
+         * Returns min allowed size.
+         * @return Min size.
+         */
+        public int minSize();
 
-        public int last();
+        /**
+         * Returns max allowed size.
+         * @return Max size.
+         */
+        public int maxSize();
+
+        public short first();
+
+        public short last();
 
         public Iterator iterator();
 
         public Iterator reverseIterator();
+
     }
 
     /**
@@ -219,20 +234,22 @@ public class GridIntSet implements Serializable {
 
             boolean exists = (words[(wordIdx)] & mask) == mask;
 
-            if (!exists) {
-                if (count == THRESHOLD2) { // convert to inverted array set.
-                    Segment seg = convertToInvertedArraySet();
+            if (exists)
+                return false;
 
-                    seg.add(val);
+            if (count == THRESHOLD2) { // convert to inverted array set.
+                Segment seg = convertToInvertedArraySet();
 
-                    throw new ConvertException(seg);
-                }
+                seg.add(val);
 
-                count++;
-
-                words[(wordIdx)] |= mask;
+                throw new ConvertException(seg);
             }
-            return exists;
+
+            count++;
+
+            words[(wordIdx)] |= mask;
+
+            return true;
         }
 
         @Override public boolean remove(short val) throws ConvertException {
@@ -244,15 +261,17 @@ public class GridIntSet implements Serializable {
 
             boolean exists = (words[(wordIdx)] & mask) == mask;
 
-            if (exists) {
-                count--;
+            if (!exists)
+                return false;
 
-                words[wordIdx] &= ~mask;
+            count--;
 
-                if (count < THRESHOLD)
-                    throw new ConvertException(convertToArraySet());
-            }
-            return exists;
+            words[wordIdx] &= ~mask;
+
+            if (count < THRESHOLD)
+                throw new ConvertException(convertToArraySet());
+
+            return true;
         }
 
         /** */
@@ -300,29 +319,32 @@ public class GridIntSet implements Serializable {
         }
 
         /** */
-        private static int nextSetBit(short[] words, int fromIdx) {
-            int u = wordIndex(fromIdx);
+        private static short nextSetBit(short[] words, int fromIdx) {
+            int wordIdx = wordIndex(fromIdx);
 
-            if (u >= words.length)
+            if (wordIdx >= words.length)
                 return -1;
 
             int shift = fromIdx & (SHORT_BITS - 1);
 
-            short word = (short)((words[u] & 0xFFFF) & (WORD_MASK << shift));
+            short word = (short)((words[wordIdx] & 0xFFFF) & (WORD_MASK << shift));
 
             while (true) {
                 if (word != 0)
-                    return (u * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF);
+                    return (short) ((wordIdx * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF));
 
-                if (++u == words.length)
+                if (++wordIdx == words.length)
                     return -1;
 
-                word = words[u];
+                word = words[wordIdx];
             }
         }
 
         @Override public boolean contains(short val) {
             int wordIdx = wordIndex(val);
+
+            if (wordIdx >= used())
+                return false;
 
             short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
 
@@ -343,11 +365,19 @@ public class GridIntSet implements Serializable {
             return count;
         }
 
-        @Override public int first() {
+        @Override public int minSize() {
+            return THRESHOLD;
+        }
+
+        @Override public int maxSize() {
+            return THRESHOLD2;
+        }
+
+        @Override public short first() {
             return nextSetBit(words, 0);
         }
 
-        @Override public int last() {
+        @Override public short last() {
             return -1; // TODO
         }
 
@@ -535,11 +565,19 @@ public class GridIntSet implements Serializable {
             return used();
         }
 
-        @Override public int first() {
+        @Override public int minSize() {
+            return 0;
+        }
+
+        @Override public int maxSize() {
+            return THRESHOLD;
+        }
+
+        @Override public short first() {
             return size() == 0 ? -1 : data[0]; // TODO FIXME size issue.
         }
 
-        @Override public int last() {
+        @Override public short last() {
             return size() == 0 ? -1 : data[used() - 1];
         }
 
@@ -681,22 +719,30 @@ public class GridIntSet implements Serializable {
             return SEGMENT_SIZE - super.size();
         }
 
-        @Override public int first() {
+        @Override public int minSize() {
+            return THRESHOLD2;
+        }
+
+        @Override public int maxSize() {
+            return SEGMENT_SIZE;
+        }
+
+        @Override public short first() {
             Iterator iter = iterator();
 
             if (!iter.hasNext())
                 return -1;
 
-            return iter.next();
+            return (short) iter.next();
         }
 
-        @Override public int last() {
+        @Override public short last() {
             Iterator iter = reverseIterator();
 
             if (!iter.hasNext())
                 return -1;
 
-            return iter.next();
+            return (short) iter.next();
         }
 
         @Override public Iterator iterator() {
@@ -720,18 +766,28 @@ public class GridIntSet implements Serializable {
 
         /** */
         private static class FlippedArrayIterator extends ArrayIterator {
+            /** */
             private int skipIdx = -1;
 
+            /** */
             private int val;
 
             /**
              * @param segment Segment.
+             * @param size Size.
              */
             FlippedArrayIterator(short[] segment, int size) {
                 super(segment, size);
 
+                advance();
+            }
+
+            /** */
+            private void advance() {
                 if (super.hasNext())
                     skipIdx = super.next();
+                else
+                    skipIdx = -1;
             }
 
             /** {@inheritDoc} */
@@ -741,8 +797,8 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public int next() {
-                while(val == skipIdx && super.hasNext()) {
-                    skipIdx = super.next();
+                while(val == skipIdx && skipIdx != -1) {
+                    advance();
 
                     val++;
                 }
@@ -752,8 +808,10 @@ public class GridIntSet implements Serializable {
 
         /** */
         private static class FlippedReverseArrayIterator extends ReverseArrayIterator {
+            /** */
             private int skipIdx = -1;
 
+            /** */
             private int val;
 
             /**
@@ -762,10 +820,17 @@ public class GridIntSet implements Serializable {
             FlippedReverseArrayIterator(short[] segment, int size) {
                 super(segment, size);
 
-                if (super.hasNext())
-                    skipIdx = super.next();
+                advance();
 
                 val = SEGMENT_SIZE - 1;
+            }
+
+            /** */
+            private void advance() {
+                if (super.hasNext())
+                    skipIdx = super.next();
+                else
+                    skipIdx = -1;
             }
 
             /** {@inheritDoc} */
@@ -775,8 +840,8 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public int next() {
-                while(val == skipIdx && super.hasNext()) {
-                    skipIdx = super.next();
+                while(val == skipIdx && skipIdx != -1) {
+                    advance();
 
                     val--;
                 }

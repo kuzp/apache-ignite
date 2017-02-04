@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.util;
 
+import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ThreadLocalRandom8;
@@ -26,85 +27,175 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Test for {@link GridHandleTable}.
+ * Test for {@link GridIntSet}.
  */
 public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array segment.
      */
-    public void testAddRemoveFlippedArraySegment() throws GridIntSet.ConvertException {
-        testAddRemove0(new GridIntSet.FlippedArraySegment());
+    public void testArraySegment() throws GridIntSet.ConvertException {
+        testRemoveAddRemoveRnd0(fill(new GridIntSet.ArraySegment()));
+        testRemoveFirst0(fill(new GridIntSet.FlippedArraySegment()));
+        testRemoveLast0(fill(new GridIntSet.FlippedArraySegment()));
+    }
+
+    /**
+     * Tests flipped array segment.
+     */
+    public void testFlippedArraySegment() throws GridIntSet.ConvertException {
+        testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment());
+        testRemoveFirst0(new GridIntSet.FlippedArraySegment());
+        testRemoveLast0(new GridIntSet.FlippedArraySegment());
     }
 
     /**
      * Tests array segment.
      */
-    private void testAddRemove0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
-        int len = ThreadLocalRandom8.current().nextInt(0, GridIntSet.THRESHOLD);
+    public void testBitSetSegment() throws GridIntSet.ConvertException {
+//        testRemoveAddRemoveRnd0(fill(new GridIntSet.BitSetSegment()));
+//        testRemoveFirst0(fill(new GridIntSet.BitSetSegment()));
+        testRemoveLast0(fill(new GridIntSet.BitSetSegment()));
+    }
 
-        List<Integer> rnd = source(len);
-
-        List<Integer> ordered = new ArrayList<>(rnd);
-
-        Collections.sort(ordered);
-
+    /**
+     * Tests array segment.
+     */
+    private void testRemoveAddRemoveRnd0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
         int size = segment.size();
 
-        for (Integer val : rnd) {
-            assertTrue(segment.data().length <= GridIntSet.THRESHOLD);
+        assertEquals(segment.maxSize(), size);
+
+        List<Integer> vals = new ArrayList<>();
+
+        // Fetch values to list.
+        GridIntSet.Iterator it = segment.iterator();
+
+        while(it.hasNext())
+            vals.add(it.next());
+
+        // Check segment data size.
+        int maxSize = segment.maxSize() - segment.minSize();
+
+        assertTrue(maxSize <= vals.size());
+
+        // Double check containment.
+        for (Integer val : vals)
+            assertTrue(segment.contains(val.shortValue()));
+
+        // Select random sub set.
+        int rndCnt = ThreadLocalRandom8.current().nextInt(0, maxSize);
+
+        List<Integer> rndVals = rndValues(vals, rndCnt);
+
+        List<Integer> sortedVals = new ArrayList<>(rndVals);
+
+        Collections.sort(sortedVals);
+
+        log().info("Data: " + rndVals);
+
+        log().info("Sorted: " + sortedVals);
+
+        for (Integer val : rndVals) {
+            validateSize(segment);
 
             assertTrue(segment.contains(val.shortValue()));
 
             assertTrue(segment.remove(val.shortValue()));
 
-            assertTrue(segment.data().length <= GridIntSet.THRESHOLD);
+            validateSize(segment);
         }
 
-        assertEquals("Size", size - len, segment.size());
+        assertEquals("Size", size - rndCnt, segment.size());
 
-        testSegment0(segment, rnd, ordered);
-    }
+        assertContainsNothing(segment, rndVals);
 
-    /** */
-    private void testSegment0(GridIntSet.Segment segment, List<Integer> vals, List<Integer> sortedVals) throws GridIntSet.ConvertException {
-        log().info("Data: " + vals);
+        for (Integer v : rndVals) {
+            validateSize(segment);
 
-        log().info("Sorted: " + sortedVals);
-
-        int before = segment.size();
-
-        assertContainsNothing(segment, vals);
-
-        for (Integer v : vals) {
             boolean val = segment.add(v.shortValue());
 
             assertTrue("Added: " + v, val);
+
+            validateSize(segment);
         }
 
-        assertContainsAll(segment, vals);
+        assertContainsAll(segment, rndVals);
 
-        Collections.shuffle(vals);
+        // Randomize removal order.
+        Collections.shuffle(rndVals);
 
-        assertEquals("After", before + vals.size(), segment.size());
+        assertEquals("After", size, segment.size());
 
-        for (Integer v : vals) {
+        for (Integer v : rndVals) {
+            validateSize(segment);
+
             boolean val = segment.remove(v.shortValue());
 
             assertTrue("Removed: " + v, val);
+
+            validateSize(segment);
         }
 
-        assertContainsNothing(segment, vals);
+        assertContainsNothing(segment, rndVals);
 
-        assertEquals("Size", before, segment.size());
-
-
-
-//
-//        assertEquals("First", sortedVals.get(0).intValue(), segment.first());
-//
-//        assertEquals("Last", sortedVals.get(vals.size() - 1).intValue(), segment.last());
+        assertEquals("Size", size - rndCnt, segment.size());
     }
 
+    /**
+     * Tests removal from left size.
+     */
+    private void testRemoveFirst0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        int size = segment.size();
+
+        assertEquals(segment.maxSize(), size);
+
+        while(size != segment.minSize()) {
+            validateSize(segment);
+
+            short val = segment.first();
+
+            assertTrue(segment.remove(val));
+
+            assertEquals(--size, segment.size());
+
+            validateSize(segment);
+        }
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testRemoveLast0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        int size = segment.size();
+
+        assertEquals(segment.maxSize(), size);
+
+        while(size != segment.minSize()) {
+            validateSize(segment);
+
+            short val = segment.last();
+
+            assertTrue(segment.remove(val));
+
+            assertEquals(--size, segment.size());
+
+            validateSize(segment);
+        }
+    }
+
+    /**
+     * @param segment Segment.
+     */
+    private void validateSize(GridIntSet.Segment segment) {
+        assertTrue(String.valueOf(segment.size()), segment.minSize() <= segment.size() && segment.size() <= segment.maxSize());
+
+        assertTrue(String.valueOf(segment.data().length), segment.data().length <= GridIntSet.THRESHOLD);
+    }
+
+    /**
+     * @param segment Segment.
+     * @param vals Values.
+     */
     public void assertContainsNothing(GridIntSet.Segment segment, List<Integer> vals) {
         for (Integer v : vals) {
             boolean val = segment.contains(v.shortValue());
@@ -113,6 +204,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         }
     }
 
+    /**
+     * @param segment Segment.
+     * @param vals Vals.
+     */
     public void assertContainsAll(GridIntSet.Segment segment, List<Integer> vals) {
         for (Integer v : vals) {
             boolean val = segment.contains(v.shortValue());
@@ -122,110 +217,35 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
+     * @param vals Values.
      * @param len Length.
      */
-    private List<Integer> source(int len) {
+    private List<Integer> rndValues(List<Integer> vals, int len) {
         List<Integer> src = new ArrayList<>(len);
 
         while(src.size() != len) {
-            int i = ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
+            int val = F.rand(vals);
 
-            if (!src.contains(i))
-                src.add(i);
+            if (!src.contains(val))
+                src.add(val);
         }
 
         return src;
     }
 
     /**
-     * Tests set grow.
+     * Fills segment with random values until full capacity.
+     *
+     * @param segment Segment.
      */
-    public void testSet() {
-        for (short step = 1; step <= 5; step++) {
-            GridIntSet set = new GridIntSet();
+    private GridIntSet.Segment fill(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        while(segment.size() != segment.maxSize()) {
+            short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
 
-            short size = 1;
-
-            short i;
-            for (i = 0; i < GridIntSet.SEGMENT_SIZE; i += step, size++) {
-                set.add(i);
-
-                testPredicates(set, size);
-            }
-
-            /** Check using {@link GridIntSet#contains(int)}. */
-            for (i = 0; i < set.size(); i ++)
-                assertEquals("Contains: " + i, i % step == 0, set.contains(i));
-
-            /** Double check using {@link GridIntSet#iterator()}. */
-            GridIntSet.Iterator it = set.iterator();
-
-            i = 0;
-
-            while(it.hasNext()) {
-                assertEquals(i, it.next());
-
-                i += step;
-            }
-
-            size = GridIntSet.SEGMENT_SIZE - 1;
-
-            for (i = 0; i < GridIntSet.SEGMENT_SIZE; i += step, size--) {
-                set.remove(i);
-
-                testPredicates(set, size);
-            }
+            if (!segment.contains(rnd))
+                segment.add(rnd);
         }
-    }
 
-    /** */
-    private void testPredicates(GridIntSet set, short expSize) {
-        GridIntSet.Segment seg = segment(set, 0);
-
-        if (set.size() <= GridIntSet.THRESHOLD)
-            assertTrue(seg instanceof GridIntSet.ArraySegment);
-        else if (set.size() > GridIntSet.THRESHOLD2)
-            assertTrue(seg instanceof GridIntSet.FlippedArraySegment);
-        else
-            assertTrue(seg.getClass().toString(), seg instanceof GridIntSet.BitSetSegment);
-
-        assertEquals(expSize, seg.size());
-
-        // Array length is upper power of two in relation to used elements length.
-        assertEquals(seg.data().length, seg.used() == 0 ? 0 :
-                1 << (Integer.SIZE - Integer.numberOfLeadingZeros(seg.used() - 1)));
-
-        assertTrue(seg.data().length <= GridIntSet.MAX_WORDS);
-    }
-
-    /** */
-    private GridIntSet.Segment segment(GridIntSet set, int idx) {
-        GridIntSet.Segment[] segments = U.field(set, "segments");
-
-        return segments[idx];
-    }
-
-    /**
-     * @throws Exception If failed.
-     */
-    public void testAdd() throws Exception {
-//        GridIntSet set = new GridIntSet();
-//
-//        for (int i = 0; i < Short.SIZE; i++) {
-//            set.add(i);
-//
-//            short[][] segments = U.field(set, "segments");
-//
-//            assertEquals("Words used", 1, segments[0].length);
-//        }
-//
-//        set.dump();
-//
-//        set.add(60);
-//        set.dump();
-//
-//        short tmp = -1;
-//
-//        System.out.println(Integer.toBinaryString(tmp));
+        return segment;
     }
 }
