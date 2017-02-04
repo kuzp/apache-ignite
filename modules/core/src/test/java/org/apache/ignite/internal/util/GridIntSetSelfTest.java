@@ -18,7 +18,6 @@
 package org.apache.ignite.internal.util;
 
 import org.apache.ignite.internal.util.typedef.F;
-import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ThreadLocalRandom8;
 
@@ -34,9 +33,17 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests array segment.
      */
     public void testArraySegment() throws GridIntSet.ConvertException {
-        testRemoveAddRemoveRnd0(fill(new GridIntSet.ArraySegment()));
-        testRemoveFirst0(fill(new GridIntSet.FlippedArraySegment()));
-        testRemoveLast0(fill(new GridIntSet.FlippedArraySegment()));
+        testRemoveAddRemoveRnd0(fill(new GridIntSet.ArraySegment(), -1));
+
+        testRemoveFirst0(fill(new GridIntSet.ArraySegment(), -1));
+
+        testRemoveLast0(fill(new GridIntSet.ArraySegment(), -1));
+
+        GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment();
+
+        int size = seg.maxSize() - seg.minSize();
+
+        testIterators0(fill(new GridIntSet.ArraySegment(), ThreadLocalRandom8.current().nextInt(0, size)));
     }
 
     /**
@@ -44,17 +51,37 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      */
     public void testFlippedArraySegment() throws GridIntSet.ConvertException {
         testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment());
+
         testRemoveFirst0(new GridIntSet.FlippedArraySegment());
+
         testRemoveLast0(new GridIntSet.FlippedArraySegment());
+
+        GridIntSet.FlippedArraySegment seg = new GridIntSet.FlippedArraySegment();
+
+        int size = seg.maxSize() - seg.minSize();
+
+        testIterators0(clear(new GridIntSet.FlippedArraySegment(), ThreadLocalRandom8.current().nextInt(0, size)));
     }
 
     /**
      * Tests array segment.
      */
     public void testBitSetSegment() throws GridIntSet.ConvertException {
-//        testRemoveAddRemoveRnd0(fill(new GridIntSet.BitSetSegment()));
-//        testRemoveFirst0(fill(new GridIntSet.BitSetSegment()));
-        testRemoveLast0(fill(new GridIntSet.BitSetSegment()));
+        testRemoveAddRemoveRnd0(fill(new GridIntSet.BitSetSegment(), -1));
+
+        testRemoveFirst0(fill(new GridIntSet.BitSetSegment(), -1));
+
+        testRemoveLast0(fill(new GridIntSet.BitSetSegment(), -1));
+
+        GridIntSet.BitSetSegment seg = new GridIntSet.BitSetSegment();
+
+        int size = seg.maxSize() - seg.minSize();
+
+        testIterators0(fill(new GridIntSet.BitSetSegment(), ThreadLocalRandom8.current().nextInt(0, size)));
+    }
+
+    public void testConvertSegment() {
+
     }
 
     /**
@@ -184,6 +211,30 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
+     *
+     * @param segment Segment.
+     */
+    private void testIterators0(GridIntSet.Segment segment) {
+        List<Integer> fwd = new ArrayList<>();
+
+        GridIntSet.Iterator fwdIt = segment.iterator();
+
+        while(fwdIt.hasNext())
+            fwd.add(fwdIt.next());
+
+        List<Integer> rev = new ArrayList<>();
+
+        GridIntSet.Iterator revIt = segment.reverseIterator();
+
+        while(revIt.hasNext())
+            rev.add(revIt.next());
+
+        Collections.reverse(rev);
+
+        assertEquals(rev.toString(), fwd, rev);
+    }
+
+    /**
      * @param segment Segment.
      */
     private void validateSize(GridIntSet.Segment segment) {
@@ -238,13 +289,37 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      *
      * @param segment Segment.
      */
-    private GridIntSet.Segment fill(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
-        while(segment.size() != segment.maxSize()) {
+    private GridIntSet.Segment fill(GridIntSet.Segment segment, int cnt) throws GridIntSet.ConvertException {
+        if (cnt == -1)
+            cnt = segment.maxSize();
+
+        while(segment.size() != cnt) {
             short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
 
             if (!segment.contains(rnd))
-                segment.add(rnd);
+                assertTrue(segment.add(rnd));
         }
+
+        return segment;
+    }
+
+    /**
+     * Fills segment with random values until full capacity.
+     *
+     * @param segment Segment.
+     */
+    private GridIntSet.Segment clear(GridIntSet.Segment segment, int cnt) throws GridIntSet.ConvertException {
+//        if (cnt == -1)
+//            cnt = segment.maxSize();
+//
+//        while(segment.size() != (segment.maxSize() - cnt)) {
+//            short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
+//
+//            if (segment.contains(rnd))
+//                assertTrue(segment.remove(rnd));
+//        }
+
+        //segment.remove(0);
 
         return segment;
     }

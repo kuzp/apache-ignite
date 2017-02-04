@@ -40,6 +40,7 @@ import java.util.NoSuchElementException;
  * TODO equals/hashcode
  * TODO FIXME cache bit masks like 1 << shift ?
  * TODO HashSegment worth it?
+ * TODO replace power of two arythmetics with bit ops.
  */
 public class GridIntSet implements Serializable {
     /** */
@@ -318,8 +319,11 @@ public class GridIntSet implements Serializable {
             return val >> WORD_SHIFT_BITS;
         }
 
-        /** */
+        /** TODO needs refactoring */
         private static short nextSetBit(short[] words, int fromIdx) {
+            if (fromIdx < 0)
+                return -1;
+
             int wordIdx = wordIndex(fromIdx);
 
             if (wordIdx >= words.length)
@@ -331,9 +335,34 @@ public class GridIntSet implements Serializable {
 
             while (true) {
                 if (word != 0)
-                    return (short) ((wordIdx * SHORT_BITS) + Long.numberOfTrailingZeros(word & 0xFFFF));
+                    return (short) ((wordIdx * SHORT_BITS) + Integer.numberOfTrailingZeros(word & 0xFFFF));
 
                 if (++wordIdx == words.length)
+                    return -1;
+
+                word = words[wordIdx];
+            }
+        }
+
+        /** */
+        private static short prevSetBit(short[] words, int fromIdx) {
+            if (fromIdx < 0)
+                return -1;
+
+            int wordIdx = wordIndex(fromIdx);
+
+            if (wordIdx >= words.length)
+                return -1;
+
+            int shift = SHORT_BITS - (fromIdx & (SHORT_BITS - 1)) - 1;
+
+            short word = (short)((words[wordIdx] & 0xFFFF) & (WORD_MASK >> shift));
+
+            while (true) {
+                if (word != 0)
+                    return (short) ((wordIdx * SHORT_BITS) + SHORT_BITS - 1 - (Integer.numberOfLeadingZeros(word & 0xFFFF) - SHORT_BITS));
+
+                if (--wordIdx == -1)
                     return -1;
 
                 word = words[wordIdx];
@@ -378,7 +407,7 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public short last() {
-            return -1; // TODO
+            return prevSetBit(words, (used() << WORD_SHIFT_BITS) - 1);
         }
 
         @Override public Iterator iterator() {
@@ -434,7 +463,7 @@ public class GridIntSet implements Serializable {
             public ReverseBitSetIterator(short[] words) {
                 this.words = words;
 
-                this.bit = nextSetBit(words, 0);
+                this.bit = prevSetBit(words, (words.length << WORD_SHIFT_BITS) - 1);
             }
 
             /** {@inheritDoc} */
@@ -447,7 +476,7 @@ public class GridIntSet implements Serializable {
                 if (bit != -1) {
                     int ret = bit;
 
-                    bit = nextSetBit(words, bit+1);
+                    bit = prevSetBit(words, bit-1);
 
                     return ret;
                 } else
@@ -766,8 +795,7 @@ public class GridIntSet implements Serializable {
 
         /** */
         private static class FlippedArrayIterator extends ArrayIterator {
-            /** */
-            private int skipIdx = -1;
+            private int skipVal = -1;
 
             /** */
             private int val;
@@ -779,15 +807,20 @@ public class GridIntSet implements Serializable {
             FlippedArrayIterator(short[] segment, int size) {
                 super(segment, size);
 
+                if (super.hasNext())
+                    skipVal = super.next();
+
                 advance();
             }
 
             /** */
             private void advance() {
-                if (super.hasNext())
-                    skipIdx = super.next();
-                else
-                    skipIdx = -1;
+                while(skipVal == val && val < SEGMENT_SIZE) {
+                    if (super.hasNext())
+                        skipVal = super.next();
+
+                    val++;
+                }
             }
 
             /** {@inheritDoc} */
@@ -797,19 +830,18 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public int next() {
-                while(val == skipIdx && skipIdx != -1) {
-                    advance();
+                int ret = val++;
 
-                    val++;
-                }
-                return val++;
+                advance();
+
+                return ret;
             }
         }
 
         /** */
         private static class FlippedReverseArrayIterator extends ReverseArrayIterator {
             /** */
-            private int skipIdx = -1;
+            private int skipVal = -1;
 
             /** */
             private int val;
@@ -820,17 +852,22 @@ public class GridIntSet implements Serializable {
             FlippedReverseArrayIterator(short[] segment, int size) {
                 super(segment, size);
 
-                advance();
-
                 val = SEGMENT_SIZE - 1;
+
+                if (super.hasNext())
+                    skipVal = super.next();
+
+                advance();
             }
 
             /** */
             private void advance() {
-                if (super.hasNext())
-                    skipIdx = super.next();
-                else
-                    skipIdx = -1;
+                while(skipVal == val && val >= 0) {
+                    if (super.hasNext())
+                        skipVal = super.next();
+
+                    val--;
+                }
             }
 
             /** {@inheritDoc} */
@@ -840,12 +877,11 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public int next() {
-                while(val == skipIdx && skipIdx != -1) {
-                    advance();
+                int ret = val--;
 
-                    val--;
-                }
-                return val--;
+                advance();
+
+                return ret;
             }
         }
     }
@@ -872,5 +908,9 @@ public class GridIntSet implements Serializable {
             this.segment = segment;
         }
     }
+
+//    public static void main(String[] args) {
+//        System.out.println(BitSetSegment.prevSetBit(new short[]{(short) Integer.parseInt("1001100011110001", 2), (short) 0, (short) Integer.parseInt("1001100011110000", 2)}, 32));
+//    }
 }
 
