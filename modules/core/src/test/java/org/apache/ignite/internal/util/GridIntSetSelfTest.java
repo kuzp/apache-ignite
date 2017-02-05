@@ -53,7 +53,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests flipped array segment.
      */
     public void testFlippedArraySegment() throws GridIntSet.ConvertException {
-        testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment());
+        testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment()); // FlippedArraySegment contains all by default.
 
         testRemoveFirst0(new GridIntSet.FlippedArraySegment());
 
@@ -336,6 +336,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Fills segment with random values until full capacity.
      *
      * @param segment Segment.
+     * @param cnt Count.
      */
     private GridIntSet.Segment fill(GridIntSet.Segment segment, int cnt) throws GridIntSet.ConvertException {
         if (cnt == -1)
