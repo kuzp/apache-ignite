@@ -77,6 +77,7 @@ import org.apache.ignite.internal.processors.query.h2.twostep.messages.GridQuery
 import org.apache.ignite.internal.processors.query.h2.twostep.messages.GridQueryRequest;
 import org.apache.ignite.internal.processors.query.h2.twostep.msg.GridH2QueryRequest;
 import org.apache.ignite.internal.util.GridEmptyIterator;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
 import org.apache.ignite.internal.util.typedef.CIX2;
 import org.apache.ignite.internal.util.typedef.F;
@@ -416,11 +417,15 @@ public class GridReduceQueryExecutor {
         Set<ClusterNode> nodes = assignment.primaryPartitionNodes();
 
         for (ClusterNode node : nodes) {
-            Set<Integer> primIds = assignment.primaryPartitions(node.id());
+            GridIntSet primIds = assignment.primaryPartitions(node.id());
 
             int commonPartsCnt = 0;
 
-            for (Integer partId : primIds) {
+            GridIntSet.Iterator it = primIds.iterator();
+
+            while(it.hasNext()) {
+                int partId = it.next();
+
                 if (parts.contains(partId))
                     commonPartsCnt++;
             }

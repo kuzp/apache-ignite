@@ -28,6 +28,7 @@ import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.processors.affinity.AffinityAssignment;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.affinity.GridAffinityAssignmentCache;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.GridLeanSet;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.typedef.F;
@@ -411,7 +412,7 @@ public class GridCacheAffinityManager extends GridCacheManagerAdapter {
      * @param topVer Topology version to calculate affinity.
      * @return Partitions for which given node is primary.
      */
-    public Set<Integer> primaryPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
+    public GridIntSet primaryPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
         if (cctx.isLocal())
             topVer = LOC_CACHE_TOP_VER;
 
@@ -428,7 +429,7 @@ public class GridCacheAffinityManager extends GridCacheManagerAdapter {
      * @param topVer Topology version to calculate affinity.
      * @return Partitions for which given node is backup.
      */
-    public Set<Integer> backupPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
+    public GridIntSet backupPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
         if (cctx.isLocal())
             topVer = LOC_CACHE_TOP_VER;
 

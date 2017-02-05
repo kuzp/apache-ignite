@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.affinity;
 
 import org.apache.ignite.cluster.ClusterNode;
+import org.apache.ignite.internal.util.GridIntSet;
 
 import java.util.HashSet;
 import java.util.List;
@@ -76,7 +77,7 @@ public interface AffinityAssignment {
      * @param nodeId Node ID to get primary partitions for.
      * @return Primary partitions for specified node ID.
      */
-    public Set<Integer> primaryPartitions(UUID nodeId);
+    public GridIntSet primaryPartitions(UUID nodeId);
 
     /**
      * Get backup partitions for specified node ID.
@@ -84,5 +85,5 @@ public interface AffinityAssignment {
      * @param nodeId Node ID to get backup partitions for.
      * @return Backup partitions for specified node ID.
      */
-    public Set<Integer> backupPartitions(UUID nodeId);
+    public GridIntSet backupPartitions(UUID nodeId);
 }

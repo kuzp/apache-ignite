@@ -66,6 +66,7 @@ import org.apache.ignite.internal.processors.timeout.GridTimeoutObjectAdapter;
 import org.apache.ignite.internal.util.F0;
 import org.apache.ignite.internal.util.GridBusyLock;
 import org.apache.ignite.internal.util.GridConcurrentHashSet;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridMetadataAwareAdapter;
@@ -1446,9 +1447,6 @@ public class GridCacheEvictionManager extends GridCacheManagerAdapter {
         /** */
         private final BlockingQueue<DiscoveryEvent> evts = new LinkedBlockingQueue<>();
 
-        /** */
-        private final Collection<Integer> primaryParts = new HashSet<>();
-
         /**
          *
          */
@@ -1483,8 +1481,6 @@ public class GridCacheEvictionManager extends GridCacheManagerAdapter {
                     initTopVer = cacheStartVer;
 
                 // Initialize.
-                primaryParts.addAll(cctx.affinity().primaryPartitions(cctx.localNodeId(), initTopVer));
-
                 while (!isCancelled()) {
                     DiscoveryEvent evt = evts.take();
 
@@ -1494,12 +1490,19 @@ public class GridCacheEvictionManager extends GridCacheManagerAdapter {
                     AffinityTopologyVersion topVer = new AffinityTopologyVersion(evt.topologyVersion());
 
                     // Remove partitions that are no longer primary.
-                    for (Iterator<Integer> it = primaryParts.iterator(); it.hasNext();) {
+                    GridIntSet prim = cctx.affinity().primaryPartitions(cctx.localNodeId(), topVer);
+
+                    GridIntSet primaryParts = new GridIntSet();
+
+                    GridIntSet.Iterator it = prim.iterator();
+
+                    while(it.hasNext()) {
                         if (!evts.isEmpty())
                             break;
 
-                        if (!cctx.affinity().primary(loc, it.next(), topVer))
-                            it.remove();
+                        int part = it.next();
+
+                        primaryParts.add(part);
                     }
 
                     // Move on to next event.

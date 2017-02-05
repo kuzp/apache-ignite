@@ -51,6 +51,7 @@ import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.datastreamer.DataStreamerCacheUpdaters;
 import org.apache.ignite.internal.processors.datastreamer.DataStreamerImpl;
 import org.apache.ignite.internal.processors.task.GridInternal;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -397,7 +398,13 @@ public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter
 
                     dataLdr.receiver(DataStreamerCacheUpdaters.<KeyCacheObject, Object>batched());
 
-                    for (int part : ctx.affinity().primaryPartitions(ctx.localNodeId(), topVer)) {
+                    GridIntSet set = ctx.affinity().primaryPartitions(ctx.localNodeId(), topVer);
+
+                    GridIntSet.Iterator it = set.iterator();
+
+                    while(it.hasNext()) {
+                        int part = it.next();
+
                         GridDhtLocalPartition locPart = dht.topology().localPartition(part, topVer, false);
 
                         if (locPart == null || (ctx.rebalanceEnabled() && locPart.state() != OWNING) || !locPart.reserve())

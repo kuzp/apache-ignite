@@ -67,6 +67,7 @@ import org.apache.ignite.internal.processors.query.h2.twostep.messages.GridQuery
 import org.apache.ignite.internal.processors.query.h2.twostep.messages.GridQueryRequest;
 import org.apache.ignite.internal.processors.query.h2.twostep.msg.GridH2QueryRequest;
 import org.apache.ignite.internal.util.GridBoundedConcurrentLinkedHashMap;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
 import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.F;
@@ -287,7 +288,11 @@ public class GridMapQueryExecutor {
     ) throws IgniteCheckedException {
         assert topVer != null;
 
-        Collection<Integer> partIds = wrap(explicitParts);
+        GridIntSet partIds = explicitParts == null ? null : new GridIntSet();
+
+        if (explicitParts != null)
+            for (int explicitPart : explicitParts)
+                partIds.add(explicitPart);
 
         for (int i = 0; i < cacheIds.size(); i++) {
             GridCacheContext<?, ?> cctx = ctx.cache().context().cacheContext(cacheIds.get(i));
@@ -333,7 +338,11 @@ public class GridMapQueryExecutor {
                     if (explicitParts == null)
                         partIds = cctx.affinity().primaryPartitions(ctx.localNodeId(), topVer);
 
-                    for (int partId : partIds) {
+                    GridIntSet.Iterator it = partIds.iterator();
+
+                    while(it.hasNext()) {
+                        int partId = it.next();
+
                         GridDhtLocalPartition part = partition(cctx, partId);
 
                         if (part == null || part.state() != OWNING || !part.reserve())

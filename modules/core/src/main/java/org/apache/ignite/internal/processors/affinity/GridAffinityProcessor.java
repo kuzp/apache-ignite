@@ -49,6 +49,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheAdapter;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutObjectAdapter;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.GridLeanMap;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
@@ -791,7 +792,7 @@ public class GridAffinityProcessor extends GridProcessorAdapter {
             ctx.gateway().readLock();
 
             try {
-                Set<Integer> parts = cache().assignment().primaryPartitions(n.id());
+                GridIntSet parts = cache().assignment().primaryPartitions(n.id());
 
                 return U.toIntArray(parts);
             }
@@ -808,7 +809,7 @@ public class GridAffinityProcessor extends GridProcessorAdapter {
             ctx.gateway().readLock();
 
             try {
-                Set<Integer> parts = cache().assignment().backupPartitions(n.id());
+                GridIntSet parts = cache().assignment().backupPartitions(n.id());
 
                 return U.toIntArray(parts);
             }

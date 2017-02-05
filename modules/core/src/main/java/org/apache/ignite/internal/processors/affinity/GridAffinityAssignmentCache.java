@@ -39,6 +39,7 @@ import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.GridNodeOrderComparator;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
@@ -409,7 +410,7 @@ public class GridAffinityAssignmentCache {
      * @param topVer Topology version.
      * @return Primary partitions for specified node ID.
      */
-    public Set<Integer> primaryPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
+    public GridIntSet primaryPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
         return cachedAffinity(topVer).primaryPartitions(nodeId);
     }
 
@@ -420,7 +421,7 @@ public class GridAffinityAssignmentCache {
      * @param topVer Topology version.
      * @return Backup partitions for specified node ID.
      */
-    public Set<Integer> backupPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
+    public GridIntSet backupPartitions(UUID nodeId, AffinityTopologyVersion topVer) {
         return cachedAffinity(topVer).backupPartitions(nodeId);
     }
 

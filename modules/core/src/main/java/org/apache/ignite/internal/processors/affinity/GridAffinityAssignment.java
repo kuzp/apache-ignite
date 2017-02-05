@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.cluster.ClusterNode;
+import org.apache.ignite.internal.util.GridIntSet;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
@@ -43,10 +44,10 @@ public class GridAffinityAssignment implements AffinityAssignment, Serializable 
     private List<List<ClusterNode>> assignment;
 
     /** Map of primary node partitions. */
-    private final Map<UUID, Set<Integer>> primary;
+    private final Map<UUID, GridIntSet> primary;
 
     /** Map of backup node partitions. */
-    private final Map<UUID, Set<Integer>> backup;
+    private final Map<UUID, GridIntSet> backup;
 
     /** Assignment node IDs */
     private transient volatile List<HashSet<UUID>> assignmentIds;
@@ -213,10 +214,10 @@ public class GridAffinityAssignment implements AffinityAssignment, Serializable 
      * @param nodeId Node ID to get primary partitions for.
      * @return Primary partitions for specified node ID.
      */
-    public Set<Integer> primaryPartitions(UUID nodeId) {
-        Set<Integer> set = primary.get(nodeId);
+    public GridIntSet primaryPartitions(UUID nodeId) {
+        GridIntSet set = primary.get(nodeId);
 
-        return set == null ? Collections.<Integer>emptySet() : set;
+        return set == null ? GridIntSet.EMPTY : set;
     }
 
     /**
@@ -225,10 +226,10 @@ public class GridAffinityAssignment implements AffinityAssignment, Serializable 
      * @param nodeId Node ID to get backup partitions for.
      * @return Backup partitions for specified node ID.
      */
-    public Set<Integer> backupPartitions(UUID nodeId) {
-        Set<Integer> set = backup.get(nodeId);
+    public GridIntSet backupPartitions(UUID nodeId) {
+        GridIntSet set = backup.get(nodeId);
 
-        return set == null ? Collections.<Integer>emptySet() : set;
+        return set == null ? GridIntSet.EMPTY : set;
     }
 
     /**
@@ -236,22 +237,22 @@ public class GridAffinityAssignment implements AffinityAssignment, Serializable 
      */
     private void initPrimaryBackupMaps() {
         // Temporary mirrors with modifiable partition's collections.
-        Map<UUID, Set<Integer>> tmpPrm = new HashMap<>();
-        Map<UUID, Set<Integer>> tmpBkp = new HashMap<>();
+        Map<UUID, GridIntSet> tmpPrm = new HashMap<>();
+        Map<UUID, GridIntSet> tmpBkp = new HashMap<>();
 
         for (int partsCnt = assignment.size(), p = 0; p < partsCnt; p++) {
             // Use the first node as primary, other - backups.
-            Map<UUID, Set<Integer>> tmp = tmpPrm;
-            Map<UUID, Set<Integer>> map = primary;
+            Map<UUID, GridIntSet> tmp = tmpPrm;
+            Map<UUID, GridIntSet> map = primary;
 
             for (ClusterNode node : assignment.get(p)) {
                 UUID id = node.id();
 
-                Set<Integer> set = tmp.get(id);
+                GridIntSet set = tmp.get(id);
 
                 if (set == null) {
-                    tmp.put(id, set = new HashSet<>());
-                    map.put(id, Collections.unmodifiableSet(set));
+                    tmp.put(id, set = new GridIntSet());
+                    map.put(id, set);
                 }
 
                 set.add(p);

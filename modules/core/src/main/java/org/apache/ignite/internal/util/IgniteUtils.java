@@ -1158,8 +1158,8 @@ public abstract class IgniteUtils {
         Runtime runtime = Runtime.getRuntime();
 
         X.println('<' + DEBUG_DATE_FMT.format(new Date(System.currentTimeMillis())) + "><DEBUG><" +
-            Thread.currentThread().getName() + "> Heap stats [free=" + runtime.freeMemory() / (1024 * 1024) +
-            "M, total=" + runtime.totalMemory() / (1024 * 1024) + "M]");
+                Thread.currentThread().getName() + "> Heap stats [free=" + runtime.freeMemory() / (1024 * 1024) +
+                "M, total=" + runtime.totalMemory() / (1024 * 1024) + "M]");
     }
 
     /**
@@ -4202,7 +4202,7 @@ public abstract class IgniteUtils {
             log.warning(compact(longMsg.toString()));
         else
             X.println("[" + SHORT_DATE_FMT.format(new java.util.Date()) + "] (wrn) " +
-                compact(shortMsg.toString()));
+                    compact(shortMsg.toString()));
     }
 
     /**
@@ -5331,7 +5331,7 @@ public abstract class IgniteUtils {
         List<E> col = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++)
-            col.add((E)in.readObject());
+            col.add((E) in.readObject());
 
         return col;
     }
@@ -5907,7 +5907,7 @@ public abstract class IgniteUtils {
             return peerDeployAware0((Iterable)obj);
 
         if (obj.getClass().isArray() && !U.isPrimitiveArray(obj))
-            return peerDeployAware0((Object[])obj);
+            return peerDeployAware0((Object[]) obj);
 
         return peerDeployAware(obj);
     }
@@ -6710,6 +6710,38 @@ public abstract class IgniteUtils {
             arr[idx++] = i;
 
         return arr;
+    }
+
+    public static int[] toIntArray(@Nullable GridIntSet set) {
+        if (set == null || set.isEmpty())
+            return EMPTY_INTS;
+
+        int[] arr = new int[set.size()];
+
+        int idx = 0;
+
+        GridIntSet.Iterator it = set.iterator();
+
+        while(it.hasNext()) {
+            arr[idx++] = it.next();
+        }
+
+        return arr;
+    }
+
+    public static Set<Integer> toIntSet(@Nullable GridIntSet set) {
+        if (set == null || set.isEmpty())
+            return Collections.<Integer>emptySet();
+
+        Set<Integer> intSet = new HashSet(set.size());
+
+        GridIntSet.Iterator it = set.iterator();
+
+        while(it.hasNext()) {
+            intSet.add(it.next());
+        }
+
+        return intSet;
     }
 
     /**

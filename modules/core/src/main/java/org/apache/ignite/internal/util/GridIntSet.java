@@ -40,6 +40,8 @@ import java.util.NoSuchElementException;
  * TODO replace power of two arythmetics with bit ops.
  */
 public class GridIntSet implements Serializable {
+    public static final GridIntSet EMPTY = new GridIntSet();
+
     /** */
     private static final long serialVersionUID = 0L;
 
@@ -111,6 +113,10 @@ public class GridIntSet implements Serializable {
         return true;
     }
 
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     public boolean contains(int v) {
         short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
 
@@ -156,14 +162,16 @@ public class GridIntSet implements Serializable {
         }
 
         private void advance() {
-            if (segIter.hasNext()) {
-                idx = (short) segIter.next();
+            if (it == null || !it.hasNext()) {
+                if (segIter.hasNext()) {
+                    idx = (short) segIter.next();
 
-                Segment segment = segments.get((short)idx);
+                    Segment segment = segments.get((short) idx);
 
-                it = getIt(segment);
-            } else
-                it = null;
+                    it = getIt(segment);
+                } else
+                    it = null;
+            }
         }
 
         protected abstract Iterator getIt(Segment segment);
