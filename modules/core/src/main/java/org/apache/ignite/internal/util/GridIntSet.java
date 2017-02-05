@@ -19,6 +19,8 @@ package org.apache.ignite.internal.util;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -48,67 +50,70 @@ public class GridIntSet implements Serializable {
 
     public static final short SEGMENT_SIZE = 1024;
 
-    public static final int SHORT_BITS = Short.SIZE;
+    private static final int SHORT_BITS = Short.SIZE;
 
-    public static final int MAX_WORDS = SEGMENT_SIZE / SHORT_BITS;
+    private static final int MAX_WORDS = SEGMENT_SIZE / SHORT_BITS;
 
-    public static final int WORD_SHIFT_BITS = 4;
+    private static final int WORD_SHIFT_BITS = 4;
 
-    public static final int MAX_SEGMENTS = Short.MAX_VALUE;
+    private static final int THRESHOLD = MAX_WORDS;
 
-    public static final int THRESHOLD = MAX_WORDS;
-
-    public static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
+    private static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
 
     private static final int WORD_MASK = 0xFFFF;
 
-    /**
-     * Segment index. Sorted in ascending order by segment id.
-     */
-    private short[] segIds = new short[1]; // TODO FIXME allow preallocate.
+    private Segment indices = new ArraySegment(16);
 
-    private short segmentsUsed = 0;
+    private Map<Short, Segment> segments = new HashMap<>();
 
-    private Segment[] segments = new Segment[1];
-
-    public GridIntSet() {
-        // TODO set segment size - power of two.
-        segments[0] = new ArraySegment();
-    }
-
-    public GridIntSet(int first, int cnt) {
-    }
-
-    public void add(int v) {
+    public boolean add(int v) {
         //U.debug("Add " + v);
 
         short div = (short) (v / SEGMENT_SIZE);
 
         short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
 
-        // Determine addition type.
-
-        int segIdx = segmentIndex(div); // TODO binary search.
+        Segment seg;
 
         try {
-            segments[segIdx].add(mod);
+            boolean added = indices.add(div);
+
+            if (added)
+                segments.put(div, (seg = new ArraySegment()));
+            else
+                seg = segments.get(div);
         } catch (ConvertException e) {
-            segments[segIdx] = e.segment();
+            indices = e.segment;
+
+            segments.put(div, (seg = new ArraySegment()));
         }
+
+        try {
+            return seg.add(mod);
+        } catch (ConvertException e) {
+            segments.put(div, e.segment);
+        }
+
+        return true;
     }
 
-    public void remove(int v) {
+    public boolean remove(int v) {
         short div = (short) (v / SEGMENT_SIZE);
 
         short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
 
-        int segIdx = segmentIndex(div); // TODO binary search.
+        Segment segment = segments.get(div);
+
+        if (segment == null)
+            return false;
 
         try {
-            segments[segIdx].remove(mod);
+            return segment.remove(mod);
         } catch (ConvertException e) {
-            e.printStackTrace();
+            segments.put(div, e.segment);
         }
+
+        return true;
     }
 
     public boolean contains(int v) {
@@ -116,21 +121,81 @@ public class GridIntSet implements Serializable {
 
         short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
 
-        return segments[0].contains(mod);
+        Segment segment = segments.get(div);
+
+        if (segment == null)
+            return false;
+
+        return segment.contains(mod);
     }
 
-    private int segmentIndex(int v) {
-        //assert segIds.length > 0 && segments.length > 0 : "At least one segment";
+    private abstract class IntSetIterator implements Iterator {
+        private final Iterator idxIter;
 
-        return 0;
+        private Iterator it;
+
+        private int idx;
+
+        public IntSetIterator() {
+            this.idxIter = getIt(indices);
+
+            advance();
+        }
+
+        private void advance() {
+            if (idxIter.hasNext()) {
+                idx = (short) idxIter.next();
+
+                Segment segment = segments.get((short)idx);
+
+                it = getIt(segment);
+            }
+        }
+
+        protected abstract Iterator getIt(Segment segment);
+
+        @Override public boolean hasNext() {
+            return it.hasNext();
+        }
+
+        @Override public int next() {
+            int id = it.next() + idx * SEGMENT_SIZE;
+
+            advance();
+
+            return id;
+        }
     }
 
+    /**
+     *
+     */
     public Iterator iterator() {
-        return segments[0].iterator();
+        return new IntSetIterator() {
+            @Override protected Iterator getIt(Segment segment) {
+                return segment.iterator();
+            }
+        };
+    }
+
+    /**
+     *
+     */
+    public Iterator reverseIterator() {
+        return new IntSetIterator() {
+            @Override protected Iterator getIt(Segment segment) {
+                return segment.reverseIterator();
+            }
+        };
     }
 
     public int size() {
-        return segments[0].size();
+        int size = 0;
+
+        for (Segment segment : segments.values())
+            size += segment.size();
+
+        return size;
     }
 
     public static interface Iterator {
@@ -170,8 +235,6 @@ public class GridIntSet implements Serializable {
         public boolean add(short val) throws ConvertException;
 
         public boolean remove(short base) throws ConvertException;
-
-        public void flip() throws ConvertException;
 
         public boolean contains(short v);
 
@@ -384,10 +447,6 @@ public class GridIntSet implements Serializable {
 
         @Override public short[] data() {
             return words;
-        }
-
-        @Override public void flip() {
-
         }
 
         @Override public int size() {
@@ -618,31 +677,6 @@ public class GridIntSet implements Serializable {
         /** {@inheritDoc} */
         @Override public Iterator reverseIterator() {
             return new ReverseArrayIterator(data, size());
-        }
-
-        /** {@inheritDoc} */
-        public void flip() {
-//            Iterator it = iterator();
-//
-//            int i = 0;
-//
-//            ArraySegment seg = new ArraySegment(Mode.NORMAL);
-//
-//            while(it.hasNext()) {
-//                int id = it.next();
-//
-//                for (; i < id; i++)
-//                    seg.add((short) i);
-//
-//                i = id + 1;
-//            }
-//
-//            while(i < SEGMENT_SIZE)
-//                seg.add((short) i++);
-//
-//            this.data = seg.data();
-//
-//            seg.mode = mode == Mode.NORMAL ? Mode.INVERTED : Mode.NORMAL;
         }
 
         /** {@inheritDoc}

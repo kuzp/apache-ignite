@@ -80,8 +80,43 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         testIterators0(fill(new GridIntSet.BitSetSegment(), ThreadLocalRandom8.current().nextInt(0, size)));
     }
 
-    public void testConvertSegment() {
+    /**
+     *
+     */
+    public void testSet() {
+        GridIntSet set = new GridIntSet();
 
+        int size = 1024;
+
+        for (int i = 0; i < size; i++)
+            assertTrue(set.add(i * size));
+
+        assertEquals("Size", size, set.size());
+
+        List<Integer> vals = toList(set.iterator());
+
+        List<Integer> vals2 = toList(set.reverseIterator());
+
+        Collections.reverse(vals2);
+
+        assertEqualsCollections(vals, vals2);
+
+        for (int i = 0; i < size; i++)
+            assertTrue(set.contains(i * size));
+
+        for (int i = 0; i < size; i++)
+            assertTrue(set.remove(i * size));
+
+        assertEquals("Size", 0, set.size());
+    }
+
+    private List<Integer> toList(GridIntSet.Iterator it) {
+        List<Integer> l = new ArrayList<>();
+
+        while(it.hasNext())
+            l.add(it.next());
+
+        return l;
     }
 
     /**
@@ -240,7 +275,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     private void validateSize(GridIntSet.Segment segment) {
         assertTrue(String.valueOf(segment.size()), segment.minSize() <= segment.size() && segment.size() <= segment.maxSize());
 
-        assertTrue(String.valueOf(segment.data().length), segment.data().length <= GridIntSet.THRESHOLD);
+        assertTrue(String.valueOf(segment.data().length), segment.data().length <= GridIntSet.SEGMENT_SIZE / Short.SIZE);
     }
 
     /**
@@ -309,17 +344,15 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * @param segment Segment.
      */
     private GridIntSet.Segment clear(GridIntSet.Segment segment, int cnt) throws GridIntSet.ConvertException {
-//        if (cnt == -1)
-//            cnt = segment.maxSize();
-//
-//        while(segment.size() != (segment.maxSize() - cnt)) {
-//            short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
-//
-//            if (segment.contains(rnd))
-//                assertTrue(segment.remove(rnd));
-//        }
+        if (cnt == -1)
+            cnt = segment.maxSize();
 
-        //segment.remove(0);
+        while(segment.size() != (segment.maxSize() - cnt)) {
+            short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
+
+            if (segment.contains(rnd))
+                assertTrue(segment.remove(rnd));
+        }
 
         return segment;
     }
