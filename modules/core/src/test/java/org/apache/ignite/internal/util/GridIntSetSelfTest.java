@@ -145,7 +145,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testSetIterators() {
-        GridIntSet set = new GridIntSet();
+        final GridIntSet set = new GridIntSet();
 
         fill(set, true);
 
