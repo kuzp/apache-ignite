@@ -89,6 +89,12 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     public void testSet() {
         GridIntSet set = new GridIntSet();
 
+        assertEquals(-1, set.first());
+
+        assertFalse(set.iterator().hasNext());
+
+        assertFalse(set.reverseIterator().hasNext());
+
         int size = 1024;
 
         for (int i = 0; i < size; i++)
@@ -103,6 +109,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         Collections.reverse(vals2);
 
         assertEqualsCollections(vals, vals2);
+
+        assertEquals("First", 0, set.first());
+
+        assertEquals("Last", (size - 1) * size, set.last());
 
         for (int i = 0; i < size; i++)
             assertTrue(set.contains(i * size));

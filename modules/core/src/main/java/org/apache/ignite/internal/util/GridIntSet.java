@@ -64,95 +64,112 @@ public class GridIntSet implements Serializable {
     private Map<Short, Segment> segments = new HashMap<>();
 
     public boolean add(int v) {
-        //U.debug("Add " + v);
+        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short div = (short) (v >> SEGMENT_SHIFT_BITS);
-
-        short mod = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = (short) (v & (SEGMENT_SIZE - 1));
 
         Segment seg;
 
         try {
-            boolean added = indices.add(div);
+            boolean added = indices.add(segIdx);
 
             if (added)
-                segments.put(div, (seg = new ArraySegment()));
+                segments.put(segIdx, (seg = new ArraySegment()));
             else
-                seg = segments.get(div);
+                seg = segments.get(segIdx);
         } catch (ConvertException e) {
             indices = e.segment;
 
-            segments.put(div, (seg = new ArraySegment()));
+            segments.put(segIdx, (seg = new ArraySegment()));
         }
 
         try {
-            return seg.add(mod);
+            return seg.add(segVal);
         } catch (ConvertException e) {
-            segments.put(div, e.segment);
+            segments.put(segIdx, e.segment);
         }
 
         return true;
     }
 
     public boolean remove(int v) {
-        short div = (short) (v >> SEGMENT_SHIFT_BITS);
+        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short mod = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = (short) (v & (SEGMENT_SIZE - 1));
 
-        Segment segment = segments.get(div);
+        Segment segment = segments.get(segIdx);
 
         if (segment == null)
             return false;
 
         try {
-            return segment.remove(mod);
+            return segment.remove(segVal);
         } catch (ConvertException e) {
-            segments.put(div, e.segment);
+            segments.put(segIdx, e.segment);
         }
 
         return true;
     }
 
     public boolean contains(int v) {
-        short div = (short) (v >> SEGMENT_SHIFT_BITS);
+        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short mod = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = (short) (v & (SEGMENT_SIZE - 1));
 
-        Segment segment = segments.get(div);
+        Segment segment = segments.get(segIdx);
 
         if (segment == null)
             return false;
 
-        return segment.contains(mod);
+        return segment.contains(segVal);
     }
 
-    private abstract class IntSetIterator implements Iterator {
-        private final Iterator idxIter;
+    public int first() {
+        short first = indices.first();
+
+        if (first == -1)
+            return -1;
+
+        return segments.get(first).first() + first * SEGMENT_SIZE;
+    }
+
+    public int last() {
+        short last = indices.last();
+
+        if (last == -1)
+            return -1;
+
+        return segments.get(last).last() + last * SEGMENT_SIZE;
+    }
+
+    private abstract class IteratorImpl implements Iterator {
+        private final Iterator segIter;
 
         private Iterator it;
 
         private int idx;
 
-        public IntSetIterator() {
-            this.idxIter = getIt(indices);
+        public IteratorImpl() {
+            this.segIter = getIt(indices);
 
             advance();
         }
 
         private void advance() {
-            if (idxIter.hasNext()) {
-                idx = (short) idxIter.next();
+            if (segIter.hasNext()) {
+                idx = (short) segIter.next();
 
                 Segment segment = segments.get((short)idx);
 
                 it = getIt(segment);
-            }
+            } else
+                it = null;
         }
 
         protected abstract Iterator getIt(Segment segment);
 
         @Override public boolean hasNext() {
-            return it.hasNext();
+            return it != null && it.hasNext();
         }
 
         @Override public int next() {
@@ -168,7 +185,7 @@ public class GridIntSet implements Serializable {
      *
      */
     public Iterator iterator() {
-        return new IntSetIterator() {
+        return new IteratorImpl() {
             @Override protected Iterator getIt(Segment segment) {
                 return segment.iterator();
             }
@@ -179,7 +196,7 @@ public class GridIntSet implements Serializable {
      *
      */
     public Iterator reverseIterator() {
-        return new IntSetIterator() {
+        return new IteratorImpl() {
             @Override protected Iterator getIt(Segment segment) {
                 return segment.reverseIterator();
             }
@@ -256,7 +273,6 @@ public class GridIntSet implements Serializable {
         public Iterator iterator();
 
         public Iterator reverseIterator();
-
     }
 
     /**
