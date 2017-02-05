@@ -25,20 +25,15 @@ import java.util.NoSuchElementException;
 
 /**
  * Holds set of integers.
- * <p/>
+ * <p>
  * Structure:
- * <p/>
- * Each segment stores SEGMENT_SIZE values.
- * <p/>
- * On example, segment size 1024:
- * <p/>
- * segIds[0]: 0, highest bit cleared && segments[0].length < THRESHOLD, segments[0]=  [0, 5, 10, 1023] - stores present values
- * segIds[1]: 5, highest bit set, segments[1]=  [0, 5, 10, 10243 - stores absent values
- * segIds[2]: 10, segments[0].length == THRESHOLD, segments[2]=  [0, 5, 10, 1024] - stores values as bits
- * <p/>
- * <p/>
+ * <p>
+ * Each segment stores SEGMENT_SIZE values, possibly in compressed format.
+ * <p>
+ * Used storage format depends on segmen's fill factor.
+ * <p>
  * Note: implementation is not thread safe.
- *
+ * <p>
  * TODO equals/hashcode
  * TODO FIXME cache bit masks like 1 << shift ?
  * TODO HashSegment worth it?
@@ -49,6 +44,8 @@ public class GridIntSet implements Serializable {
     private static final long serialVersionUID = 0L;
 
     public static final short SEGMENT_SIZE = 1024;
+
+    private static final int SEGMENT_SHIFT_BITS = Integer.numberOfTrailingZeros(SEGMENT_SIZE);
 
     private static final int SHORT_BITS = Short.SIZE;
 
@@ -69,9 +66,9 @@ public class GridIntSet implements Serializable {
     public boolean add(int v) {
         //U.debug("Add " + v);
 
-        short div = (short) (v / SEGMENT_SIZE);
+        short div = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
+        short mod = (short) (v & (SEGMENT_SIZE - 1));
 
         Segment seg;
 
@@ -98,9 +95,9 @@ public class GridIntSet implements Serializable {
     }
 
     public boolean remove(int v) {
-        short div = (short) (v / SEGMENT_SIZE);
+        short div = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
+        short mod = (short) (v & (SEGMENT_SIZE - 1));
 
         Segment segment = segments.get(div);
 
@@ -117,9 +114,9 @@ public class GridIntSet implements Serializable {
     }
 
     public boolean contains(int v) {
-        short div = (short) (v / SEGMENT_SIZE);
+        short div = (short) (v >> SEGMENT_SHIFT_BITS);
 
-        short mod = (short) (v - div * SEGMENT_SIZE); // TODO use modulo bit hack.
+        short mod = (short) (v & (SEGMENT_SIZE - 1));
 
         Segment segment = segments.get(div);
 
@@ -942,9 +939,5 @@ public class GridIntSet implements Serializable {
             this.segment = segment;
         }
     }
-
-//    public static void main(String[] args) {
-//        System.out.println(BitSetSegment.prevSetBit(new short[]{(short) Integer.parseInt("1001100011110001", 2), (short) 0, (short) Integer.parseInt("1001100011110000", 2)}, 32));
-//    }
 }
 

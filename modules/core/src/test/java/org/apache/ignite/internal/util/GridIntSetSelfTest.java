@@ -29,6 +29,9 @@ import java.util.List;
  * Test for {@link GridIntSet}.
  */
 public class GridIntSetSelfTest extends GridCommonAbstractTest {
+    /** Max words. */
+    private static final int MAX_WORDS = GridIntSet.SEGMENT_SIZE / Short.SIZE;
+
     /**
      * Tests array segment.
      */
@@ -275,7 +278,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     private void validateSize(GridIntSet.Segment segment) {
         assertTrue(String.valueOf(segment.size()), segment.minSize() <= segment.size() && segment.size() <= segment.maxSize());
 
-        assertTrue(String.valueOf(segment.data().length), segment.data().length <= GridIntSet.SEGMENT_SIZE / Short.SIZE);
+        assertTrue(String.valueOf(segment.data().length), segment.data().length <= MAX_WORDS);
     }
 
     /**
