@@ -43,7 +43,11 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
         testRemoveFirst0(fill(new GridIntSet.ArraySegment(), false));
 
+        testRemoveFirstIter0(fill(new GridIntSet.ArraySegment(), false));
+
         testRemoveLast0(fill(new GridIntSet.ArraySegment(), false));
+
+        testRemoveLastIter0(fill(new GridIntSet.ArraySegment(), false));
 
         final GridIntSet.Segment seg = fill(new GridIntSet.ArraySegment(), true);
 
@@ -275,6 +279,29 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
+     * Tests removal from left size.
+     */
+    private void testRemoveFirstIter0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        int size = segment.size();
+
+        assertEquals(segment.maxSize() - segment.minSize(), size);
+
+        GridIntSet.Iterator iter = segment.iterator();
+
+        while(iter.hasNext() && size != segment.minSize()) {
+            validateSize(segment);
+
+            iter.next();
+
+            iter.remove();
+
+            assertEquals(--size, segment.size());
+
+            validateSize(segment);
+        }
+    }
+
+    /**
      * Tests removal from right side.
      */
     private void testRemoveLast0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
@@ -288,6 +315,29 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             short val = segment.last();
 
             assertTrue(segment.remove(val));
+
+            assertEquals(--size, segment.size());
+
+            validateSize(segment);
+        }
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testRemoveLastIter0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+        int size = segment.size();
+
+        assertEquals(segment.maxSize() - segment.minSize(), size);
+
+        GridIntSet.Iterator iter = segment.reverseIterator();
+
+        while(iter.hasNext() && size != segment.minSize()) {
+            validateSize(segment);
+
+            iter.next();
+
+            iter.remove();
 
             assertEquals(--size, segment.size());
 
