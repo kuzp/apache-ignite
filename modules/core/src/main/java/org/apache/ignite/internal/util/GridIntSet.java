@@ -256,16 +256,20 @@ public class GridIntSet implements Serializable {
             if (segIdx == idx) {
                 it.skipTo(segVal);
 
+                advance();
+
                 return;
             }
 
             segIter.skipTo(segIdx);
 
-            advance();
+            it = null;
+
+            advance(); // Force iterator refresh.
 
             it.skipTo(segVal);
 
-            // TODO handle case then next value contains in next segment
+            advance(); // Switch to next segment if needed.
         }
     }
 
