@@ -39,17 +39,17 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests array segment.
      */
     public void testArraySegment() throws GridIntSet.ConversionException {
-        testRemoveAddRemoveRnd0(fill(new GridIntSet.ArraySegment(), false));
+        testRemoveAddRemoveRnd0(rndFill(new GridIntSet.ArraySegment(), false));
 
-        testRemoveFirst0(fill(new GridIntSet.ArraySegment(), false));
+        testRemoveFirst0(rndFill(new GridIntSet.ArraySegment(), false));
 
-        testRemoveFirstIter0(fill(new GridIntSet.ArraySegment(), false));
+        testRemoveFirstIter0(rndFill(new GridIntSet.ArraySegment(), false));
 
-        testRemoveLast0(fill(new GridIntSet.ArraySegment(), false));
+        testRemoveLast0(rndFill(new GridIntSet.ArraySegment(), false));
 
-        testRemoveLastIter0(fill(new GridIntSet.ArraySegment(), false));
+        testRemoveLastIter0(rndFill(new GridIntSet.ArraySegment(), false));
 
-        final GridIntSet.Segment seg = fill(new GridIntSet.ArraySegment(), true);
+        final GridIntSet.Segment seg = rndFill(new GridIntSet.ArraySegment(), true);
 
         testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
             @Override public GridIntSet.Iterator apply() {
@@ -93,17 +93,17 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests array segment.
      */
     public void testBitSetSegment() throws GridIntSet.ConversionException {
-        testRemoveAddRemoveRnd0(fill(new GridIntSet.BitSetSegment(), false));
+        testRemoveAddRemoveRnd0(rndFill(new GridIntSet.BitSetSegment(), false));
 
-        testRemoveFirst0(fill(new GridIntSet.BitSetSegment(), false));
+        testRemoveFirst0(rndFill(new GridIntSet.BitSetSegment(), false));
 
-        testRemoveFirstIter0(fill(new GridIntSet.BitSetSegment(), false));
+        testRemoveFirstIter0(rndFill(new GridIntSet.BitSetSegment(), false));
 
-        testRemoveLast0(fill(new GridIntSet.BitSetSegment(), false));
+        testRemoveLast0(rndFill(new GridIntSet.BitSetSegment(), false));
 
-        testRemoveLastIter0(fill(new GridIntSet.BitSetSegment(), false));
+        testRemoveLastIter0(rndFill(new GridIntSet.BitSetSegment(), false));
 
-        final GridIntSet.Segment seg = fill(new GridIntSet.BitSetSegment(), true);
+        final GridIntSet.Segment seg = rndFill(new GridIntSet.BitSetSegment(), true);
 
         testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
             @Override public GridIntSet.Iterator apply() {
@@ -156,10 +156,13 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         assertEquals("Size", 0, set.size());
     }
 
+    /**
+     * Tests set iterators.
+     */
     public void testSetIterators() {
         final GridIntSet set = new GridIntSet();
 
-        fill(set, true);
+        rndFill(set, true);
 
         testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
             @Override public GridIntSet.Iterator apply() {
@@ -172,6 +175,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         });
     }
 
+    /** */
     private List<Integer> toList(GridIntSet.Iterator it) {
         List<Integer> l = new ArrayList<>();
 
@@ -415,31 +419,38 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
-     * Fills segment with random values until full capacity.
+     * Fills segment with random values.
      *
-     * @param segment Segment.
-     * @param randomize Randomize count.
+     * @param seg Segment.
+     * @param randomizeCnt If {@code true} operations count will be randomized.
      */
-    private GridIntSet.Segment fill(GridIntSet.Segment segment, boolean randomize) throws GridIntSet.ConversionException {
-        int cnt = segment.maxSize() - segment.minSize();
+    private GridIntSet.Segment rndFill(GridIntSet.Segment seg, boolean randomizeCnt) throws GridIntSet.ConversionException {
+        int cnt = seg.maxSize() - seg.minSize();
 
-        if (randomize)
+        if (randomizeCnt)
             cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
 
-        while(segment.size() != cnt) {
+        while(seg.size() != cnt) {
             short rnd = (short) ThreadLocalRandom8.current().nextInt(0, GridIntSet.SEGMENT_SIZE);
 
-            if (!segment.contains(rnd))
-                assertTrue(segment.add(rnd));
+            if (!seg.contains(rnd))
+                assertTrue(seg.add(rnd));
         }
 
-        return segment;
+        return seg;
     }
 
-    private void fill(GridIntSet set, boolean randomize) {
+    /**
+     *
+     * Fills set with random values.
+     *
+     * @param set Set.
+     * @param randomizeCnt If {@code true} operations count will be randomized.
+     */
+    private void rndFill(GridIntSet set, boolean randomizeCnt) {
         int cnt = MAX_VALUES / 10;
 
-        if (randomize)
+        if (randomizeCnt)
             cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
 
         while(set.size() != cnt) {
