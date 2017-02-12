@@ -122,27 +122,27 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     public void testSet2() throws GridIntSet.ConversionException {
         // TODO testRemoveAddRemoveRnd0(rndFill(new GridIntSet(), false));
 
-        //testRemoveFirst0(rndFill(new GridIntSet(), false));
+        testRemoveFirst0(rndFill(new GridIntSet(), false));
 
         testRemoveFirstIter0(rndFill(new GridIntSet(), false));
 
-        //testRemoveLast0(rndFill(new GridIntSet(), false));
-//
-//        testRemoveLastIter0(rndFill(new GridIntSet(), false));
+        testRemoveLast0(rndFill(new GridIntSet(), false));
 
-//        final GridIntSet set = new GridIntSet();
-//
-//        rndFill(new GridIntSet(), true);
-//
-//        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
-//            @Override public GridIntSet.Iterator apply() {
-//                return set.iterator();
-//            }
-//        }, new IgniteOutClosure<GridIntSet.Iterator>() {
-//            @Override public GridIntSet.Iterator apply() {
-//                return set.reverseIterator();
-//            }
-//        });
+        testRemoveLastIter0(rndFill(new GridIntSet(), false));
+
+        final GridIntSet set = new GridIntSet();
+
+        rndFill(new GridIntSet(), true);
+
+        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.iterator();
+            }
+        }, new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.reverseIterator();
+            }
+        });
     }
 
     /**

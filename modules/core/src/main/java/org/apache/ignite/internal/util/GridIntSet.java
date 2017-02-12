@@ -242,7 +242,9 @@ public class GridIntSet implements Serializable {
 
                 it = getIt(seg);
 
-                it.skipTo(cur - idx * SEGMENT_SIZE + 1);
+                it.skipTo(cur - idx * SEGMENT_SIZE);
+
+                advance();
             }
         }
 
