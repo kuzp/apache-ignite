@@ -38,7 +38,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array segment.
      */
-    public void testArraySegment() throws GridIntSet.ConvertException {
+    public void testArraySegment() throws GridIntSet.ConversionException {
         testRemoveAddRemoveRnd0(fill(new GridIntSet.ArraySegment(), false));
 
         testRemoveFirst0(fill(new GridIntSet.ArraySegment(), false));
@@ -65,12 +65,16 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests flipped array segment.
      */
-    public void testFlippedArraySegment() throws GridIntSet.ConvertException {
-        testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment()); // FlippedArraySegment contains all by default.
+    public void testFlippedArraySegment() throws GridIntSet.ConversionException {
+        testRemoveAddRemoveRnd0(new GridIntSet.FlippedArraySegment()); // FlippedArraySegment contains everything by default.
 
         testRemoveFirst0(new GridIntSet.FlippedArraySegment());
 
+        testRemoveFirstIter0(new GridIntSet.FlippedArraySegment());
+
         testRemoveLast0(new GridIntSet.FlippedArraySegment());
+
+        testRemoveLastIter0(new GridIntSet.FlippedArraySegment());
 
         final GridIntSet.Segment seg = clear(new GridIntSet.FlippedArraySegment(), true);
 
@@ -88,12 +92,16 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array segment.
      */
-    public void testBitSetSegment() throws GridIntSet.ConvertException {
+    public void testBitSetSegment() throws GridIntSet.ConversionException {
         testRemoveAddRemoveRnd0(fill(new GridIntSet.BitSetSegment(), false));
 
         testRemoveFirst0(fill(new GridIntSet.BitSetSegment(), false));
 
+        testRemoveFirstIter0(fill(new GridIntSet.BitSetSegment(), false));
+
         testRemoveLast0(fill(new GridIntSet.BitSetSegment(), false));
+
+        testRemoveLastIter0(fill(new GridIntSet.BitSetSegment(), false));
 
         final GridIntSet.Segment seg = fill(new GridIntSet.BitSetSegment(), true);
 
@@ -176,10 +184,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array segment.
      */
-    private void testRemoveAddRemoveRnd0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+    private void testRemoveAddRemoveRnd0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
-
-        assertEquals(segment.maxSize() - segment.minSize(), size);
 
         List<Integer> vals = new ArrayList<>();
 
@@ -260,10 +266,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirst0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+    private void testRemoveFirst0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
-
-        assertEquals(segment.maxSize() - segment.minSize(), size);
 
         while(size != segment.minSize()) {
             validateSize(segment);
@@ -281,10 +285,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirstIter0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+    private void testRemoveFirstIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
-
-        assertEquals(segment.maxSize() - segment.minSize(), size);
 
         GridIntSet.Iterator iter = segment.iterator();
 
@@ -304,10 +306,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLast0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+    private void testRemoveLast0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
-
-        assertEquals(segment.maxSize() - segment.minSize(), size);
 
         while(size != segment.minSize()) {
             validateSize(segment);
@@ -325,10 +325,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLastIter0(GridIntSet.Segment segment) throws GridIntSet.ConvertException {
+    private void testRemoveLastIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
-
-        assertEquals(segment.maxSize() - segment.minSize(), size);
 
         GridIntSet.Iterator iter = segment.reverseIterator();
 
@@ -422,7 +420,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * @param segment Segment.
      * @param randomize Randomize count.
      */
-    private GridIntSet.Segment fill(GridIntSet.Segment segment, boolean randomize) throws GridIntSet.ConvertException {
+    private GridIntSet.Segment fill(GridIntSet.Segment segment, boolean randomize) throws GridIntSet.ConversionException {
         int cnt = segment.maxSize() - segment.minSize();
 
         if (randomize)
@@ -457,7 +455,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      *
      * @param segment Segment.
      */
-    private GridIntSet.Segment clear(GridIntSet.Segment segment, boolean randomize) throws GridIntSet.ConvertException {
+    private GridIntSet.Segment clear(GridIntSet.Segment segment, boolean randomize) throws GridIntSet.ConversionException {
         int cnt = segment.maxSize() - segment.minSize();
 
         if (randomize)
