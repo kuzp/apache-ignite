@@ -167,7 +167,17 @@ public class GridIntSet implements Serializable {
 
         private Iterator it;
 
-        private int idx;
+        private Iterator lastIt;
+
+        private short idx;
+
+        private Segment seg;
+
+        private Segment lastSeg;
+
+        private short lastIdx;
+
+        private int cur;
 
         public IteratorImpl() {
             this.segIter = getIt(indices);
@@ -175,17 +185,17 @@ public class GridIntSet implements Serializable {
             advance();
         }
 
+        /** */
         private void advance() {
-            if (it == null || !it.hasNext()) {
+            if (it == null || !it.hasNext())
                 if (segIter.hasNext()) {
                     idx = (short) segIter.next();
 
-                    Segment segment = segments.get((short) idx);
+                    seg = segments.get(idx);
 
-                    it = getIt(segment);
+                    it = getIt(seg);
                 } else
                     it = null;
-            }
         }
 
         protected abstract Iterator getIt(Segment segment);
@@ -195,15 +205,65 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int next() {
-            int id = it.next() + idx * SEGMENT_SIZE;
+            cur = it.next() + idx * SEGMENT_SIZE;
+
+            lastIt = it; // Store refs for remove.
+
+            lastSeg = seg;
+
+            lastIdx = idx;
 
             advance();
 
-            return id;
+            return cur;
         }
 
         @Override public void remove() {
-            it.remove();
+            try {
+                lastIt.remove();
+
+                if (lastSeg.size() == 0) {
+                    try {
+                        indices.remove(lastIdx);
+                    } catch (ConversionException e) {
+                        indices = e.segment;
+                    }
+
+                    segments.remove(lastIdx);
+                }
+            } catch (ConversionException e) {
+                assert idx == lastIdx;
+                assert seg == lastSeg;
+                assert it == lastIt;
+
+                segments.put(idx, e.segment);
+
+                seg = lastSeg = e.segment; // segment was changed.
+
+                it = getIt(seg);
+
+                it.skipTo(cur - idx * SEGMENT_SIZE + 1);
+            }
+        }
+
+        @Override public void skipTo(int v) {
+            short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
+
+            short segVal = (short) (v & (SEGMENT_SIZE - 1));
+
+            if (segIdx == idx) {
+                it.skipTo(segVal);
+
+                return;
+            }
+
+            segIter.skipTo(segIdx);
+
+            advance();
+
+            it.skipTo(segVal);
+
+            // TODO handle case then next value contains in next segment
         }
     }
 
@@ -244,6 +304,8 @@ public class GridIntSet implements Serializable {
         public int next();
 
         public void remove();
+
+        public void skipTo(int val);
     }
 
     /** {@inheritDoc} */
@@ -372,7 +434,7 @@ public class GridIntSet implements Serializable {
 
             words[wordIdx] &= ~mask;
 
-            if (count < THRESHOLD)
+            if (count == THRESHOLD - 1)
                 throw new ConversionException(convertToArraySet());
 
             return true;
@@ -566,6 +628,11 @@ public class GridIntSet implements Serializable {
             @Override public void remove() {
                 BitSetSegment.this.remove((short) cur);
             }
+
+            /** {@inheritDoc} */
+            @Override public void skipTo(int val) {
+                next = nextSetBit(words, val);
+            }
         }
 
         /** */
@@ -598,6 +665,11 @@ public class GridIntSet implements Serializable {
             /** {@inheritDoc} */
             @Override public void remove() {
                 BitSetSegment.this.remove((short) cur);
+            }
+
+            /** {@inheritDoc} */
+            @Override public void skipTo(int val) {
+                next = prevSetBit(words, val);
             }
         }
     }
@@ -797,6 +869,12 @@ public class GridIntSet implements Serializable {
             @Override public void remove() {
                 ArraySegment.this.remove0((short) (--cur));
             }
+
+            @Override public void skipTo(int val) {
+                int idx = Arrays.binarySearch(data, 0, used(), (short) val);
+
+                cur = idx >= 0 ? idx : -(idx + 1);
+            }
         }
 
         /** */
@@ -817,6 +895,12 @@ public class GridIntSet implements Serializable {
             /** {@inheritDoc} */
             @Override public void remove() throws ConversionException {
                 ArraySegment.this.remove0((short) (cur + 1));
+            }
+
+            @Override public void skipTo(int val) {
+                int idx = Arrays.binarySearch(data, 0, used(), (short) val);
+
+                cur = idx >= 0 ? idx : -(idx + 1) - 1;
             }
         }
     }
@@ -961,6 +1045,11 @@ public class GridIntSet implements Serializable {
             @Override public void remove() {
                 FlippedArraySegment.this.remove((short) cur);
             }
+
+            /** {@inheritDoc} */
+            @Override public void skipTo(int val) {
+                throw new UnsupportedOperationException();
+            }
         }
 
         /** */
@@ -1006,6 +1095,11 @@ public class GridIntSet implements Serializable {
             /** {@inheritDoc} */
             @Override public void remove() {
                 FlippedArraySegment.this.remove((short) cur);
+            }
+
+            /** {@inheritDoc} */
+            @Override public void skipTo(int val) {
+                throw new UnsupportedOperationException();
             }
         }
     }

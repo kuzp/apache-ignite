@@ -130,19 +130,19 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 //
 //        testRemoveLastIter0(rndFill(new GridIntSet(), false));
 
-        final GridIntSet set = new GridIntSet();
-
-        rndFill(new GridIntSet(), true);
-
-        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
-                return set.iterator();
-            }
-        }, new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
-                return set.reverseIterator();
-            }
-        });
+//        final GridIntSet set = new GridIntSet();
+//
+//        rndFill(new GridIntSet(), true);
+//
+//        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
+//            @Override public GridIntSet.Iterator apply() {
+//                return set.iterator();
+//            }
+//        }, new IgniteOutClosure<GridIntSet.Iterator>() {
+//            @Override public GridIntSet.Iterator apply() {
+//                return set.reverseIterator();
+//            }
+//        });
     }
 
     /**
