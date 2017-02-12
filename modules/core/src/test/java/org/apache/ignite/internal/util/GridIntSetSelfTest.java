@@ -117,6 +117,35 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
+     * Tests array segment.
+     */
+    public void testSet2() throws GridIntSet.ConversionException {
+        // TODO testRemoveAddRemoveRnd0(rndFill(new GridIntSet(), false));
+
+        //testRemoveFirst0(rndFill(new GridIntSet(), false));
+
+        testRemoveFirstIter0(rndFill(new GridIntSet(), false));
+
+        //testRemoveLast0(rndFill(new GridIntSet(), false));
+//
+//        testRemoveLastIter0(rndFill(new GridIntSet(), false));
+
+        final GridIntSet set = new GridIntSet();
+
+        rndFill(new GridIntSet(), true);
+
+        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.iterator();
+            }
+        }, new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.reverseIterator();
+            }
+        });
+    }
+
+    /**
      *
      */
     public void testSet() {
@@ -289,6 +318,25 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from left size.
      */
+    private void testRemoveFirst0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        while(size != 0) {
+            int val = set.first();
+
+            boolean removed = set.remove(val);
+
+            assertTrue(removed);
+
+            --size;
+
+            assertEquals(size, set.size());
+        }
+    }
+
+    /**
+     * Tests removal from left size.
+     */
     private void testRemoveFirstIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
 
@@ -305,6 +353,25 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
             validateSize(segment);
         }
+    }
+
+    /**
+     * Tests removal from left size.
+     */
+    private void testRemoveFirstIter0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        GridIntSet.Iterator iter = set.iterator();
+
+        while(iter.hasNext()) {
+            iter.next();
+
+            iter.remove();
+
+            assertEquals(--size, set.size());
+        }
+
+        assertEquals(0, set.size());
     }
 
     /**
@@ -329,6 +396,21 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from right side.
      */
+    private void testRemoveLast0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        while(size != 0) {
+            int val = set.last();
+
+            assertTrue(set.remove(val));
+
+            assertEquals(--size, set.size());
+        }
+    }
+
+    /**
+     * Tests removal from right side.
+     */
     private void testRemoveLastIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
         int size = segment.size();
 
@@ -345,6 +427,25 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
             validateSize(segment);
         }
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testRemoveLastIter0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        GridIntSet.Iterator iter = set.reverseIterator();
+
+        while(iter.hasNext()) {
+            iter.next();
+
+            iter.remove();
+
+            assertEquals(--size, set.size());
+        }
+
+        assertEquals(0, set.size());
     }
 
     /** */
@@ -422,12 +523,12 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Fills segment with random values.
      *
      * @param seg Segment.
-     * @param randomizeCnt If {@code true} operations count will be randomized.
+     * @param randomCnt If {@code true} operations count will be randomized.
      */
-    private GridIntSet.Segment rndFill(GridIntSet.Segment seg, boolean randomizeCnt) throws GridIntSet.ConversionException {
+    private GridIntSet.Segment rndFill(GridIntSet.Segment seg, boolean randomCnt) throws GridIntSet.ConversionException {
         int cnt = seg.maxSize() - seg.minSize();
 
-        if (randomizeCnt)
+        if (randomCnt)
             cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
 
         while(seg.size() != cnt) {
@@ -441,16 +542,15 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     /**
-     *
      * Fills set with random values.
      *
      * @param set Set.
-     * @param randomizeCnt If {@code true} operations count will be randomized.
+     * @param randomCnt If {@code true} operations count will be randomized.
      */
-    private void rndFill(GridIntSet set, boolean randomizeCnt) {
+    private GridIntSet rndFill(GridIntSet set, boolean randomCnt) {
         int cnt = MAX_VALUES / 10;
 
-        if (randomizeCnt)
+        if (randomCnt)
             cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
 
         while(set.size() != cnt) {
@@ -459,6 +559,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             if (!set.contains(rnd))
                 assertTrue(set.add(rnd));
         }
+
+        return set;
     }
 
     /**

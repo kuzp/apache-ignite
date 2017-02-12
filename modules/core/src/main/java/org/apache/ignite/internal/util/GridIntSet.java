@@ -110,7 +110,19 @@ public class GridIntSet implements Serializable {
             return false;
 
         try {
-            return seg.remove(segVal);
+            boolean rmv = seg.remove(segVal);
+
+            if (rmv && seg.size() == 0) {
+                try {
+                    indices.remove(segIdx);
+                } catch (ConversionException e) {
+                    indices = e.segment;
+                }
+
+                segments.remove(segIdx);
+            }
+
+            return rmv;
         } catch (ConversionException e) {
             segments.put(segIdx, e.segment);
         }
@@ -191,11 +203,7 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public void remove() {
-            try {
-                segIter.remove();
-            } catch (ConversionException e) {
-
-            }
+            it.remove();
         }
     }
 
@@ -836,7 +844,13 @@ public class GridIntSet implements Serializable {
 
         /** {@inheritDoc} */
         @Override public boolean remove(short base) throws ConversionException {
-            return super.add(base);
+            try {
+                return super.add(base);
+            } catch (ConversionException e) {
+                e.segment.remove(base);
+
+                throw e;
+            }
         }
 
         /** {@inheritDoc} */
