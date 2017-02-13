@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.util;
 
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteOutClosure;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ThreadLocalRandom8;
@@ -37,6 +38,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     private static final int MAX_WORDS = GridIntSet.SEGMENT_SIZE / Short.SIZE;
 
     private static final int MAX_VALUES = GridIntSet.SEGMENT_SIZE * GridIntSet.SEGMENT_SIZE;
+
+    private GridRandom gridRandom = new GridRandom();
 
     /**
      * Tests array segment.
@@ -128,19 +131,27 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         long t0 = System.nanoTime();
         long t1 = 0;
 
-        for (int i = 0; i < 1000; i++) {
-            if ( i < 100)
-                continue;
-            else
+        int cnt = 1;
+
+        for (int i = 0; i < cnt; i++) {
+            //long seed = ThreadLocalRandom8.current().nextLong();
+
+            long seed = -6087285172100122953L;
+
+            gridRandom.setSeed(seed);
+
+            if ( i == 100)
                 t1 = System.nanoTime();
+
+            log().info("Seed: " + seed);
 
             testRemoveFirst0(rndFill2(new TestIntSetImpl(), false));
 
             testRemoveFirstIter0(rndFill2(new TestIntSetImpl(), false));
 
-            testRemoveLast0(rndFill2(new TestIntSetImpl(), false));
-
-            testRemoveLastIter0(rndFill2(new TestIntSetImpl(), false));
+//            testRemoveLast0(rndFill2(new TestIntSetImpl(), false));
+//
+//            testRemoveLastIter0(rndFill2(new TestIntSetImpl(), false));
         }
 
         System.out.println("Time0: " + (System.nanoTime() - t0)/1000/1000.);
@@ -366,6 +377,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from left size.
      */
     private void testRemoveFirst0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
+        log().info("testRemoveFirst0");
+
         int size = segment.size();
 
         while(size != segment.minSize()) {
@@ -385,6 +398,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from left size.
      */
     private void testRemoveFirst0(TestIntSet set) throws GridIntSet.ConversionException {
+        log().info("testRemoveFirst0");
+
         int size = set.size();
 
         while(size != 0) {
@@ -402,6 +417,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from left size.
      */
     private void testRemoveFirstIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
+        log().info("testRemoveFirstIter0");
+
         int size = segment.size();
 
         GridIntSet.Iterator iter = segment.iterator();
@@ -423,6 +440,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from left size.
      */
     private void testRemoveFirstIter0(TestIntSet set) throws GridIntSet.ConversionException {
+        log().info("testRemoveFirstIter0");
+
         int size = set.size();
 
         GridIntSet.Iterator iter = set.iterator();
@@ -442,6 +461,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from right side.
      */
     private void testRemoveLast0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
+        log().info("testRemoveLast0");
+
         int size = segment.size();
 
         while(size != segment.minSize()) {
@@ -461,6 +482,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from right side.
      */
     private void testRemoveLast0(TestIntSet set) throws GridIntSet.ConversionException {
+        log().info("testRemoveLast0");
+
         int size = set.size();
 
         while(size != 0) {
@@ -476,6 +499,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from right side.
      */
     private void testRemoveLastIter0(GridIntSet.Segment segment) throws GridIntSet.ConversionException {
+        log().info("testRemoveLastIter0");
+
         int size = segment.size();
 
         GridIntSet.Iterator iter = segment.reverseIterator();
@@ -497,6 +522,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * Tests removal from right side.
      */
     private void testRemoveLastIter0(TestIntSet set) throws GridIntSet.ConversionException {
+        log().info("testRemoveLastIter0");
+
         int size = set.size();
 
         GridIntSet.Iterator iter = set.reverseIterator();
@@ -631,10 +658,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         int cnt = MAX_VALUES / 100;
 
         if (randomCnt)
-            cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
+            cnt = gridRandom.nextInt(cnt);
 
         while(set.size() != cnt) {
-            int rnd = ThreadLocalRandom8.current().nextInt(0, cnt);
+            int rnd = gridRandom.nextInt(MAX_VALUES);
 
             if (!set.contains(rnd))
                 assertTrue(set.add(rnd));

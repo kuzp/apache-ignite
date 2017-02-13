@@ -178,7 +178,7 @@ public class GridIntSet implements Serializable {
     }
 
     private abstract class IteratorImpl implements Iterator {
-        private final Iterator segIter;
+        private Iterator idxIter;
 
         private Iterator it;
 
@@ -195,7 +195,7 @@ public class GridIntSet implements Serializable {
         private int cur;
 
         public IteratorImpl() {
-            this.segIter = getIt(indices);
+            this.idxIter = getIt(indices);
 
             advance();
         }
@@ -203,8 +203,8 @@ public class GridIntSet implements Serializable {
         /** */
         private void advance() {
             if (it == null || !it.hasNext())
-                if (segIter.hasNext()) {
-                    idx = (short) segIter.next();
+                if (idxIter.hasNext()) {
+                    idx = (short) idxIter.next();
 
                     seg = segments.get(idx);
 
@@ -239,9 +239,13 @@ public class GridIntSet implements Serializable {
 
                 if (lastSeg.size() == 0) {
                     try {
-                        segIter.remove();
+                        idxIter.remove();
                     } catch (ConversionException e) {
                         indices = e.segment;
+
+                        idxIter = indices.iterator();
+
+                        idxIter.skipTo(lastIdx);
                     }
 
                     segments.remove(lastIdx);
@@ -279,7 +283,7 @@ public class GridIntSet implements Serializable {
                 return;
             }
 
-            segIter.skipTo(segIdx);
+            idxIter.skipTo(segIdx);
 
             it = null;
 
@@ -796,8 +800,8 @@ public class GridIntSet implements Serializable {
 
             data[used] = 0;
 
-            if (used == (data.length >> 1))
-                data = Arrays.copyOf(data, used);
+//            if (used == (data.length >> 1))
+//                data = Arrays.copyOf(data, used);
 
             return true;
         }
@@ -1026,7 +1030,7 @@ public class GridIntSet implements Serializable {
             private int skipVal = -1;
 
             /** */
-            private int next = -1;
+            private int next = 0;
 
             /** */
             private int cur;
@@ -1038,6 +1042,10 @@ public class GridIntSet implements Serializable {
 
             /** */
             private void advance() {
+                if (skipVal == -1)
+                    if (super.hasNext())
+                        skipVal = super.next();
+
                 while(skipVal == next && next < SEGMENT_SIZE) {
                     if (super.hasNext())
                         skipVal = super.next();
@@ -1074,10 +1082,7 @@ public class GridIntSet implements Serializable {
         /** */
         private class FlippedReverseArrayIterator extends ReverseArrayIterator {
             /** */
-            private int skipVal = SEGMENT_SIZE;
-
-            /** */
-            private int next = SEGMENT_SIZE;
+            private int next = SEGMENT_SIZE - 1;
 
             /** */
             private int cur;
@@ -1089,12 +1094,7 @@ public class GridIntSet implements Serializable {
 
             /** */
             private void advance() {
-                while(skipVal == next && next >= 0) {
-                    if (super.hasNext())
-                        skipVal = super.next();
-
-                    next--;
-                }
+                while(super.hasNext() && super.next() == next && next-- >= 0);
             }
 
             /** {@inheritDoc} */
