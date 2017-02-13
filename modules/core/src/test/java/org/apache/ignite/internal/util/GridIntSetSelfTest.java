@@ -24,7 +24,10 @@ import org.jsr166.ThreadLocalRandom8;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Test for {@link GridIntSet}.
@@ -122,27 +125,90 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     public void testSet2() throws GridIntSet.ConversionException {
         // TODO testRemoveAddRemoveRnd0(rndFill(new GridIntSet(), false));
 
-        testRemoveFirst0(rndFill(new GridIntSet(), false));
+        long t0 = System.nanoTime();
+        long t1 = 0;
 
-        testRemoveFirstIter0(rndFill(new GridIntSet(), false));
+        for (int i = 0; i < 1000; i++) {
+            if ( i < 100)
+                continue;
+            else
+                t1 = System.nanoTime();
 
-        testRemoveLast0(rndFill(new GridIntSet(), false));
+            testRemoveFirst0(rndFill2(new TestIntSetImpl(), false));
 
-        testRemoveLastIter0(rndFill(new GridIntSet(), false));
+            testRemoveFirstIter0(rndFill2(new TestIntSetImpl(), false));
 
-        final GridIntSet set = new GridIntSet();
+            testRemoveLast0(rndFill2(new TestIntSetImpl(), false));
 
-        rndFill(new GridIntSet(), true);
+            testRemoveLastIter0(rndFill2(new TestIntSetImpl(), false));
+        }
 
-        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
-                return set.iterator();
-            }
-        }, new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
-                return set.reverseIterator();
-            }
-        });
+        System.out.println("Time0: " + (System.nanoTime() - t0)/1000/1000.);
+        System.out.println("Time: " + (System.nanoTime() - t1)/1000/1000.);
+
+//        final TestIntSet set = new TestIntSetImpl();
+//
+//        rndFill2(new TestIntSetImpl(), true);
+//
+//        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
+//            @Override public GridIntSet.Iterator apply() {
+//                return set.iterator();
+//            }
+//        }, new IgniteOutClosure<GridIntSet.Iterator>() {
+//            @Override public GridIntSet.Iterator apply() {
+//                return set.reverseIterator();
+//            }
+//        });
+    }
+
+    public void testSet3() throws GridIntSet.ConversionException {
+        // TODO testRemoveAddRemoveRnd0(rndFill(new GridIntSet(), false));
+
+        long t0 = System.nanoTime();
+        long t1 = 0;
+
+        for (int i = 0; i < 1000; i++) {
+            if (i < 100)
+                continue;
+            else
+                t1 = System.nanoTime();
+
+            testRemoveFirst0(rndFill2(new TestIntSetImpl2(), false));
+
+            testRemoveFirstIter0(rndFill2(new TestIntSetImpl2(), false));
+
+            testRemoveLast0(rndFill2(new TestIntSetImpl2(), false));
+
+            testRemoveLastIter0(rndFill2(new TestIntSetImpl2(), false));
+        }
+
+        System.out.println("Time0: " + (System.nanoTime() - t0) / 1000 / 1000.);
+        System.out.println("Time: " + (System.nanoTime() - t1) / 1000 / 1000.);
+    }
+
+    public void testSet4() throws GridIntSet.ConversionException {
+        // TODO testRemoveAddRemoveRnd0(rndFill(new GridIntSet(), false));
+
+        long t0 = System.nanoTime();
+        long t1 = 0;
+
+        for (int i = 0; i < 1000; i++) {
+            if (i < 100)
+                continue;
+            else
+                t1 = System.nanoTime();
+
+            testRemoveFirst0(rndFill2(new TestIntSetImpl3(), false));
+
+            testRemoveFirstIter0(rndFill2(new TestIntSetImpl3(), false));
+
+            testRemoveLast0(rndFill2(new TestIntSetImpl3(), false));
+
+            testRemoveLastIter0(rndFill2(new TestIntSetImpl3(), false));
+        }
+
+        System.out.println("Time0: " + (System.nanoTime() - t0) / 1000 / 1000.);
+        System.out.println("Time: " + (System.nanoTime() - t1) / 1000 / 1000.);
     }
 
     /**
@@ -318,15 +384,13 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirst0(GridIntSet set) throws GridIntSet.ConversionException {
+    private void testRemoveFirst0(TestIntSet set) throws GridIntSet.ConversionException {
         int size = set.size();
 
         while(size != 0) {
             int val = set.first();
 
-            boolean removed = set.remove(val);
-
-            assertTrue(removed);
+            assertTrue(set.remove(val));
 
             --size;
 
@@ -358,7 +422,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirstIter0(GridIntSet set) throws GridIntSet.ConversionException {
+    private void testRemoveFirstIter0(TestIntSet set) throws GridIntSet.ConversionException {
         int size = set.size();
 
         GridIntSet.Iterator iter = set.iterator();
@@ -396,7 +460,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLast0(GridIntSet set) throws GridIntSet.ConversionException {
+    private void testRemoveLast0(TestIntSet set) throws GridIntSet.ConversionException {
         int size = set.size();
 
         while(size != 0) {
@@ -432,7 +496,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLastIter0(GridIntSet set) throws GridIntSet.ConversionException {
+    private void testRemoveLastIter0(TestIntSet set) throws GridIntSet.ConversionException {
         int size = set.size();
 
         GridIntSet.Iterator iter = set.reverseIterator();
@@ -563,6 +627,22 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         return set;
     }
 
+    private TestIntSet rndFill2(TestIntSet set, boolean randomCnt) {
+        int cnt = MAX_VALUES / 100;
+
+        if (randomCnt)
+            cnt = ThreadLocalRandom8.current().nextInt(0, cnt);
+
+        while(set.size() != cnt) {
+            int rnd = ThreadLocalRandom8.current().nextInt(0, cnt);
+
+            if (!set.contains(rnd))
+                assertTrue(set.add(rnd));
+        }
+
+        return set;
+    }
+
     /**
      * Fills segment with random values until full capacity.
      *
@@ -583,4 +663,238 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
         return segment;
     }
+
+    public interface TestIntSet {
+
+        int size();
+
+        int first();
+
+        boolean remove(int val);
+
+        boolean contains(int val);
+
+        boolean add(int val);
+
+        GridIntSet.Iterator iterator();
+
+        int last();
+
+        GridIntSet.Iterator reverseIterator();
+    }
+
+    public static class TestIntSetImpl implements TestIntSet {
+        private final GridIntSet set;
+
+        public TestIntSetImpl() {
+            set = new GridIntSet();
+        }
+
+        @Override
+        public int size() {
+            return set.size();
+        }
+
+        @Override
+        public int first() {
+            return set.first();
+        }
+
+        @Override
+        public boolean remove(int val) {
+            return set.remove(val);
+        }
+
+        @Override
+        public boolean contains(int val) {
+            return set.contains(val);
+        }
+
+        @Override
+        public boolean add(int val) {
+            return set.add(val);
+        }
+
+        @Override
+        public GridIntSet.Iterator iterator() {
+            return set.iterator();
+        }
+
+        @Override
+        public int last() {
+            return set.last();
+        }
+
+        @Override
+        public GridIntSet.Iterator reverseIterator() {
+            return set.reverseIterator();
+        }
+    }
+
+    public static class TestIntSetImpl2 implements TestIntSet {
+        private final ArrayList<Integer> list;
+
+        public TestIntSetImpl2() {
+            list = new ArrayList<>();
+        }
+
+        @Override
+        public int size() {
+            return list.size();
+        }
+
+        @Override
+        public int first() {
+            return list.get(0);
+        }
+
+        @Override
+        public boolean remove(int val) {
+            return list.remove((Integer)val);
+        }
+
+        @Override
+        public boolean contains(int val) {
+            return list.contains(val);
+        }
+
+        @Override
+        public boolean add(int val) {
+            return list.add(val);
+        }
+
+        @Override
+        public GridIntSet.Iterator iterator() {
+            final ListIterator<Integer> it = list.listIterator();
+
+            return new GridIntSet.Iterator() {
+                @Override
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                @Override
+                public int next() {
+                    return it.next();
+                }
+
+                @Override
+                public void remove() {
+                    it.remove();
+                }
+
+                @Override
+                public void skipTo(int val) {
+
+                }
+            };
+        }
+
+        @Override
+        public int last() {
+            return list.get(list.size() - 1);
+        }
+
+        @Override
+        public GridIntSet.Iterator reverseIterator() {
+            final ListIterator<Integer> it = list.listIterator();
+
+            // Move to the end.
+            while(it.hasNext())
+                it.next();
+
+            return new GridIntSet.Iterator() {
+                @Override
+                public boolean hasNext() {
+                    return it.hasPrevious();
+                }
+
+                @Override
+                public int next() {
+                    return it.previous();
+                }
+
+                @Override
+                public void remove() {
+                    it.remove();
+                }
+
+                @Override
+                public void skipTo(int val) {
+
+                }
+            };
+        }
+    }
+
+    public static class TestIntSetImpl3 implements TestIntSet {
+        private final HashSet<Integer> list;
+
+        public TestIntSetImpl3() {
+            list = new HashSet<>();
+        }
+
+        @Override
+        public int size() {
+            return list.size();
+        }
+
+        @Override
+        public int first() {
+            return list.iterator().next();
+        }
+
+        @Override
+        public boolean remove(int val) {
+            return list.remove((Integer)val);
+        }
+
+        @Override
+        public boolean contains(int val) {
+            return list.contains(val);
+        }
+
+        @Override
+        public boolean add(int val) {
+            return list.add(val);
+        }
+
+        @Override
+        public GridIntSet.Iterator iterator() {
+            final Iterator<Integer> it = list.iterator();
+
+            return new GridIntSet.Iterator() {
+                @Override
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                @Override
+                public int next() {
+                    return it.next();
+                }
+
+                @Override
+                public void remove() {
+                    it.remove();
+                }
+
+                @Override
+                public void skipTo(int val) {
+
+                }
+            };
+        }
+
+        @Override
+        public int last() {
+            return list.iterator().next();
+        }
+
+        @Override
+        public GridIntSet.Iterator reverseIterator() {
+            return iterator();
+        }
+    }
+
 }

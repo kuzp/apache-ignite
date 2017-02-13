@@ -66,6 +66,8 @@ public class GridIntSet implements Serializable {
 
     private Map<Short, Segment> segments = new HashMap<>();
 
+    private int size;
+
     /**
      * @param v V.
      */
@@ -88,9 +90,16 @@ public class GridIntSet implements Serializable {
         }
 
         try {
-            return seg.add(segVal);
+            boolean added = seg.add(segVal);
+
+            if (added)
+                size++;
+
+            return added;
         } catch (ConversionException e) {
             segments.put(segIdx, e.segment);
+
+            size++;
         }
 
         return true;
@@ -112,19 +121,25 @@ public class GridIntSet implements Serializable {
         try {
             boolean rmv = seg.remove(segVal);
 
-            if (rmv && seg.size() == 0) {
-                try {
-                    indices.remove(segIdx);
-                } catch (ConversionException e) {
-                    indices = e.segment;
-                }
+            if (rmv) {
+                size--;
 
-                segments.remove(segIdx);
+                if (seg.size() == 0) {
+                    try {
+                        indices.remove(segIdx);
+                    } catch (ConversionException e) {
+                        indices = e.segment;
+                    }
+
+                    segments.remove(segIdx);
+                }
             }
 
             return rmv;
         } catch (ConversionException e) {
             segments.put(segIdx, e.segment);
+
+            size--;
         }
 
         return true;
@@ -224,7 +239,7 @@ public class GridIntSet implements Serializable {
 
                 if (lastSeg.size() == 0) {
                     try {
-                        indices.remove(lastIdx);
+                        segIter.remove();
                     } catch (ConversionException e) {
                         indices = e.segment;
                     }
@@ -242,12 +257,15 @@ public class GridIntSet implements Serializable {
 
                 it = getIt(seg);
 
-                it.skipTo(cur - idx * SEGMENT_SIZE);
+                it.skipTo(cur - idx * SEGMENT_SIZE); // TODO FIXME bit shift
 
                 advance();
             }
+
+            size--;
         }
 
+        /** {@inheritDoc} */
         @Override public void skipTo(int v) {
             short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
 
@@ -296,11 +314,6 @@ public class GridIntSet implements Serializable {
     }
 
     public int size() {
-        int size = 0;
-
-        for (Segment segment : segments.values())
-            size += segment.size();
-
         return size;
     }
 
