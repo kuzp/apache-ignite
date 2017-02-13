@@ -245,7 +245,7 @@ public class GridIntSet implements Serializable {
 
                         idxIter = indices.iterator();
 
-                        idxIter.skipTo(lastIdx);
+                        idxIter.skipTo(lastIdx + 1);
                     }
 
                     segments.remove(lastIdx);
