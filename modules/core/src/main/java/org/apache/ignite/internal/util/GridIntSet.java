@@ -954,6 +954,7 @@ public class GridIntSet implements Serializable {
             try {
                 return super.add(base);
             } catch (ConversionException e) {
+                // Converted value will be included in converted set, have to remove it before proceeding.
                 e.segment.remove(base);
 
                 throw e;
