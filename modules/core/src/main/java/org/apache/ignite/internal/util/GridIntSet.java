@@ -137,7 +137,9 @@ public class GridIntSet implements Serializable {
 
             return rmv;
         } catch (ConversionException e) {
-            segments.put(segIdx, e.segment);
+            assert seg.size() != 0; // Converted segment cannot be empty.
+
+            segments.put(segIdx, e.segment); // Update the segment with different impl.
 
             size--;
         }
@@ -190,16 +192,17 @@ public class GridIntSet implements Serializable {
         /** Current segment. */
         private Segment seg;
 
+        /** Stores last iterator for removal. */
         private Iterator lastIt;
 
+        /** Stores last segment for removal. */
         private Segment lastSeg;
 
+        /** Stores last index for removal. */
         private short lastIdx;
 
-        private int cur;
-
         public IteratorImpl() {
-            this.idxIter = getIt(indices);
+            this.idxIter = iter(indices);
 
             advance();
         }
@@ -212,24 +215,23 @@ public class GridIntSet implements Serializable {
 
                     seg = segments.get(idx);
 
-                    it = getIt(seg);
+                    it = iter(seg);
                 } else
                     it = null;
         }
 
-        protected abstract Iterator getIt(Segment segment);
+        protected abstract Iterator iter(Segment segment);
 
         @Override public boolean hasNext() {
             return it != null && it.hasNext();
         }
 
         @Override public int next() {
-            cur = it.next() + idx * SEGMENT_SIZE;
+            int cur = it.next() + idx * SEGMENT_SIZE;
 
-            lastIt = it; // Store refs for remove.
-
+            /** Store refs for removal, because segment might change on calling {@link #advance()} */
+            lastIt = it;
             lastSeg = seg;
-
             lastIdx = idx;
 
             advance();
@@ -237,6 +239,7 @@ public class GridIntSet implements Serializable {
             return cur;
         }
 
+        /** {@inheritDoc} */
         @Override public void remove() {
             try {
                 lastIt.remove();
@@ -261,11 +264,10 @@ public class GridIntSet implements Serializable {
 
                 segments.put(idx, e.segment);
 
-                seg = lastSeg = e.segment; // segment was changed.
+                // Segment was changed, fetch new iterator and reposition it.
+                it = iter(seg = e.segment);
 
-                it = getIt(seg);
-
-                it.skipTo(cur - idx * SEGMENT_SIZE); // TODO FIXME bit shift
+                it.skipTo(lastIdx + 1);
 
                 advance();
             }
@@ -304,7 +306,7 @@ public class GridIntSet implements Serializable {
      */
     public Iterator iterator() {
         return new IteratorImpl() {
-            @Override protected Iterator getIt(Segment segment) {
+            @Override protected Iterator iter(Segment segment) {
                 return segment.iterator();
             }
         };
@@ -315,7 +317,7 @@ public class GridIntSet implements Serializable {
      */
     public Iterator reverseIterator() {
         return new IteratorImpl() {
-            @Override protected Iterator getIt(Segment segment) {
+            @Override protected Iterator iter(Segment segment) {
                 return segment.reverseIterator();
             }
         };

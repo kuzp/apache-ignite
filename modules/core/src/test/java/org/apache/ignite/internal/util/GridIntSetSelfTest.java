@@ -17,12 +17,13 @@
 
 package org.apache.ignite.internal.util;
 
-import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteOutClosure;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ThreadLocalRandom8;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,13 +43,24 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
     private GridRandom gridRandom = new GridRandom();
 
+    private long seed;
+
     /** {@inheritDoc} */
     @Override protected void beforeTest() throws Exception {
         super.beforeTest();
 
-        long seed = ThreadLocalRandom8.current().nextLong();
+        setSeed(ThreadLocalRandom8.current().nextLong());
+    }
+
+    /** */
+    private void setSeed(long seed) {
+        this.seed = seed;
 
         gridRandom.setSeed(seed);
+    }
+
+    @Override protected void afterTest() throws Exception {
+        super.afterTest();
 
         log.info("Used seed: " + seed);
     }
@@ -62,12 +74,51 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testRemoveAddRemoveRndIntSet() {
-        int cnt = MAX_VALUES / 10;
+        int size = MAX_VALUES / 10;
 
-        // 7934495536614167519
-        gridRandom.setSeed(7934495536614167519L);
+        testRemoveAddRemoveRnd0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+    }
 
-        testRemoveAddRemoveRnd0(rndFill(new TestIntSetImpl(), cnt, MAX_VALUES), cnt);
+    public void testRemoveFirst() {
+        int size = MAX_VALUES / 10;
+
+        testRemoveFirst0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+    }
+
+    public void testRemoveFirstIter() {
+        int size = MAX_VALUES / 10;
+
+        testRemoveFirstIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+    }
+
+    public void testRemoveLast() {
+        int size = MAX_VALUES / 10;
+
+        testRemoveLast0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+    }
+
+    public void testRemoveLastIter() {
+        int size = 100; //MAX_VALUES / 10;
+
+        setSeed(5146716557677208185L);
+
+        testRemoveLastIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+    }
+
+    public void testIterators() {
+        int size = 100; //MAX_VALUES / 10;
+
+        final TestIntSet set = rndFill(new TestIntSetImpl(), size, MAX_VALUES);
+
+        testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.iterator();
+            }
+        }, new IgniteOutClosure<GridIntSet.Iterator>() {
+            @Override public GridIntSet.Iterator apply() {
+                return set.reverseIterator();
+            }
+        });
     }
 
     /**
@@ -248,7 +299,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         int cnt = gridRandom.nextInt(maxSize);
 
         // Define random subset of set elements.
-        List<Integer> rndVals = rndSubset(vals, cnt);
+        List<Integer> rndVals = randomSublist(vals, cnt);
 
         List<Integer> sortedVals = new ArrayList<>(rndVals);
 
@@ -274,6 +325,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             boolean val = set.add(v);
 
             assertTrue("Added: " + v, val);
+
+            assertTrue(set.contains(v));
 
             validateSize(set);
         }
@@ -320,7 +373,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size - cnt, segment.size());
+        assertEquals(size, segment.size());
     }
 
     /**
@@ -345,7 +398,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size - cnt, segment.size());
+        assertEquals(size, segment.size());
     }
     /**
      * Tests removal from right side.
@@ -367,7 +420,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size - cnt, segment.size());
+        assertEquals(size, segment.size());
     }
 
     /**
@@ -383,7 +436,11 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         while(iter.hasNext() && i-- > 0) {
             validateSize(segment);
 
-            iter.next();
+            System.out.println(U.field(segment, "set").toString());
+
+            int next = iter.next();
+
+            System.out.println(next);
 
             iter.remove();
 
@@ -392,7 +449,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size - cnt, segment.size());
+        assertEquals(size, segment.size());
     }
 
     /** */
@@ -435,56 +492,37 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      * @param set Segment.
      * @param vals Values.
      */
-    public void assertContainsNothing(TestIntSet set, List<Integer> vals) {
+    public void assertContainsNothing(TestIntSet set, Collection<Integer> vals) {
         for (Integer v : vals) {
-            boolean val = set.contains(v.shortValue());
+            boolean val = set.contains(v);
 
             assertFalse("Contains: " + v, val);
         }
     }
 
     /**
-     * @param seg Segment.
-     * @param vals Vals.
+     * @param set Set.
+     * @param vals Test values.
      */
-    public void assertContainsAll(TestIntSet seg, List<Integer> vals) {
+    public void assertContainsAll(TestIntSet set, Collection<Integer> vals) {
         for (Integer v : vals) {
-            boolean val = seg.contains(v.shortValue());
+            boolean val = set.contains(v);
 
             assertTrue("Contains: " + v, val);
         }
     }
 
     /**
-     * @param vals Values.
-     * @param len Length.
-     */
-    private List<Integer> rndSubset(List<Integer> vals, int len) {
-        assert len <= vals.size();
-
-        List<Integer> src = new ArrayList<>(len);
-
-        while(src.size() != len) {
-            int val = F.rand(vals);
-
-            if (!src.contains(val))
-                src.add(val);
-        }
-
-        return src;
-    }
-
-    /**
      * @param set Set.
-     * @param cnt Count.
+     * @param size Resulting size.
      * @param max Max.
      */
-    private TestIntSet rndFill(TestIntSet set, int cnt, int max) {
-        assert cnt <= max;
+    private TestIntSet rndFill(TestIntSet set, int size, int max) {
+        assert size <= max;
 
-        boolean negate = cnt > max / 2;
+        boolean negate = size > max / 2;
 
-        int tmpCnt = negate ? max - cnt : cnt;
+        int tmpCnt = negate ? max - size : size;
 
         SortedSet<Integer> buf = new TreeSet<>();
 
@@ -508,13 +546,13 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
                 i = id + 1;
             }
 
-            while(i < cnt)
+            while(i < size)
                 set.add((short) i++);
         } else
             for (Integer val : buf)
                 set.add(val);
 
-        assertEquals(cnt, set.size());
+        assertEquals(size, set.size());
 
         return set;
     }
@@ -524,12 +562,12 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      *
      * @param set Segment.
      */
-    private TestIntSet rndRmv(TestIntSet set, int cnt, int max) {
+    private TestIntSet rndErase(TestIntSet set, int cnt, int max) {
         assert cnt <= max;
 
-        boolean flip  = cnt > max / 2;
+        boolean negate  = cnt > max / 2;
 
-        int tmpCnt = flip  ? max - cnt : cnt;
+        int tmpCnt = negate  ? max - cnt : cnt;
 
         SortedSet<Integer> buf = new TreeSet<>();
 
@@ -539,7 +577,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             buf.add(rnd);
         }
 
-        if (flip) { // Flip.
+        if (negate) {
             Iterator<Integer> it = buf.iterator();
 
             int i = 0;
@@ -560,6 +598,37 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
                 set.add(val);
 
         return set;
+    }
+
+    /** Returns random element from list. */
+    private <T> T random(List<T> l) {
+        return l.get(gridRandom.nextInt(l.size()));
+    }
+
+    /**
+     * Return random sublist from a list.
+     *
+     * @param list List.
+     * @param len Length of sublist.
+     */
+    private List<Integer> randomSublist(List<Integer> list, int len) {
+        assert len <= list.size();
+
+        List<Integer> src = new ArrayList<>(list);
+
+        for (int i = 0; i < list.size(); i++) {
+            int idx1 = gridRandom.nextInt(list.size());
+
+            int idx2 = gridRandom.nextInt(list.size());
+
+            Collections.swap(list, idx1, idx2);
+        }
+
+        List<Integer> ret = src.subList(0, len);
+
+        assertEquals(len, ret.size());
+
+        return ret;
     }
 
     interface TestIntSet {
@@ -803,5 +872,4 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             return iterator();
         }
     }
-
 }
