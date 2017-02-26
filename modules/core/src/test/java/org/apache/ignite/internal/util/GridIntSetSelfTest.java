@@ -74,7 +74,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testRemoveAddRemoveRndIntSet() {
-        int size = MAX_VALUES / 10;
+        int size = 10000; //MAX_VALUES / 10;
 
         testRemoveAddRemoveRnd0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
@@ -98,15 +98,15 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testRemoveLastIter() {
-        int size = 100; //MAX_VALUES / 10;
+        int size = 100000; // MAX_VALUES / 10;
 
-        setSeed(5146716557677208185L);
+        setSeed(-4563779349498242699L);
 
         testRemoveLastIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
 
     public void testIterators() {
-        int size = 100; //MAX_VALUES / 10;
+        int size = MAX_VALUES / 10;
 
         final TestIntSet set = rndFill(new TestIntSetImpl(), size, MAX_VALUES);
 
@@ -119,6 +119,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
                 return set.reverseIterator();
             }
         });
+    }
+
+    public void testIteratorRemovalBothDirectionsWithConversion() {
+
     }
 
     /**
@@ -278,8 +282,10 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     /**
      * Tests array set.
      */
-    private void testRemoveAddRemoveRnd0(TestIntSet set, int maxSize) throws GridIntSet.ConversionException {
+    private void testRemoveAddRemoveRnd0(TestIntSet set, int expSize) throws GridIntSet.ConversionException {
         int size = set.size();
+
+        assertEquals(expSize, set.size());
 
         List<Integer> vals = new ArrayList<>();
 
@@ -287,16 +293,16 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         GridIntSet.Iterator it = set.iterator();
 
         while(it.hasNext())
-            vals.add(it.next());
+            assertTrue(vals.add(it.next()));
 
-        assertTrue(maxSize <= vals.size());
+        assertEquals(expSize, vals.size());
 
         // Double check containment.
         for (Integer val : vals)
             assertTrue(set.contains(val));
 
         // Select random sub set.
-        int cnt = gridRandom.nextInt(maxSize);
+        int cnt = gridRandom.nextInt(expSize);
 
         // Define random subset of set elements.
         List<Integer> rndVals = randomSublist(vals, cnt);
@@ -359,6 +365,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     private void testRemoveFirst0(TestIntSet segment, int cnt) throws GridIntSet.ConversionException {
         int size = segment.size();
 
+        int origSize = size;
+
         int i = cnt;
 
         while(i-- > 0) {
@@ -373,7 +381,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size, segment.size());
+        assertEquals(origSize - cnt, segment.size());
     }
 
     /**
@@ -381,6 +389,8 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
      */
     private void testRemoveFirstIter0(TestIntSet segment, int cnt) throws GridIntSet.ConversionException {
         int size = segment.size();
+
+        int origSize = size;
 
         GridIntSet.Iterator iter = segment.iterator();
 
@@ -398,13 +408,15 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size, segment.size());
+        assertEquals(origSize - cnt, segment.size());
     }
     /**
      * Tests removal from right side.
      */
     private void testRemoveLast0(TestIntSet segment, int cnt) throws GridIntSet.ConversionException {
         int size = segment.size();
+
+        int origSize = size;
 
         int i = cnt;
 
@@ -420,36 +432,34 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             validateSize(segment);
         }
 
-        assertEquals(size, segment.size());
+        assertEquals(origSize - cnt, segment.size());
     }
 
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLastIter0(TestIntSet segment, int cnt) throws GridIntSet.ConversionException {
-        int size = segment.size();
+    private void testRemoveLastIter0(TestIntSet set, int cnt) throws GridIntSet.ConversionException {
+        int size = set.size();
 
-        GridIntSet.Iterator iter = segment.reverseIterator();
+        int origSize = size;
+
+        GridIntSet.Iterator iter = set.reverseIterator();
 
         int i = cnt;
 
         while(iter.hasNext() && i-- > 0) {
-            validateSize(segment);
+            validateSize(set);
 
-            System.out.println(U.field(segment, "set").toString());
-
-            int next = iter.next();
-
-            System.out.println(next);
+            iter.next();
 
             iter.remove();
 
-            assertEquals(--size, segment.size());
+            assertEquals(--size, set.size());
 
-            validateSize(segment);
+            validateSize(set);
         }
 
-        assertEquals(size, segment.size());
+        assertEquals(origSize - cnt, set.size());
     }
 
     /** */

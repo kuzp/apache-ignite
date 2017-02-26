@@ -192,19 +192,8 @@ public class GridIntSet implements Serializable {
         /** Current segment. */
         private Segment seg;
 
-        /** Stores last iterator for removal. */
-        private Iterator lastIt;
-
-        /** Stores last segment for removal. */
-        private Segment lastSeg;
-
-        /** Stores last index for removal. */
-        private short lastIdx;
-
         public IteratorImpl() {
             this.idxIter = iter(indices);
-
-            advance();
         }
 
         /** */
@@ -223,51 +212,42 @@ public class GridIntSet implements Serializable {
         protected abstract Iterator iter(Segment segment);
 
         @Override public boolean hasNext() {
-            return it != null && it.hasNext();
+            return idxIter.hasNext() || (it != null && it.hasNext());
         }
 
         @Override public int next() {
-            int cur = it.next() + idx * SEGMENT_SIZE;
-
             /** Store refs for removal, because segment might change on calling {@link #advance()} */
-            lastIt = it;
-            lastSeg = seg;
-            lastIdx = idx;
-
             advance();
 
-            return cur;
+            return it.next() + idx * SEGMENT_SIZE;
         }
 
         /** {@inheritDoc} */
         @Override public void remove() {
             try {
-                lastIt.remove();
+                it.remove();
 
-                if (lastSeg.size() == 0) {
+                if (seg.size() == 0) {
                     try {
                         idxIter.remove();
                     } catch (ConversionException e) {
                         indices = e.segment;
 
-                        idxIter = indices.iterator();
+                        // Re-crete iterator and move it to right position.
+                        idxIter = iter(indices);
 
-                        idxIter.skipTo(lastIdx + 1);
+                        idxIter.skipTo(idx);
                     }
 
-                    segments.remove(lastIdx);
+                    segments.remove(idx);
                 }
             } catch (ConversionException e) {
-                assert idx == lastIdx;
-                assert seg == lastSeg;
-                assert it == lastIt;
-
                 segments.put(idx, e.segment);
 
                 // Segment was changed, fetch new iterator and reposition it.
                 it = iter(seg = e.segment);
 
-                it.skipTo(lastIdx + 1);
+                it.skipTo(idx);
 
                 advance();
             }
@@ -927,6 +907,7 @@ public class GridIntSet implements Serializable {
                 ArraySegment.this.remove0((short) (cur + 1));
             }
 
+            /** {@inheritDoc} */
             @Override public void skipTo(int val) {
                 int idx = Arrays.binarySearch(data, 0, used(), (short) val);
 
