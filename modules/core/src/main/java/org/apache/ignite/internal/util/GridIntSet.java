@@ -165,7 +165,7 @@ public class GridIntSet implements Serializable {
         if (idx == -1)
             return -1;
 
-        return segments.get(idx).first() + idx * SEGMENT_SIZE;
+        return segments.get(idx).first() + idx * SEGMENT_SIZE; // TODO FIXME use bit ops.
     }
 
     public int last() {
@@ -178,15 +178,19 @@ public class GridIntSet implements Serializable {
     }
 
     private abstract class IteratorImpl implements Iterator {
-        private Iterator idxIter;
-
-        private Iterator it;
-
-        private Iterator lastIt;
-
+        /** Segment index. */
         private short idx;
 
+        /** Segment index iterator. */
+        private Iterator idxIter;
+
+        /** Current segment value iterator. */
+        private Iterator it;
+
+        /** Current segment. */
         private Segment seg;
+
+        private Iterator lastIt;
 
         private Segment lastSeg;
 
@@ -328,6 +332,7 @@ public class GridIntSet implements Serializable {
 
         public void remove();
 
+        // Next call must be hasNext to ensure value is present.
         public void skipTo(int val);
     }
 
@@ -412,10 +417,10 @@ public class GridIntSet implements Serializable {
         @Override public boolean add(short val) throws ConversionException {
             int wordIdx = wordIndex(val);
 
-            if (wordIdx >= words.length)
+            if (wordIdx >= words.length) // TODO FIXME Math.min is not really needed if we force power of two condition for MAX_WORDS
                 words = Arrays.copyOf(words, Math.min(MAX_WORDS, Math.max(words.length * 2, wordIdx + 1))); // TODO shift
 
-            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME bits
 
             assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
 

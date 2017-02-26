@@ -474,12 +474,17 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         return src;
     }
 
+    /**
+     * @param set Set.
+     * @param cnt Count.
+     * @param max Max.
+     */
     private TestIntSet rndFill(TestIntSet set, int cnt, int max) {
         assert cnt <= max;
 
-        boolean flip = cnt > max / 2;
+        boolean negate = cnt > max / 2;
 
-        int tmpCnt = flip  ? max - cnt : cnt;
+        int tmpCnt = negate ? max - cnt : cnt;
 
         SortedSet<Integer> buf = new TreeSet<>();
 
@@ -489,7 +494,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
             buf.add(rnd);
         }
 
-        if (flip) { // Flip.
+        if (negate) {
             Iterator<Integer> it = buf.iterator();
 
             int i = 0;
