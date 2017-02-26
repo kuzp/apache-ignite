@@ -17,7 +17,6 @@
 
 package org.apache.ignite.internal.util;
 
-import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteOutClosure;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ThreadLocalRandom8;
@@ -74,7 +73,7 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testRemoveAddRemoveRndIntSet() {
-        int size = 10000; //MAX_VALUES / 10;
+        int size = MAX_VALUES / 10;
 
         testRemoveAddRemoveRnd0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
@@ -98,9 +97,9 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
     }
 
     public void testRemoveLastIter() {
-        int size = 100000; // MAX_VALUES / 10;
+        int size = 500; //MAX_VALUES / 10;
 
-        setSeed(-4563779349498242699L);
+        setSeed(-2596830107547831146L);
 
         testRemoveLastIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
@@ -534,35 +533,38 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
 
         int tmpCnt = negate ? max - size : size;
 
-        SortedSet<Integer> buf = new TreeSet<>();
+//        SortedSet<Integer> buf = new TreeSet<>();
+//
+//        while(buf.size() != tmpCnt) {
+//            int rnd = gridRandom.nextInt(max);
+//
+//            buf.add(rnd);
+//        }
+//
+//        if (negate) {
+//            Iterator<Integer> it = buf.iterator();
+//
+//            int i = 0;
+//
+//            while (it.hasNext()) {
+//                int id = it.next();
+//
+//                for (; i < id; i++)
+//                    set.add((short) i);
+//
+//                i = id + 1;
+//            }
+//
+//            while(i < size)
+//                set.add((short) i++);
+//        } else
+//            for (Integer val : buf)
+//                set.add(val);
+//
+//        assertEquals(size, set.size());
 
-        while(buf.size() != tmpCnt) {
-            int rnd = gridRandom.nextInt(max);
-
-            buf.add(rnd);
-        }
-
-        if (negate) {
-            Iterator<Integer> it = buf.iterator();
-
-            int i = 0;
-
-            while (it.hasNext()) {
-                int id = it.next();
-
-                for (; i < id; i++)
-                    set.add((short) i);
-
-                i = id + 1;
-            }
-
-            while(i < size)
-                set.add((short) i++);
-        } else
-            for (Integer val : buf)
-                set.add(val);
-
-        assertEquals(size, set.size());
+        for (int i = 0; i < size; i++)
+            set.add(i);
 
         return set;
     }

@@ -192,6 +192,9 @@ public class GridIntSet implements Serializable {
         /** Current segment. */
         private Segment seg;
 
+        /** Current value. */
+        private short cur;
+
         public IteratorImpl() {
             this.idxIter = iter(indices);
         }
@@ -219,7 +222,9 @@ public class GridIntSet implements Serializable {
             /** Store refs for removal, because segment might change on calling {@link #advance()} */
             advance();
 
-            return it.next() + idx * SEGMENT_SIZE;
+            cur = (short) it.next();
+
+            return cur + idx * SEGMENT_SIZE;
         }
 
         /** {@inheritDoc} */
@@ -247,7 +252,7 @@ public class GridIntSet implements Serializable {
                 // Segment was changed, fetch new iterator and reposition it.
                 it = iter(seg = e.segment);
 
-                it.skipTo(idx);
+                it.skipTo(cur);
 
                 advance();
             }
