@@ -64,45 +64,58 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         log.info("Used seed: " + seed);
     }
 
-    public void testRemoveAddRemoveRndArraySegment() {
+    public void testRemoveAddRemoveArraySegment() {
         GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment();
 
-        int cnt = seg.maxSize() - seg.minSize();
+        int size = seg.maxSize() - seg.minSize();
 
-        testRemoveAddRemoveRnd0(rndFill(new TestIntSetSegImpl(seg), cnt, GridIntSet.SEGMENT_SIZE), cnt);
+        testRemoveAddRemoveRnd0(rndFill(new TestIntSetSegImpl(seg), size, GridIntSet.SEGMENT_SIZE), size);
     }
 
-    public void testRemoveAddRemoveRndIntSet() {
+    public void testRemoveFirstArraySegment() {
+        GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment();
+
+        int size = seg.maxSize() - seg.minSize();
+
+        testRemoveFirst0(rndFill(new TestIntSetSegImpl(seg), size, MAX_VALUES), size);
+    }
+
+    public void testRemoveAddRemoveIntSet() {
         int size = MAX_VALUES / 10;
 
         testRemoveAddRemoveRnd0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
 
-    public void testRemoveFirst() {
+    public void testRemoveFirstIntSet() {
         int size = MAX_VALUES / 10;
 
         testRemoveFirst0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
 
-    public void testRemoveFirstIter() {
+    public void testRemoveFirstIterIntSet() {
         int size = MAX_VALUES / 10;
 
         testRemoveFirstIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
 
-    public void testRemoveLast() {
+    public void testRemoveLastIntSet() {
         int size = MAX_VALUES / 10;
 
         testRemoveLast0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
 
-    public void testRemoveLastIter() {
-        int size = 500; //MAX_VALUES / 10;
-
-        setSeed(-2596830107547831146L);
+    public void testRemoveLastIterIntSet() {
+        int size = MAX_VALUES / 10;
 
         testRemoveLastIter0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
     }
+
+    // TODO FIXME unmute.
+//    public void testSkipRemoveForward() {
+//        int size = MAX_VALUES / 10;
+//
+//        testSkipRemoveForward0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
+//    }
 
     public void testIterators() {
         int size = MAX_VALUES / 10;
@@ -459,6 +472,48 @@ public class GridIntSetSelfTest extends GridCommonAbstractTest {
         }
 
         assertEquals(origSize - cnt, set.size());
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testSkipRemoveForward0(TestIntSet set, int cnt) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        int origSize = size;
+
+        List<Integer> tmp = new ArrayList<>(size);
+
+        GridIntSet.Iterator iter = set.iterator();
+
+        while(iter.hasNext())
+            assertTrue(tmp.add(iter.next()));
+
+        assertEquals(set.size(), tmp.size());
+
+        for (Integer val : tmp) {
+            iter.skipTo(val);
+
+            assertTrue(iter.hasNext());
+
+            assertEquals(val.intValue(), iter.next());
+        }
+
+//        int i = cnt;
+//
+//        while(iter.hasNext() && i-- > 0) {
+//            validateSize(set);
+//
+//            iter.next();
+//
+//            iter.remove();
+//
+//            assertEquals(--size, set.size());
+//
+//            validateSize(set);
+//        }
+//
+//        assertEquals(origSize - cnt, set.size());
     }
 
     /** */
