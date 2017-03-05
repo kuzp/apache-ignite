@@ -46,7 +46,7 @@ public class GridIntSet implements Serializable {
     /** */
     private static final long serialVersionUID = 0L;
 
-    public static final short SEGMENT_SIZE = 1024;
+    static final short SEGMENT_SIZE = 1024;
 
     private static final int SEGMENT_SHIFT_BITS = Integer.numberOfTrailingZeros(SEGMENT_SIZE);
 
@@ -139,7 +139,7 @@ public class GridIntSet implements Serializable {
         } catch (ConversionException e) {
             assert seg.size() != 0; // Converted segment cannot be empty.
 
-            segments.put(segIdx, e.segment); // Update the segment with different impl.
+            segments.put(segIdx, e.segment);
 
             size--;
         }
@@ -219,7 +219,6 @@ public class GridIntSet implements Serializable {
         }
 
         @Override public int next() {
-            /** Store refs for removal, because segment might change on calling {@link #advance()} */
             advance();
 
             cur = (short) it.next();
@@ -475,6 +474,7 @@ public class GridIntSet implements Serializable {
             return seg;
         }
 
+        /** */
         private Segment convertToArraySet() throws ConversionException {
             ArraySegment seg = new ArraySegment(THRESHOLD);
 
@@ -1066,7 +1066,11 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public void skipTo(int val) {
-                throw new UnsupportedOperationException();
+                assert val >= 0;
+
+                next = val;
+
+                advance();
             }
         }
 
@@ -1109,13 +1113,17 @@ public class GridIntSet implements Serializable {
 
             /** {@inheritDoc} */
             @Override public void skipTo(int val) {
-                throw new UnsupportedOperationException();
+                assert val >= 0;
+
+                next = val;
+
+                advance();
             }
         }
     }
 
     /** */
-    public static class ConversionException extends RuntimeException {
+    static class ConversionException extends RuntimeException {
         private Segment segment;
 
         public ConversionException(Segment segment) {

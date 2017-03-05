@@ -96,23 +96,38 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         testRemoveLastIter0(set());
     }
 
-    // TODO FIXME unmute.
-//    public void testSkipRemoveForward() {
-//        int size = MAX_VALUES / 10;
-//
-//        testSkipRemoveForward0(rndFill(new TestIntSetImpl(), size, MAX_VALUES), size);
-//    }
+    /** */
+    public void testSkipForward() {
+        testSkipForward0(set());
+    }
+
+    /** */
+    public void testSkipBackward() {
+        testSkipBackward0(set());
+    }
+
+    /** */
+    public void testSkipRemoveForward() {
+        testSkipRemoveForward0(set());
+    }
+
+    /** */
+    public void testSkipRemoveBackward() {
+        testSkipRemoveBackward0(set());
+    }
 
     /** */
     public void testIterators() {
         final TestIntSet set = set();
 
         testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
+            @Override
+            public GridIntSet.Iterator apply() {
                 return set.iterator();
             }
         }, new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override public GridIntSet.Iterator apply() {
+            @Override
+            public GridIntSet.Iterator apply() {
                 return set.reverseIterator();
             }
         });
@@ -317,12 +332,10 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     }
 
     /**
-     * Tests removal from right side.
+     * Tests forward skips.
      */
-    private void testSkipRemoveForward0(TestIntSet set) throws GridIntSet.ConversionException {
+    private void testSkipForward0(TestIntSet set) throws GridIntSet.ConversionException {
         int size = set.size();
-
-        int origSize = size;
 
         List<Integer> tmp = new ArrayList<>(size);
 
@@ -333,29 +346,123 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
         assertEquals(set.size(), tmp.size());
 
-        for (Integer val : tmp) {
+        int i = set.size() - set.minSize();
+
+        Iterator<Integer> it = tmp.iterator();
+
+        while(it.hasNext() && i-- > 0) {
+            Integer val = it.next();
+
             iter.skipTo(val);
 
             assertTrue(iter.hasNext());
 
             assertEquals(val.intValue(), iter.next());
         }
+    }
 
-//        int i = cnt;
-//
-//        while(iter.hasNext() && i-- > 0) {
-//            validateSize(set);
-//
-//            iter.next();
-//
-//            iter.remove();
-//
-//            assertEquals(--size, set.size());
-//
-//            validateSize(set);
-//        }
-//
-//        assertEquals(origSize - cnt, set.size());
+    /**
+     * Tests backward skips with removals.
+     */
+    private void testSkipBackward0(TestIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        List<Integer> tmp = new ArrayList<>(size);
+
+        GridIntSet.Iterator iter = set.reverseIterator();
+
+        while(iter.hasNext())
+            assertTrue(tmp.add(iter.next()));
+
+        assertEquals(set.size(), tmp.size());
+
+        int i = set.size() - set.minSize();
+
+        Iterator<Integer> it = tmp.iterator();
+
+        while(it.hasNext() && i-- > 0) {
+            Integer val = it.next();
+
+            iter.skipTo(val);
+
+            assertTrue(iter.hasNext());
+
+            assertEquals(val.intValue(), iter.next());
+        }
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testSkipRemoveForward0(TestIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        List<Integer> tmp = new ArrayList<>(size);
+
+        GridIntSet.Iterator iter = set.iterator();
+
+        while(iter.hasNext())
+            assertTrue(tmp.add(iter.next()));
+
+        assertEquals(set.size(), tmp.size());
+
+        int i = set.size() - set.minSize();
+
+        int rmvCnt = i;
+
+        Iterator<Integer> it = tmp.iterator();
+
+        while(it.hasNext() && i-- > 0) {
+            Integer val = it.next();
+
+            iter.skipTo(val);
+
+            assertTrue(iter.hasNext());
+
+            assertEquals(val.intValue(), iter.next());
+
+            iter.remove();
+        }
+
+        assertEquals(size - rmvCnt, set.size());
+    }
+
+    /**
+     * Tests removal from right side.
+     */
+    private void testSkipRemoveBackward0(TestIntSet set) throws GridIntSet.ConversionException {
+        int size = set.size();
+
+        List<Integer> tmp = new ArrayList<>(size);
+
+        GridIntSet.Iterator iter = set.iterator();
+
+        while(iter.hasNext())
+            assertTrue(tmp.add(iter.next()));
+
+        assertEquals(set.size(), tmp.size());
+
+        int i = set.size() - set.minSize();
+
+        int rmvCnt = i;
+
+        Iterator<Integer> it = tmp.listIterator(tmp.size() - 1);
+
+        iter = set.reverseIterator();
+
+        while(it.hasNext() && i-- > 0) {
+            Integer val = it.next();
+
+            iter.skipTo(val);
+
+            assertTrue(iter.hasNext());
+
+            assertEquals(val.intValue(), iter.next());
+
+            iter.remove();
+        }
+
+        assertEquals(size - rmvCnt, set.size());
     }
 
     /** */
