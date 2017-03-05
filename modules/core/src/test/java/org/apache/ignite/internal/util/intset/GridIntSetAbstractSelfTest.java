@@ -446,12 +446,12 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
         int rmvCnt = i;
 
-        Iterator<Integer> it = tmp.listIterator(tmp.size() - 1);
+        ListIterator<Integer> it = tmp.listIterator(tmp.size());
 
         iter = set.reverseIterator();
 
-        while(it.hasNext() && i-- > 0) {
-            Integer val = it.next();
+        while(it.hasPrevious() && i-- > 0) {
+            Integer val = it.previous();
 
             iter.skipTo(val);
 
