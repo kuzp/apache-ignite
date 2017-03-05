@@ -18,7 +18,7 @@
 package org.apache.ignite.internal.processors.affinity;
 
 import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.internal.util.GridIntSet;
+import org.apache.ignite.internal.util.intset.GridIntSet;
 
 import java.util.HashSet;
 import java.util.List;

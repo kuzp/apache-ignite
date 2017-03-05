@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.internal.util;
+package org.apache.ignite.internal.util.intset;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -286,9 +286,7 @@ public class GridIntSet implements Serializable {
         }
     }
 
-    /**
-     *
-     */
+    /** */
     public Iterator iterator() {
         return new IteratorImpl() {
             @Override protected Iterator iter(Segment segment) {
@@ -297,9 +295,7 @@ public class GridIntSet implements Serializable {
         };
     }
 
-    /**
-     *
-     */
+    /** */
     public Iterator reverseIterator() {
         return new IteratorImpl() {
             @Override protected Iterator iter(Segment segment) {
@@ -340,7 +336,8 @@ public class GridIntSet implements Serializable {
         return b.toString();
     }
 
-    public interface Segment {
+    /** */
+    interface Segment {
         /** Segment data. */
         public short[] data();
 
@@ -382,7 +379,7 @@ public class GridIntSet implements Serializable {
     /**
      * TODO store used counter.
      */
-    public static class BitSetSegment implements Segment {
+    static class BitSetSegment implements Segment {
         short[] words;
 
         private int count;
@@ -690,7 +687,7 @@ public class GridIntSet implements Serializable {
     }
 
     /** */
-    public static class ArraySegment implements Segment {
+    static class ArraySegment implements Segment {
         /** */
         private short[] data;
 
@@ -922,7 +919,7 @@ public class GridIntSet implements Serializable {
     }
 
     /** */
-    public static class FlippedArraySegment extends ArraySegment {
+    static class FlippedArraySegment extends ArraySegment {
         /**
          * Default constructor.
          */

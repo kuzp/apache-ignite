@@ -19,7 +19,6 @@ package org.apache.ignite.internal.processors.affinity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.internal.util.GridIntSet;
+import org.apache.ignite.internal.util.intset.GridIntSet;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
