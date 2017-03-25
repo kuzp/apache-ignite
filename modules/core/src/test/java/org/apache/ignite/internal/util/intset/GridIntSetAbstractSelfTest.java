@@ -545,14 +545,10 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
             buf.add(rnd);
         }
 
-        List<Short> buf1 = new ArrayList<>();
-
         if (negate) {
             Iterator<Integer> it = buf.iterator();
 
             int i = 0;
-
-            int c = 0;
 
             while (it.hasNext()) {
                 int id = it.next();

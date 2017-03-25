@@ -17,7 +17,12 @@
 
 package org.apache.ignite.internal.util.intset;
 
-import java.io.Serializable;
+import org.apache.ignite.internal.util.typedef.internal.U;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,15 +43,14 @@ import java.util.Map;
  * TODO HashSegment worth it?
  * TODO replace power of two arythmetics with bit ops.
  * TODO fixme overflows ?
- * TODO constant time size.
  */
-public class GridIntSet implements Serializable {
+public class GridIntSet implements Externalizable {
     public static final GridIntSet EMPTY = new GridIntSet();
 
     /** */
     private static final long serialVersionUID = 0L;
 
-    static final short SEGMENT_SIZE = 1024;
+    static final short SEGMENT_SIZE = 1024; // Must be power of two.
 
     private static final int SEGMENT_SHIFT_BITS = Integer.numberOfTrailingZeros(SEGMENT_SIZE);
 
@@ -379,7 +383,7 @@ public class GridIntSet implements Serializable {
      * TODO store used counter.
      */
     static class BitSetSegment implements Segment {
-        short[] words;
+        private short[] words;
 
         private int count;
 
@@ -387,10 +391,19 @@ public class GridIntSet implements Serializable {
             this(0);
         }
 
-        public BitSetSegment(int maxValue) {
-            assert maxValue <= SEGMENT_SIZE;
+        public BitSetSegment(int maxVal) {
+            assert maxVal <= SEGMENT_SIZE;
 
-            words = new short[1 << (Integer.SIZE - Integer.numberOfLeadingZeros(wordIndex(maxValue)))];
+            words = new short[nextPowerOfTwo(wordIndex(maxVal))];
+        }
+
+        public BitSetSegment(short[] data) {
+            words = data;
+
+            assert U.isPow2(data.length);
+
+            for (short word : words)
+                count += Integer.bitCount(word);
         }
 
         @Override public int used() {
@@ -400,8 +413,8 @@ public class GridIntSet implements Serializable {
         @Override public boolean add(short val) throws ConversionException {
             int wordIdx = wordIndex(val);
 
-            if (wordIdx >= words.length) // TODO FIXME Math.min is not really needed if we force power of two condition for MAX_WORDS
-                words = Arrays.copyOf(words, Math.min(MAX_WORDS, Math.max(words.length * 2, wordIdx + 1))); // TODO shift
+            if (wordIdx >= words.length)
+                words = Arrays.copyOf(words, Math.max(words.length * 2, wordIdx + 1)); // TODO shift
 
             short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME bits
 
@@ -684,6 +697,21 @@ public class GridIntSet implements Serializable {
                 next = prevSetBit(words, val);
             }
         }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            BitSetSegment that = (BitSetSegment) o;
+
+            return Arrays.equals(words, that.words);
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            return Arrays.hashCode(words);
+        }
     }
 
     /** */
@@ -702,6 +730,16 @@ public class GridIntSet implements Serializable {
         /** */
         public ArraySegment(int size) {
             this.data = new short[size];
+        }
+
+        /** */
+        public ArraySegment(short[] data, short used) {
+            this.data = data;
+
+            // Segment length must be power of two.
+            assert data.length == 0 || U.isPow2(data.length);
+
+            this.used = used;
         }
 
         /** {@inheritDoc} */
@@ -916,6 +954,33 @@ public class GridIntSet implements Serializable {
                 cur = idx >= 0 ? idx : -(idx + 1) - 1;
             }
         }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ArraySegment that = (ArraySegment) o;
+
+            if (used != that.used)
+                return false;
+
+            for (int i = 0; i < used; i++)
+                if (data[i] != that.data[i])
+                    return false;
+
+            return true;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            int res = 1;
+
+            for (int i = 0; i < used; i++)
+                res = 31 * res + data[i];
+
+            return res;
+        }
     }
 
     /** */
@@ -932,6 +997,10 @@ public class GridIntSet implements Serializable {
          */
         public FlippedArraySegment(int size) {
             super(size);
+        }
+
+        public FlippedArraySegment(short[] buf, short used) {
+            super(buf, used);
         }
 
         /** {@inheritDoc} */
@@ -1143,5 +1212,91 @@ public class GridIntSet implements Serializable {
         public void segment(Segment segment) {
             this.segment = segment;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeByte(0); // Version.
+
+        writeSegment(out, indices);
+
+        Iterator it = indices.iterator();
+
+        while(it.hasNext()) {
+            short id = (short) it.next();
+
+            writeSegment(out, segments.get(id));
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        in.readByte();
+
+        indices = readSegment(in);
+
+        Iterator it = indices.iterator();
+
+        while(it.hasNext()) {
+            short id = (short) it.next();
+
+            Segment seg = readSegment(in);
+
+            size += seg.size();
+
+            segments.put(id, seg);
+        }
+    }
+
+    private void writeSegment(ObjectOutput out, Segment segment) throws IOException {
+        int used = segment.used();
+
+        out.writeShort(used);
+
+        for(int i = 0; i < used; i++)
+            out.writeShort(segment.data()[i]);
+
+        out.writeByte(segment instanceof FlippedArraySegment ? 2 : segment instanceof BitSetSegment ? 1 : 0);
+    }
+
+    private Segment readSegment(ObjectInput in) throws IOException {
+        short used = in.readShort();
+
+        short[] buf = new short[used == 0 ? 0: nextPowerOfTwo(used - 1)];
+
+        for (int i = 0; i < used; i++)
+            buf[i] = in.readShort();
+
+        byte type = in.readByte();
+
+        return type == 0 ? new ArraySegment(buf, used) : type == 1 ? new BitSetSegment(buf) :
+                new FlippedArraySegment(buf, used);
+    }
+
+    @Override public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GridIntSet that = (GridIntSet) o;
+
+        if (size != that.size) return false;
+
+        if (!indices.equals(that.indices)) return false;
+
+        return segments.equals(that.segments);
+    }
+
+    private static int nextPowerOfTwo(int i) {
+        return 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(i));
+    }
+
+    @Override public int hashCode() {
+        int res = indices.hashCode();
+
+        res = 31 * res + segments.hashCode();
+
+        res = 31 * res + size;
+
+        return res;
     }
 }

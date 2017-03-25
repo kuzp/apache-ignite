@@ -17,6 +17,14 @@
 
 package org.apache.ignite.internal.util.intset;
 
+import org.apache.ignite.internal.util.io.GridByteArrayInputStream;
+import org.apache.ignite.internal.util.io.GridByteArrayOutputStream;
+import org.apache.ignite.internal.util.typedef.internal.U;
+
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +52,7 @@ public class GridIntSetContainerSelfTest extends GridIntSetAbstractSelfTest {
 
         assertFalse(set.reverseIterator().hasNext());
 
-        int size = 1024;
+        int size = GridIntSet.SEGMENT_SIZE;
 
         for (int i = 0; i < size; i++)
             assertTrue(set.add(i * size));
@@ -70,6 +78,36 @@ public class GridIntSetContainerSelfTest extends GridIntSetAbstractSelfTest {
             assertTrue(set.remove(i * size));
 
         assertEquals("Size", 0, set.size());
+    }
+
+    /** */
+    public void testSerialization() throws IOException, ClassNotFoundException {
+        GridIntSet set = new GridIntSet();
+
+        int size = GridIntSet.SEGMENT_SIZE;
+
+        for (int i = 0; i < size; i++)
+            assertTrue(set.add(i * size));
+
+        assertEquals("Size", size, set.size());
+
+        GridByteArrayOutputStream bos = new GridByteArrayOutputStream();
+
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+
+        oos.writeObject(set);
+
+        oos.close();
+
+        byte[] bytes = bos.toByteArray();
+
+        System.out.println(bytes.length);
+
+        ObjectInputStream ois = new ObjectInputStream(new GridByteArrayInputStream(bytes));
+
+        GridIntSet set2 = (GridIntSet) ois.readObject();
+
+        assertEquals(set, set2);
     }
 
     /** */
