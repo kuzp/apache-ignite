@@ -124,6 +124,7 @@ import pageConfigure from './components/page-configure';
 import pageConfigureBasic from './components/page-configure-basic';
 import pageConfigureAdvanced from './components/page-configure-advanced';
 import pageQueries from './components/page-queries';
+import pageConfigureOverview from './components/page-configure-overview';
 import gridColumnSelector from './components/grid-column-selector';
 import gridItemSelected from './components/grid-item-selected';
 import gridNoData from './components/grid-no-data';
@@ -204,6 +205,7 @@ angular.module('ignite-console', [
     pageConfigureBasic.name,
     pageConfigureAdvanced.name,
     pageQueries.name,
+    pageConfigureOverview.name,
     gridColumnSelector.name,
     gridItemSelected.name,
     gridNoData.name,

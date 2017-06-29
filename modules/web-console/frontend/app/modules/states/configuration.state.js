@@ -62,6 +62,20 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     }
                 }
             })
+            .state('base.configuration.overview', {
+                url: '/configuration/overview',
+                template: '<page-configure-overview></page-configure-overview>',
+                metaTags: {
+                    title: 'Configuration'
+                },
+                resolve: {
+                    list: ['IgniteConfigurationResource', 'PageConfigure', (configuration, pageConfigure) => {
+                        return configuration.read().then((data) => {
+                            pageConfigure.loadList(data);
+                        });
+                    }]
+                }
+            })
             .state('base.configuration.tabs', {
                 url: '/configuration',
                 permission: 'configuration',
@@ -76,7 +90,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.tabs.basic', {
-                url: '/basic',
+                url: '/basic?{clusterID:string}',
                 permission: 'configuration',
                 template: '<page-configure-basic></page-configure-basic>',
                 tfMetaTags: {
@@ -99,7 +113,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 redirectTo: 'base.configuration.tabs.advanced.clusters'
             })
             .state('base.configuration.tabs.advanced.clusters', {
-                url: '/clusters',
+                url: '/clusters?{clusterID:string}',
                 templateUrl: clustersTpl,
                 permission: 'configuration',
                 tfMetaTags: {

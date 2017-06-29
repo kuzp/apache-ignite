@@ -15,22 +15,12 @@
  * limitations under the License.
  */
 
-import './badge/index.scss';
-import './btn/index.scss';
-import './datepicker/index.scss';
-import './timepicker/index.scss';
-import './tabs/index.scss';
-import './table/index.scss';
-import './panel/index.scss';
-import './dropdown/index.scss';
-import './modal/index.scss';
-import './ui-grid/index.scss';
-import './ui-grid-header/index.scss';
-import './ui-grid-settings/index.scss';
-import './page/index.scss';
-import './radio/index.scss';
-import './switcher/index.scss';
-import './form-field/index.scss';
-import './typography/index.scss';
-import './grid/index.scss';
-import './page-header/index.scss';
+import angular from 'angular';
+
+import component from './component';
+import clustersTable from './components/pco-clusters-table/component';
+
+export default angular
+    .module('ignite-console.page-configure-overview', [])
+    .component('pageConfigureOverview', component)
+    .component('pcoClustersTable', clustersTable);

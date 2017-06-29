@@ -17,7 +17,7 @@
 
 export const LOAD_LIST = Symbol('LOAD_LIST');
 export const ADD_CLUSTER = Symbol('ADD_CLUSTER');
-export const REMOVE_CLUSTER = Symbol('REMOVE_CLUSTER');
+export const REMOVE_CLUSTERS = Symbol('REMOVE_CLUSTERS');
 export const UPDATE_CLUSTER = Symbol('UPDATE_CLUSTER');
 export const UPSERT_CLUSTERS = Symbol('UPSERT_CLUSTERS');
 export const ADD_CACHE = Symbol('ADD_CACHE');
@@ -26,8 +26,19 @@ export const UPSERT_CACHES = Symbol('UPSERT_CACHES');
 export const REMOVE_CACHE = Symbol('REMOVE_CACHE');
 
 const defaults = {clusters: new Map(), caches: new Map(), spaces: new Map()};
-const mapByID = (array) => {
-    return new Map(array.map((item) => [item._id, item]));
+const mapByID = (items) => {
+    return Array.isArray(items) ? new Map(items.map((item) => [item._id, item])) : new Map(items);
+};
+
+export const uniqueName = (name, items, fn = ({name, i}) => `${name} (${i})`) => {
+    let i = 0;
+    let newName = name;
+    const isUnique = (item) => item.name === newName;
+    while (items.some(isUnique)) {
+        i += 1;
+        newName = fn({name, i});
+    }
+    return newName;
 };
 
 export const reducer = (state = defaults, action) => {
@@ -35,6 +46,7 @@ export const reducer = (state = defaults, action) => {
         case LOAD_LIST: {
             return {
                 clusters: mapByID(action.list.clusters),
+                domains: mapByID(action.list.domains),
                 caches: mapByID(action.list.caches),
                 spaces: mapByID(action.list.spaces)
             };
@@ -44,12 +56,20 @@ export const reducer = (state = defaults, action) => {
                 clusters: new Map([...state.clusters.entries(), [action.cluster._id, action.cluster]])
             });
         }
-        case REMOVE_CLUSTER:
-            return state;
-        case UPDATE_CLUSTER: {
-            const id = action.cluster._id;
+        case REMOVE_CLUSTERS: {
             return Object.assign({}, state, {
-                clusters: new Map(state.clusters).set(id, Object.assign({}, state.clusters.get(id), action.cluster))
+                clusters: new Map([...state.clusters.entries()].filter(([id, value]) => !action.clusterIDs.includes(id)))
+            });
+        }
+        case UPDATE_CLUSTER: {
+            const id = action._id || action.cluster._id;
+            return Object.assign({}, state, {
+                // clusters: new Map(state.clusters).set(id, Object.assign({}, state.clusters.get(id), action.cluster))
+                clusters: new Map(Array.from(state.clusters.entries()).map(([_id, cluster]) => {
+                    return _id === id
+                        ? [action.cluster._id || _id, Object.assign({}, cluster, action.cluster)]
+                        : [_id, cluster];
+                }))
             });
         }
         case UPSERT_CLUSTERS: {

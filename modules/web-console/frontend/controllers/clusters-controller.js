@@ -281,7 +281,11 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
             return cluster.name + ', ' + _.find($scope.discoveries, {value: cluster.discovery.kind}).label;
         }
 
-        function selectFirstItem() {
+        function selectCurrentItem() {
+            if ($state.params.clusterID) {
+                const item = $scope.clusters.find((cluster) => cluster._id === $state.params.clusterID);
+                if (item) return $scope.selectItem(item);
+            }
             if ($scope.clusters.length > 0)
                 $scope.selectItem($scope.clusters[0]);
         }
@@ -346,23 +350,9 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
 
                 if ($state.params.linkId)
                     $scope.createItem($state.params.linkId);
-                else {
-                    const lastSelectedCluster = angular.fromJson(sessionStorage.lastSelectedCluster);
+                else
+                    selectCurrentItem();
 
-                    if (lastSelectedCluster) {
-                        const idx = _.findIndex($scope.clusters, (cluster) => cluster._id === lastSelectedCluster);
-
-                        if (idx >= 0)
-                            $scope.selectItem($scope.clusters[idx]);
-                        else {
-                            sessionStorage.removeItem('lastSelectedCluster');
-
-                            selectFirstItem();
-                        }
-                    }
-                    else
-                        selectFirstItem();
-                }
 
                 $scope.$watch('ui.inputForm.$valid', function(valid) {
                     if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
