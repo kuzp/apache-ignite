@@ -67,7 +67,7 @@ export default class ClustersTableController {
         ];
     }
 
-    dispatchAction(type, items) {
+    dispatchAction(type) {
         this.onAction({$event: {type, items: this.gridAPI.selection.getSelectedRows()}});
         this.gridAPI.selection.clearSelectedRows();
     }
@@ -84,7 +84,7 @@ export default class ClustersTableController {
 
     adjustHeight(api, rows) {
         // Add header height.
-        const height = Math.min(rows, 11) * 48 + 56;
+        const height = Math.min(rows, 11) * 48 + 59;
         api.grid.element.css('height', height + 'px');
         api.core.handleWindowResize();
     }
