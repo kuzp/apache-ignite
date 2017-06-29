@@ -42,7 +42,7 @@ suite('page-configure component reducer', () => {
             }
         );
     });
-    test('LOAD_LIST action', () => {
+    test.skip('LOAD_LIST action', () => {
         assert.deepEqual(
             reducer(void 0, {
                 type: LOAD_LIST,
