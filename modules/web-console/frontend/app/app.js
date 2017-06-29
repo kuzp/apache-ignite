@@ -123,6 +123,7 @@ import userNotifications from './components/user-notifications';
 import pageConfigure from './components/page-configure';
 import pageConfigureBasic from './components/page-configure-basic';
 import pageConfigureAdvanced from './components/page-configure-advanced';
+import pageConfigureOverview from './components/page-configure-overview';
 import gridColumnSelector from './components/grid-column-selector';
 import gridItemSelected from './components/grid-item-selected';
 import bsSelectMenu from './components/bs-select-menu';
@@ -197,6 +198,7 @@ angular.module('ignite-console', [
     pageConfigure.name,
     pageConfigureBasic.name,
     pageConfigureAdvanced.name,
+    pageConfigureOverview.name,
     gridColumnSelector.name,
     gridItemSelected.name,
     bsSelectMenu.name,

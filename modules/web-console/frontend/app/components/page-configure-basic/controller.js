@@ -26,11 +26,12 @@ export default class PageConfigureBasicController {
         'Clusters',
         'ConfigureState',
         'ConfigurationDownload',
-        'IgniteVersion'
+        'IgniteVersion',
+        '$state'
     ];
 
-    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version) {
-        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version});
+    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state) {
+        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state});
     }
 
     $onInit() {
@@ -46,7 +47,7 @@ export default class PageConfigureBasicController {
         ];
 
         this.memorySizeScale = this.sizesMenu[2];
-        this.pageService.setCluster(-1);
+        this.pageService.setCluster(this.$state.params.clusterID || '-1');
     }
 
     getObservable(state$, version$) {

@@ -15,7 +15,10 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/scan';
 import 'rxjs/add/operator/share';
 import 'rxjs/add/operator/publishReplay';
@@ -80,13 +83,24 @@ const reducer = (state = {}, action) => {
     return value;
 };
 
-const state$ = actions$.scan(reducer, void 0).publishReplay(1).refCount();
+const state$ = new BehaviorSubject(void 0);
 
-state$.subscribe();
+actions$.scan(reducer, void 0).do((v) => state$.next(v)).subscribe();
+
+// state$.subscribe();
 
 export default class ConfigureState {
     state$ = state$;
+    actions$ = actions$;
     dispatchAction(action) {
+        if (typeof action === 'function')
+            return action((a) => actions$.next(a), () => this.state$.getValue());
+        // if (action instanceof Observable)
+        //     {return action.do((v) => {
+        //         console.debug(v);
+        //         actions$.next(v);
+        //     }).subscribe();}
+
         actions$.next(action);
     }
 }

@@ -22,22 +22,13 @@ export const REMOVE_CACHE = Symbol('REMOVE_CACHE');
 export const SET_SELECTED_CACHES = Symbol('SET_SELECTED_CACHES');
 export const SET_CLUSTER = Symbol('SET_CLUSTER');
 
+import {uniqueName} from '../page-configure/reducer';
+
 const defaults = {
     clusterID: -1,
     cluster: null,
     newClusterCaches: [],
     oldClusterCaches: []
-};
-
-const uniqueName = (name, items) => {
-    let i = 0;
-    let newName = name;
-    const isUnique = (item) => item.name === newName;
-    while (items.some(isUnique)) {
-        i += 1;
-        newName = `${name} (${i})`;
-    }
-    return newName;
 };
 
 const defaultSpace = (root) => [...root.list.spaces.keys()][0];
