@@ -98,14 +98,6 @@ export default class ClustersTableController {
                 enableHiding: false
             },
             {
-                name: 'version',
-                displayName: 'Version',
-                field: '_id',
-                cellClass: 'ui-grid-number-cell',
-                visible: true
-                // width: 200
-            },
-            {
                 name: 'discovery',
                 displayName: 'Discovery',
                 field: 'discovery',
