@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import cellTemplate from './linkedCellTemplate.pug';
+
 export default class ClustersTableController {
     static $inject = ['$scope'];
 
@@ -108,6 +110,7 @@ export default class ClustersTableController {
                 displayName: 'Caches',
                 field: 'caches',
                 cellClass: 'ui-grid-number-cell',
+                cellTemplate,
                 width: 95
             },
             {
@@ -115,6 +118,7 @@ export default class ClustersTableController {
                 displayName: 'Models',
                 field: 'models',
                 cellClass: 'ui-grid-number-cell',
+                cellTemplate,
                 width: 95
             },
             {
@@ -122,6 +126,7 @@ export default class ClustersTableController {
                 displayName: 'IGFS',
                 field: 'igfs',
                 cellClass: 'ui-grid-number-cell',
+                cellTemplate,
                 width: 80
             }
         ];

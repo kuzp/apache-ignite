@@ -123,7 +123,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 controllerAs: '$ctrl'
             })
             .state('base.configuration.tabs.advanced.caches', {
-                url: '/caches',
+                url: '/caches?{clusterID:string}',
                 templateUrl: cachesTpl,
                 permission: 'configuration',
                 tfMetaTags: {
@@ -133,7 +133,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 controllerAs: '$ctrl'
             })
             .state('base.configuration.tabs.advanced.domains', {
-                url: '/domains',
+                url: '/domains?{clusterID:string}',
                 templateUrl: domainsTpl,
                 permission: 'configuration',
                 tfMetaTags: {
@@ -143,7 +143,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 controllerAs: '$ctrl'
             })
             .state('base.configuration.tabs.advanced.igfs', {
-                url: '/igfs',
+                url: '/igfs?{clusterID:string}',
                 templateUrl: igfsTpl,
                 permission: 'configuration',
                 tfMetaTags: {
@@ -153,7 +153,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 controllerAs: '$ctrl'
             })
             .state('base.configuration.tabs.advanced.summary', {
-                url: '/summary',
+                url: '/summary?{clusterID:string}',
                 templateUrl: summaryTpl,
                 permission: 'configuration',
                 controller: ConfigurationSummaryCtrl,
