@@ -48,7 +48,8 @@ export const reducer = (state = defaults, action) => {
                 clusters: mapByID(action.list.clusters),
                 domains: mapByID(action.list.domains),
                 caches: mapByID(action.list.caches),
-                spaces: mapByID(action.list.spaces)
+                spaces: mapByID(action.list.spaces),
+                plugins: mapByID(action.list.plugins)
             };
         }
         case ADD_CLUSTER: {
