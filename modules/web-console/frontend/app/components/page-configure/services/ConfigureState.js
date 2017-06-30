@@ -95,11 +95,6 @@ export default class ConfigureState {
     dispatchAction(action) {
         if (typeof action === 'function')
             return action((a) => actions$.next(a), () => this.state$.getValue());
-        // if (action instanceof Observable)
-        //     {return action.do((v) => {
-        //         console.debug(v);
-        //         actions$.next(v);
-        //     }).subscribe();}
 
         actions$.next(action);
     }

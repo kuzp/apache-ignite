@@ -1,0 +1,5 @@
+.ui-grid-cell-contents
+    a.link-success(
+        ui-sref='base.configuration.tabs.advanced.{{col.field}}({clusterID: row.entity._id})'
+    )
+        | {{ row.entity[col.field] }}
