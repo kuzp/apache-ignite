@@ -33,6 +33,7 @@ export default class ClustersTableController {
             enableFullRowSelection: true,
             enableSelectionBatchEvent: true,
             selectionRowHeaderWidth: 52,
+            enableColumnCategories: true,
             rowIdentity(row) {
                 return row._id;
             },
@@ -86,7 +87,7 @@ export default class ClustersTableController {
 
     adjustHeight(api, rows) {
         // Add header height.
-        const height = Math.min(rows, 11) * 48 + 59;
+        const height = Math.min(rows, 11) * 46 + 69 + 15;
         api.grid.element.css('height', height + 'px');
         api.core.handleWindowResize();
     }
@@ -97,7 +98,8 @@ export default class ClustersTableController {
                 name: 'name',
                 displayName: 'Name',
                 field: 'name',
-                enableHiding: false
+                enableHiding: false,
+                minWidth: 165
             },
             {
                 name: 'discovery',
@@ -110,6 +112,7 @@ export default class ClustersTableController {
                 displayName: 'Caches',
                 field: 'caches',
                 cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
                 width: 95
             },
@@ -118,6 +121,7 @@ export default class ClustersTableController {
                 displayName: 'Models',
                 field: 'models',
                 cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
                 width: 95
             },
@@ -126,6 +130,7 @@ export default class ClustersTableController {
                 displayName: 'IGFS',
                 field: 'igfs',
                 cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
                 width: 80
             }
