@@ -82,6 +82,6 @@ export default class PageConfigureOverviewController {
     }
 
     createCluster() {
-        this.$state.go('base.configuration.tabs.basic');
+        this.PageConfigure.editCluster();
     }
 }
