@@ -30,7 +30,7 @@ include /app/helpers/jade/mixins
                     options: '$ctrl.actionsMenu'
                 })
     .panel-collapse
-        .grid.ui-grid--ignite(ui-grid='$ctrl.grid' ui-grid-selection)
+        .grid.ui-grid--ignite(ui-grid='$ctrl.grid' ui-grid-selection pco-grid-column-categories ui-grid-resize-columns)
     .pco-clusters-table__no-items-message(ng-hide='$ctrl.grid.data.length')
         | You have no cluster configurations.
         a.link-success(ui-sref='base.configuration.tabs.basic')  Create one?
