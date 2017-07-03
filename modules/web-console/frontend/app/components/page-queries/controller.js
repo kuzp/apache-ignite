@@ -933,7 +933,7 @@ export default class {
 
         const _startWatch = () => {
             const awaitClusters$ = fromPromise(
-                agentMgr.startClusterWatch('Back to Configuration', 'base.configuration.tabs.advanced.clusters'));
+                agentMgr.startClusterWatch('Back to Configuration', 'base.configuration.overview'));
 
             const finishLoading$ = defer(() => {
                 if (!$root.IgniteDemoMode)
