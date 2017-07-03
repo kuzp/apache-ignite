@@ -14,7 +14,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-h1.page-header Clusters
+h1.page-header Configuration
 
 .pco-relative-root
     button.btn-ignite.btn-ignite--primary.pco-table-context-button(
@@ -22,5 +22,5 @@ h1.page-header Clusters
         ng-click='$ctrl.createCluster()'
     )
         svg.icon-left(ignite-icon='plus')
-        | Create Cluster
+        | Create Cluster Configuration
     pco-clusters-table(clusters='$ctrl.clustersTable' on-action='$ctrl.onClustersAction($event)')
