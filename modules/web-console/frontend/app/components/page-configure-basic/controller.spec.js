@@ -45,6 +45,11 @@ const mocks = () => new Map([
     ['IgniteVersion', {
         currentSbj: new BehaviorSubject({ignite: '1.9.0'}),
         since: (a, b) => a === b
+    }],
+    ['state$', {
+        params: {
+            clusterID: null
+        }
     }]
 ]);
 
@@ -71,7 +76,10 @@ suite('page-configure-basic component controller', () => {
             'exposes sizesMenu'
         );
         assert.equal(c.memorySizeScale, c.sizesMenu[2], 'sets default memorySizeScale to Gb');
-        assert.deepEqual(c.pageService.setCluster.lastCall.args, [-1], 'sets cluster to -1');
+        assert.deepEqual(
+            c.pageService.setCluster.lastCall.args, ['-1'],
+            'sets cluster to -1 by clusterID state param is missing'
+        );
     });
 
     test('$onDestroy method', () => {
