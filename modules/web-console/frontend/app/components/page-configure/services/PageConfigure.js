@@ -173,7 +173,7 @@ export default class PageConfigure {
         .take(1)
         .switchMap((state) => {
             return this.$state.go(
-                state.list.clusters.size === 1
+                state.list.clusters.size <= 1
                     ? 'base.configuration.tabs.basic'
                     : 'base.configuration.tabs.advanced.clusters',
                 {clusterID}
