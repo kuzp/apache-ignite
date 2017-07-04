@@ -118,7 +118,7 @@ export default class PageConfigure {
                     )
                 );
             })
-            .do((a) => console.debug(a))
+            // .do((a) => console.debug(a))
             .subscribe((a) => ConfigureState.dispatchAction(a));
     }
 
