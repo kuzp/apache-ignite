@@ -34,6 +34,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import {
     ADD_CLUSTER,
+    ADD_CLUSTERS,
     UPDATE_CLUSTER,
     UPSERT_CLUSTERS,
     REMOVE_CLUSTERS,
@@ -96,10 +97,10 @@ export default class PageConfigure {
                         name: uniqueName(`${c.name} (clone)`, [...state.list.clusters.values()])
                     });
                 });
-                return Observable.from(toAdd.map((c) => ({
-                    type: ADD_CLUSTER,
-                    cluster: c
-                })))
+                return Observable.of({
+                    type: ADD_CLUSTERS,
+                    clusters: toAdd
+                })
                 .merge(
                     ...toAdd.map((c) => Observable
                         .fromPromise(sendRequest(c))

@@ -17,6 +17,7 @@
 
 export const LOAD_LIST = Symbol('LOAD_LIST');
 export const ADD_CLUSTER = Symbol('ADD_CLUSTER');
+export const ADD_CLUSTERS = Symbol('ADD_CLUSTERS');
 export const REMOVE_CLUSTERS = Symbol('REMOVE_CLUSTERS');
 export const UPDATE_CLUSTER = Symbol('UPDATE_CLUSTER');
 export const UPSERT_CLUSTERS = Symbol('UPSERT_CLUSTERS');
@@ -55,6 +56,11 @@ export const reducer = (state = defaults, action) => {
         case ADD_CLUSTER: {
             return Object.assign({}, state, {
                 clusters: new Map([...state.clusters.entries(), [action.cluster._id, action.cluster]])
+            });
+        }
+        case ADD_CLUSTERS: {
+            return Object.assign({}, state, {
+                clusters: new Map([...state.clusters.entries(), ...action.clusters.map((c) => [c._id, c])])
             });
         }
         case REMOVE_CLUSTERS: {
