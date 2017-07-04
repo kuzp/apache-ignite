@@ -77,7 +77,7 @@ export default class PageConfigureOverviewController {
             case 'DELETE':
                 return this.PageConfigure.removeClustersLocalRemote(action.items);
             default:
-                console.debug(action);
+                return;
         }
     }
 
