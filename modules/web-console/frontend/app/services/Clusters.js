@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+
+
 export default class Clusters {
     static $inject = ['$http'];
 
@@ -38,15 +40,19 @@ export default class Clusters {
     }
 
     saveCluster(cluster) {
-        // return Promise.reject(cluster);
         return this.$http.post('/api/v1/configuration/clusters/save', cluster);
+    }
+
+    saveCluster$(cluster) {
+        return Observable.fromPromise(this.saveCluster(cluster));
     }
 
     removeCluster(cluster) {
         return this.$http.post('/api/v1/configuration/clusters/remove', cluster);
-        // return (Math.random() * 10) < 5
-        //     ? Promise.resolve()
-        //     : Promise.reject({data: 'Random said to!'});
+    }
+
+    removeCluster$(cluster) {
+        return Observable.fromPromise(this.removeCluster(cluster));
     }
 
     getBlankCluster() {
