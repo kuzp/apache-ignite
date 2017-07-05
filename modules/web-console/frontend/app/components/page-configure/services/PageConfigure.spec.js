@@ -20,8 +20,6 @@ import {assert} from 'chai';
 import {spy} from 'sinon';
 import {TestScheduler} from 'rxjs/testing/TestScheduler';
 import {Observable} from 'rxjs/Observable';
-import {Subject} from 'rxjs/Subject';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/throw';
