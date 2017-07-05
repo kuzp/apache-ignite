@@ -19,22 +19,13 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/take';
-import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/switchMap';
-import 'rxjs/add/operator/toPromise';
-// import 'rxjs/add/operator/flatMap';
-import 'rxjs/add/operator/concat';
-import 'rxjs/add/operator/repeat';
 import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
-import 'rxjs/add/observable/forkJoin';
-import 'rxjs/add/observable/fromPromise';
-import 'rxjs/add/observable/merge';
-import 'rxjs/add/observable/throw';
 import 'rxjs/add/observable/forkJoin';
 import get from 'lodash/fp/get';
 import propEq from 'lodash/fp/propEq';
@@ -126,7 +117,7 @@ export default class PageConfigure {
                 );
             });
 
-        Observable.merge(this.removeClusters$, this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
+        this.removeClusters$.merge(this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
     }
 
     onStateEnterRedirect(toState) {
