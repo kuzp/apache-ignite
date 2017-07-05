@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/fromPromise';
 
 export default class Clusters {
     static $inject = ['$http'];
