@@ -94,11 +94,11 @@ export default class PageConfigure {
                 );
             });
 
-        this.cloneClusters$ = ConfigureState.actions$
+        this.cloneClusters$ = this.ConfigureState.actions$
             .filter(propEq('type', CLONE_CLUSTERS))
-            .withLatestFrom(ConfigureState.state$)
+            .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([{clusters}, state]) => {
-                const sendRequest = (c) => this.Clusters.saveCluster(Object.assign({}, c, {_id: void 0}));
+                const sendRequest = (c) => this.Clusters.saveCluster$(Object.assign({}, c, {_id: void 0}));
                 const toAdd = clusters.map((c, i) => {
                     return Object.assign(cloneDeep(state.list.clusters.get(c._id)), {
                         _id: (i + 1) * -1,
@@ -110,8 +110,7 @@ export default class PageConfigure {
                     clusters: toAdd
                 })
                 .merge(
-                    ...toAdd.map((c) => Observable
-                        .fromPromise(sendRequest(c))
+                    ...toAdd.map((c) => sendRequest(c)
                         .map(({data}) => ({
                             type: UPDATE_CLUSTER,
                             _id: c._id,
@@ -128,7 +127,6 @@ export default class PageConfigure {
             });
 
         Observable.merge(this.removeClusters$, this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
-
     }
 
     onStateEnterRedirect(toState) {
