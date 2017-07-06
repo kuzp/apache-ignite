@@ -17,6 +17,8 @@
 nav.pca-menu.pca-sticky-1
     ul
         li(ng-repeat='item in $ctrl.menuItems')
-            a.pca-menu-link.btn-ignite(ui-sref-active='active' ui-sref='{{::item.sref}}') {{::item.text}}
+            a.pca-menu-link.btn-ignite(ui-sref-active='active' ui-sref='{{::item.sref}}')
+                svg(ng-if='::item.icon' ignite-icon='{{::item.icon}}').icon-left
+                |{{::item.text}}
 
 .pca-content.docs-content(ui-view='')
