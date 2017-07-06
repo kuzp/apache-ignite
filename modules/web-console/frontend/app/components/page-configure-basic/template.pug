@@ -32,22 +32,14 @@ include mixins/pcb-form-field-size
 - const tipOpts = {placement: 'top'}
 
 form(novalidate name=form)
-    .docs-header
-        h1 Step 1. Cluster Configuration
+    h2.pcb-section-header Step 1. Cluster Configuration
 
-    ignite-information
-        ul
-            li(ng-if='!$ctrl.clusters.size')
-                | You have no clusters.
-                | Let’s configure your first one and associate it with caches and in-memory file systems!
-            li(ng-if='$ctrl.clusters.size')
-                | You have {{$ctrl.clusters.size}} cluster(s).
-                | You can create a new one on this tab or #[a(ui-sref='^.advanced.clusters') edit existing ones].
+    .pcb-section-notification(ng-if='!$ctrl.clusters.size')
+        | You have no clusters.
+        | Let’s configure your first one and associate it with caches and in-memory file systems!
+    .pcb-section-notification(ng-if='$ctrl.clusters.size')
+        | Configure cluster properties and associate your cluster with caches and in-memory file systems.
 
-    .settings-row
-        +ignite-form-field-dropdown('Cluster:', '$ctrl.clusterID', '"clusters"', false, true, false, 'Select a cluster', '', '$ctrl.clustersMenu', 'Add new cluster or select existing one.')(
-            bs-options='cluster._id as cluster.name for cluster in $ctrl.clustersMenu'
-        )
     .settings-row
         +text('Name:', `${model}.name`, '"clusterName"', 'true', 'Input name', 'Grid name allows to indicate to what grid this particular grid instance belongs to')
     .settings-row
@@ -85,11 +77,10 @@ form(novalidate name=form)
     div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
         +discovery-kubernetes(model)        
 
-    .docs-header(style='margin-top:30px')
-        h1 Step 2. Caches Configuration
+    h2.pcb-section-header(style='margin-top:30px') Step 2. Caches Configuration
 
-    .settings-row(ng-show='!$ctrl.caches.size').pcb-no-caches
-        | You have no caches.
+    .settings-row(ng-show='!$ctrl.caches.size').pcb-section-notification
+        | You have no caches. Let’s create a new one.
 
     .settings-row.pcb-memory-size(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
         +pcb-form-field-size('Off-heap Size:', '$ctrl.defaultMemoryPolicy.maxSize', '"memory"', 'false', 'false', '0.8 * totalMemoryAvailable', '{{ $ctrl.minMemorySize/$ctrl.memorySizeScale.value }}', null, '1', '“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.')(

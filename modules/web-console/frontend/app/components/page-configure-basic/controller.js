@@ -27,11 +27,16 @@ export default class PageConfigureBasicController {
         'ConfigureState',
         'ConfigurationDownload',
         'IgniteVersion',
-        '$state'
+        '$state',
+        '$element'
     ];
 
-    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state) {
-        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state});
+    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element) {
+        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element});
+    }
+
+    $postLink() {
+        this.$element.addClass('panel--ignite');
     }
 
     $onInit() {
@@ -60,7 +65,6 @@ export default class PageConfigureBasicController {
             state: state.configureBasic,
             allClusterCaches: this.getAllClusterCaches(state.configureBasic),
             cachesMenu: this.getCachesMenu(state.list.caches),
-            clustersMenu: this.getClustersMenu(state.list.clusters),
             defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.configureBasic.cluster, version),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
         }))
@@ -112,13 +116,6 @@ export default class PageConfigureBasicController {
         return this.save().then(([clusterID]) => (
             this.ConfigurationDownload.downloadClusterConfiguration({_id: clusterID, name: this.state.cluster.name})
         ));
-    }
-
-    getClustersMenu(clusters = new Map()) {
-        const newOne = {_id: -1, name: '+ Add new cluster'};
-        return clusters.size
-            ? [newOne, ...clusters.values()]
-            : [newOne];
     }
 
     getCachesMenu(caches = []) {

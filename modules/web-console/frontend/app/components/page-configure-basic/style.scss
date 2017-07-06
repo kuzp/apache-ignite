@@ -101,12 +101,17 @@ page-configure-basic {
         }
     }
 
-    .pcb-no-caches {
-        font-style: italic;
+    .pcb-section-notification {
+        font-size: 14px;
+        color: #757575;
+        margin-bottom: 1em;
     }
 
-    .docs-header h1 {
-        margin-bottom: 20px;
+    .pcb-section-header {
+        margin-top: 0;
+        margin-bottom: 7px;
+        font-size: 16px;
+        line-height: 19px;
     }
 
     .pcb-memory-size {

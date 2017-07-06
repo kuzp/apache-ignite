@@ -16,7 +16,7 @@
  */
 
 export default class PageConfigureAdvancedController {
-    static $inject = ['$scope'];
+    static $inject = ['$scope', '$element'];
 
     static menuItems = [
         { text: 'Clusters', sref: 'base.configuration.tabs.advanced.clusters' },
@@ -26,8 +26,12 @@ export default class PageConfigureAdvancedController {
         { text: 'Summary', sref: 'base.configuration.tabs.advanced.summary' }
     ];
 
-    constructor($scope) {
-        Object.assign(this, {$scope});
+    constructor($scope, $element) {
+        Object.assign(this, {$scope, $element});
+    }
+
+    $postLink() {
+        this.$element.addClass('panel--ignite');
     }
 
     $onInit() {
