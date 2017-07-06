@@ -159,17 +159,22 @@ form(novalidate name=form)
         
     hr
 
-    div.pcb-buttons-group
-        button.btn-ignite.btn-ignite--primary(
+    div.pcb-buttons-group.pcb-form-main-buttons
+        button.btn-ignite.btn-ignite--link-success.pcb-form-main-buttons-right(
             type='button'
-            ng-click='$ctrl.save()'
-            ng-disabled='$ctrl.form.$invalid'
+            ui-sref='base.configuration.overview'
         )
-            | Save project
-        button.btn-ignite.btn-ignite--primary(
-            type='button'
-            ng-click='$ctrl.saveAndDownload()'
-            ng-disabled='$ctrl.form.$invalid'
-        )
-            svg(ignite-icon='download').icon-left
-            | Save and Download project
+            | Cancel
+        .btn-ignite-group
+            button.btn-ignite.btn-ignite--success(
+                ng-click='$ctrl.saveAndDownload()'
+                type='button'
+            )
+                svg(ignite-icon='download').icon-left
+                | Save changes and download project
+            button.btn-ignite.btn-ignite--success(
+                bs-dropdown='$ctrl.extraFormActions'
+                data-placement='bottom-right'
+                type='button'
+            )
+                span.icon.fa.fa-caret-down
