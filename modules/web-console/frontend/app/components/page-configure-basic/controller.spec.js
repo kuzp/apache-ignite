@@ -151,7 +151,6 @@ suite('page-configure-basic component controller', () => {
                 },
                 allClusterCaches: [],
                 cachesMenu: [],
-                clustersMenu: [{_id: -1, name: '+ Add new cluster'}],
                 defaultMemoryPolicy: void 0,
                 memorySizeInputVisible: false
             },
@@ -165,7 +164,6 @@ suite('page-configure-basic component controller', () => {
                 },
                 allClusterCaches: [],
                 cachesMenu: [],
-                clustersMenu: [{_id: -1, name: '+ Add new cluster'}],
                 defaultMemoryPolicy: void 0,
                 memorySizeInputVisible: true
             },
@@ -192,11 +190,6 @@ suite('page-configure-basic component controller', () => {
                 ],
                 cachesMenu: [
                     {_id: 1, name: '1'},
-                    {_id: 2, name: '2'}
-                ],
-                clustersMenu: [
-                    {_id: -1, name: '+ Add new cluster'},
-                    {_id: 1, name: '1', caches: [1, 2]},
                     {_id: 2, name: '2'}
                 ],
                 defaultMemoryPolicy: void 0,
