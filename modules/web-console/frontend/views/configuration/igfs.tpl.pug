@@ -28,7 +28,7 @@ include /app/helpers/jade/mixins
         div(ng-show='ui.ready')
             hr
             +main-table('IGFS', 'igfss', 'igfsName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
-            .padding-top-dflt(bs-affix)
+            .padding-top-dflt.pca-sticky-2
                 .panel-tip-container(data-placement='bottom' bs-tooltip='' data-title='Create new IGFS')
                     button.btn.btn-primary(id='new-item' ng-click='createItem()') Add IGFS
                 +save-remove-clone-undo-buttons('IGFS')

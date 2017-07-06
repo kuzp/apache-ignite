@@ -49,7 +49,7 @@ include /app/helpers/jade/mixins
                                                     td
                                                         a(ng-class='{active: row._id == selectedItem._id}' ng-click='selectItem(row)') {{$index + 1}}) {{row.valueType}}
                                     label.placeholder(ng-show='(displayedRows | domainsValidation:ui.showValid:true).length == 0') No domain models found
-            .padding-top-dflt(bs-affix)
+            .padding-top-dflt.pca-sticky-2
                 .panel-tip-container(data-placement='bottom' bs-tooltip='' data-title='Create new domain model')
                     button.btn.btn-primary(id='new-item' ng-click='createItem()') Add domain model
                 .panel-tip-container(bs-tooltip='' data-title='Import domain models from database' data-placement='bottom')

@@ -27,7 +27,7 @@ include /app/helpers/jade/mixins
         div(ng-show='ui.ready')
             hr
             +main-table('clusters', 'clusters', 'clusterName', 'selectItem(row)', '{{$index + 1}}) {{row.label}}', 'label')
-            .padding-top-dflt(bs-affix)
+            .padding-top-dflt.pca-sticky-2
                 .panel-tip-container(data-placement='bottom' bs-tooltip='' data-title='Create new cluster')
                     button.btn.btn-primary(id='new-item' ng-click='createItem()') Add cluster
                 +save-remove-clone-undo-buttons('cluster')
