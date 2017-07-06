@@ -48,6 +48,9 @@ export default class PageConfigureBasicController {
 
         this.memorySizeScale = this.sizesMenu[2];
         this.pageService.setCluster(this.$state.params.clusterID || '-1');
+        this.extraFormActions = [
+            {text: 'Save changes', click: () => this.save()}
+        ];
     }
 
     getObservable(state$, version$) {

@@ -60,7 +60,7 @@ page-configure-basic {
         display: flex;
         flex-direction: row;
 
-        .btn-ignite + .btn-ignite {
+        &>*+* {
             margin-left: 10px;
         }
 
@@ -138,6 +138,16 @@ page-configure-basic {
     .pcb-caches {
         .panel-details {
             padding-left: 10px;
+        }
+    }
+    .pcb-form-main-buttons {
+        display: flex;
+        flex-direction: row;
+        .pcb-form-main-buttons-left {
+            margin-right: auto;
+        }
+        .pcb-form-main-buttons-right {
+            margin-left: auto;
         }
     }
 }

@@ -294,6 +294,10 @@ $btn-content-padding-with-border: 9px 11px;
         $line-color: $ignite-brand-primary;
         border-right-color: change-color($line-color, $lightness: 41%);
     }
+    .btn-ignite.btn-ignite--success {
+        $line-color: $ignite-brand-success;
+        border-right-color: change-color($line-color, $saturation: 63%, $lightness: 33%);
+    }
 }
 
 @mixin ignite-link($color, $color-hover) {
