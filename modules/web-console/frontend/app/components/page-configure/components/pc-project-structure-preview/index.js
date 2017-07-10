@@ -17,16 +17,9 @@
 
 import angular from 'angular';
 import component from './component';
-import ConfigureState from './services/ConfigureState';
-import PageConfigure from './services/PageConfigure';
-import ConfigurationDownload from './services/ConfigurationDownload';
-import projectStructurePreview from './components/pc-project-structure-preview';
+import service from './service';
 
 export default angular
-    .module('ignite-console.page-configure', [
-        projectStructurePreview.name
-    ])
-    .component('pageConfigure', component)
-    .service('PageConfigure', PageConfigure)
-    .service('ConfigureState', ConfigureState)
-    .service('ConfigurationDownload', ConfigurationDownload);
+    .module('ignite-console.page-configure.project-structure-preview', [])
+    .service('pcProjectStructurePreview', service)
+    .component('pcProjectStructurePreview', component);
