@@ -23,8 +23,8 @@ pc-project-structure-preview {}
             overflow: visible;
         }
     }
-    pre {
+    .file-preview {
+        margin: 0;
         height: 100%;
-        overflow: auto;
     }
 }

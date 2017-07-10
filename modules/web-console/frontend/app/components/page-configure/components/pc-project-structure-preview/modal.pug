@@ -36,6 +36,6 @@ include /app/helpers/jade/mixins
                         i.fa.fa-file-text-o(ng-if='::!node.file.dir')
                         | {{ ::node.path }}
                 .pane-right
-                    pre {{ $ctrl.fileText }}
+                    div.file-preview(ignite-ace='{mode: $ctrl.fileExt, readonly: true}' ng-model='$ctrl.fileText')
             .modal-footer
                 button.btn-ignite.btn-ignite--success(ng-click='$hide()') Close

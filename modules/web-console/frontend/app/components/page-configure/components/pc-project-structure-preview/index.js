@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import 'brace/mode/properties';
 import angular from 'angular';
 import component from './component';
 import service from './service';

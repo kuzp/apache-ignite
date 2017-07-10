@@ -31,6 +31,8 @@ const makeId = (() => {
 })();
 
 export default class PageConfigureBasic {
+    isNewItem = isNewItem;
+
     static $inject = [
         '$q',
         'IgniteMessages',

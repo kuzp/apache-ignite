@@ -151,6 +151,10 @@ form(novalidate name=form)
     hr
 
     div.pcb-buttons-group.pcb-form-main-buttons
+        pc-project-structure-preview(
+            cluster=model
+            ng-if=`!$ctrl.pageService.isNewItem(${model})`
+        )
         button.btn-ignite.btn-ignite--link-success.pcb-form-main-buttons-right(
             type='button'
             ui-sref='base.configuration.overview'
