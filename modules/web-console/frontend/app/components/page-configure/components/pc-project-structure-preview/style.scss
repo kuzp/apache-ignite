@@ -1,0 +1,22 @@
+pc-project-structure-preview {}
+
+.pc-project-structure-preview-modal {
+    treecontrol {
+        width: 330px;
+        overflow: auto;
+    }
+    .modal-dialog {
+        width: auto;
+    }
+
+    .modal-body {
+        display: flex;
+        flex-direction: row;
+        height: 360px;
+    }
+    pre {
+        height: 100%;
+        width: 560px;
+        overflow: auto;
+    }
+}

@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 
-import angular from 'angular';
-import component from './component';
-import ConfigureState from './services/ConfigureState';
-import PageConfigure from './services/PageConfigure';
-import ConfigurationDownload from './services/ConfigurationDownload';
-import projectStructurePreview from './components/pc-project-structure-preview';
+import template from './template.pug';
+import './style.scss';
+import controller from './controller';
 
-export default angular
-    .module('ignite-console.page-configure', [
-        projectStructurePreview.name
-    ])
-    .component('pageConfigure', component)
-    .service('PageConfigure', PageConfigure)
-    .service('ConfigureState', ConfigureState)
-    .service('ConfigurationDownload', ConfigurationDownload);
+export default {
+    template,
+    controller,
+    bindings: {
+        cluster: '<'
+    }
+};

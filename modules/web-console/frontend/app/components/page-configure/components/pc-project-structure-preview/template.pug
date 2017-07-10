@@ -1,0 +1,11 @@
+button.btn-ignite.btn-ignite--link-dashed-success(
+    type='button'
+    ng-click='$ctrl.showModal()'
+    b_s-popover
+    d_ata-template-url='{{ $ctrl.popoverTemplateURL }}'
+    d_ata-placement='top'
+    d_ata-trigger='click'
+    d_ata-auto-close='true'
+)
+    svg(ignite-icon='info').icon-left
+    | See project structure
