@@ -22,7 +22,7 @@ import map from 'lodash/map';
 import get from 'lodash/get';
 import values from 'lodash/values';
 import reduce from 'lodash/reduce';
-import popoverTemplateURL from './popover.tpl.pug';
+import modalTemplate from './modal.pug';
 
 export default class ProjectStructurePreviewController {
     static $inject = [
@@ -36,7 +36,7 @@ export default class ProjectStructurePreviewController {
     showModal() {
         this.$modal({
             title: 'See project structure',
-            templateUrl: popoverTemplateURL,
+            template: modalTemplate,
             resolve: {
                 cluster: () => this.cluster
             },
@@ -120,9 +120,5 @@ export default class ProjectStructurePreviewController {
             controllerAs: '$ctrl',
             show: true
         });
-    }
-
-    $onInit() {
-        this.popoverTemplateURL = popoverTemplateURL;
     }
 }
