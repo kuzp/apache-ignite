@@ -125,7 +125,7 @@ onmessage = function(e) {
     zip.file('jdbc-drivers/README.txt', readme.generateJDBC());
 
     if (_.isEmpty(data.pojos))
-        data.pojos = java.pojos(cluster.caches);
+        data.pojos = java.pojos(cluster.caches, true);
 
     for (const pojo of data.pojos) {
         if (pojo.keyClass)
