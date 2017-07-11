@@ -18,6 +18,10 @@
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/pluck';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/switchMap';
+import 'rxjs/add/observable/empty';
+import {Observable} from 'rxjs/Observable';
 
 import map from 'lodash/fp/map';
 import flatMap from 'lodash/fp/flatMap';
@@ -41,9 +45,20 @@ export default class PageConfigureOverviewController {
     }
 
     getObservable(state$) {
-        return state$.pluck('list').map((list) => ({
+        return state$
+        .pluck('list')
+        .map((list) => ({
             clustersTable: this.getClustersTable(list)
-        })).do((value) => this.applyValue(value));
+        }))
+        .merge(
+            state$.pluck('list', 'clusters', 'size')
+            .take(1)
+            .filter((size) => size === 0)
+            .do(() => this.PageConfigure.editCluster())
+            .do((v) => console.debug(`Clusters count: ${v}`))
+            .switchMap(() => Observable.empty())
+        )
+        .do((value) => this.applyValue(value));
     }
 
     applyValue(value) {
