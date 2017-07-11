@@ -22,8 +22,8 @@
     div
         ul.tabs.tabs--blue
             li(role='presentation' ui-sref-active='active')
-                a(ui-sref='base.configuration.tabs.basic') Basic
-            li(role='presentation' ui-sref-active='active')
-                a(ui-sref='base.configuration.tabs.advanced') Advanced
+                a(ui-sref='base.configuration.tabs.basic({clusterID: $ctrl.$state.params.clusterID})') Basic
+            li(role='presentation' ui-sref-active='{active: "base.configuration.tabs.advanced"}')
+                a(ui-sref='base.configuration.tabs.advanced.clusters({clusterID: $ctrl.$state.params.clusterID})') Advanced
 
         ui-view
