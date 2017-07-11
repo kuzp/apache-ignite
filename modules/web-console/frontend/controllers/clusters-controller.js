@@ -405,7 +405,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
 
         $scope.selectItem = function(item, backup) {
             function selectItem() {
-                $state.go('.', {clusterID: item._id}, {notify: false});
+                $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
                 $scope.selectedItem = item;
 
                 try {
