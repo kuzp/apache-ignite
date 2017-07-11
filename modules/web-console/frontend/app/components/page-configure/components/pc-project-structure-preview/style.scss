@@ -4,13 +4,13 @@ pc-project-structure-preview {}
     @import '../../../../../public/stylesheets/variables.scss';
 
     .modal-dialog {
-        width: auto;
+        width: 900px;
     }
     .modal-content .modal-body {
         display: flex;
         flex-direction: row;
         height: 360px;
-        padding-top: 0;
+        padding-top: 10px;
         padding-bottom: 0;
     }
     .pane-left {
@@ -23,6 +23,7 @@ pc-project-structure-preview {}
     }
     treecontrol {
         white-space: nowrap;
+        font-family: Roboto;
 
         ul {
             overflow: visible;
