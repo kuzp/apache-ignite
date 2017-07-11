@@ -26,7 +26,10 @@ include /app/helpers/jade/mixins
                 button.close(type='button' aria-label='Close' ng-click='$hide()')
                      svg(ignite-icon="cross")
 
-            .modal-body
+            .modal-body(
+                ignite-loading='projectStructurePreview'
+                ignite-loading-text='Generating project structure preview…'
+            )
                 .pane-left
                     treecontrol(
                         tree-model='$ctrl.data'

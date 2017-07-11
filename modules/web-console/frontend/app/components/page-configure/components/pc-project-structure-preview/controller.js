@@ -40,7 +40,7 @@ export default class ProjectStructurePreviewController {
             resolve: {
                 cluster: () => this.cluster
             },
-            controller: class dsfsd {
+            controller: class ProjectStructurePreviewModalController {
                 static $inject = [
                     'IgniteConfigurationResource',
                     'IgniteSummaryZipper',
@@ -48,11 +48,12 @@ export default class ProjectStructurePreviewController {
                     'IgniteVersion',
                     '$scope',
                     'cluster',
-                    'ConfigurationDownload'
+                    'ConfigurationDownload',
+                    'IgniteLoading'
                 ];
 
-                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload) {
-                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload});
+                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading) {
+                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading});
                     this.$onInit();
                 }
 
@@ -80,6 +81,7 @@ export default class ProjectStructurePreviewController {
                 }
 
                 doStuff(cluster) {
+                    this.IgniteLoading.start('projectStructurePreview');
                     this.IgniteConfigurationResource.read()
                     .then((data) => this.IgniteConfigurationResource.populate(data))
                     .then(({clusters}) => {
@@ -126,6 +128,7 @@ export default class ProjectStructurePreviewController {
                             })
                         ];
                         this.showPreview(this.selectedNode);
+                        this.IgniteLoading.finish('projectStructurePreview');
                     });
                 }
 
