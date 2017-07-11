@@ -49,17 +49,22 @@ include /app/helpers/jade/mixins
                                                     td
                                                         a(ng-class='{active: row._id == selectedItem._id}' ng-click='selectItem(row)') {{$index + 1}}) {{row.valueType}}
                                     label.placeholder(ng-show='(displayedRows | domainsValidation:ui.showValid:true).length == 0') No domain models found
-            .padding-top-dflt.pca-sticky-2
-                .panel-tip-container(data-placement='bottom' bs-tooltip='' data-title='Create new domain model')
-                    button.btn.btn-primary(id='new-item' ng-click='createItem()') Add domain model
-                .panel-tip-container(bs-tooltip='' data-title='Import domain models from database' data-placement='bottom')
-                    button.btn.btn-primary(ng-click='showImportDomainModal()') Import from database
-                +save-remove-clone-undo-buttons('domain model')
-                hr
-            .bs-affix-fix
             div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
                 form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
                     .panel-group
                         include /app/modules/states/configuration/domains/general
                         include /app/modules/states/configuration/domains/query
                         include /app/modules/states/configuration/domains/store
+
+            .pc-form-actions-panel
+                .pc-form-actions-panel__right-after
+                button.btn-ignite.btn-ignite--success(
+                    id='new-item'
+                    ng-click='createItem()'
+                    type='button'
+                ) Add domain model
+                button.btn-ignite.btn-ignite--success(
+                    ng-click='showImportDomainModal()'
+                    type='button'
+                ) Import from database
+                +save-remove-clone-undo-buttons('domain model')

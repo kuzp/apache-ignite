@@ -148,14 +148,13 @@ form(novalidate name=form)
             )
                 | + Select from existing caches
         
-    hr
-
-    div.pcb-buttons-group.pcb-form-main-buttons
+    .pc-form-actions-panel
         pc-project-structure-preview(
             cluster=model
             ng-if=`!$ctrl.pageService.isNewItem(${model})`
         )
-        button.btn-ignite.btn-ignite--link-success.pcb-form-main-buttons-right(
+        .pc-form-actions-panel__right-after
+        button.btn-ignite.btn-ignite--link-success(
             type='button'
             ui-sref='base.configuration.overview'
         )
