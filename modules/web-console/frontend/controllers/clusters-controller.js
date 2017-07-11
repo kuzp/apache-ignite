@@ -408,16 +408,6 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                 $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
                 $scope.selectedItem = item;
 
-                try {
-                    if (item && item._id)
-                        sessionStorage.lastSelectedCluster = angular.toJson(item._id);
-                    else
-                        sessionStorage.removeItem('lastSelectedCluster');
-                }
-                catch (ignored) {
-                    // No-op.
-                }
-
                 if (backup)
                     $scope.backupItem = backup;
                 else if (item)
