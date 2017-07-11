@@ -21,17 +21,20 @@ include /app/helpers/jade/mixins
         .modal-content
             .modal-header
                 h4.modal-title 
-                    i.fa.fa-clone
+                    svg(ignite-icon="structure")
                     span See Project Structure
                 button.close(type='button' aria-label='Close' ng-click='$hide()')
                      svg(ignite-icon="cross")
 
             .modal-body
                 .pane-left
-                    treecontrol.tree-classic(
+                    treecontrol(
                         tree-model='$ctrl.data'
                         on-selection='$ctrl.showPreview(node)'
                         selected-node='$ctrl.selectedNode'
+                        expanded-nodes='$ctrl.expandedNodes'
+                        options='$ctrl.treeOptions'
+                        order-by='["file.dir", "-path"]'
                     )
                         i.fa.fa-file-text-o(ng-if='::!node.file.dir')
                         | {{ ::node.path }}

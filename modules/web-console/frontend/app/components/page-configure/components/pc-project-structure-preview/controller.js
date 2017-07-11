@@ -47,23 +47,23 @@ export default class ProjectStructurePreviewController {
                     '$rootScope',
                     'IgniteVersion',
                     '$scope',
-                    'cluster'
+                    'cluster',
+                    'ConfigurationDownload'
                 ];
 
-                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster) {
-                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster});
+                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload) {
+                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload});
                     this.$onInit();
                 }
 
                 $onInit() {
-                    this.projectStructureOptions = {
+                    this.treeOptions = {
                         nodeChildren: 'children',
                         dirSelectable: false,
                         injectClasses: {
                             iExpanded: 'fa fa-folder-open-o',
                             iCollapsed: 'fa fa-folder-o'
-                        },
-                        equality: (a, b) => a === b
+                        }
                     };
                     this.doStuff(this.cluster);
                 }
@@ -98,24 +98,39 @@ export default class ProjectStructurePreviewController {
                         const convert = (files) => {
                             return Object.keys(files)
                             .map((path, i, paths) => ({
-                                path,
+                                fullPath: path,
+                                path: path.replace(/\/$/, ''),
                                 file: files[path],
                                 parent: files[paths.filter((p) => path.startsWith(p) && p !== path).sort((a, b) => b.length - a.length)[0]]
                             }))
-                            .sort((a, b) => a.file.dir !== b.file.dir)
                             .map((node, i, nodes) => Object.assign(node, {
                                 path: node.parent ? node.path.replace(node.parent.name, '') : node.path,
                                 children: nodes.filter((n) => n.parent && n.parent.name === node.file.name)
-                            }))
-                            .filter((n) => !n.parent);
+                            }));
                         };
 
-                        console.debug(val);
-                        console.debug(this.data = convert(val.files));
+                        const nodes = convert(val.files);
 
-                        this.selectedNode = this.data.find((n) => n.path.includes('README'));
+                        this.data = [{
+                            path: this.ConfigurationDownload.nameFile(cluster),
+                            file: {dir: true},
+                            children: nodes.filter((n) => !n.parent)
+                        }];
+
+                        this.selectedNode = nodes.find((n) => n.path.includes('server.xml'));
+                        this.expandedNodes = [
+                            ...this.data,
+                            ...nodes.filter((n) => {
+                                return !n.fullPath.startsWith('src/main/java/')
+                                    || /src\/main\/java(\/(config|load|startup))?\/$/.test(n.fullPath);
+                            })
+                        ];
                         this.showPreview(this.selectedNode);
                     });
+                }
+
+                orderBy() {
+                    return;
                 }
             },
             controllerAs: '$ctrl',

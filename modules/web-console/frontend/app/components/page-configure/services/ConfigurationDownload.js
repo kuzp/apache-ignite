@@ -51,14 +51,14 @@ export default class ConfigurationDownload {
                     targetVer: this.Version.currentSbj.getValue()
                 });
             })
-            .then((data) => {
-                const fileName = `${this.escapeFileName(cluster.name)}-project.zip`;
-
-                this.saver.saveAs(data, fileName);
-            })
+            .then((data) => this.saver.saveAs(data, this.nameFile(cluster)))
             .catch((e) => (
                 this.messages.showError(`Failed to generate project files. ${e.message}`)
             ));
+    }
+
+    nameFile(cluster) {
+        return `${this.escapeFileName(cluster.name)}-project.zip`;
     }
 
     escapeFileName(name) {
