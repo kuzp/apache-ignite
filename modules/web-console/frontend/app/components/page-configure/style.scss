@@ -21,3 +21,30 @@ page-configure {
         vertical-align: bottom;
     }
 }
+
+.pc-form-actions-panel {
+    display: flex;
+    flex-direction: row;
+    height: 85px;
+    padding: 25px 30px;
+    border-top: 1px solid #dddddd;
+    position: sticky;
+    bottom: 0px;
+    margin: 20px -30px -30px;
+    background: white;
+    border-radius: 0 0 4px 4px;
+    z-index: 999;
+
+    &>*+* {
+        margin-left: 10px;
+    }
+
+    .link-primary + .link-primary {
+        margin-left: 40px;
+    }
+
+    .pc-form-actions-panel__right-after {
+        width: 0;
+        margin-left: auto;
+    }
+}

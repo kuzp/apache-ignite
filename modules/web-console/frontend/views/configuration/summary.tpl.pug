@@ -36,24 +36,6 @@ mixin hard-link(ref, txt)
     div(ng-show='clusters && clusters.length > 0' ignite-loading='summaryPage' ignite-loading-text='Loading summary screen...' ignite-loading-position='top')
         +main-table('clusters', 'clustersView', 'clusterName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
         div(ng-show='selectedItem && contentVisible(displayedRows, selectedItem)')
-            .actions.padding-top-dflt.pca-sticky-2
-                div
-                    button.btn.btn-primary(id='download' ng-click='downloadConfiguration()' bs-tooltip='' data-title='Download project' data-placement='bottom' ng-disabled='isPrepareDownloading')
-                        div
-                            i.fa.fa-fw.fa-download(ng-hide='isPrepareDownloading')
-                            i.fa.fa-fw.fa-refresh.fa-spin(ng-show='isPrepareDownloading')
-                            span.tipLabel Download project
-                    pc-project-structure-preview(cluster='cluster')
-                    span(bs-tooltip='' data-title='Preview generated project structure' data-placement='bottom')
-                        button.btn.btn-primary(bs-popover data-template-url='{{ ctrl.summaryProjectStructureTemplateUrl }}', data-placement='bottom', data-trigger='click' data-auto-close='true')
-                            i.fa.fa-sitemap
-                            label.tipLabel Project structure
-                    button.btn.btn-primary(id='proprietary-jdbc-drivers' ng-if='downloadJdbcDriversVisible()' ng-click='downloadJdbcDrivers()' bs-tooltip='' data-title='Open proprietary JDBC drivers download pages' data-placement='bottom') Download JDBC drivers
-                .actions-note(ng-show='ui.isSafari')
-                    i.icon-note
-                    label "Download project" is not fully supported in Safari. Please rename downloaded file from "Unknown" to "&lt;project-name&gt;.zip"
-                hr
-            .bs-affix-fix
             .panel-group(bs-collapse ng-init='ui.activePanels=[0,1]' ng-model='ui.activePanels' data-allow-multiple='true')
                 .panel.panel-default
                     .panel-heading(role='tab' bs-collapse-toggle)
@@ -89,3 +71,22 @@ mixin hard-link(ref, txt)
                                 div(bs-pane title='POJO' ng-if='cluster | hasPojo')
                                     ignite-ui-ace-pojos(ng-if='tabsClient.activeTab == 3 || tabsClient.init[3]' ng-init='tabsClient.init[3] = true' data-cluster='cluster' data-no-deep-watch ng-model='ctrl.data.pojos')
                         
+            .pc-form-actions-panel
+                pc-project-structure-preview(cluster='cluster')
+                .pc-form-actions-panel__right-after
+                button.btn-ignite.btn-ignite--success(
+                    id='download'
+                    ng-click='downloadConfiguration()'
+                    ng-disabled='isPrepareDownloading'
+                )
+                    i.icon-left.fa.fa-fw.fa-download(ng-hide='isPrepareDownloading')
+                    i.icon-left.fa.fa-fw.fa-refresh.fa-spin(ng-show='isPrepareDownloading')
+                    | Download project
+                button.btn-ignite.btn-ignite--success(
+                    id='proprietary-jdbc-drivers'
+                    ng-if='downloadJdbcDriversVisible()'
+                    ng-click='downloadJdbcDrivers()'
+                    bs-tooltip=''
+                    data-title='Open proprietary JDBC drivers download pages'
+                    data-placement='top'
+                ) Download JDBC drivers

@@ -22,6 +22,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
     function($scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version) {
         this.available = Version.available.bind(Version);
 
+        this.extraFormActions = [{text: 'Remove all', click: () => $scope.removeAllItems()}];
+
         const rebuildDropdowns = () => {
             $scope.affinityFunction = [
                 {value: 'Rendezvous', label: 'Rendezvous'},

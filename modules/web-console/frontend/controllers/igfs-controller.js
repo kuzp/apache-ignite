@@ -31,6 +31,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             secondaryFileSystem: {}
         };
 
+        this.extraFormActions = [{text: 'Remove all', click: () => $scope.removeAllItems()}];
+
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
         $scope.backupItem = emptyIgfs;
 

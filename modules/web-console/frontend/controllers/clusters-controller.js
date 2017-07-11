@@ -22,6 +22,8 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
 
         this.available = Version.available.bind(Version);
 
+        this.extraFormActions = [{text: 'Remove all', click: () => $scope.removeAllItems()}];
+
         const rebuildDropdowns = () => {
             $scope.eventStorage = [
                 {value: 'Memory', label: 'Memory'},

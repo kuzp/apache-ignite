@@ -28,12 +28,6 @@ include /app/helpers/jade/mixins
         div(ng-show='ui.ready')
             hr
             +main-table('IGFS', 'igfss', 'igfsName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
-            .padding-top-dflt.pca-sticky-2
-                .panel-tip-container(data-placement='bottom' bs-tooltip='' data-title='Create new IGFS')
-                    button.btn.btn-primary(id='new-item' ng-click='createItem()') Add IGFS
-                +save-remove-clone-undo-buttons('IGFS')
-                hr
-            .bs-affix-fix
             div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
                 form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
                     .panel-group
@@ -52,3 +46,12 @@ include /app/helpers/jade/mixins
                             include /app/modules/states/configuration/igfs/misc
 
                             +advanced-options-toggle-default
+
+            .pc-form-actions-panel
+                .pc-form-actions-panel__right-after
+                button.btn-ignite.btn-ignite--success(
+                    id='new-item'
+                    ng-click='createItem()'
+                    type='button'
+                ) Add IGFS
+                +save-remove-clone-undo-buttons('IGFS')
