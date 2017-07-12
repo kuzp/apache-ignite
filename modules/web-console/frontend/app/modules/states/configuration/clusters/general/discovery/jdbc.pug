@@ -29,4 +29,8 @@ mixin discovery-jdbc(modelAt = 'backupItem')
     .details-row
         +checkbox('DB schema should be initialized by Ignite', `${model}.initSchema`, '"initSchema"',
             'Flag indicating whether DB schema should be initialized by Ignite or was explicitly created by user')
+    .details-row(ng-if=`$ctrl.Clusters.requiresProprietaryDrivers(${modelAt})`)
+        label
+            a.link-success(ng-href=`{{ $ctrl.Clusters.JDBCDriverURL(${modelAt}) }}` target='_blank')
+                | Download JDBC drivers?
     .pcb-flex-grid-break
