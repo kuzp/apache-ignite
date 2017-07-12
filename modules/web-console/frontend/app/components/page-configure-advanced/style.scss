@@ -52,10 +52,13 @@ page-configure-advanced {
             color: #393939;
             font-weight: normal;
             font-size: 12px;
-            padding: 15px 20px;
+            padding: 15px 20px 14px;
             line-height: 16px;
             border-right: 1px solid #dddddd;
             text-decoration: none !important;
+            transition-duration: 0.2s;
+            transition-property: border-bottom, background-color, color, padding-bottom;
+            border-bottom: $ignite-brand-primary 0px solid;
 
             &.active, &:hover {
                 background-color: white;
