@@ -22,7 +22,6 @@ export default {
     '/configuration/caches': 'Configure caches',
     '/configuration/domains': 'Configure domain model',
     '/configuration/igfs': 'Configure IGFS',
-    '/configuration/summary': 'Configurations summary',
     '/configuration/download': 'Download project',
     '/demo/resume': 'Demo resume',
     '/demo/reset': 'Demo reset',

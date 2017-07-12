@@ -84,11 +84,6 @@ hr {
     color: $input-color-placeholder;
 }
 
-.theme-line .summary-pojo-list > ul.dropdown-menu {
-    width: 100%;
-    max-width: none;
-}
-
 .tooltip {
   word-wrap: break-word;
 }
@@ -1144,44 +1139,6 @@ button.form-control {
     }
 }
 
-.theme-line .popover.summary-project-structure {
-    @extend .popover.settings;
-
-    z-index: 1030;
-    min-width: 305px;
-
-    .popover-title {
-        color: black;
-
-        line-height: 27px;
-
-        padding: 3px 5px 3px 10px;
-
-        white-space: nowrap;
-        overflow: hidden;
-        -o-text-overflow: ellipsis;
-        text-overflow: ellipsis;
-
-        .close {
-            float: right;
-            top: 0;
-            right: 0;
-            position: relative;
-            margin-left: 10px;
-            line-height: 27px;
-        }
-    }
-
-    > .popover-content {
-        overflow: auto;
-
-        white-space: nowrap;
-
-        min-height: 300px;
-        max-height: 300px;
-    }
-}
-
 .theme-line .popover.validation-error {
     max-width: 400px;
     color: $brand-primary;
@@ -1315,19 +1272,6 @@ label.required:after {
     .close {
         margin-right: 0;
         line-height: 19px;
-    }
-}
-
-.summary-tabs {
-    margin-top: 0.65em;
-}
-
-.summary-tab {
-    img {
-        margin-right: 5px;
-        height: 16px;
-        width: 16px;
-        float: left;
     }
 }
 
@@ -1484,16 +1428,6 @@ th[st-sort] {
 
     .ace_gutter-cell, .ace_folding-enabled > .ace_gutter-cell {
         padding-left: 0.65em;
-    }
-}
-
-.preview-panel, .summary-tabs {
-    .ace_hidden-cursors {
-        opacity: 0;
-    }
-
-    .ace_cursor {
-        opacity: 0;
     }
 }
 
@@ -1943,18 +1877,6 @@ treecontrol.tree-classic {
     border-left-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
-}
-
-.summary-tabs {
-    .nav-tabs > li:first-child,
-    .nav-tabs > li:first-child.active {
-        & > a,
-        & > a:focus,
-        & > a:hover {
-            border-left: none;
-            border-top-left-radius: 0;
-        }
-    }
 }
 
 .ribbon-wrapper {

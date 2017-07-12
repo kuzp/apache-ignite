@@ -22,8 +22,7 @@ export default class PageConfigureAdvancedController {
         { text: 'Clusters', sref: 'base.configuration.tabs.advanced.clusters' },
         { text: 'Model', sref: 'base.configuration.tabs.advanced.domains' },
         { text: 'Caches', sref: 'base.configuration.tabs.advanced.caches' },
-        { text: 'IGFS', sref: 'base.configuration.tabs.advanced.igfs' },
-        { text: 'Summary', sref: 'base.configuration.tabs.advanced.summary' }
+        { text: 'IGFS', sref: 'base.configuration.tabs.advanced.igfs' }
     ];
 
     constructor($scope, $element) {
