@@ -57,7 +57,6 @@ export default class PageConfigureOverviewController {
             .take(1)
             .filter((size) => size === 0)
             .do(() => this.PageConfigure.editCluster())
-            .do((v) => console.debug(`Clusters count: ${v}`))
             .switchMap(() => Observable.empty())
         )
         .do((value) => this.applyValue(value));
