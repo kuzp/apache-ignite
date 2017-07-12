@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
 
@@ -112,5 +113,17 @@ export default class Clusters {
             caches: [],
             igfss: []
         };
+    }
+
+    requiresProprietaryDrivers(cluster) {
+        return get(cluster, 'discovery.kind') === 'Jdbc' && ['Oracle', 'DB2', 'SQLServer'].includes(get(cluster, 'discovery.Jdbc.dialect'));
+    }
+
+    JDBCDriverURL(cluster) {
+        return ({
+            Oracle: 'http://www.oracle.com/technetwork/database/features/jdbc/default-2280470.html',
+            DB2: 'http://www-01.ibm.com/support/docview.wss?uid=swg21363866',
+            SQLServer: 'https://www.microsoft.com/en-us/download/details.aspx?id=11774'
+        })[get(cluster, 'discovery.Jdbc.dialect')];
     }
 }
