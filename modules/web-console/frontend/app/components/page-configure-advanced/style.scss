@@ -66,6 +66,10 @@ page-configure-advanced {
                 border-bottom: $ignite-brand-primary 3px solid;
                 padding-bottom: 12px;
             }
+
+            &:hover:not(.active) {
+                border-bottom-color: lighten($ignite-brand-primary, 25%)
+            }
         }
     }
 
