@@ -29,11 +29,13 @@ import flow from 'lodash/fp/flow';
 import get from 'lodash/fp/get';
 import uniq from 'lodash/fp/uniq';
 
-export default class PageConfigureOverviewController {
-    static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure'];
+const allNames = (items) => items.map((i) => i.name).join(', ');
 
-    constructor(ConfigureState, $scope, $state, PageConfigure) {
-        Object.assign(this, {ConfigureState, $scope, $state, PageConfigure});
+export default class PageConfigureOverviewController {
+    static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure', 'IgniteConfirm'];
+
+    constructor(ConfigureState, $scope, $state, PageConfigure, IgniteConfirm) {
+        Object.assign(this, {ConfigureState, $scope, $state, PageConfigure, IgniteConfirm});
     }
 
     $onDestroy() {
@@ -90,7 +92,9 @@ export default class PageConfigureOverviewController {
             case 'CLONE':
                 return this.PageConfigure.cloneClusters(action.items);
             case 'DELETE':
-                return this.PageConfigure.removeClustersLocalRemote(action.items);
+                return this.IgniteConfirm
+                    .confirm(`Are you sure want to remove cluster(s): ${allNames(action.items)}?`)
+                    .then(() => this.PageConfigure.removeClustersLocalRemote(action.items));
             default:
                 return;
         }
