@@ -289,12 +289,12 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         }
 
         function selectCurrentItem() {
-            if ($state.params.clusterID) {
-                const item = $scope.clusters.find((cluster) => cluster._id === $state.params.clusterID);
-                if (item) return $scope.selectItem(item);
-            }
-            if ($scope.clusters.length > 0)
-                $scope.selectItem($scope.clusters[0]);
+            const item = $scope.clusters.find((cluster) => cluster._id === $state.params.clusterID);
+            if (item)
+                $scope.selectItem(item);
+            else
+                $scope.createItem();
+
         }
 
         Loading.start('loadingClustersScreen');
@@ -355,11 +355,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                         cluster.executorConfiguration = [];
                 });
 
-                if ($state.params.linkId)
-                    $scope.createItem($state.params.linkId);
-                else
-                    selectCurrentItem();
-
+                selectCurrentItem();
 
                 $scope.$watch('ui.inputForm.$valid', function(valid) {
                     if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
