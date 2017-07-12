@@ -87,7 +87,7 @@ export default class ClustersTableController {
 
     adjustHeight(api, rows) {
         // Add header height.
-        const height = Math.min(rows, 11) * 46 + 69 + 15;
+        const height = Math.min(rows, 11) * 46 + 70 + (rows ? 15 : 0);
         api.grid.element.css('height', height + 'px');
         api.core.handleWindowResize();
     }
