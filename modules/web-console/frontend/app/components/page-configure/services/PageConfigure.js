@@ -170,8 +170,9 @@ export default class PageConfigure {
         return this.ConfigureState.state$
         .take(1)
         .switchMap((state) => {
+            const toClusterCachesAmount = get('caches.length', state.list.clusters.get(clusterID), 0);
             return this.$state.go(
-                state.list.clusters.size <= 1
+                (state.list.clusters.size <= 1 && toClusterCachesAmount < 10)
                     ? 'base.configuration.tabs.basic'
                     : 'base.configuration.tabs.advanced.clusters',
                 {clusterID}
