@@ -93,3 +93,9 @@ include /app/helpers/jade/mixins
             button.btn-ignite.btn-ignite--success(id='new-item' ng-click='createItem()' type='button')
                 | Add cluster
             +save-remove-clone-undo-buttons('cluster')
+            button.btn-ignite.btn-ignite--success(
+                type='button'
+                ng-click='$ctrl.downloadConfiguration(backupItem)'
+            )
+                svg(ignite-icon='download').icon-left
+                | Download project
