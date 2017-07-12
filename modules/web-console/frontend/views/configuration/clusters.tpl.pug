@@ -88,7 +88,7 @@ include /app/helpers/jade/mixins
                             +advanced-options-toggle-default
 
         .pc-form-actions-panel
-            pc-project-structure-preview(cluster='backupItem')
+            pc-project-structure-preview(cluster='backupItem' ng-if='backupItem._id')
             .pc-form-actions-panel__right-after
             button.btn-ignite.btn-ignite--success(id='new-item' ng-click='createItem()' type='button')
                 | Add cluster
