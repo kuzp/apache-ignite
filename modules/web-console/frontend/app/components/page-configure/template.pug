@@ -14,16 +14,14 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.docs-content
-    header
-        h1
-            | Configure
-            version-picker
-    div
-        ul.tabs.tabs--blue
-            li(role='presentation' ui-sref-active='active')
-                a(ui-sref='base.configuration.tabs.basic({clusterID: $ctrl.$state.params.clusterID})') Basic
-            li(role='presentation' ui-sref-active='{active: "base.configuration.tabs.advanced"}')
-                a(ui-sref='base.configuration.tabs.advanced.clusters({clusterID: $ctrl.$state.params.clusterID})') Advanced
+h1.pc-page-header
+    | Configure
+    version-picker
+div
+    ul.tabs.tabs--blue
+        li(role='presentation' ui-sref-active='active')
+            a(ui-sref='base.configuration.tabs.basic({clusterID: $ctrl.$state.params.clusterID})') Basic
+        li(role='presentation' ui-sref-active='{active: "base.configuration.tabs.advanced"}')
+            a(ui-sref='base.configuration.tabs.advanced.clusters({clusterID: $ctrl.$state.params.clusterID})') Advanced
 
-        ui-view
+    ui-view

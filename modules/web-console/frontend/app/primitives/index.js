@@ -33,4 +33,3 @@ import './switcher/index.scss';
 import './form-field/index.scss';
 import './typography/index.scss';
 import './grid/index.scss';
-import './page-header/index.scss';
