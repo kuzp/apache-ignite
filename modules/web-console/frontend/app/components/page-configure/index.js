@@ -22,10 +22,33 @@ import PageConfigure from './services/PageConfigure';
 import ConfigurationDownload from './services/ConfigurationDownload';
 import projectStructurePreview from './components/pc-project-structure-preview';
 
+import 'rxjs/add/operator/withLatestFrom';
+import 'rxjs/add/operator/skip';
+
+import {reducer} from './reducer';
+import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegration';
+
 export default angular
     .module('ignite-console.page-configure', [
         projectStructurePreview.name
     ])
+    .run(['ConfigureState', (ConfigureState) => {
+        if (devTools) {
+            devTools.subscribe((e) => {
+                if (e.type === 'DISPATCH' && e.state) ConfigureState.actions$.next(e);
+            });
+
+            ConfigureState.actions$
+            .filter((e) => e.type !== 'DISPATCH')
+            .withLatestFrom(ConfigureState.state$.skip(1))
+            .subscribe(([action, state]) => devTools.send(action, state));
+
+            ConfigureState.addReducer(reduxDevtoolsReducer);
+        }
+        ConfigureState.addReducer((state, action) => Object.assign(state, {
+            list: reducer(state.list, action)
+        }));
+    }])
     .component('pageConfigure', component)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)
