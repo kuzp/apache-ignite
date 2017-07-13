@@ -16,11 +16,6 @@
  */
 
 page-configure {
-    h1 version-picker {
-        margin-left: 8px;
-        vertical-align: bottom;
-    }
-
     .pc-form-actions-panel {
         display: flex;
         flex-direction: row;
@@ -45,5 +40,19 @@ page-configure {
             width: 0;
             margin-left: auto;
         }
+    }
+}
+.pc-page-header {
+    font-family: Roboto;
+    font-size: 24px;
+    line-height: 36px;
+    color: #393939;
+    margin: 40px 0 30px;
+    padding: 0;
+    border: none;
+
+    version-picker {
+        margin-left: 8px;
+        vertical-align: 2px;
     }
 }
