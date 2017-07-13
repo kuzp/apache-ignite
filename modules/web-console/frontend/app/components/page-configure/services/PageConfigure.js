@@ -120,20 +120,6 @@ export default class PageConfigure {
         this.removeClusters$.merge(this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
     }
 
-    onStateEnterRedirect(toState) {
-        if (toState.name !== 'base.configuration.tabs')
-            return this.$q.resolve();
-
-        return this.configuration.read()
-            .then((data) => {
-                this.loadList(data);
-
-                return this.$q.resolve(data.clusters.length
-                    ? 'base.configuration.tabs.advanced'
-                    : 'base.configuration.tabs.basic');
-            });
-    }
-
     cloneClusters(clusters) {
         this.ConfigureState.dispatchAction({type: CLONE_CLUSTERS, clusters});
     }

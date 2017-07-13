@@ -16,9 +16,9 @@
  */
 
 export default class PageConfigureController {
-    static $inject = ['$scope'];
+    static $inject = ['$state'];
 
-    constructor($scope) {
-        Object.assign(this, {$scope});
+    constructor($state) {
+        Object.assign(this, {$state});
     }
 }
