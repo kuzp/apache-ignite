@@ -16,8 +16,8 @@
  */
 
 // Controller for IGFS screen.
-export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion',
-    function($scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version) {
+export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q',
+    function($scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q) {
         this.available = Version.available.bind(Version);
 
         UnsavedChangesGuard.install($scope);
@@ -30,11 +30,6 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             ipcEndpointConfiguration: {},
             secondaryFileSystem: {}
         };
-
-        this.extraFormActions = [
-            {text: 'Remove', click: () => $scope.removeItem()},
-            {text: 'Remove all', click: () => $scope.removeAllItems()}
-        ];
 
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
         $scope.backupItem = emptyIgfs;
@@ -121,9 +116,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         $scope.igfsModes = LegacyUtils.mkOptions(['PRIMARY', 'PROXY', 'DUAL_SYNC', 'DUAL_ASYNC']);
 
         $scope.contentVisible = function() {
-            const item = $scope.backupItem;
-
-            return !item.empty && (!item._id || _.find($scope.displayedRows, {_id: item._id}));
+            return !$scope.backupItem.empty;
         };
 
         $scope.toggleExpanded = function() {
@@ -132,7 +125,58 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             ErrorPopover.hide();
         };
 
+        this.defaultValues = {
+            affinnityGroupSize: 512,
+            defaultMode: 'DUAL_ASYNC'
+        };
+
+        this.buildIGFSsTable = (igfss = []) => igfss.map((i) => ({
+            _id: i._id,
+            name: i.name,
+            groupSize: i.affinnityGroupSize || this.defaultValues.affinnityGroupSize,
+            mode: i.defaultMode || this.defaultValues.defaultMode
+        }));
+
+        this.onIGFSAction = (action) => {
+            const realItems = action.items.map((item) => $scope.igfss.find(({_id}) => _id === item._id));
+            switch (action.type) {
+                case 'EDIT':
+                    return $scope.selectItem(realItems[0]);
+                case 'CLONE':
+                    return this.cloneItems(realItems);
+                case 'DELETE':
+                    return realItems.length === this.IGFSsTable.length
+                        ? $scope.removeAllItems()
+                        : $scope.removeItem(realItems[0]);
+                default:
+                    return;
+            }
+        };
+
+        this.IGFSColumnDefs = [
+            {
+                name: 'name',
+                displayName: 'Name',
+                field: 'name',
+                enableHiding: false,
+                minWidth: 165
+            },
+            {
+                name: 'mode',
+                displayName: 'Mode',
+                field: 'mode',
+                width: 160
+            },
+            {
+                name: 'groupSize',
+                displayName: 'Group size',
+                field: 'groupSize',
+                width: 130
+            }
+        ];
+
         $scope.igfss = [];
+        this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
         $scope.clusters = [];
 
         function selectFirstItem() {
@@ -148,6 +192,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 $scope.spaces = spaces;
 
                 $scope.igfss = igfss || [];
+                this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
 
                 // For backward compatibility set colocateMetadata and relaxedConsistency default values.
                 _.forEach($scope.igfss, (igfs) => {
@@ -300,8 +345,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         }
 
         // Save IGFS in database.
-        function save(item) {
-            $http.post('/api/v1/configuration/igfs/save', item)
+        const save = (item) => {
+            return $http.post('/api/v1/configuration/igfs/save', item)
                 .then(({data}) => {
                     const _id = data;
 
@@ -315,19 +360,18 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                         item._id = _id;
                         $scope.igfss.push(item);
                     }
+                    this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
 
                     $scope.selectItem(item);
 
                     Messages.showInfo(`IGFS "${item.name}" saved.`);
                 })
                 .catch(Messages.showError);
-        }
+        };
 
         // Save IGFS.
-        $scope.saveItem = function() {
+        this.saveItem = function(item) {
             if ($scope.tableReset(true)) {
-                const item = $scope.backupItem;
-
                 if (validate(item))
                     save(item);
             }
@@ -338,28 +382,21 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         }
 
         // Clone IGFS with new name.
-        $scope.cloneItem = function() {
-            if ($scope.tableReset(true) && validate($scope.backupItem)) {
-                Input.clone($scope.backupItem.name, _igfsNames()).then((newName) => {
-                    const item = angular.copy($scope.backupItem);
-
-                    delete item._id;
-
-                    item.name = newName;
-
-                    save(item);
-                });
-            }
-        };
+        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
+            return Input.clone(item.name, _igfsNames()).then((newName) => {
+                const clonedItem = angular.copy(item);
+                delete clonedItem._id;
+                clonedItem.name = newName;
+                return save(clonedItem);
+            });
+        }), $q.resolve());
 
         // Remove IGFS from db.
-        $scope.removeItem = function() {
+        $scope.removeItem = (selectedItem) => {
             LegacyTable.tableReset();
 
-            const selectedItem = $scope.selectedItem;
-
             Confirm.confirm('Are you sure you want to remove IGFS: "' + selectedItem.name + '"?')
-                .then(function() {
+                .then(() => {
                     const _id = selectedItem._id;
 
                     $http.post('/api/v1/configuration/igfs/remove', {_id})
@@ -382,22 +419,24 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                                 else
                                     $scope.backupItem = emptyIgfs;
                             }
+                            this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
                         })
                         .catch(Messages.showError);
                 });
         };
 
         // Remove all IGFS from db.
-        $scope.removeAllItems = function() {
+        $scope.removeAllItems = () => {
             LegacyTable.tableReset();
 
             Confirm.confirm('Are you sure you want to remove all IGFS?')
-                .then(function() {
+                .then(() => {
                     $http.post('/api/v1/configuration/igfs/remove/all')
                         .then(() => {
                             Messages.showInfo('All IGFS have been removed');
 
                             $scope.igfss = [];
+                            this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
                             $scope.backupItem = emptyIgfs;
                             $scope.ui.inputForm.$error = {};
                             $scope.ui.inputForm.$setPristine();

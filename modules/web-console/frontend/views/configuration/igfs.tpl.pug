@@ -27,7 +27,17 @@ include /app/helpers/jade/mixins
     div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS screen...' ignite-loading-position='top')
         div(ng-show='ui.ready')
             hr
-            +main-table('IGFS', 'igfss', 'igfsName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
+            //- +main-table('IGFS', 'igfss', 'igfsName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
+            pc-items-table(
+                table-title='::"My IGFS"'
+                column-defs='$ctrl.IGFSColumnDefs'
+                items='$ctrl.IGFSsTable'
+                on-action='$ctrl.onIGFSAction($event)'
+            )
+                footer-slot
+                    a.link-success(
+                        ng-click='createItem()'
+                    ) + Add new IGFS
             div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
                 form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
                     .panel-group
@@ -49,9 +59,13 @@ include /app/helpers/jade/mixins
 
             .pc-form-actions-panel
                 .pc-form-actions-panel__right-after
-                button.btn-ignite.btn-ignite--success(
-                    id='new-item'
-                    ng-click='createItem()'
+                button.btn-ignite.btn-ignite--link-success(
                     type='button'
-                ) Add IGFS
-                +save-remove-clone-undo-buttons('IGFS')
+                    ng-disabled='!ui.inputForm.$dirty'
+                    ng-click='ui.inputForm.$dirty && resetAll()'
+                )
+                    | Cancel
+                button.btn-ignite.btn-ignite--success(
+                    ng-disabled='!ui.inputForm.$dirty'
+                    ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+                ) Save
