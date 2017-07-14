@@ -35,7 +35,7 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +clusters(model, 'Associate clusters with the current IGFS')
                 .settings-row
-                    +dropdown('IGFS mode:', `${model}.defaultMode`, '"defaultMode"', 'true', 'DUAL_ASYNC',
+                    +dropdown('IGFS mode:', `${model}.defaultMode`, '"defaultMode"', 'true', '{{::$ctrl.defaultValues.defaultMode}}',
                     '[\
                         {value: "PRIMARY", label: "PRIMARY"},\
                         {value: "PROXY", label: "PROXY"},\
@@ -50,7 +50,7 @@ include /app/helpers/jade/mixins
                         <li>DUAL_ASYNC - in this mode IGFS will cache files locally and also <b> asynchronously </b> write them through to secondary file system</li>\
                     </ul>')
                 .settings-row
-                    +number('Group size:', `${model}.affinnityGroupSize`, '"affinnityGroupSize"', 'true', '512', '1',
+                    +number('Group size:', `${model}.affinnityGroupSize`, '"affinnityGroupSize"', 'true', '{{::$ctrl.defaultValues.affinnityGroupSize}}', '1',
                         'Size of the group in blocks<br/>\
                         Required for construction of affinity mapper in IGFS data cache')
             .col-sm-6
