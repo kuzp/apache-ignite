@@ -23,4 +23,12 @@ h1.pc-page-header Configuration
     )
         svg.icon-left(ignite-icon='plus')
         | Create Cluster Configuration
-    pco-clusters-table(clusters='$ctrl.clustersTable' on-action='$ctrl.onClustersAction($event)')
+    pc-items-table(
+        table-title='::"My Cluster Configurations"'
+        column-defs='$ctrl.clustersColumnDefs'
+        items='$ctrl.clustersTable'
+        on-action='$ctrl.onClustersAction($event)'
+    )
+        footer-slot(ng-hide='$ctrl.clustersTable.length' style='font-style: italic')
+            | You have no cluster configurations.
+            a.link-success(ui-sref='base.configuration.tabs.basic')  Create one?

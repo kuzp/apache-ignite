@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-pco-clusters-table {
+pc-items-table {
     @import "./../../../../../public/stylesheets/variables.scss";
 
     display: block;
@@ -39,10 +39,10 @@ pco-clusters-table {
         padding-top: (69px - 20px) / 2;
         padding-bottom: (69px - 20px) / 2;
     }
-    .pco-clusters-table__no-items-message {
+    footer-slot {
         $height: 36px + 11px;
         $line-height: 16px;
-        font-style: italic;
+        display: block;
         line-height: $line-height;
         font-size: 14px;
         padding: ($height - $line-height) / 2 51px;
