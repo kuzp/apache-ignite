@@ -15,12 +15,20 @@
  * limitations under the License.
  */
 
-import angular from 'angular';
+import template from './template.pug';
+import './style.scss';
+import controller from './controller';
 
-import component from './component';
-import gridColumnCategories from './components/pco-grid-column-categories/directive';
-
-export default angular
-    .module('ignite-console.page-configure-overview', [])
-    .component('pageConfigureOverview', component)
-    .directive('pcoGridColumnCategories', gridColumnCategories);
+export default {
+    template,
+    controller,
+    transclude: {
+        footerSlot: '?footerSlot'
+    },
+    bindings: {
+        items: '<',
+        onAction: '&',
+        columnDefs: '<',
+        tableTitle: '<'
+    }
+};

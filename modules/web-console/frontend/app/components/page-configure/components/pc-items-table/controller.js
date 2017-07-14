@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-import cellTemplate from './linkedCellTemplate.pug';
-
-export default class ClustersTableController {
+export default class ItemsTableController {
     static $inject = ['$scope'];
 
     constructor($scope) {
@@ -77,11 +75,11 @@ export default class ClustersTableController {
 
     $onChanges(changes) {
         if (
-            'clusters' in changes &&
-            changes.clusters.currentValue !== changes.clusters.previousValue &&
+            'items' in changes &&
+            changes.items.currentValue !== changes.items.previousValue &&
             this.grid
         )
-            this.grid.data = this.prepareData(changes.clusters.currentValue);
+            this.grid.data = this.prepareData(changes.items.currentValue);
 
     }
 
@@ -93,48 +91,7 @@ export default class ClustersTableController {
     }
 
     getColumnDefs() {
-        return [
-            {
-                name: 'name',
-                displayName: 'Name',
-                field: 'name',
-                enableHiding: false,
-                minWidth: 165
-            },
-            {
-                name: 'discovery',
-                displayName: 'Discovery',
-                field: 'discovery',
-                width: 110
-            },
-            {
-                name: 'caches',
-                displayName: 'Caches',
-                field: 'caches',
-                cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
-                width: 95
-            },
-            {
-                name: 'models',
-                displayName: 'Models',
-                field: 'models',
-                cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
-                width: 95
-            },
-            {
-                name: 'igfs',
-                displayName: 'IGFS',
-                field: 'igfs',
-                cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
-                width: 80
-            }
-        ];
+        return this.columnDefs;
     }
 
     prepareData(data = []) {

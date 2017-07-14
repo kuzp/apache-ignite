@@ -31,6 +31,12 @@ import uniq from 'lodash/fp/uniq';
 
 const allNames = (items) => items.map((i) => i.name).join(', ');
 
+const cellTemplate = `
+    <div class="ui-grid-cell-contents">
+        <a class="link-success" ui-sref="{{ ::col.colDef.url(row) }}")>{{ row.entity[col.field] }}</a>
+    </div>
+`;
+
 export default class PageConfigureOverviewController {
     static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure', 'IgniteConfirm'];
 
@@ -44,6 +50,48 @@ export default class PageConfigureOverviewController {
 
     $onInit() {
         this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+        this.clustersColumnDefs = [
+            {
+                name: 'name',
+                displayName: 'Name',
+                field: 'name',
+                enableHiding: false,
+                minWidth: 165
+            },
+            {
+                name: 'discovery',
+                displayName: 'Discovery',
+                field: 'discovery',
+                width: 110
+            },
+            {
+                name: 'caches',
+                displayName: 'Caches',
+                field: 'caches',
+                cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
+                cellTemplate,
+                width: 95
+            },
+            {
+                name: 'models',
+                displayName: 'Models',
+                field: 'models',
+                cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
+                cellTemplate,
+                width: 95
+            },
+            {
+                name: 'igfs',
+                displayName: 'IGFS',
+                field: 'igfs',
+                cellClass: 'ui-grid-number-cell',
+                url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
+                cellTemplate,
+                width: 80
+            }
+        ];
     }
 
     getObservable(state$) {

@@ -15,15 +15,9 @@
  * limitations under the License.
  */
 
-import template from './template.pug';
-import './style.scss';
-import controller from './controller';
+import angular from 'angular';
+import component from './component';
 
-export default {
-    template,
-    controller,
-    bindings: {
-        clusters: '<',
-        onAction: '&'
-    }
-};
+export default angular
+    .module('ignite-console.page-configure.items-table', [])
+    .component('pcItemsTable', component);
