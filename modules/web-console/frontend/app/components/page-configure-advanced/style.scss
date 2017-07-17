@@ -25,6 +25,7 @@ page-configure-advanced {
 
     .pca-menu {
         height: $nav-height;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
     }
 
     .pca-menu > ul {
@@ -68,5 +69,57 @@ page-configure-advanced {
         border-left: 1px solid $gray-lighter;
         padding: 30px;
         flex: 1;
+    }
+
+    .pca-panel {
+        font-family: Roboto;
+        border-radius: 0 0 4px 4px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+
+        .pca-panel-heading {
+            padding: 30px 20px 30px;
+            color: #393939;
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+
+            ignite-form-panel-chevron {
+                margin-right: 10px;
+                color: #757575;
+            }
+
+            .fa-undo {
+                margin-left: auto;
+                padding-left: 10px;
+            }
+
+            .pca-panel-heading-title {
+                font-size: 16px;
+                margin-right: 8px;
+            }
+            .pca-panel-heading-description {
+                font-size: 12px;
+                color: #757575;
+            }
+        }
+        .pca-panel-body {
+            border-top: 1px solid #dddddd;
+            padding: 15px 20px;
+        }
+    }
+
+    .pca-panel {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .pca-form-row {
+        display: flex;
+        flex-direction: row;
+
+        .pca-form-column-6 {
+            flex: 6;
+        }
     }
 }

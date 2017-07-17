@@ -32,3 +32,5 @@ export check from './check.svg';
 export structure from './structure.svg';
 export alert from './alert.svg';
 export attention from './attention.svg';
+export expand from './expand.svg';
+export collapse from './collapse.svg';

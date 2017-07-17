@@ -37,6 +37,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         $scope.ui = FormUtils.formUI();
         $scope.ui.activePanels = [0];
         $scope.ui.topPanels = [0];
+        $scope.ui.expanded = true;
 
         $scope.compactJavaName = FormUtils.compactJavaName;
         $scope.widthIsSufficient = FormUtils.widthIsSufficient;
