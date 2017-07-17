@@ -83,6 +83,8 @@ page-configure-advanced {
             display: flex;
             flex-direction: row;
             align-items: baseline;
+            user-select: none;
+            cursor: pointer;
 
             ignite-form-panel-chevron {
                 margin-right: 10px;
