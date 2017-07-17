@@ -19,18 +19,18 @@ include /app/helpers/jade/mixins
 -var form = 'clientNearCache'
 -var model = 'backupItem.clientNearConfiguration'
 
-.panel.panel-default(ng-form=form novalidate ng-show='backupItem.cacheMode === "PARTITIONED"')
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate ng-show='backupItem.cacheMode === "PARTITIONED"')
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Client near cache
-        ignite-form-field-tooltip.tipLabel
-            | Near cache settings for client nodes#[br]
-            | Near cache is a small local cache that stores most recently or most frequently accessed data#[br]
-            | Should be used in case when it is impossible to send computations to remote nodes
+        .pca-panel-heading-title Client near cache
+        .pca-panel-heading-description
+            | Near cache settings for client nodes. 
+            | Near cache is a small local cache that stores most recently or most frequently accessed data. 
+            | Should be used in case when it is impossible to send computations to remote nodes.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 -var enabled = `${model}.clientNearCacheEnabled`
 
                 .settings-row
@@ -46,5 +46,5 @@ include /app/helpers/jade/mixins
                             <li>First In First Out (FIFO) - Eviction policy based on FIFO algorithm and supports batch eviction</li>\
                             <li>SORTED - Eviction policy which will select the minimum cache entry for eviction</li>\
                         </ul>')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java('backupItem', 'cacheClientNearCache')

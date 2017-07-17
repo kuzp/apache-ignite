@@ -19,16 +19,16 @@ include /app/helpers/jade/mixins
 -var form = 'concurrency'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Concurrency control
-        ignite-form-field-tooltip.tipLabel
+        .pca-panel-heading-title Concurrency control
+        .pca-panel-heading-description
             | Cache concurrent asynchronous operations settings
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +number('Max async operations:', `${model}.maxConcurrentAsyncOperations`, '"maxConcurrentAsyncOperations"', 'true', '500', '0',
                         'Maximum number of allowed concurrent asynchronous operations<br/>\
@@ -64,5 +64,5 @@ include /app/helpers/jade/mixins
                             <li>FULL_ASYNC - Ignite will not wait for write or commit responses from participating nodes</li>\
                             <li>PRIMARY_SYNC - Makes sense for PARTITIONED mode. Ignite will wait for write or commit to complete on primary node</li>\
                         </ul>')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheConcurrency')

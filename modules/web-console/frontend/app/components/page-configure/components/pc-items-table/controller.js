@@ -46,6 +46,15 @@ export default class ItemsTableController {
 
     onRowsSelectionChange() {
         this.actionsMenu = this.makeActionsMenu();
+        if (this.immediateEdit) {
+            const selected = this.gridAPI.selection.getSelectedRows();
+            this.onAction({
+                $event: {
+                    type: 'EDIT',
+                    items: selected.length === 1 ? [selected[0]] : []
+                }
+            });
+        }
     }
 
     makeActionsMenu() {
@@ -53,7 +62,7 @@ export default class ItemsTableController {
             {
                 action: 'Edit',
                 click: () => this.dispatchAction('EDIT'),
-                available: this.gridAPI.selection.getSelectedCount() === 1
+                available: this.gridAPI.selection.getSelectedCount() === 1 && !this.immediateEdit
             },
             {
                 action: 'Delete',

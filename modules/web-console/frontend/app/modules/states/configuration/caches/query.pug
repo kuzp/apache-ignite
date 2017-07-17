@@ -19,17 +19,17 @@ include /app/helpers/jade/mixins
 -var form = 'query'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Queries & Indexing
-        ignite-form-field-tooltip.tipLabel
-            | Cache queries settings#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/sql-queries" target="_blank") More info]
+        .pca-panel-heading-title Queries & Indexing
+        .pca-panel-heading-description
+            | Cache queries settings. 
+            a.link-success(href="https://apacheignite.readme.io/docs/sql-queries" target="_blank") More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +text('SQL schema name:', `${model}.sqlSchema`, '"sqlSchema"', 'false', 'Input schema name',
                         'Specify any custom name to be used as SQL schema for current cache. This name will correspond to SQL ANSI-99 standard.\
@@ -127,5 +127,5 @@ include /app/helpers/jade/mixins
                         +number('SQL index max inline size:', model + '.sqlIndexMaxInlineSize', '"sqlIndexMaxInlineSize"', 'true', '-1', '0',
                             'Maximum inline size for sql indexes')
 
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheQuery', 'domains')

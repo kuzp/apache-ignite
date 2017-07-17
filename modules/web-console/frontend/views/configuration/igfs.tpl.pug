@@ -21,6 +21,7 @@ div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS screen.
         table-title='::"My IGFS"'
         column-defs='$ctrl.IGFSColumnDefs'
         items='$ctrl.IGFSsTable'
+        immediate-edit='false'
         on-action='$ctrl.onIGFSAction($event)'
     )
         footer-slot

@@ -16,43 +16,47 @@
 
 include /app/helpers/jade/mixins
 
-.docs-header
-    h1 Configure Ignite Caches
-.docs-body
-    ignite-information
-        ul
-            li Configure #[a(href='https://apacheignite.readme.io/docs/data-grid' target='_blank') memory] settings
-            li Configure persistence
-    div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...' ignite-loading-position='top')
-        div(ng-show='ui.ready')
-            hr
-            +main-table('caches', 'caches', 'cacheName', 'selectItem(row)', '{{$index + 1}}) {{row.label}}', 'label')
-            div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-                form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
-                    .panel-group
-                        include /app/modules/states/configuration/caches/general
-                        include /app/modules/states/configuration/caches/memory
-                        include /app/modules/states/configuration/caches/query
-                        include /app/modules/states/configuration/caches/store
+div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...' ignite-loading-position='top')
+    pc-items-table(
+        table-title='::"My caches"'
+        column-defs='$ctrl.cachesColumnDefs'
+        items='$ctrl.cachesTable'
+        immediate-edit='false'
+        on-action='$ctrl.onCacheAction($event)'
+    )
+        footer-slot
+            a.link-success(
+                ng-click='createItem()'
+            ) + Add new cache
+    //- +main-table('caches', 'caches', 'cacheName', 'selectItem(row)', '{{$index + 1}}) {{row.label}}', 'label')
 
-                        +advanced-options-toggle-default
+    h2.pc-page-header(ng-hide='backupItem.empty')
+        | {{ backupItem._id ? 'Edit' : 'Create' }} cache {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
 
-                        div(ng-show='ui.expanded')
-                            include /app/modules/states/configuration/caches/affinity
-                            include /app/modules/states/configuration/caches/concurrency
-                            include /app/modules/states/configuration/caches/near-cache-client
-                            include /app/modules/states/configuration/caches/near-cache-server
-                            include /app/modules/states/configuration/caches/node-filter
-                            include /app/modules/states/configuration/caches/rebalance
-                            include /app/modules/states/configuration/caches/statistics
+    div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+        form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+            include /app/modules/states/configuration/caches/general
+            include /app/modules/states/configuration/caches/memory
+            include /app/modules/states/configuration/caches/query
+            include /app/modules/states/configuration/caches/store
 
-                            +advanced-options-toggle-default
+            include /app/modules/states/configuration/caches/affinity
+            include /app/modules/states/configuration/caches/concurrency
+            include /app/modules/states/configuration/caches/near-cache-client
+            include /app/modules/states/configuration/caches/near-cache-server
+            include /app/modules/states/configuration/caches/node-filter
+            include /app/modules/states/configuration/caches/rebalance
+            include /app/modules/states/configuration/caches/statistics
 
-            .pc-form-actions-panel
-                .pc-form-actions-panel__right-after
-                button.btn-ignite.btn-ignite--success(
-                    id='new-item'
-                    ng-click='createItem()'
-                    type='button'
-                ) Add cache
-                +save-remove-clone-undo-buttons('cache')
+    .pc-form-actions-panel
+        .pc-form-actions-panel__right-after
+        button.btn-ignite.btn-ignite--link-success(
+            type='button'
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && resetAll()'
+        )
+            | Cancel
+        button.btn-ignite.btn-ignite--success(
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+        ) Save

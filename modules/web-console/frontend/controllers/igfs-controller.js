@@ -209,27 +209,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                     value: cluster._id
                 }));
 
-                if ($state.params.linkId)
-                    $scope.createItem($state.params.linkId);
-                else {
-                    const lastSelectedIgfs = angular.fromJson(sessionStorage.lastSelectedIgfs);
-
-                    if (lastSelectedIgfs) {
-                        const idx = _.findIndex($scope.igfss, function(igfs) {
-                            return igfs._id === lastSelectedIgfs;
-                        });
-
-                        if (idx >= 0)
-                            $scope.selectItem($scope.igfss[idx]);
-                        else {
-                            sessionStorage.removeItem('lastSelectedIgfs');
-
-                            selectFirstItem();
-                        }
-                    }
-                    else
-                        selectFirstItem();
-                }
+                selectFirstItem();
 
                 $scope.$watch('ui.inputForm.$valid', function(valid) {
                     if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
@@ -265,16 +245,6 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 LegacyTable.tableReset();
 
                 $scope.selectedItem = item;
-
-                try {
-                    if (item && item._id)
-                        sessionStorage.lastSelectedIgfs = angular.toJson(item._id);
-                    else
-                        sessionStorage.removeItem('lastSelectedIgfs');
-                }
-                catch (ignored) {
-                    // No-op.
-                }
 
                 if (backup)
                     $scope.backupItem = backup;

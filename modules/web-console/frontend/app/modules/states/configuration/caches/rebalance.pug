@@ -19,17 +19,17 @@ include /app/helpers/jade/mixins
 -var form = 'rebalance'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate ng-hide=`${model}.cacheMode === "LOCAL"`)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate ng-hide=`${model}.cacheMode === "LOCAL"`)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Rebalance
-        ignite-form-field-tooltip.tipLabel
-            | Cache rebalance settings#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/rebalancing" target="_blank") More info]
+        .pca-panel-heading-title Rebalance
+        .pca-panel-heading-description
+            | Cache rebalance settings. 
+            a.link-success(href="https://apacheignite.readme.io/docs/rebalancing" target="_blank") More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Mode:', `${model}.rebalanceMode`, '"rebalanceMode"', 'true', 'ASYNC',
                         '[\
@@ -62,5 +62,5 @@ include /app/helpers/jade/mixins
                     .settings-row
                         +number('Throttle:', `${model}.rebalanceThrottle`, '"rebalanceThrottle"', 'true', '0', '0',
                             'Time in milliseconds to wait between rebalance messages to avoid overloading of CPU or network')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheRebalance')

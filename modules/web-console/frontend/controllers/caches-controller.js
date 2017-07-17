@@ -18,14 +18,54 @@
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 
 // Controller for Caches screen.
-export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion',
-    function($scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version) {
-        this.available = Version.available.bind(Version);
-
-        this.extraFormActions = [
-            {text: 'Remove', click: () => $scope.removeItem()},
-            {text: 'Remove all', click: () => $scope.removeAllItems()}
+export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q',
+    function($scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q) {
+        this.cachesColumnDefs = [
+            {
+                name: 'name',
+                displayName: 'Name',
+                field: 'name',
+                enableHiding: false,
+                minWidth: 165
+            },
+            {
+                name: 'mode',
+                displayName: 'Mode',
+                field: 'mode',
+                width: 160
+            },
+            {
+                name: 'atomicity',
+                displayName: 'Atomicity',
+                field: 'atomicity',
+                width: 160
+            }
         ];
+
+        this.buildCachesTable = (caches = []) => caches.map((i) => ({
+            _id: i._id,
+            name: i.name,
+            atomicity: i.atomicityMode,
+            mode: i.cacheMode
+        }));
+
+        this.onCacheAction = (action) => {
+            const realItems = action.items.map((item) => $scope.caches.find(({_id}) => _id === item._id));
+            switch (action.type) {
+                case 'EDIT':
+                    return $scope.selectItem(realItems[0]);
+                case 'CLONE':
+                    return this.cloneItems(realItems);
+                case 'DELETE':
+                    return realItems.length === this.cachesTable.length
+                        ? $scope.removeAllItems()
+                        : $scope.removeItem(realItems[0]);
+                default:
+                    return;
+            }
+        };
+
+        this.available = Version.available.bind(Version);
 
         const rebuildDropdowns = () => {
             $scope.affinityFunction = [
@@ -87,9 +127,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         $scope.offHeapMode = 'DISABLED';
 
         $scope.contentVisible = function() {
-            const item = $scope.backupItem;
-
-            return !item.empty && (!item._id || _.find($scope.displayedRows, {_id: item._id}));
+            return !$scope.backupItem.empty;
         };
 
         $scope.toggleExpanded = function() {
@@ -99,6 +137,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         };
 
         $scope.caches = [];
+        this.cachesTable = this.buildCachesTable($scope.caches);
         $scope.domains = [];
 
         function _cacheLbl(cache) {
@@ -211,6 +250,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
 
                 $scope.spaces = spaces;
                 $scope.caches = caches;
+                this.cachesTable = this.buildCachesTable($scope.caches);
                 $scope.igfss = _.map(igfss, (igfs) => ({
                     label: igfs.name,
                     value: igfs._id,
@@ -234,27 +274,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                     meta: domain
                 })), 'label');
 
-                if ($state.params.linkId)
-                    $scope.createItem($state.params.linkId);
-                else {
-                    const lastSelectedCache = angular.fromJson(sessionStorage.lastSelectedCache);
-
-                    if (lastSelectedCache) {
-                        const idx = _.findIndex($scope.caches, function(cache) {
-                            return cache._id === lastSelectedCache;
-                        });
-
-                        if (idx >= 0)
-                            $scope.selectItem($scope.caches[idx]);
-                        else {
-                            sessionStorage.removeItem('lastSelectedCache');
-
-                            selectFirstItem();
-                        }
-                    }
-                    else
-                        selectFirstItem();
-                }
+                selectFirstItem();
 
                 $scope.$watch('ui.inputForm.$valid', function(valid) {
                     if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
@@ -293,16 +313,6 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
 
                 if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
                     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
-
-                try {
-                    if (item && item._id)
-                        sessionStorage.lastSelectedCache = angular.toJson(item._id);
-                    else
-                        sessionStorage.removeItem('lastSelectedCache');
-                }
-                catch (ignored) {
-                    // No-op.
-                }
 
                 if (backup)
                     $scope.backupItem = backup;
@@ -506,7 +516,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         }
 
         // Save cache in database.
-        function save(item) {
+        const save = (item) => {
             $http.post('/api/v1/configuration/caches/save', item)
                 .then(({data}) => {
                     const _id = data;
@@ -539,16 +549,15 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                     });
 
                     $scope.selectItem(item);
+                    this.cachesTable = this.buildCachesTable($scope.caches);
 
                     Messages.showInfo('Cache "' + item.name + '" saved.');
                 })
                 .catch(Messages.showError);
-        }
+        };
 
         // Save cache.
-        $scope.saveItem = function() {
-            const item = $scope.backupItem;
-
+        this.saveItem = function(item) {
             _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
 
             if (validate(item))
@@ -560,41 +569,19 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         }
 
         // Clone cache with new name.
-        $scope.cloneItem = function() {
-            if (validate($scope.backupItem)) {
-                Input.clone($scope.backupItem.name, _cacheNames()).then((newName) => {
-                    const item = angular.copy($scope.backupItem);
-
-                    delete item._id;
-
-                    item.name = newName;
-
-                    if (!_.isEmpty(item.clusters) && !_.isNil(item.sqlSchema)) {
-                        delete item.sqlSchema;
-
-                        const scope = $scope.$new();
-
-                        scope.title = 'Info';
-                        scope.content = [
-                            'Use the same SQL schema name in one cluster in not allowed',
-                            'SQL schema name will be reset'
-                        ];
-
-                        // Show a basic modal from a controller
-                        $modal({scope, templateUrl: infoMessageTemplateUrl, show: true});
-                    }
-
-                    save(item);
-                });
-            }
-        };
+        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
+            return Input.clone(item.name, _cacheNames()).then((newName) => {
+                const clonedItem = angular.copy(item);
+                delete clonedItem._id;
+                clonedItem.name = newName;
+                return save(clonedItem);
+            });
+        }), $q.resolve());
 
         // Remove cache from db.
-        $scope.removeItem = function() {
-            const selectedItem = $scope.selectedItem;
-
+        $scope.removeItem = (selectedItem) => {
             Confirm.confirm('Are you sure you want to remove cache: "' + selectedItem.name + '"?')
-                .then(function() {
+                .then(() => {
                     const _id = selectedItem._id;
 
                     $http.post('/api/v1/configuration/caches/remove', {_id})
@@ -620,20 +607,22 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                                 _.forEach($scope.clusters, (cluster) => _.remove(cluster.caches, (id) => id === _id));
                                 _.forEach($scope.domains, (domain) => _.remove(domain.meta.caches, (id) => id === _id));
                             }
+                            this.cachesTable = this.buildCachesTable($scope.caches);
                         })
                         .catch(Messages.showError);
                 });
         };
 
         // Remove all caches from db.
-        $scope.removeAllItems = function() {
+        $scope.removeAllItems = () => {
             Confirm.confirm('Are you sure you want to remove all caches?')
-                .then(function() {
+                .then(() => {
                     $http.post('/api/v1/configuration/caches/remove/all')
                         .then(() => {
                             Messages.showInfo('All caches have been removed');
 
                             $scope.caches = [];
+                            this.cachesTable = this.buildCachesTable($scope.caches);
 
                             _.forEach($scope.clusters, (cluster) => cluster.caches = []);
                             _.forEach($scope.domains, (domain) => domain.meta.caches = []);
