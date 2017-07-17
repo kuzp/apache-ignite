@@ -19,7 +19,7 @@ const template = '<i ng-show="form.$dirty" class="fa fa-undo pull-right" ng-clic
 
 export default ['igniteFormRevert', ['$tooltip', 'IgniteLegacyTable', ($tooltip, LegacyTable) => {
     const link = (scope, $element, $attrs, [form]) => {
-        $tooltip($element, { title: 'Undo unsaved changes' });
+        $tooltip($element, { title: 'Undo unsaved changes', placement: 'left' });
 
         scope.form = form;
 

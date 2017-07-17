@@ -28,3 +28,5 @@ export checkmark from './checkmark.svg';
 export sort from './sort.svg';
 export info from './info.svg';
 export structure from './structure.svg';
+export expand from './expand.svg';
+export collapse from './collapse.svg';

@@ -19,16 +19,15 @@ include /app/helpers/jade/mixins
 -var form = 'ipc'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label IPC
-        ignite-form-field-tooltip.tipLabel
-            | IGFS Inter-process communication properties
+        .pca-panel-heading-title IPC
+        .pca-panel-heading-description IGFS Inter-process communication properties
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 -var ipcEndpointConfiguration = `${model}.ipcEndpointConfiguration`
                 -var enabled = `${model}.ipcEndpointEnabled`
 
@@ -56,5 +55,5 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +number('Thread count:', `${ipcEndpointConfiguration}.threadCount`, '"ipcEndpointConfigurationThreadCount"', enabled, 'availableProcessors', '1',
                         'Number of threads used by this endpoint to process incoming requests')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'igfsIPC')

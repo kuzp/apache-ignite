@@ -19,16 +19,15 @@ include /app/helpers/jade/mixins
 -var form = 'fragmentizer'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Fragmentizer
-        ignite-form-field-tooltip.tipLabel
-            | Fragmentizer settings
+        .pca-panel-heading-title Fragmentizer
+        .pca-panel-heading-description Fragmentizer settings
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 -var enabled = `${model}.fragmentizerEnabled`
 
                 .settings-row
@@ -39,5 +38,5 @@ include /app/helpers/jade/mixins
                     +number('Throttling block length:', `${model}.fragmentizerThrottlingBlockLength`, '"fragmentizerThrottlingBlockLength"', enabled, '16777216', '1', 'Length of file chunk to transmit before throttling is delayed')
                 .settings-row
                     +number('Throttling delay:', `${model}.fragmentizerThrottlingDelay`, '"fragmentizerThrottlingDelay"', enabled, '200', '0', 'Delay in milliseconds for which fragmentizer is paused')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'igfsFragmentizer')

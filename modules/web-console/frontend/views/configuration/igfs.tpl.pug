@@ -16,56 +16,42 @@
 
 include /app/helpers/jade/mixins
 
-.docs-header
-    h1 Configure Ignite In-memory File Systems
-.docs-body
-    ignite-information(data-title='Configure IGFS only if you are going to use In-memory File System')
-        ul
-            li Ignite File System (#[a(href='https://apacheignite-fs.readme.io/docs/in-memory-file-system' target='_blank') IGFS]) is an in-memory file system allowing work with files and directories over existing cache infrastructure
-            li IGFS can either work as purely in-memory file system, or delegate to another file system (e.g. various Hadoop file system implementations) acting as a caching layer (see #[a(href='https://apacheignite-fs.readme.io/docs/secondary-file-system' target='_blank') secondary file system]  for more detail)
-            li In addition IGFS provides API to execute map-reduce tasks over file system data
-    div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS screen...' ignite-loading-position='top')
-        div(ng-show='ui.ready')
-            hr
-            //- +main-table('IGFS', 'igfss', 'igfsName', 'selectItem(row)', '{{$index + 1}}) {{row.name}}', 'name')
-            pc-items-table(
-                table-title='::"My IGFS"'
-                column-defs='$ctrl.IGFSColumnDefs'
-                items='$ctrl.IGFSsTable'
-                on-action='$ctrl.onIGFSAction($event)'
-            )
-                footer-slot
-                    a.link-success(
-                        ng-click='createItem()'
-                    ) + Add new IGFS
-            div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-                form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
-                    .panel-group
-                        include /app/modules/states/configuration/igfs/general
+div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS screen...' ignite-loading-position='top')
+    pc-items-table(
+        table-title='::"My IGFS"'
+        column-defs='$ctrl.IGFSColumnDefs'
+        items='$ctrl.IGFSsTable'
+        on-action='$ctrl.onIGFSAction($event)'
+    )
+        footer-slot
+            a.link-success(
+                ng-click='createItem()'
+            ) + Add new IGFS
 
-                        +advanced-options-toggle-default
+    h2.pc-page-header(ng-hide='backupItem.empty')
+        | {{ backupItem._id ? 'Edit' : 'Create' }} IGFS {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
 
-                        div(ng-show='ui.expanded')
-                            include /app/modules/states/configuration/igfs/secondary
-                            include /app/modules/states/configuration/igfs/ipc
-                            include /app/modules/states/configuration/igfs/fragmentizer
+    div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+        form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+            include /app/modules/states/configuration/igfs/general
 
-                            //- Removed in ignite 2.0
-                            include /app/modules/states/configuration/igfs/dual
+            include /app/modules/states/configuration/igfs/secondary
+            include /app/modules/states/configuration/igfs/ipc
+            include /app/modules/states/configuration/igfs/fragmentizer
 
-                            include /app/modules/states/configuration/igfs/misc
+            //- Removed in ignite 2.0
+            include /app/modules/states/configuration/igfs/dual
+            include /app/modules/states/configuration/igfs/misc
 
-                            +advanced-options-toggle-default
-
-            .pc-form-actions-panel
-                .pc-form-actions-panel__right-after
-                button.btn-ignite.btn-ignite--link-success(
-                    type='button'
-                    ng-disabled='!ui.inputForm.$dirty'
-                    ng-click='ui.inputForm.$dirty && resetAll()'
-                )
-                    | Cancel
-                button.btn-ignite.btn-ignite--success(
-                    ng-disabled='!ui.inputForm.$dirty'
-                    ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
-                ) Save
+    .pc-form-actions-panel
+        .pc-form-actions-panel__right-after
+        button.btn-ignite.btn-ignite--link-success(
+            type='button'
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && resetAll()'
+        )
+            | Cancel
+        button.btn-ignite.btn-ignite--success(
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+        ) Save

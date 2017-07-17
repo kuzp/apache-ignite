@@ -42,16 +42,15 @@ mixin table-igfs-path-mode-edit(prefix, focusId, index)
         .input-tip
             button.select-toggle.form-control(id=valFocusId bs-select ng-model=valModel data-placeholder='Mode' bs-options='item.value as item.label for item in igfsModes' tabindex='0' ignite-on-enter=btnVisibleAndSave ignite-on-escape='tableReset(false)')
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Miscellaneous
-        ignite-form-field-tooltip.tipLabel
-            | Various miscellaneous IGFS settings
+        .pca-panel-heading-title Miscellaneous
+        .pca-panel-heading-description Various miscellaneous IGFS settings
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +number('Block size:', `${model}.blockSize`, '"blockSize"', 'true', '65536', '0', 'File data block size in bytes')
 
@@ -119,5 +118,5 @@ mixin table-igfs-path-mode-edit(prefix, focusId, index)
                                     tr
                                         td.col-sm-12
                                             +table-igfs-path-mode-edit('new', 'PathMode', '-1')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'igfsMisc')
