@@ -27,17 +27,17 @@ include /app/helpers/jade/mixins
 -var rendPartitionsRequired = rendezvousAff + ' && ' + affModel + '.Rendezvous.affinityBackupFilter'
 -var fairPartitionsRequired = fairAff + ' && ' + affModel + '.Fair.affinityBackupFilter'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Affinity Collocation
-        ignite-form-field-tooltip.tipLabel
-            | Collocate data with data to improve performance and scalability of your application#[br]
-            | #[a(href="http://apacheignite.readme.io/docs/affinity-collocation" target="_blank") More info]
+        .pca-panel-heading-title Affinity Collocation
+        .pca-panel-heading-description
+            | Collocate data with data to improve performance and scalability of your application.
+            a.link-success(href="http://apacheignite.readme.io/docs/affinity-collocation" target="_blank")  More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
                     +dropdown('Function:', `${affModel}.kind`, '"AffinityKind"', 'true', 'Default', 'affinityFunction',
                         'Key topology resolver to provide mapping from keys to nodes<br/>\
@@ -55,7 +55,7 @@ include /app/helpers/jade/mixins
                             <li>Custom - Custom implementation of key affinity fynction</li>\
                             <li>Default - By default rendezvous affinity function  with 1024 partitions is used</li>\
                         </ul>')
-                .panel-details(ng-if=rendezvousAff)
+                .pca-panel-details(ng-if=rendezvousAff)
                     .details-row
                         +number-required('Partitions', `${affModel}.Rendezvous.partitions`, '"RendPartitions"', 'true', rendPartitionsRequired, '1024', '1', 'Number of partitions')
                     .details-row
@@ -64,7 +64,7 @@ include /app/helpers/jade/mixins
                     .details-row
                         +checkbox('Exclude neighbors', `${affModel}.Rendezvous.excludeNeighbors`, '"RendExcludeNeighbors"',
                             'Exclude same - host - neighbors from being backups of each other and specified number of backups')
-                .panel-details(ng-if=fairAff)
+                .pca-panel-details(ng-if=fairAff)
                     .details-row
                         +number-required('Partitions', `${affModel}.Fair.partitions`, '"FairPartitions"', 'true', fairPartitionsRequired, '256', '1', 'Number of partitions')
                     .details-row
@@ -73,7 +73,7 @@ include /app/helpers/jade/mixins
                     .details-row
                         +checkbox('Exclude neighbors', `${affModel}.Fair.excludeNeighbors`, '"FairExcludeNeighbors"',
                             'Exclude same - host - neighbors from being backups of each other and specified number of backups')
-                .panel-details(ng-if=customAff)
+                .pca-panel-details(ng-if=customAff)
                     .details-row
                         +java-class('Class name:', `${affModel}.Custom.className`, '"AffCustomClassName"', 'true', customAff,
                             'Custom key affinity function implementation class name')
@@ -85,5 +85,5 @@ include /app/helpers/jade/mixins
                 .settings-row(ng-if='$ctrl.available("2.0.0")')
                     +java-class('Topology validator:', model + '.topologyValidator', '"topologyValidator"', 'true', 'false', 'Topology validator')
 
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheAffinity')

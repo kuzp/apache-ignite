@@ -23,16 +23,16 @@ include /app/helpers/jade/mixins
 -var igfsFilter = nodeFilterKind + ' === "IGFS"'
 -var customFilter = nodeFilterKind + ' === "Custom"'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label(id='nodeFilter-title') Node filter
-        ignite-form-field-tooltip.tipLabel
+        .pca-panel-heading-title(id='nodeFilter-title') Node filter
+        .pca-panel-heading-description
             | Determines on what nodes the cache should be started
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Node filter:', nodeFilterKind, '"nodeFilter"', 'true', 'Not set',
                         '[\
@@ -48,5 +48,5 @@ include /app/helpers/jade/mixins
                 .settings-row(ng-show=customFilter)
                     +java-class('Class name:', `${nodeFilter}.Custom.className`, '"customNodeFilter"',
                         'true', customFilter, 'Class name of custom node filter implementation', customFilter)
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheNodeFilter', 'igfss')

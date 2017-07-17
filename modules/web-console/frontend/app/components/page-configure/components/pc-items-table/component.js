@@ -29,6 +29,7 @@ export default {
         items: '<',
         onAction: '&',
         columnDefs: '<',
-        tableTitle: '<'
+        tableTitle: '<',
+        immediateEdit: '<?'
     }
 };

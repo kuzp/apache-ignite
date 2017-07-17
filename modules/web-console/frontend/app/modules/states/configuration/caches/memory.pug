@@ -19,20 +19,20 @@ include /app/helpers/jade/mixins
 -var form = 'memory'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Memory
-        ignite-form-field-tooltip.tipLabel(ng-show='$ctrl.available(["1.0.0", "2.0.0"])')
-            | Cache memory settings#[br]
+        .pca-panel-heading-title Memory
+        .pca-panel-heading-description(ng-show='$ctrl.available(["1.0.0", "2.0.0"])')
+            | Cache memory settings.
             | #[a(href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory" target="_blank") More info]
         ignite-form-field-tooltip.tipLabel(ng-show='$ctrl.available("2.0.0")')
-            | Cache memory settings#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/evictions" target="_blank") More info]
+            | Cache memory settings.
+            a.link-success(href="https://apacheignite.readme.io/docs/evictions" target="_blank")  More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 //- Since ignite 2.0
                 .settings-row(ng-if='$ctrl.available("2.0.0")')
                         +checkbox('Onheap cache enabled', model + '.onheapCacheEnabled', '"OnheapCacheEnabled"', 'Checks if the on-heap cache is enabled for the off-heap based page memory')
@@ -132,5 +132,5 @@ include /app/helpers/jade/mixins
                     .settings-row
                         +checkbox('Swap enabled', `${model}.swapEnabled`, '"swapEnabled"', 'Flag indicating whether swap storage is enabled or not for this cache')
 
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheMemory')

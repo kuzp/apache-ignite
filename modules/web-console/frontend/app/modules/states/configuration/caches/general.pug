@@ -19,17 +19,17 @@ include /app/helpers/jade/mixins
 -var form = 'general'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle)
+.pca-panel(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle)
         ignite-form-panel-chevron
-        label General
-        ignite-form-field-tooltip.tipLabel
-            | Common cache configuration#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/data-grid" target="_blank") More info]
+        .pca-panel-heading-title General
+        .pca-panel-heading-description
+            | Common cache configuration.
+            a.link-success(href="https://apacheignite.readme.io/docs/data-grid" target="_blank")  More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id='general')
-        .panel-body
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id='general')
+        .pca-panel-body.pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +text('Name:', `${model}.name`, '"cacheName"', 'true', 'Input name', 'Cache name')
                 .settings-row(ng-if='$ctrl.available("2.1.0")')
@@ -96,5 +96,5 @@ include /app/helpers/jade/mixins
                     +checkbox('Invalidate near cache', `${model}.isInvalidate`, '"isInvalidate"',
                         'Invalidation flag for near cache entries in transaction<br/>\
                         If set then values will be invalidated (nullified) upon commit in near cache')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'cacheGeneral')
