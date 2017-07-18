@@ -29,6 +29,5 @@ include /app/helpers/jade/mixins
                     required: false,
                     options: '$ctrl.actionsMenu'
                 })
-    .panel-collapse
-        .grid.ui-grid--ignite(ui-grid='$ctrl.grid' ui-grid-selection pco-grid-column-categories ui-grid-resize-columns)
+    .grid.ui-grid--ignite(ui-grid='$ctrl.grid' ui-grid-selection pco-grid-column-categories ui-grid-resize-columns)
     div(ng-transclude='footerSlot')
