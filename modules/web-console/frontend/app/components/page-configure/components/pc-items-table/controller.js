@@ -16,10 +16,10 @@
  */
 
 export default class ItemsTableController {
-    static $inject = ['$scope'];
+    static $inject = ['$scope', 'gridUtil'];
 
-    constructor($scope) {
-        Object.assign(this, {$scope});
+    constructor($scope, gridUtil) {
+        Object.assign(this, {$scope, gridUtil});
     }
 
     $onInit() {
@@ -32,6 +32,9 @@ export default class ItemsTableController {
             enableSelectionBatchEvent: true,
             selectionRowHeaderWidth: 52,
             enableColumnCategories: true,
+            flatEntityAccess: true,
+            headerRowHeight: 69,
+            modifierKeysToMultiSelect: true,
             rowIdentity(row) {
                 return row._id;
             },
@@ -39,7 +42,6 @@ export default class ItemsTableController {
                 this.gridAPI = api;
                 api.selection.on.rowSelectionChanged(this.$scope, (e) => this.onRowsSelectionChange([e]));
                 api.selection.on.rowSelectionChangedBatch(this.$scope, (e) => this.onRowsSelectionChange(e));
-                this.$scope.$watch(() => api.grid.getVisibleRows().length, (rows) => this.adjustHeight(api, rows));
             }
         };
     }
@@ -87,14 +89,18 @@ export default class ItemsTableController {
             'items' in changes &&
             changes.items.currentValue !== changes.items.previousValue &&
             this.grid
-        )
+        ) {
             this.grid.data = this.prepareData(changes.items.currentValue);
-
+            this.adjustHeight(this.gridAPI, this.grid.data.length);
+        }
     }
 
     adjustHeight(api, rows) {
-        // Add header height.
-        const height = Math.min(rows, 11) * 46 + 70 + (rows ? 15 : 0);
+        const maxRowsToShow = 5;
+        const headerBorder = 1;
+        const header = this.grid.headerRowHeight + headerBorder;
+        const optionalScroll = (rows ? this.gridUtil.getScrollbarWidth() : 0);
+        const height = Math.min(rows, maxRowsToShow) * this.grid.rowHeight + header + optionalScroll;
         api.grid.element.css('height', height + 'px');
         api.core.handleWindowResize();
     }

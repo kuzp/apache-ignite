@@ -21,14 +21,13 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
         table-title='::"My caches"'
         column-defs='$ctrl.cachesColumnDefs'
         items='$ctrl.cachesTable'
-        immediate-edit='false'
+        immediate-edit='true'
         on-action='$ctrl.onCacheAction($event)'
     )
         footer-slot
             a.link-success(
                 ng-click='createItem()'
             ) + Add new cache
-    //- +main-table('caches', 'caches', 'cacheName', 'selectItem(row)', '{{$index + 1}}) {{row.label}}', 'label')
 
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} cache {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
