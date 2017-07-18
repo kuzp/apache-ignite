@@ -310,6 +310,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         $scope.selectItem = function(item, backup) {
             function selectItem() {
                 $scope.selectedItem = item;
+                $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
 
                 if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
                     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
@@ -359,9 +360,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
 
         // Add new cache.
         $scope.createItem = function(linkId) {
-            $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
-
             $scope.selectItem(null, prepareNewItem(linkId));
+            $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
         };
 
         function cacheClusters() {
