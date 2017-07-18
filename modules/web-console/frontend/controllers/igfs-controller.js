@@ -321,7 +321,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 .then(({data}) => {
                     const _id = data;
 
-                    $scope.ui.inputForm.$setPristine();
+                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                     const idx = _.findIndex($scope.igfss, {_id});
 
@@ -383,7 +383,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                             if (idx >= 0) {
                                 igfss.splice(idx, 1);
 
-                                $scope.ui.inputForm.$setPristine();
+                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                                 if (igfss.length > 0)
                                     $scope.selectItem(igfss[0]);
@@ -409,8 +409,10 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                             $scope.igfss = [];
                             this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
                             $scope.backupItem = emptyIgfs;
-                            $scope.ui.inputForm.$error = {};
-                            $scope.ui.inputForm.$setPristine();
+                            if ($scope.ui.inputForm) {
+                                $scope.ui.inputForm.$error = {};
+                                $scope.ui.inputForm.$setPristine();
+                            }
                         })
                         .catch(Messages.showError);
                 });
@@ -422,8 +424,10 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             Confirm.confirm('Are you sure you want to undo all changes for current IGFS?')
                 .then(function() {
                     $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
+                    if ($scope.ui.inputForm) {
+                        $scope.ui.inputForm.$error = {};
+                        $scope.ui.inputForm.$setPristine();
+                    }
                 });
         };
     }
