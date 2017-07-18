@@ -16,10 +16,10 @@
  */
 
 export default class ItemsTableController {
-    static $inject = ['$scope', 'gridUtil'];
+    static $inject = ['$scope', 'gridUtil', '$timeout', 'uiGridSelectionService'];
 
-    constructor($scope, gridUtil) {
-        Object.assign(this, {$scope, gridUtil});
+    constructor($scope, gridUtil, $timeout, uiGridSelectionService) {
+        Object.assign(this, {$scope, gridUtil, $timeout, uiGridSelectionService});
     }
 
     $onInit() {
@@ -92,6 +92,22 @@ export default class ItemsTableController {
         ) {
             this.grid.data = this.prepareData(changes.items.currentValue);
             this.adjustHeight(this.gridAPI, this.grid.data.length);
+        }
+        if (
+            'selectedRowId' in changes &&
+            changes.selectedRowId.currentValue !== changes.selectedRowId.previousValue &&
+            this.grid && this.grid.data
+        ) {
+            // TODO: refactor this
+            if (changes.selectedRowId.currentValue.empty) return;
+            this.$timeout(() => {
+                this.gridAPI.grid.rows.forEach((row) => {
+                    const match = row.entity._id === changes.selectedRowId.currentValue._id;
+                    row.setSelected(match);
+                    if (match) this.gridAPI.core.scrollToIfNecessary(row, null);
+                });
+                this.actionsMenu = this.makeActionsMenu();
+            });
         }
     }
 

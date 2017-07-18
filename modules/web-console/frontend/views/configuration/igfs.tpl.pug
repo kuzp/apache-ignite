@@ -23,6 +23,7 @@ div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS screen.
         items='$ctrl.IGFSsTable'
         immediate-edit='true'
         on-action='$ctrl.onIGFSAction($event)'
+        selected-row-id='backupItem'
     )
         footer-slot
             a.link-success(
