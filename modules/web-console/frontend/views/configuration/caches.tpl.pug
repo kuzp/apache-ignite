@@ -23,6 +23,7 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
         items='$ctrl.cachesTable'
         immediate-edit='true'
         on-action='$ctrl.onCacheAction($event)'
+        selected-row-id='backupItem'
     )
         footer-slot
             a.link-success(

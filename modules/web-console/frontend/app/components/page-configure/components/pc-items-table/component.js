@@ -30,6 +30,7 @@ export default {
         onAction: '&',
         columnDefs: '<',
         tableTitle: '<',
-        immediateEdit: '<?'
+        immediateEdit: '<?',
+        selectedRowId: '<?'
     }
 };
