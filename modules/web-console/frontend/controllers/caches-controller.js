@@ -523,7 +523,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
 
                     item.label = _cacheLbl(item);
 
-                    $scope.ui.inputForm.$setPristine();
+                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                     const idx = _.findIndex($scope.caches, {_id});
 
@@ -597,7 +597,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                             if (idx >= 0) {
                                 caches.splice(idx, 1);
 
-                                $scope.ui.inputForm.$setPristine();
+                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                                 if (caches.length > 0)
                                     $scope.selectItem(caches[0]);
@@ -628,8 +628,10 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                             _.forEach($scope.domains, (domain) => domain.meta.caches = []);
 
                             $scope.backupItem = emptyCache;
-                            $scope.ui.inputForm.$error = {};
-                            $scope.ui.inputForm.$setPristine();
+                            if ($scope.ui.inputForm) {
+                                $scope.ui.inputForm.$error = {};
+                                $scope.ui.inputForm.$setPristine();
+                            }
                         })
                         .catch(Messages.showError);
                 });
@@ -639,8 +641,10 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
             Confirm.confirm('Are you sure you want to undo all changes for current cache?')
                 .then(function() {
                     $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
+                    if ($scope.ui.inputForm) {
+                        $scope.ui.inputForm.$error = {};
+                        $scope.ui.inputForm.$setPristine();
+                    }
                 });
         };
     }
