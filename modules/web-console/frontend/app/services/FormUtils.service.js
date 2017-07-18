@@ -18,7 +18,7 @@
 export default ['IgniteFormUtils', ['$window', 'IgniteFocus', ($window, Focus) => {
     function ensureActivePanel(ui, pnl, focusId) {
         if (ui && ui.loadPanel) {
-            const collapses = $('div.panel-collapse');
+            const collapses = $('[bs-collapse-target]');
 
             ui.loadPanel(pnl);
 
