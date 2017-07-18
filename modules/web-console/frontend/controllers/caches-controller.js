@@ -307,8 +307,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
                 Loading.finish('loadingCachesScreen');
             });
 
-        $scope.selectItem = function(item, backup) {
-            function selectItem() {
+        $scope.selectItem = (item, backup) => {
+            const selectItem = () => {
                 $scope.selectedItem = item;
                 $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
 
@@ -337,7 +337,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
 
                 if (LegacyUtils.getQueryVariable('new'))
                     $state.go('base.configuration.tabs.advanced.caches');
-            }
+            };
 
             FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
         };
