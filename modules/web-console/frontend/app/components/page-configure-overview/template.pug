@@ -28,6 +28,7 @@ h1.pc-page-header Configuration
         column-defs='$ctrl.clustersColumnDefs'
         items='$ctrl.clustersTable'
         on-action='$ctrl.onClustersAction($event)'
+        max-rows-to-show='10'
     )
         footer-slot(ng-hide='$ctrl.clustersTable.length' style='font-style: italic')
             | You have no cluster configurations.

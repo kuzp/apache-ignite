@@ -31,6 +31,7 @@ export default {
         columnDefs: '<',
         tableTitle: '<',
         immediateEdit: '<?',
-        selectedRowId: '<?'
+        selectedRowId: '<?',
+        maxRowsToShow: '@?'
     }
 };
