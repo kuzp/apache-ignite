@@ -112,7 +112,7 @@ export default class ItemsTableController {
     }
 
     adjustHeight(api, rows) {
-        const maxRowsToShow = 5;
+        const maxRowsToShow = this.maxRowsToShow || 5;
         const headerBorder = 1;
         const header = this.grid.headerRowHeight + headerBorder;
         const optionalScroll = (rows ? this.gridUtil.getScrollbarWidth() : 0);
