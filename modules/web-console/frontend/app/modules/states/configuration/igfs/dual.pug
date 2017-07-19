@@ -26,7 +26,6 @@ include /app/helpers/jade/mixins
         .pca-panel-heading-description
             | IGFS supports dual-mode that allows it to work as either a standalone file system in Hadoop cluster, or work in tandem with HDFS, providing a primary caching layer for the secondary HDFS.
             | As a caching layer it provides highly configurable read-through and write-through behaviour.
-        ignite-form-revert
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`$ctrl.available(["1.0.0", "2.0.0"]) && ui.isPanelLoaded('${form}')`)
             .pca-form-column-6
