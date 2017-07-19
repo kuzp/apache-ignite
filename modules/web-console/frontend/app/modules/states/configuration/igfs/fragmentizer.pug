@@ -23,7 +23,6 @@ include /app/helpers/jade/mixins
     .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
         .pca-panel-heading-title Fragmentizer
-        .pca-panel-heading-description Fragmentizer settings
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
             .pca-form-column-6
