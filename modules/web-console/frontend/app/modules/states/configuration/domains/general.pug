@@ -20,18 +20,18 @@ include /app/helpers/jade/mixins
 -var model = 'backupItem'
 -var generatePojo = `${model}.generatePojo`
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle)
         ignite-form-panel-chevron
-        label General
-        ignite-form-field-tooltip.tipLabel
-            | Domain model properties common for Query and Store#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/cache-queries" target="_blank") More info about query configuration]#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info about store]
+        .pca-panel-heading-title General
+        .pca-panel-heading-description
+            | Domain model properties common for Query and Store. 
+            a.link-success(href="https://apacheignite.readme.io/docs/cache-queries" target="_blank") More info about query configuration. 
+            a.link-success(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info about store.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +checkbox('Generate POJO classes', generatePojo, '"generatePojo"', 'If selected then POJO classes will be generated from database tables')
                 .settings-row
@@ -48,5 +48,5 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +java-class-autofocus-placholder('Value type:', `${model}.valueType`, '"valueType"', 'true', 'true', 'false', '{{ ' + generatePojo +' ? "Enter fully qualified class name" : "Value type name" }}', 'Value class used to store value in cache', generatePojo)
 
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'domainModelGeneral')

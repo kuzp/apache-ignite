@@ -52,17 +52,17 @@ mixin table-index-item-edit(prefix, index, sortAvailable, idAddition)
         .input-tip
             button.select-toggle.form-control(id=`{{::'${fieldName}' + ${idAddition}}}` ng-model=fieldNameModel placeholder=`{{fields('${prefix}', ${fieldNameModel}).length > 0 ? 'Choose index field' : 'No fields configured'}}` bs-select bs-options=`item.value as item.label for item in fields('${prefix}', ${fieldNameModel})` ng-disabled=`fields('${prefix}', ${fieldNameModel}).length === 0` ignite-on-escape='tableReset(false)' tabindex='0')
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle)
         ignite-form-panel-chevron
-        label(id='query-title') Domain model for SQL query
-        ignite-form-field-tooltip.tipLabel
-            | Domain model properties for fields queries#[br]
-            | #[a(href='https://apacheignite.readme.io/docs/cache-queries' target='_blank') More info]
+        .pca-panel-heading-title(id='query-title') Domain model for SQL query
+        .pca-panel-heading-description
+            | Domain model properties for fields queries. 
+            a.link-success(href='https://apacheignite.readme.io/docs/cache-queries' target='_blank') More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id='query')
-        .panel-body
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id='query')
+        .pca-panel-body.pca-form-row
+            .pca-form-column-6
                 .content-not-available(ng-if=`${model}.queryMetadata === 'Annotations'`)
                     label Not available for annotated types
                 div(ng-if=`${model}.queryMetadata === 'Configuration'`)
@@ -192,5 +192,5 @@ mixin table-index-item-edit(prefix, index, sortAvailable, idAddition)
                                                     +btn-save('tableIndexSaveVisible(indexesTbl, -1)', 'tableIndexSave(indexesTbl, -1)')
                                                     .input-tip
                                                         button#newIndexType.select-toggle.form-control(bs-select ng-model='indexesTbl.newIndexType' data-placeholder='Select index type' bs-options='item.value as item.label for item in indexType' tabindex='0' ignite-on-enter=btnVisibleAndSave ignite-on-escape='tableReset(false)')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'domainModelQuery')

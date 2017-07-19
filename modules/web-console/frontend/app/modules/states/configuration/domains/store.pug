@@ -61,17 +61,17 @@ mixin table-db-field-edit(tbl, prefix, focusId, index)
         .input-tip
             button.select-toggle.form-control(id=javaTypeId ng-model=javaTypeModel data-placeholder='Java type' ng-class=`{placeholder: !${javaTypeModel}}` bs-select bs-options='item.value as item.label for item in {{supportedJavaTypes}}' ignite-on-enter=btnVisibleAndSave ignite-on-escape='tableReset(false)' tabindex='0')
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label(id='store-title') Domain model for cache store
-        ignite-form-field-tooltip.tipLabel
-            | Domain model properties for binding database with cache via POJO cache store#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info]
+        .pca-panel-heading-title(id='store-title') Domain model for cache store
+        .pca-panel-heading-description
+            | Domain model properties for binding database with cache via POJO cache store. 
+            a.link-success(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info.
         ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
+            .pca-form-column-6
                 .settings-row
                     +text('Database schema:', model + '.databaseSchema', '"databaseSchema"', 'false', 'Input DB schema name', 'Schema name in database')
                 .settings-row
@@ -122,6 +122,6 @@ mixin table-db-field-edit(tbl, prefix, focusId, index)
                                     tr
                                         td
                                             +table-db-field-edit('valuesTbl', 'new', 'ValueField', '-1')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'domainStore')
 
