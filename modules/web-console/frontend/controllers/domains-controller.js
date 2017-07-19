@@ -1206,6 +1206,8 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         function selectFirstItem() {
             if ($scope.domains.length > 0)
                 $scope.selectItem($scope.domains[0]);
+            else
+                $scope.createItem();
         }
 
         $scope.importActions = [{
@@ -1247,27 +1249,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
 
                 $scope.importCommon.action = IMPORT_DM_NEW_CACHE;
 
-                if ($state.params.linkId)
-                    $scope.createItem($state.params.linkId);
-                else {
-                    const lastSelectedDomain = angular.fromJson(sessionStorage.lastSelectedDomain);
-
-                    if (lastSelectedDomain) {
-                        const idx = _.findIndex($scope.domains, function(domain) {
-                            return domain._id === lastSelectedDomain;
-                        });
-
-                        if (idx >= 0)
-                            $scope.selectItem($scope.domains[idx]);
-                        else {
-                            sessionStorage.removeItem('lastSelectedDomain');
-
-                            selectFirstItem();
-                        }
-                    }
-                    else
-                        selectFirstItem();
-                }
+                selectFirstItem();
 
                 $scope.$watch('ui.inputForm.$valid', function(valid) {
                     if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))

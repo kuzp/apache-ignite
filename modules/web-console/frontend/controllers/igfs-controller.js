@@ -183,6 +183,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         function selectFirstItem() {
             if ($scope.igfss.length > 0)
                 $scope.selectItem($scope.igfss[0]);
+            else
+                $scope.createItem();
         }
 
         Loading.start('loadingIgfsScreen');
