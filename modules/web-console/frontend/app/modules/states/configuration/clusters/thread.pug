@@ -20,16 +20,15 @@ include /app/helpers/jade/mixins
 -var model = 'backupItem'
 -var executors = model + '.executorConfiguration'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Thread pools size
-        ignite-form-field-tooltip.tipLabel
-            | Settings for node thread pools
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Thread pools size
+        .pca-panel-heading-description
+            | Settings for node thread pools.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +number('Public:', model + '.publicThreadPoolSize', '"publicThreadPoolSize"', 'true', 'max(8, availableProcessors) * 2', '1',
                         'Thread pool that is in charge of processing ComputeJob, GridJobs and user messages sent to node')
@@ -88,5 +87,5 @@ include /app/helpers/jade/mixins
                                     +number('Pool size:', 'model.size', '"ExecutorPoolSize" + $index', 'true', 'max(8, availableProcessors)', '1',
                                         'Thread pool size')
 
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterPools')

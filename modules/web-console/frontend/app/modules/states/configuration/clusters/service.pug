@@ -19,17 +19,16 @@ include /app/helpers/jade/mixins
 -var form = 'serviceConfiguration'
 -var model = 'backupItem.serviceConfigurations'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Service configuration
-        ignite-form-field-tooltip.tipLabel
-            | Service Grid allows for deployments of arbitrary user-defined services on the cluster#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/fault-tolerance" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Service configuration
+        .pca-panel-heading-description
+            | Service Grid allows for deployments of arbitrary user-defined services on the cluster. 
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/fault-tolerance" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row(ng-init='serviceConfigurationsTbl={type: "serviceConfigurations", model: "serviceConfigurations", focusId: "kind", ui: "failover-table"}')
                     +ignite-form-group()
                         ignite-form-field-label
@@ -84,5 +83,5 @@ include /app/helpers/jade/mixins
                             .settings-row
                                 +text('Affinity key:', 'model.affinityKey', '"ServiceAffinityKey" + $index', 'false', 'Input affinity key',
                                     'Affinity key used for key-to-node affinity calculation')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java('backupItem', 'clusterServiceConfiguration', 'caches')

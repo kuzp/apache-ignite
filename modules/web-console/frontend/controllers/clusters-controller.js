@@ -16,9 +16,47 @@
  */
 
 // Controller for Clusters screen.
-export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload',
-    function($root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload) {
+export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
+    function($root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
         this.Clusters = Clusters;
+
+        this.clustersColumnDefs = [
+            {
+                name: 'name',
+                displayName: 'Name',
+                field: 'name',
+                enableHiding: false,
+                minWidth: 165
+            },
+            {
+                name: 'discovery',
+                displayName: 'Discovery',
+                field: 'discovery',
+                width: 110
+            }
+        ];
+
+        this.buildClustersTable = (clusters = []) => clusters.map((i) => ({
+            _id: i._id,
+            name: i.name,
+            discovery: i.discovery.kind
+        }));
+
+        this.onClusterAction = (action) => {
+            const realItems = action.items.map((item) => $scope.clusters.find(({_id}) => _id === item._id));
+            switch (action.type) {
+                case 'EDIT':
+                    return $scope.selectItem(realItems[0]);
+                case 'CLONE':
+                    return this.cloneItems(realItems);
+                case 'DELETE':
+                    return realItems.length === this.clustersTable.length
+                        ? $scope.removeAllItems()
+                        : $scope.removeItem(realItems[0]);
+                default:
+                    return;
+            }
+        };
 
         let __original_value;
 
@@ -248,9 +286,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         $scope.widthIsSufficient = FormUtils.widthIsSufficient;
 
         $scope.contentVisible = function() {
-            const item = $scope.backupItem;
-
-            return !item.empty && (!item._id || _.find($scope.displayedRows, {_id: item._id}));
+            return !$scope.backupItem.empty;
         };
 
         $scope.toggleExpanded = function() {
@@ -283,6 +319,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         ];
 
         $scope.clusters = [];
+        this.clustersTable = this.buildClustersTable($scope.clusters);
 
         function _clusterLbl(cluster) {
             return cluster.name + ', ' + _.find($scope.discoveries, {value: cluster.discovery.kind}).label;
@@ -305,6 +342,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                 $scope.spaces = spaces;
 
                 $scope.clusters = clusters;
+                this.clustersTable = this.buildClustersTable($scope.clusters);
 
                 $scope.caches = _.map(caches, (cache) => {
                     cache.domains = _.filter(domains, ({_id}) => _.includes(cache.domains, _id));
@@ -880,14 +918,14 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         };
 
         // Save cluster in database.
-        function save(item) {
+        const save = (item) => {
             $http.post('/api/v1/configuration/clusters/save', item)
                 .then(({data}) => {
                     const _id = data;
 
                     item.label = _clusterLbl(item);
 
-                    $scope.ui.inputForm.$setPristine();
+                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                     const idx = _.findIndex($scope.clusters, {_id});
 
@@ -916,20 +954,19 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                     $scope.selectItem(item);
 
                     Messages.showInfo(`Cluster "${item.name}" saved.`);
+                    this.clustersTable = this.buildClustersTable($scope.clusters);
                 })
                 .catch(Messages.showError);
-        }
+        };
 
         // Save cluster.
-        $scope.saveItem = () => {
-            const item = $scope.backupItem;
-
+        this.saveItem = function(item) {
             const swapConfigured = item.swapSpaceSpi && item.swapSpaceSpi.kind;
 
             if (!swapConfigured && _.find(clusterCaches(item), (cache) => cache.swapEnabled))
                 _.merge(item, {swapSpaceSpi: {kind: 'FileSwapSpaceSpi'}});
 
-            if (this.validate(item))
+            if (validate(item))
                 save(item);
         };
 
@@ -938,25 +975,19 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         }
 
         // Clone cluster with new name.
-        $scope.cloneItem = () => {
-            if (this.validate($scope.backupItem)) {
-                Input.clone($scope.backupItem.name, _clusterNames()).then((newName) => {
-                    const item = angular.copy($scope.backupItem);
-
-                    delete item._id;
-                    item.name = newName;
-
-                    save(item);
-                });
-            }
-        };
+        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
+            return Input.clone(item.name, _clusterNames()).then((newName) => {
+                const clonedItem = angular.copy(item);
+                delete clonedItem._id;
+                clonedItem.name = newName;
+                return save(clonedItem);
+            });
+        }), $q.resolve());
 
         // Remove cluster from db.
-        $scope.removeItem = function() {
-            const selectedItem = $scope.selectedItem;
-
+        $scope.removeItem = (selectedItem) => {
             Confirm.confirm('Are you sure you want to remove cluster: "' + selectedItem.name + '"?')
-                .then(function() {
+                .then(() => {
                     const _id = selectedItem._id;
 
                     $http.post('/api/v1/configuration/clusters/remove', {_id})
@@ -970,7 +1001,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                             if (idx >= 0) {
                                 clusters.splice(idx, 1);
 
-                                $scope.ui.inputForm.$setPristine();
+                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                                 if (clusters.length > 0)
                                     $scope.selectItem(clusters[0]);
@@ -980,27 +1011,31 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                                 _.forEach($scope.caches, (cache) => _.remove(cache.cache.clusters, (id) => id === _id));
                                 _.forEach($scope.igfss, (igfs) => _.remove(igfs.igfs.clusters, (id) => id === _id));
                             }
+                            this.clustersTable = this.buildClustersTable($scope.clusters);
                         })
                         .catch(Messages.showError);
                 });
         };
 
         // Remove all clusters from db.
-        $scope.removeAllItems = function() {
+        $scope.removeAllItems = () => {
             Confirm.confirm('Are you sure you want to remove all clusters?')
-                .then(function() {
+                .then(() => {
                     $http.post('/api/v1/configuration/clusters/remove/all')
                         .then(() => {
                             Messages.showInfo('All clusters have been removed');
 
                             $scope.clusters = [];
+                            this.clustersTable = this.buildClustersTable($scope.clusters);
 
                             _.forEach($scope.caches, (cache) => cache.cache.clusters = []);
                             _.forEach($scope.igfss, (igfs) => igfs.igfs.clusters = []);
 
                             $scope.backupItem = emptyCluster;
-                            $scope.ui.inputForm.$error = {};
-                            $scope.ui.inputForm.$setPristine();
+                            if ($scope.ui.inputForm) {
+                                $scope.ui.inputForm.$error = {};
+                                $scope.ui.inputForm.$setPristine();
+                            }
                         })
                         .catch(Messages.showError);
                 });
@@ -1010,8 +1045,10 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
             Confirm.confirm('Are you sure you want to undo all changes for current cluster?')
                 .then(function() {
                     $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
+                    if ($scope.ui.inputForm) {
+                        $scope.ui.inputForm.$error = {};
+                        $scope.ui.inputForm.$setPristine();
+                    }
                 });
         };
 

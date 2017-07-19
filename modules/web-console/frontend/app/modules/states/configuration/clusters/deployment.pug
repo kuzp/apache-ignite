@@ -27,17 +27,16 @@ include /app/helpers/jade/mixins
 -var localDeployment = modelDeployment + '.kind === "Local"'
 -var customDeployment = modelDeployment + '.kind === "Custom"'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Class deployment
-        ignite-form-field-tooltip.tipLabel
-            | Task and resources deployment in cluster#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/deployment-modes" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id='deployment')
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Class deployment
+        .pca-panel-heading-description
+            | Task and resources deployment in cluster.
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/deployment-modes" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id='deployment')
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Deployment mode:', `${model}.deploymentMode`, '"deploymentMode"', 'true', 'SHARED',
                         '[\
@@ -239,5 +238,5 @@ include /app/helpers/jade/mixins
                 .panel-details(ng-show=customDeployment)
                     .details-row
                         +java-class('Class:', `${modelDeployment}.Custom.className`, '"DeploymentCustom"', 'true', customDeployment, 'DeploymentSpi implementation class', customDeployment)
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterDeployment')

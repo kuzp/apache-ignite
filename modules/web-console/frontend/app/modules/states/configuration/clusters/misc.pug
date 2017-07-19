@@ -19,16 +19,15 @@ include /app/helpers/jade/mixins
 -var form = 'misc'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle)
         ignite-form-panel-chevron
-        label Miscellaneous
-        ignite-form-field-tooltip.tipLabel
-            | Various miscellaneous cluster settings
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body
-            .col-sm-6
+        .pca-panel-heading-title Miscellaneous
+        .pca-panel-heading-description
+            | Various miscellaneous cluster settings.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +text('Work directory:', model + '.workDirectory', '"workDirectory"', 'false', 'Input work directory',
                         'Ignite work directory.<br/>\
@@ -60,5 +59,5 @@ include /app/helpers/jade/mixins
                 .settings-row(ng-if='$ctrl.available("2.1.0")')
                     +number('Long query timeout:', `${model}.longQueryWarningTimeout`, '"LongQueryWarningTimeout"', 'true', '3000', '0',
                     'Timeout in milliseconds after which long query warning will be printed')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterMisc', 'caches')

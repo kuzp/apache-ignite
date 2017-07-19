@@ -20,16 +20,15 @@ include /app/helpers/jade/mixins
 -var model = 'backupItem.logger'
 -var kind = model + '.kind'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Logger configuration
-        ignite-form-field-tooltip.tipLabel
-            | Logging functionality used throughout the system
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Logger configuration
+        .pca-panel-heading-description
+            | Logging functionality used throughout the system.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Logger:', kind, '"logger"', 'true', 'Default',
                         '[\
@@ -61,6 +60,6 @@ include /app/helpers/jade/mixins
                             include ./logger/log4j
                         div(ng-show=`${kind} === 'Custom'`)
                             include ./logger/custom
-            .col-sm-6
+            .pca-form-column-6
                 -var model = 'backupItem.logger'
                 +preview-xml-java(model, 'clusterLogger')

@@ -21,17 +21,14 @@ include /app/helpers/jade/mixins
 -var connectionModel = model + '.sqlConnectorConfiguration'
 -var connectionEnabled = connectionModel + '.enabled'
 
-.panel.panel-default(ng-show='$ctrl.available(["2.1.0", "2.3.0"])' ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-show='$ctrl.available(["2.1.0", "2.3.0"])' ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Query configuration
-        ignite-form-field-tooltip.tipLabel
-            | Query configuration
+        .pca-panel-heading-title Query configuration
         //- TODO IGNITE-5415 Add link to documentation.
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`$ctrl.available(["2.1.0", "2.3.0"]) && ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`$ctrl.available(["2.1.0", "2.3.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +checkbox('Enabled', connectionEnabled, '"SqlConnectorEnabled"', 'Flag indicating whether to configure SQL connector configuration')
                 .settings-row
@@ -56,5 +53,5 @@ include /app/helpers/jade/mixins
                         'Size of thread pool that is in charge of processing SQL requests')
                 .settings-row
                     +checkbox-enabled('TCP_NODELAY option', `${connectionModel}.tcpNoDelay`, '"SqlConnectorTcpNoDelay"', connectionEnabled, 'Value for TCP_NODELAY socket option')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterQuery')

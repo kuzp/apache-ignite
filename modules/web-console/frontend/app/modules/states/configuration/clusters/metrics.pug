@@ -19,16 +19,15 @@ include /app/helpers/jade/mixins
 -var form = 'metrics'
 -var model = 'backupItem'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Metrics
-        ignite-form-field-tooltip.tipLabel
-            | Cluster runtime metrics settings
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Metrics
+        .pca-panel-heading-description
+            | Cluster runtime metrics settings.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +number('Elapsed time:', `${model}.metricsExpireTime`, '"metricsExpireTime"', 'true', 'Long.MAX_VALUE', '1',
                         'Time in milliseconds after which a certain metric value is considered expired')
@@ -47,5 +46,5 @@ include /app/helpers/jade/mixins
                             <li>If set to 0 job metrics are updated on each job start and finish</li>\
                             <li>Positive value defines the actual update frequency</li>\
                         </ul>')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterMetrics')

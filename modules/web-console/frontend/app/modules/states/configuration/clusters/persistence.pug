@@ -20,17 +20,16 @@ include /app/helpers/jade/mixins
 -var model = 'backupItem.persistenceStoreConfiguration'
 -var enabled = model + '.enabled'
 
-.panel.panel-default(ng-show='$ctrl.available(["2.1.0", "2.3.0"])' ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-show='$ctrl.available(["2.1.0", "2.3.0"])' ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Persistence store
-        ignite-form-field-tooltip.tipLabel
-            | Configures Apache Ignite Persistence store#[br]
-        //- TODO IGNITE-5415 Add link to documentation.
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`$ctrl.available(["2.1.0", "2.3.0"]) && ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Persistence store
+        .pca-panel-heading-description
+            | Configures Apache Ignite Persistence store.
+            a.link-success(href='https://apacheignite.readme.io/docs/persistent-store' target='_blank') More info.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`$ctrl.available(["2.1.0", "2.3.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +checkbox('Enabled', enabled, '"PersistenceEnabled"', 'Flag indicating whether to configure persistent configuration')
                 .settings-row
@@ -78,5 +77,5 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +number('Sub intervals:', `${model}.subIntervals`, '"PersistenceSubIntervals"', enabled, '5', '1',
                     'Number of sub - intervals the whole rate time interval will be split into to calculate rate - based metrics')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterPersistence')

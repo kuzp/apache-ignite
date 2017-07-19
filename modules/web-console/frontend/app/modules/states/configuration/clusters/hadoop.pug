@@ -24,18 +24,17 @@ include /app/helpers/jade/mixins
 -var customPlanner = plannerModel + '.kind === "Custom"'
 -var libs = model + '.nativeLibraryNames'
 
-.panel.panel-default(ng-form=form novalidate)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
     -var uniqueTip = 'Such native library already exists!'
 
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Hadoop configuration
-        ignite-form-field-tooltip.tipLabel
-            | Hadoop Accelerator configuration
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Hadoop configuration
+        .pca-panel-heading-description
+            | Hadoop Accelerator configuration.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Map reduce planner:', plannerModel + '.kind', '"MapReducePlanner"', 'true', 'Default', '[\
                         {value: "Weighted", label: "Weighted"},\
@@ -115,5 +114,5 @@ include /app/helpers/jade/mixins
                                         +unique-feedback(name, uniqueTip)
                         .group-content-empty(id='libs' ng-if=`!(${libs}.length) && !group.add.length`)
                             | Not defined
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterHadoop')
