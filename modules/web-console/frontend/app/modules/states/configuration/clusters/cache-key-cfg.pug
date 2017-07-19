@@ -19,16 +19,15 @@ include /app/helpers/jade/mixins
 -var form = 'cacheKeyCfg'
 -var model = 'backupItem.cacheKeyConfiguration'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Cache key configuration
-        ignite-form-field-tooltip.tipLabel
-            | Cache key configuration allows to collocate objects in a partitioned cache based on field in cache key without explicit usage of annotations on user classes
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Cache key configuration
+        .pca-panel-heading-description
+            | Cache key configuration allows to collocate objects in a partitioned cache based on field in cache key without explicit usage of annotations on user classes.
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +ignite-form-group()
                         ignite-form-field-label
@@ -46,5 +45,5 @@ include /app/helpers/jade/mixins
                                     +table-remove-button(model, 'Remove cache key configuration')
                             .settings-row
                                 +text('Affinity key field name:', 'model.affinityKeyFieldName', '"affinityKeyFieldName" + $index', true, 'Enter field name', 'Affinity key field name')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterCacheKeyConfiguration')

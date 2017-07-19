@@ -19,17 +19,16 @@ include /app/helpers/jade/mixins
 -var form = 'discovery'
 -var model = 'backupItem.discovery'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Discovery
-        ignite-form-field-tooltip.tipLabel
-            | TCP/IP discovery configuration#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/cluster-config" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Discovery
+        .pca-panel-heading-description
+            | TCP/IP discovery configuration. 
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/cluster-config" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +text-ip-address('Local address:', `${model}.localAddress`, '"discoLocalAddress"', 'true', '228.1.2.4',
                         'Local host IP address that discovery SPI uses<br/>\
@@ -88,5 +87,5 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +checkbox('Client reconnect disabled', `${model}.clientReconnectDisabled`, '"clientReconnectDisabled"',
                         'Disable try of client to reconnect after server detected client node failure')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterDiscovery')

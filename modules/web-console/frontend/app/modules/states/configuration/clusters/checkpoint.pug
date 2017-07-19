@@ -21,17 +21,16 @@ include /app/helpers/jade/mixins
 -var CustomCheckpoint = 'model.kind === "Custom"'
 -var CacheCheckpoint = 'model.kind === "Cache"'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Checkpointing
-        ignite-form-field-tooltip.tipLabel
-            | Checkpointing provides an ability to save an intermediate job state#[br]
-            | #[a(href="http://apacheignite.readme.io/docs/checkpointing" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Checkpointing
+        .pca-panel-heading-description
+            | Checkpointing provides an ability to save an intermediate job state. 
+            | #[a.link-success(href="http://apacheignite.readme.io/docs/checkpointing" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row(ng-init='checkpointSpiTbl={type: "checkpointSpi", model: "checkpointSpi", focusId: "kind", ui: "checkpoint-table"}')
                     +ignite-form-group()
                         ignite-form-field-label
@@ -82,5 +81,5 @@ include /app/helpers/jade/mixins
                             .settings-row(ng-show=CustomCheckpoint)
                                 +java-class('Class name:', 'model.Custom.className', '"checkpointCustomClassName" + $index', 'true', CustomCheckpoint,
                                 'Custom CheckpointSpi implementation class', CustomCheckpoint)
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java('backupItem', 'clusterCheckpoint', 'caches')

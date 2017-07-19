@@ -16,80 +16,92 @@
 
 include /app/helpers/jade/mixins
 
-.docs-header
-    h1 Configure Ignite Clusters
-.docs-body
-    ignite-information
-        ul
-            li Configure #[a(href='https://apacheignite.readme.io/docs/clustering' target='_blank') clusters] properties
-            li Associate clusters with caches and in-memory file systems
-    div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters...' ignite-loading-position='top')
-        div(ng-show='ui.ready')
-            +main-table('clusters', 'clusters', 'clusterName', 'selectItem(row)', '{{$index + 1}}) {{row.label}}', 'label')
-            div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-                form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
-                    .panel-group
-                        include /app/modules/states/configuration/clusters/general
+div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters...' ignite-loading-position='top')
+    pc-items-table(
+        table-title='::"My clusters"'
+        column-defs='$ctrl.clustersColumnDefs'
+        items='$ctrl.clustersTable'
+        immediate-edit='true'
+        on-action='$ctrl.onClusterAction($event)'
+        selected-row-id='backupItem'
+    )
+        footer-slot
+            a.link-success(
+                ng-click='createItem()'
+            ) + Add new cluster
 
-                        +advanced-options-toggle-default
+    h2.pc-page-header(ng-hide='backupItem.empty')
+        | {{ backupItem._id ? 'Edit' : 'Create' }} cluster {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
 
-                        div(ng-show='ui.expanded')
-                            include /app/modules/states/configuration/clusters/atomic
-                            include /app/modules/states/configuration/clusters/binary
-                            include /app/modules/states/configuration/clusters/cache-key-cfg
-                            include /app/modules/states/configuration/clusters/checkpoint
-                            include /app/modules/states/configuration/clusters/collision
-                            include /app/modules/states/configuration/clusters/communication
-                            include /app/modules/states/configuration/clusters/connector
-                            include /app/modules/states/configuration/clusters/deployment
+    div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+        form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+            .panel-group
+                include /app/modules/states/configuration/clusters/general
+
+                include /app/modules/states/configuration/clusters/atomic
+                include /app/modules/states/configuration/clusters/binary
+                include /app/modules/states/configuration/clusters/cache-key-cfg
+                include /app/modules/states/configuration/clusters/checkpoint
+                include /app/modules/states/configuration/clusters/collision
+                include /app/modules/states/configuration/clusters/communication
+                include /app/modules/states/configuration/clusters/connector
+                include /app/modules/states/configuration/clusters/deployment
 
                             //- Since ignite 2.3
                             include /app/modules/states/configuration/clusters/data-storage
 
-                            include /app/modules/states/configuration/clusters/discovery
-                            include /app/modules/states/configuration/clusters/events
-                            include /app/modules/states/configuration/clusters/failover
-                            include /app/modules/states/configuration/clusters/hadoop
-                            include /app/modules/states/configuration/clusters/igfs
-                            include /app/modules/states/configuration/clusters/load-balancing
-                            include /app/modules/states/configuration/clusters/logger
-                            include /app/modules/states/configuration/clusters/marshaller
+                include /app/modules/states/configuration/clusters/discovery
+                include /app/modules/states/configuration/clusters/events
+                include /app/modules/states/configuration/clusters/failover
+                include /app/modules/states/configuration/clusters/hadoop
+                include /app/modules/states/configuration/clusters/igfs
+                include /app/modules/states/configuration/clusters/load-balancing
+                include /app/modules/states/configuration/clusters/logger
+                include /app/modules/states/configuration/clusters/marshaller
 
-                            //- Since ignite 2.0, deprecated in ignite 2.3
-                            include /app/modules/states/configuration/clusters/memory
+                //- Since ignite 2.0, deprecated in ignite 2.3
+                include /app/modules/states/configuration/clusters/memory
 
-                            include /app/modules/states/configuration/clusters/misc
-                            include /app/modules/states/configuration/clusters/metrics
+                include /app/modules/states/configuration/clusters/misc
+                include /app/modules/states/configuration/clusters/metrics
 
-                            //- Deprecated in ignite 2.1
-                            include /app/modules/states/configuration/clusters/odbc
+                //- Deprecated in ignite 2.1
+                include /app/modules/states/configuration/clusters/odbc
 
-                            //- Since ignite 2.1, deprecated in ignite 2.3
-                            include /app/modules/states/configuration/clusters/persistence
-                            include /app/modules/states/configuration/clusters/sql-connector
+                //- Since ignite 2.1, deprecated in ignite 2.3
+                include /app/modules/states/configuration/clusters/persistence
+                include /app/modules/states/configuration/clusters/sql-connector
 
-                            include /app/modules/states/configuration/clusters/service
-                            include /app/modules/states/configuration/clusters/ssl
+                include /app/modules/states/configuration/clusters/service
+                include /app/modules/states/configuration/clusters/ssl
 
-                            //- Removed in ignite 2.0
-                            include /app/modules/states/configuration/clusters/swap
+                //- Removed in ignite 2.0
+                include /app/modules/states/configuration/clusters/swap
 
-                            include /app/modules/states/configuration/clusters/thread
-                            include /app/modules/states/configuration/clusters/time
-                            include /app/modules/states/configuration/clusters/transactions
-                            include /app/modules/states/configuration/clusters/attributes
+                include /app/modules/states/configuration/clusters/thread
+                include /app/modules/states/configuration/clusters/time
+                include /app/modules/states/configuration/clusters/transactions
+                include /app/modules/states/configuration/clusters/attributes
 
-                            +advanced-options-toggle-default
+    .pc-form-actions-panel
+        pc-project-structure-preview(cluster='backupItem' ng-if='backupItem._id')
+        button.btn-ignite.btn-ignite--success(
+            type='button'
+            ng-if='backupItem._id'
+            ng-click='$ctrl.downloadConfiguration(backupItem)'
+        )
+            svg(ignite-icon='download').icon-left
+            | Download project
 
-        .pc-form-actions-panel
-            pc-project-structure-preview(cluster='backupItem' ng-if='backupItem._id')
-            .pc-form-actions-panel__right-after
-            button.btn-ignite.btn-ignite--success(id='new-item' ng-click='createItem()' type='button')
-                | Add cluster
-            +save-remove-clone-undo-buttons('cluster')
-            button.btn-ignite.btn-ignite--success(
-                type='button'
-                ng-click='$ctrl.downloadConfiguration(backupItem)'
-            )
-                svg(ignite-icon='download').icon-left
-                | Download project
+        .pc-form-actions-panel__right-after
+
+        button.btn-ignite.btn-ignite--link-success(
+            type='button'
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && resetAll()'
+        )
+            | Cancel
+        button.btn-ignite.btn-ignite--success(
+            ng-disabled='!ui.inputForm.$dirty'
+            ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+        ) Save

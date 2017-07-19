@@ -21,17 +21,16 @@ include /app/helpers/jade/mixins
 -var failoverSpi = model + '.failoverSpi'
 -var failoverCustom = 'model.kind === "Custom"'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Failover configuration
-        ignite-form-field-tooltip.tipLabel
-            | Failover SPI provides ability to supply custom logic for handling failed execution of a grid job#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/fault-tolerance" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Failover configuration
+        .pca-panel-heading-description
+            | Failover SPI provides ability to supply custom logic for handling failed execution of a grid job. 
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/fault-tolerance" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 //- Since ignite 2.0
                 div(ng-if='$ctrl.available("2.0.0")')
                     .settings-row
@@ -78,5 +77,5 @@ include /app/helpers/jade/mixins
                             .settings-row(ng-show=failoverCustom)
                                 +java-class('SPI implementation', 'model.Custom.class', '"failoverSpiClass" + $index', 'true', failoverCustom,
                                     'Custom FailoverSpi implementation class name.', failoverCustom)
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterFailover')

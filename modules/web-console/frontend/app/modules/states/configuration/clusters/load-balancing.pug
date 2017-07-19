@@ -22,17 +22,16 @@ include /app/helpers/jade/mixins
 -var loadBalancingCustom = 'model.kind === "Custom"'
 -var loadProbeCustom = 'model.kind === "Adaptive" && model.Adaptive.loadProbe.kind === "Custom"'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Load balancing configuration
-        ignite-form-field-tooltip.tipLabel
-            | Load balancing component balances job distribution among cluster nodes#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/load-balancing" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Load balancing configuration
+        .pca-panel-heading-description
+            | Load balancing component balances job distribution among cluster nodes. 
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/load-balancing" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row(ng-init='loadBalancingSpiTbl={type: "loadBalancingSpi", model: "loadBalancingSpi", focusId: "kind", ui: "load-balancing-table"}')
                     +ignite-form-group()
                         ignite-form-field-label
@@ -103,5 +102,5 @@ include /app/helpers/jade/mixins
                             .settings-row(ng-show=loadBalancingCustom)
                                 +java-class('Load balancing SPI implementation:', 'model.Custom.className', '"loadBalancingClass" + $index', 'true', loadBalancingCustom,
                                     'Custom load balancing SPI implementation class name.', loadBalancingCustom)
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterLoadBalancing')

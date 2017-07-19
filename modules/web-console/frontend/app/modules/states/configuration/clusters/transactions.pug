@@ -19,17 +19,16 @@ include /app/helpers/jade/mixins
 -var form = 'transactions'
 -var model = 'backupItem.transactionConfiguration'
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
-        label Transactions
-        ignite-form-field-tooltip.tipLabel
-            | Settings for transactions#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/transactions" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body(ng-if=`ui.isPanelLoaded('${form}')`)
-            .col-sm-6
+        .pca-panel-heading-title Transactions
+        .pca-panel-heading-description
+            | Settings for transactions. 
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/transactions" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +dropdown('Concurrency:', `${model}.defaultTxConcurrency`, '"defaultTxConcurrency"', 'true', 'PESSIMISTIC',
                         '[\
@@ -65,5 +64,5 @@ include /app/helpers/jade/mixins
                 .settings-row
                     +java-class('Manager factory:', `${model}.txManagerFactory`, '"txManagerFactory"', 'true', 'false',
                         'Class name of transaction manager factory for integration with JEE app servers')
-            .col-sm-6
+            .pca-form-column-6
                 +preview-xml-java(model, 'clusterTransactions')

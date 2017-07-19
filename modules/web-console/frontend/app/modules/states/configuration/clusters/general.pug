@@ -30,17 +30,16 @@ include ./general/discovery/vm
 include ./general/discovery/zookeeper
 include ./general/discovery/kubernetes
 
-.panel.panel-default(ng-form=form novalidate)
-    .panel-heading(bs-collapse-toggle)
+.pca-panel.pca-panel-default(ng-form=form novalidate)
+    .pca-panel-heading(bs-collapse-toggle)
         ignite-form-panel-chevron
-        label General
-        ignite-form-field-tooltip.tipLabel
-            | Common cluster configuration#[br]
-            | #[a(href="https://apacheignite.readme.io/docs/clustering" target="_blank") More info]
-        ignite-form-revert
-    .panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .panel-body
-            .col-sm-6
+        .pca-panel-heading-title General
+        .pca-panel-heading-description
+            | Common cluster configuration.
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/clustering" target="_blank") More info.]
+    .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
+        .pca-panel-body.pca-form-row
+            .pca-form-column-6
                 .settings-row
                     +text('Name:', `${model}.name`, '"clusterName"', 'true', 'Input name', 'Instance name allows to indicate to what grid this particular grid instance belongs to')
                 .settings-row
@@ -84,6 +83,6 @@ include ./general/discovery/kubernetes
                             +discovery-zookeeper()
                         div(ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
                             +discovery-kubernetes()
-            .col-sm-6
+            .pca-form-column-6
                 -var model = 'backupItem'
                 +preview-xml-java(model, 'clusterCaches', 'caches')
