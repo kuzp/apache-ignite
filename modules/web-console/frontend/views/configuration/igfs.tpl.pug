@@ -24,9 +24,9 @@ div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS...' ign
         selected-row-id='backupItem'
     )
         footer-slot
-            a.link-success(
-                ng-click='createItem()'
-            ) + Add new IGFS
+            div(style='font-style: italic' ng-hide='$ctrl.IGFSsTable.length')
+                | You have no IGFS. #[a.link-success(ng-click='createItem()') Create one?]
+            a.link-success(ng-click='createItem()' ng-show='$ctrl.IGFSsTable.length') + Add new IGFS
 
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} IGFS {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}

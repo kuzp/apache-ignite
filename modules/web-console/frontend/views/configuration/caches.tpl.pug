@@ -24,9 +24,9 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
         selected-row-id='backupItem'
     )
         footer-slot
-            a.link-success(
-                ng-click='createItem()'
-            ) + Add new cache
+            div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
+                | You have no caches. #[a.link-success(ng-click='createItem()') Create one?]                
+            a.link-success(ng-click='createItem()' ng-show='$ctrl.cachesTable.length') + Add new cache
 
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} cache {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
