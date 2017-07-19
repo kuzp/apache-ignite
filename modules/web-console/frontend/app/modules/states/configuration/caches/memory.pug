@@ -23,12 +23,18 @@ include /app/helpers/jade/mixins
     .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
         .pca-panel-heading-title Memory
-        .pca-panel-heading-description(ng-show='$ctrl.available(["1.0.0", "2.0.0"])')
+        .pca-panel-heading-description
             | Cache memory settings.
-            | #[a(href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory" target="_blank") More info]
-        ignite-form-field-tooltip.tipLabel(ng-show='$ctrl.available("2.0.0")')
-            | Cache memory settings.
-            a.link-success(href="https://apacheignite.readme.io/docs/evictions" target="_blank")  More info.
+            a.link-success(
+                href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory"
+                target="_blank"
+                ng-show='$ctrl.available(["1.0.0", "2.0.0"])'
+            )  More info.
+            a.link-success(
+                href="https://apacheignite.readme.io/docs/evictions"
+                target="_blank"
+                ng-show='$ctrl.available("2.0.0")'
+            )  More info.
         ignite-form-revert
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
