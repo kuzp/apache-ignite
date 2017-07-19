@@ -24,9 +24,9 @@ div(ignite-loading='loadingDomainModelsScreen' ignite-loading-text='Loading doma
         selected-row-id='backupItem'
     )
         footer-slot
-            a.link-success(
-                ng-click='createItem()'
-            ) + Add new domain model
+            div(style='font-style: italic' ng-hide='$ctrl.modelsTable.length')
+                | You have no domain models. #[a.link-success(ng-click='createItem()') Create one?]
+            a.link-success(ng-click='createItem()' ng-show='$ctrl.modelsTable.length') + Add new domain model
 
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} domain model {{ backupItem._id ? '‘'+backupItem.valueType+'’' : '' }}

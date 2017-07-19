@@ -26,9 +26,9 @@ div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters
         selected-row-id='backupItem'
     )
         footer-slot
-            a.link-success(
-                ng-click='createItem()'
-            ) + Add new cluster
+            div(style='font-style: italic' ng-hide='$ctrl.clustersTable.length')
+                | You have no cluster configurations. #[a.link-success(ng-click='createItem()') Create one?]
+            a.link-success(ng-click='createItem()' ng-show='$ctrl.clustersTable.length') + Add new cluster
 
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} cluster {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
