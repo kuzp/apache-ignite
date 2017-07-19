@@ -49,7 +49,6 @@ mixin hibernateField(name, model, items, valid, save, newItem)
         .pca-panel-heading-description
             | Cache store settings. 
             | #[a(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info]
-        ignite-form-revert
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
             .pca-form-column-6
