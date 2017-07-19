@@ -18,8 +18,47 @@
 import templateUrl from 'views/configuration/domains-import.tpl.pug';
 
 // Controller for Domain model screen.
-export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'AgentManager', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'JavaTypes', 'SqlTypes', 'IgniteActivitiesData', 'IgniteVersion',
-    function($root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version) {
+export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'AgentManager', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'JavaTypes', 'SqlTypes', 'IgniteActivitiesData', 'IgniteVersion', '$q',
+    function($root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version, $q) {
+        this.modelsColumnDefs = [];
+        this.modelsTable = [];
+        this.buildModelsTable = (models = []) => models.map((i) => ({
+            _id: i._id,
+            keyType: i.keyType,
+            valueType: i.valueType
+        }));
+        this.modelsColumnDefs = [
+            {
+                name: 'keyType',
+                displayName: 'Key type',
+                field: 'keyType',
+                enableHiding: false,
+                minWidth: 165
+            },
+            {
+                name: 'valueType',
+                displayName: 'Value type',
+                field: 'valueType',
+                enableHiding: false,
+                minWidth: 165
+            }
+        ];
+        this.onModelAction = (action) => {
+            const realItems = action.items.map((item) => $scope.domains.find(({_id}) => _id === item._id));
+            switch (action.type) {
+                case 'EDIT':
+                    return $scope.selectItem(realItems[0]);
+                case 'CLONE':
+                    return this.cloneItems(realItems);
+                case 'DELETE':
+                    return realItems.length === this.modelsTable.length
+                        ? $scope.removeAllItems()
+                        : $scope.removeItem(realItems[0]);
+                default:
+                    return;
+            }
+        };
+
         UnsavedChangesGuard.install($scope);
 
         this.available = Version.available.bind(Version);
@@ -76,9 +115,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         }
 
         $scope.contentVisible = function() {
-            const item = $scope.backupItem;
-
-            return !item.empty && (!item._id || _.find($scope.displayedRows, {_id: item._id}));
+            return !$scope.backupItem.empty;
         };
 
         $scope.javaBuiltInClassesBase = LegacyUtils.javaBuiltInClasses;
@@ -1199,6 +1236,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                 $scope.caches = _mapCaches(caches);
 
                 $scope.domains = _.sortBy(domains, 'valueType');
+                this.modelsTable = this.buildModelsTable($scope.domains);
 
                 _.forEach($scope.clusters, (cluster) => $scope.ui.generatedCachesClusters.push(cluster.value));
 
@@ -1414,7 +1452,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         }
 
         // Save domain models into database.
-        function save(item) {
+        const save = (item) => {
             const qry = LegacyUtils.domainForQueryConfigured(item);
             const str = LegacyUtils.domainForStoreConfigured(item);
 
@@ -1427,7 +1465,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
 
             $http.post('/api/v1/configuration/domains/save', item)
                 .then(({data}) => {
-                    $scope.ui.inputForm.$setPristine();
+                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                     const savedMeta = data.savedDomains[0];
 
@@ -1452,15 +1490,15 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                     Messages.showInfo(`Domain model "${item.valueType}" saved.`);
 
                     _checkShowValidPresentation();
+
+                    this.modelsTable = this.buildModelsTable($scope.domains);
                 })
                 .catch(Messages.showError);
-        }
+        };
 
         // Save domain model.
-        $scope.saveItem = function() {
+        this.saveItem = function(item) {
             if ($scope.tableReset(true)) {
-                const item = $scope.backupItem;
-
                 item.cacheStoreChanges = [];
 
                 _.forEach(item.caches, (cacheId) => {
@@ -1487,27 +1525,21 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         }
 
         // Save domain model with new name.
-        $scope.cloneItem = function() {
-            if ($scope.tableReset(true) && validate($scope.backupItem)) {
-                Input.clone($scope.backupItem.valueType, _domainNames(), _newNameIsValidJavaClass).then((newName) => {
-                    const item = angular.copy($scope.backupItem);
-
-                    delete item._id;
-                    item.valueType = newName;
-
-                    save(item);
-                });
-            }
-        };
+        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
+            return Input.clone(item.valueType, _domainNames(), _newNameIsValidJavaClass).then((newName) => {
+                const clonedItem = angular.copy(item);
+                delete clonedItem._id;
+                clonedItem.valueType = newName;
+                return save(clonedItem);
+            });
+        }), $q.resolve());
 
         // Remove domain model from db.
-        $scope.removeItem = function() {
+        $scope.removeItem = (selectedItem) => {
             LegacyTable.tableReset();
 
-            const selectedItem = $scope.selectedItem;
-
             Confirm.confirm('Are you sure you want to remove domain model: "' + selectedItem.valueType + '"?')
-                .then(function() {
+                .then(() => {
                     const _id = selectedItem._id;
 
                     $http.post('/api/v1/configuration/domains/remove', {_id})
@@ -1521,7 +1553,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                             if (idx >= 0) {
                                 domains.splice(idx, 1);
 
-                                $scope.ui.inputForm.$setPristine();
+                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
                                 if (domains.length > 0)
                                     $scope.selectItem(domains[0]);
@@ -1532,29 +1564,33 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                             }
 
                             _checkShowValidPresentation();
+                            this.modelsTable = this.buildModelsTable($scope.domains);
                         })
                         .catch(Messages.showError);
                 });
         };
 
         // Remove all domain models from db.
-        $scope.removeAllItems = function() {
+        $scope.removeAllItems = () => {
             LegacyTable.tableReset();
 
             Confirm.confirm('Are you sure you want to remove all domain models?')
-                .then(function() {
+                .then(() => {
                     $http.post('/api/v1/configuration/domains/remove/all')
                         .then(() => {
                             Messages.showInfo('All domain models have been removed');
 
                             $scope.domains = [];
+                            this.modelsTable = this.buildModelsTable($scope.domains);
 
                             _.forEach($scope.caches, (cache) => cache.cache.domains = []);
 
                             $scope.backupItem = emptyDomain;
                             $scope.ui.showValid = true;
-                            $scope.ui.inputForm.$error = {};
-                            $scope.ui.inputForm.$setPristine();
+                            if ($scope.ui.inputForm) {
+                                $scope.ui.inputForm.$error = {};
+                                $scope.ui.inputForm.$setPristine();
+                            }
                         })
                         .catch(Messages.showError);
                 });
@@ -1894,8 +1930,10 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
             Confirm.confirm('Are you sure you want to undo all changes for current domain model?')
                 .then(function() {
                     $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
+                    if ($scope.ui.inputForm) {
+                        $scope.ui.inputForm.$error = {};
+                        $scope.ui.inputForm.$setPristine();
+                    }
                 });
         };
     }
