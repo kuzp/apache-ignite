@@ -147,6 +147,8 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'I
         function selectFirstItem() {
             if ($scope.caches.length > 0)
                 $scope.selectItem($scope.caches[0]);
+            else
+                $scope.createItem();
         }
 
         function cacheDomains(item) {
