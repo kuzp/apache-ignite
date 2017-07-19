@@ -126,11 +126,6 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         $scope.widthIsSufficient = FormUtils.widthIsSufficient;
         $scope.saveBtnTipText = FormUtils.saveBtnTipText;
 
-        this.extraFormActions = [
-            {text: 'Remove', click: () => $scope.removeItem()},
-            {text: 'Remove all', click: () => $scope.removeAllItems()}
-        ];
-
         $scope.tableSave = function(field, index, stopEdit) {
             if (LegacyTable.tableEditing({model: 'table-index-fields'}, LegacyTable.tableEditedRowIndex())) {
                 if ($scope.tableIndexItemSaveVisible(field, index))
