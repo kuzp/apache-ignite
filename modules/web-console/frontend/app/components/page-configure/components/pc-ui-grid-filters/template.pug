@@ -1,0 +1,19 @@
+.ui-grid-filter-container.pc-ui-grid-filters(
+    role='columnheader'
+    ng-style='col.extraStyle'
+    ng-repeat='colFilter in col.filters'
+    ng-class="{'ui-grid-filter-cancel-button-hidden' : colFilter.disableCancelFilterButton === true }"
+    ng-switch='colFilter.type'
+)
+    div(ng-switch-when='select')
+        button.btn-ignite.btn-ignite--link-dashed-success(
+            type='button'
+            title='Active filter: {{ colFilter.selectOptions.length === colFilter.term.length ? "show all" : colFilter.term.join(", ") }}'
+            ng-model='colFilter.term'
+            bs-select
+            bs-options='option.value as option.label for option in colFilter.selectOptions'
+            data-multiple='true'
+            data-trigger='click'
+            data-placement='bottom-right'
+            protect-from-bs-select-render
+        ) {{ col.displayName }}
