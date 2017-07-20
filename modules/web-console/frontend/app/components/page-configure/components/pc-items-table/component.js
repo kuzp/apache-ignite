@@ -28,6 +28,7 @@ export default {
     bindings: {
         items: '<',
         onAction: '&',
+        onFilterChanged: '&?',
         columnDefs: '<',
         tableTitle: '<',
         immediateEdit: '<?',
