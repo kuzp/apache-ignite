@@ -36,4 +36,6 @@ include /app/helpers/jade/mixins
         pc-ui-grid-filters
         ui-grid-resize-columns
     )
-    div(ng-transclude='footerSlot')
+
+    div(ng-transclude='footerSlot' ng-hide='$ctrl.showFilterNotification')
+    footer-slot(ng-if='$ctrl.showFilterNotification' style='font-style:italic') Nothing to display. Check your filters.

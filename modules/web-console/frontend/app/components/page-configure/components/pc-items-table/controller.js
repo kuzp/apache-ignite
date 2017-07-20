@@ -47,6 +47,7 @@ export default class ItemsTableController {
                     const visibleRows = api.core.getVisibleRows();
                     if (this.onFilterChanged) this.onFilterChanged({$event: visibleRows});
                     this.adjustHeight(api, visibleRows.length);
+                    this.showFilterNotification = this.grid.data.length && visibleRows.length === 0;
                 });
             }
         };
