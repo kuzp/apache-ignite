@@ -93,6 +93,7 @@ import ModelNormalizer from './services/ModelNormalizer.service.js';
 import UnsavedChangesGuard from './services/UnsavedChangesGuard.service';
 import Clusters from './services/Clusters';
 import Caches from './services/Caches';
+import IGFSs from './services/IGFSs';
 
 import AngularStrapTooltip from './services/AngularStrapTooltip.decorator';
 import AngularStrapSelect from './services/AngularStrapSelect.decorator';
@@ -257,6 +258,7 @@ angular.module('ignite-console', [
 .service('IgniteActivitiesUserDialog', IgniteActivitiesUserDialog)
 .service('Clusters', Clusters)
 .service('Caches', Caches)
+.service('IGFSs', IGFSs)
 // Controllers.
 .controller(...resetPassword)
 .controller(...profile)
