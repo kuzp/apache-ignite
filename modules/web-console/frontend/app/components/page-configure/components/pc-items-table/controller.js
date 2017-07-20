@@ -43,6 +43,11 @@ export default class ItemsTableController {
                 this.gridAPI = api;
                 api.selection.on.rowSelectionChanged(this.$scope, (e) => this.onRowsSelectionChange([e]));
                 api.selection.on.rowSelectionChangedBatch(this.$scope, (e) => this.onRowsSelectionChange(e));
+                api.core.on.rowsVisibleChanged(this.$scope, () => {
+                    const visibleRows = api.core.getVisibleRows();
+                    if (this.onFilterChanged) this.onFilterChanged({$event: visibleRows});
+                    this.adjustHeight(api, visibleRows.length);
+                });
             }
         };
     }

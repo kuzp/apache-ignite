@@ -23,6 +23,7 @@ div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters
         items='$ctrl.clustersTable'
         immediate-edit='true'
         on-action='$ctrl.onClusterAction($event)'
+        on-filter-changed='$ctrl.onFilterChanged($event)'
         selected-row-id='backupItem'
     )
         footer-slot
