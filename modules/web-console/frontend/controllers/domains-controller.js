@@ -33,6 +33,9 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                 displayName: 'Key type',
                 field: 'keyType',
                 enableHiding: false,
+                filter: {
+                    placeholder: 'Filter by key type…'
+                },
                 minWidth: 165
             },
             {
@@ -40,6 +43,9 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                 displayName: 'Value type',
                 field: 'valueType',
                 enableHiding: false,
+                filter: {
+                    placeholder: 'Filter by value type…'
+                },
                 minWidth: 165
             }
         ];

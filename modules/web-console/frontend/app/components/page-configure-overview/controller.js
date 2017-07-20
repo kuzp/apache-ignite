@@ -38,10 +38,10 @@ const cellTemplate = `
 `;
 
 export default class PageConfigureOverviewController {
-    static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure', 'IgniteConfirm'];
+    static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure', 'IgniteConfirm', 'Clusters'];
 
-    constructor(ConfigureState, $scope, $state, PageConfigure, IgniteConfirm) {
-        Object.assign(this, {ConfigureState, $scope, $state, PageConfigure, IgniteConfirm});
+    constructor(ConfigureState, $scope, $state, PageConfigure, IgniteConfirm, Clusters) {
+        Object.assign(this, {ConfigureState, $scope, $state, PageConfigure, IgniteConfirm, Clusters});
     }
 
     $onDestroy() {
@@ -56,12 +56,16 @@ export default class PageConfigureOverviewController {
                 displayName: 'Name',
                 field: 'name',
                 enableHiding: false,
+                filter: {
+                    placeholder: 'Filter by name…'
+                },
                 minWidth: 165
             },
             {
                 name: 'discovery',
                 displayName: 'Discovery',
                 field: 'discovery',
+                multiselectFilterOptions: this.Clusters.discoveries,
                 width: 110
             },
             {
@@ -71,6 +75,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
+                enableFiltering: false,
                 width: 95
             },
             {
@@ -80,6 +85,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
+                enableFiltering: false,
                 width: 95
             },
             {
@@ -89,6 +95,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
+                enableFiltering: false,
                 width: 80
             }
         ];

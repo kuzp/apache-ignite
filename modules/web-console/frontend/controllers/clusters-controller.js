@@ -26,12 +26,16 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                 displayName: 'Name',
                 field: 'name',
                 enableHiding: false,
-                minWidth: 165
+                minWidth: 165,
+                filter: {
+                    placeholder: 'Filter by name…'
+                }
             },
             {
                 name: 'discovery',
                 displayName: 'Discovery',
                 field: 'discovery',
+                multiselectFilterOptions: this.Clusters.discoveries,
                 width: 110
             }
         ];
