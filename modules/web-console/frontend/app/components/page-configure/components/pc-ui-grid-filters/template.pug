@@ -8,7 +8,7 @@
     div(ng-switch-when='select')
         button.btn-ignite.btn-ignite--link-dashed-success(
             type='button'
-            title='Active filter: {{ colFilter.selectOptions.length === colFilter.term.length ? "show all" : colFilter.term.join(", ") }}'
+            title='{{ colFilter.$$multiselectFilterTooltip() }}'
             ng-model='colFilter.term'
             bs-select
             bs-options='option.value as option.label for option in colFilter.selectOptions'
