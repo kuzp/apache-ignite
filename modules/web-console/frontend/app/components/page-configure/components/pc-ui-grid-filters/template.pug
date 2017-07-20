@@ -7,6 +7,10 @@
 )
     div(ng-switch-when='select')
         button.btn-ignite.btn-ignite--link-dashed-success(
+            ng-class=`{
+                'btn-ignite--link-dashed-success': colFilter.term.length === colFilter.selectOptions.length,
+                'btn-ignite--link-dashed-primary': colFilter.term.length !== colFilter.selectOptions.length
+            }`
             type='button'
             title='{{ colFilter.$$multiselectFilterTooltip() }}'
             ng-model='colFilter.term'
