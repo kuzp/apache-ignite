@@ -32,7 +32,15 @@ export default function pcUiGridFilters(uiGridConstants) {
                         condition(searchTerm, cellValue, row, column) {
                             return searchTerm.includes(cellValue);
                         },
-                        selectOptions: cd.multiselectFilterOptions
+                        selectOptions: cd.multiselectFilterOptions,
+                        $$selectOptionsMapping: cd.multiselectFilterOptions.reduce((a, v) => Object.assign(a, {[v.value]: v.label}), {}),
+                        $$multiselectFilterTooltip() {
+                            return `Active filter: ${
+                                this.selectOptions.length === this.term.length
+                                    ? 'show all'
+                                    : this.term.map((t) => this.$$selectOptionsMapping[t]).join(', ')
+                            }`;
+                        }
                     };
                 });
             }
