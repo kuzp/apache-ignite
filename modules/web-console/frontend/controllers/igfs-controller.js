@@ -16,8 +16,8 @@
  */
 
 // Controller for IGFS screen.
-export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q',
-    function($scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q) {
+export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
+    function($scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q, IGFSs) {
         this.available = Version.available.bind(Version);
 
         UnsavedChangesGuard.install($scope);
@@ -160,18 +160,23 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 displayName: 'Name',
                 field: 'name',
                 enableHiding: false,
+                filter: {
+                    placeholder: 'Filter by name…'
+                },
                 minWidth: 165
             },
             {
                 name: 'mode',
                 displayName: 'Mode',
                 field: 'mode',
+                multiselectFilterOptions: IGFSs.igfsModes,
                 width: 160
             },
             {
                 name: 'groupSize',
                 displayName: 'Group size',
                 field: 'groupSize',
+                enableFiltering: false,
                 width: 130
             }
         ];

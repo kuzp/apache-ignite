@@ -33,8 +33,9 @@ export default class ItemsTableController {
             selectionRowHeaderWidth: 52,
             enableColumnCategories: true,
             flatEntityAccess: true,
-            headerRowHeight: 69,
+            headerRowHeight: 70,
             modifierKeysToMultiSelect: true,
+            enableFiltering: true,
             rowIdentity(row) {
                 return row._id;
             },

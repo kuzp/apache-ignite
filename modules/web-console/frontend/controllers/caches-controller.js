@@ -18,26 +18,31 @@
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 
 // Controller for Caches screen.
-export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q',
-    function($scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q) {
+export default ['$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
+    function($scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
         this.cachesColumnDefs = [
             {
                 name: 'name',
                 displayName: 'Name',
                 field: 'name',
                 enableHiding: false,
+                filter: {
+                    placeholder: 'Filter by key type…'
+                },
                 minWidth: 165
             },
             {
                 name: 'mode',
                 displayName: 'Mode',
                 field: 'mode',
+                multiselectFilterOptions: Caches.cacheModes,
                 width: 160
             },
             {
                 name: 'atomicity',
                 displayName: 'Atomicity',
                 field: 'atomicity',
+                multiselectFilterOptions: Caches.atomicityModes,
                 width: 160
             }
         ];
