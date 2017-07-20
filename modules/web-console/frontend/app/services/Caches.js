@@ -18,6 +18,17 @@
 export default class Caches {
     static $inject = ['$http'];
 
+    cacheModes = [
+        {value: 'LOCAL', label: 'LOCAL'},
+        {value: 'REPLICATED', label: 'REPLICATED'},
+        {value: 'PARTITIONED', label: 'PARTITIONED'}
+    ];
+
+    atomicityModes = [
+        {value: 'ATOMIC', label: 'ATOMIC'},
+        {value: 'TRANSACTIONAL', label: 'TRANSACTIONAL'}
+    ];
+
     constructor($http) {
         Object.assign(this, {$http});
     }
