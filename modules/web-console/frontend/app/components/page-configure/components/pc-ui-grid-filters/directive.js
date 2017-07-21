@@ -42,6 +42,13 @@ export default function pcUiGridFilters(uiGridConstants) {
                             }`;
                         }
                     };
+                    if (!cd.cellTemplate) {
+                        cd.cellTemplate = `
+                            <div class="ui-grid-cell-contents">
+                                {{ col.colDef.filter.$$selectOptionsMapping[row.entity[col.field]] }}
+                            </div>
+                        `;
+                    }
                 });
             }
         }
