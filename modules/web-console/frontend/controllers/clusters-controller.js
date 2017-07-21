@@ -320,7 +320,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         $scope.clusters = [];
         this.clustersTable = this.buildClustersTable($scope.clusters);
         this.onFilterChanged = (visibleRows) => {
-            console.debug(visibleRows);
+            // console.debug(visibleRows);
         };
 
         function _clusterLbl(cluster) {
