@@ -66,7 +66,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Discovery',
                 field: 'discovery',
                 multiselectFilterOptions: this.Clusters.discoveries,
-                width: 110
+                width: 150
             },
             {
                 name: 'caches',
