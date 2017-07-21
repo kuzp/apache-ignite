@@ -21,4 +21,8 @@ export default class PageConfigureController {
     constructor($state) {
         Object.assign(this, {$state});
     }
+
+    $onInit() {
+        this.tooltipsVisible = true;
+    }
 }
