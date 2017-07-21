@@ -16,6 +16,8 @@
  */
 
 page-configure {
+    font-family: Roboto;
+
     .pc-form-actions-panel {
         display: flex;
         flex-direction: row;
@@ -39,6 +41,40 @@ page-configure {
         .pc-form-actions-panel__right-after {
             width: 0;
             margin-left: auto;
+        }
+    }
+
+    .pc-hide-tooltips {
+        .icon-help {
+            display: none;
+        }
+    }
+
+    .pc-content-container {
+        position: relative;
+
+        .pc-tooltips-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    }
+
+    .pc-tooltips-toggle {
+        display: inline-flex;
+        height: 40px;
+        align-items: center;
+        width: auto;
+        max-width: initial !important;
+        user-select: none;
+
+        &>*:not(input) {
+            margin-left: 5px;
+            flex: 0 0 auto;
+        }
+
+        &>div {
+            margin-left: 10px !important;
         }
     }
 }
