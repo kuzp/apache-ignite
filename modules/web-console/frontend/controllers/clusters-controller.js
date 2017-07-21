@@ -36,7 +36,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
                 displayName: 'Discovery',
                 field: 'discovery',
                 multiselectFilterOptions: this.Clusters.discoveries,
-                width: 110
+                width: 150
             }
         ];
 
