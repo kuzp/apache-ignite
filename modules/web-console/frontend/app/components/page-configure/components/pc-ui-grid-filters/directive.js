@@ -35,11 +35,15 @@ export default function pcUiGridFilters(uiGridConstants) {
                         selectOptions: cd.multiselectFilterOptions,
                         $$selectOptionsMapping: cd.multiselectFilterOptions.reduce((a, v) => Object.assign(a, {[v.value]: v.label}), {}),
                         $$multiselectFilterTooltip() {
-                            return `Active filter: ${
-                                this.selectOptions.length === this.term.length
-                                    ? 'show all'
-                                    : this.term.map((t) => this.$$selectOptionsMapping[t]).join(', ')
-                            }`;
+                            const prefix = 'Active filter';
+                            switch (this.term.length) {
+                                case 0:
+                                    return `${prefix}: show none`;
+                                default:
+                                    return `${prefix}: ${this.term.map((t) => this.$$selectOptionsMapping[t]).join(', ')}`;
+                                case this.selectOptions.length:
+                                    return `${prefix}: show all`;
+                            }
                         }
                     };
                     if (!cd.cellTemplate) {
