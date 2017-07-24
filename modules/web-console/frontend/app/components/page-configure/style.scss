@@ -45,7 +45,7 @@ page-configure {
     }
 
     .pc-hide-tooltips {
-        .tipField, .icon-help {
+        .tipField:not(.fa-remove), .icon-help {
             display: none;
         }
     }
