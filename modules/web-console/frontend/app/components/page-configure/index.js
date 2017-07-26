@@ -23,6 +23,7 @@ import ConfigurationDownload from './services/ConfigurationDownload';
 import projectStructurePreview from './components/pc-project-structure-preview';
 import itemsTable from './components/pc-items-table';
 import pcUiGridFilters from './components/pc-ui-grid-filters';
+import pcFormFieldSize from './components/pc-form-field-size';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -32,6 +33,7 @@ import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegrat
 
 export default angular
     .module('ignite-console.page-configure', [
+        pcFormFieldSize.name,
         pcUiGridFilters.name,
         projectStructurePreview.name,
         itemsTable.name

@@ -37,16 +37,17 @@ mixin ignite-form-field-number(label, model, name, disabled, required, placehold
 
     .ignite-form-field
         +ignite-form-field__label(label, name, required)
-        .ignite-form-field__control
             +tooltip(tip, tipOpts)
-            
+        .ignite-form-field__control
+            .input-tip
+                +form-field-input(attributes=attributes)
+        .ignite-form-field__errors(
+            ng-messages=`${form}[${name}].$error`
+            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
+        )
             +form-field-feedback(name, 'required', 'This field could not be empty')
             +form-field-feedback(name, 'min', 'Value is less than allowable minimum: '+ min || 0)
             +form-field-feedback(name, 'max', 'Value is more than allowable maximum: '+ max)
             +form-field-feedback(name, 'number', 'Only numbers allowed')
-
             if block
                 block
-
-            .input-tip
-                +form-field-input(attributes=attributes)

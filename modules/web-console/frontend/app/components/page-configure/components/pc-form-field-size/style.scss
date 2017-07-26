@@ -1,0 +1,31 @@
+pc-form-field-size {
+    @import "./../../../../../public/stylesheets/variables.scss";
+
+    .input-tip {
+        display: flex;
+        flex-direction: row;
+
+        .form-control {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        input {
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .btn-ignite {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            flex: 0 0 auto;
+            width: 60px !important;
+            line-height: initial !important;
+        }
+    }
+    // [ignite-icon='info'] {
+    //     color: $ignite-brand-success;
+    //     margin-left: 4px;
+    //     margin-bottom: -4px;
+    // }
+}

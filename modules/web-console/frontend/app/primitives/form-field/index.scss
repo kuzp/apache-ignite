@@ -29,11 +29,24 @@
         .ignite-form-field__label {
             float: left;
             width: 100%;
-            margin: 0 10px 4px;
+            margin: 0 10px 2px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
 
             color: $gray-light;
             font-size: 12px;
             line-height: 12px;
+
+            [ignite-icon='info'] {
+                margin-left: 4px;
+                color: $ignite-brand-success;
+            }
+        }
+
+        label.required {
+            content: '*';
+            margin-left: 0.25em;
         }
 
         .ignite-form-field__control {
@@ -85,6 +98,17 @@
 
             .tipField {
                 line-height: 36px;
+            }
+       }
+
+       .ignite-form-field__errors {
+            color: $ignite-brand-primary;
+            padding: 10px;
+            line-height: 10px;
+            font-size: 12px;
+
+            [ng-message] + [ng-message] {
+                margin-top: 10px;
             }
        }
     }

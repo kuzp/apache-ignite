@@ -28,7 +28,7 @@ include mixins/pcb-form-field-size
 
 - const model = '$ctrl.state.cluster'
 - const modelDiscoveryKind = `${model}.discovery.kind`
-- const form = '$ctrl.form'
+- let form = '$ctrl.form'
 - const tipOpts = {placement: 'top'}
 
 form(novalidate name=form)
@@ -40,69 +40,69 @@ form(novalidate name=form)
     .pcb-section-notification(ng-if='$ctrl.clusters.size')
         | Configure cluster properties and associate your cluster with caches and in-memory file systems.
 
-    .settings-row
-        +text('Name:', `${model}.name`, '"clusterName"', 'true', 'Input name', 'Grid name allows to indicate to what grid this particular grid instance belongs to')
-    .settings-row
-        +dropdown('Discovery:', modelDiscoveryKind, '"discovery"', 'true', 'Choose discovery', '$ctrl.discoveries',
-        'Discovery allows to discover remote nodes in grid\
-        <ul>\
-            <li>Static IPs - IP Finder which works only with pre configured list of IP addresses specified</li>\
-            <li>Multicast - Multicast based IP finder</li>\
-            <li>AWS S3 - AWS S3 based IP finder that automatically discover cluster nodes on Amazon EC2 cloud</li>\
-            <li>Apache jclouds - Apache jclouds multi cloud toolkit based IP finder for cloud platforms with unstable IP addresses</li>\
-            <li>Google cloud storage - Google Cloud Storage based IP finder that automatically discover cluster nodes on Google Compute Engine cluster</li>\
-            <li>JDBC - JDBC based IP finder that use database to store node IP address</li>\
-            <li>Shared filesystem - Shared filesystem based IP finder that use file to store node IP address</li>\
-            <li>Apache ZooKeeper - Apache ZooKeeper based IP finder when you use ZooKeeper to coordinate your distributed environment</li>\
-            <li>Kubernetes - IP finder for automatic lookup of Ignite nodes running in Kubernetes environment</li>\
-        </ul>')
+    .pc-form-grid-row
+        .pc-form-grid-col-60
+            +text('Name:', `${model}.name`, '"clusterName"', 'true', 'Input name', 'Grid name allows to indicate to what grid this particular grid instance belongs to')
 
-
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Cloud'`)
-        +discovery-cloud(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'GoogleStorage'`)
-        +discovery-google(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Jdbc'`)
-        +discovery-jdbc(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Multicast'`)
-        +discovery-multicast(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'S3'`)
-        +discovery-s3(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'SharedFs'`)
-        +discovery-shared(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Vm'`)
-        +discovery-vm(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'ZooKeeper'`)
-        +discovery-zookeeper(model)
-    div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
-        +discovery-kubernetes(model)        
+        .pc-form-grid__break
+        .pc-form-grid-col-60
+            +dropdown('Discovery:', modelDiscoveryKind, '"discovery"', 'true', 'Choose discovery', '$ctrl.discoveries',
+            'Discovery allows to discover remote nodes in grid\
+            <ul>\
+                <li>Static IPs - IP Finder which works only with pre configured list of IP addresses specified</li>\
+                <li>Multicast - Multicast based IP finder</li>\
+                <li>AWS S3 - AWS S3 based IP finder that automatically discover cluster nodes on Amazon EC2 cloud</li>\
+                <li>Apache jclouds - Apache jclouds multi cloud toolkit based IP finder for cloud platforms with unstable IP addresses</li>\
+                <li>Google cloud storage - Google Cloud Storage based IP finder that automatically discover cluster nodes on Google Compute Engine cluster</li>\
+                <li>JDBC - JDBC based IP finder that use database to store node IP address</li>\
+                <li>Shared filesystem - Shared filesystem based IP finder that use file to store node IP address</li>\
+                <li>Apache ZooKeeper - Apache ZooKeeper based IP finder when you use ZooKeeper to coordinate your distributed environment</li>\
+                <li>Kubernetes - IP finder for automatic lookup of Ignite nodes running in Kubernetes environment</li>\
+            </ul>')
+        .pc-form-grid__break
+        .pc-form-group
+            +discovery-cloud(model)(ng-if=`${modelDiscoveryKind} === 'Cloud'`)
+            +discovery-google(model)(ng-if=`${modelDiscoveryKind} === 'GoogleStorage'`)
+            +discovery-jdbc(model)(ng-if=`${modelDiscoveryKind} === 'Jdbc'`)
+            +discovery-multicast(model)(ng-if=`${modelDiscoveryKind} === 'Multicast'`)
+            +discovery-s3(model)(ng-if=`${modelDiscoveryKind} === 'S3'`)
+            +discovery-shared(model)(ng-if=`${modelDiscoveryKind} === 'SharedFs'`)
+            +discovery-vm(model)(ng-if=`${modelDiscoveryKind} === 'Vm'`)
+            +discovery-zookeeper(model)(ng-if=`${modelDiscoveryKind} === 'ZooKeeper'`)
+            +discovery-kubernetes(model)(ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
 
     h2.pcb-section-header(style='margin-top:30px') Step 2. Caches Configuration
 
     .settings-row(ng-show='!$ctrl.caches.size').pcb-section-notification
         | You have no caches. Let’s create a new one.
 
-    .settings-row.pcb-memory-size(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
-        +pcb-form-field-size('Off-heap Size:', '$ctrl.defaultMemoryPolicy.maxSize', '"memory"', 'false', 'false', '0.8 * totalMemoryAvailable', '{{ $ctrl.minMemorySize/$ctrl.memorySizeScale.value }}', null, '1', '“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.')(
-            pcb-scale-number="$ctrl.memorySizeScale.value"
+    .settings-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
+        pc-form-field-size(
+            required='true'
+            ng-model='$ctrl.defaultMemoryPolicy.maxSize'
+            id='memory'
+            name='memory'
+            label='Off-heap Size:'
+            placeholder='0.8 * totalMemoryAvailable'
+            min='{{::$ctrl.minMemorySize}}'
+            tip='“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.'
         )
-            button.btn-ignite.btn-ignite--secondary(
-                bs-select
-                bs-options='size as size.label for size in $ctrl.sizesMenu'
-                ng-model='$ctrl.memorySizeScale'
-                protect-from-bs-select-render
-            )
-                | {{ $ctrl.memorySizeScale.label }}
-                span.fa.fa-caret-down.icon-right
-    .margin-top-dflt-2x(ng-repeat='cache in $ctrl.allClusterCaches track by cache._id' ng-form).pcb-caches
+    .margin-top-dflt-2x(
+        ng-repeat='cache in $ctrl.allClusterCaches track by cache._id'
+        ng-form='cacheForm'
+    ).pcb-caches
+        - form = 'cacheForm'
         .panel-details
             .settings-row.pcb-cache-name-row
                 +text('Name:', 'cache.name', '"cacheName"', 'true', 'Input name', 'Cache name')
                 .pcb-cache-remove
-                    a.link-primary(
+                    button.btn-ignite.btn-ignite--link-dashed-secondary(
+                        type='button'
                         ng-click='$ctrl.removeCache(cache)'
+                        bs-tooltip=''
+                        data-title='Remove from cluster'
                     )
-                        | Remove from cluster
+                        svg(ignite-icon='cross').icon
             .settings-row
                 +cacheMode('Mode:', 'cache.cacheMode', '"cacheMode"', 'PARTITIONED')
             .settings-row

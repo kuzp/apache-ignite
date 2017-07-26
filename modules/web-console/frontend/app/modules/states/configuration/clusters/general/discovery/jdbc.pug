@@ -20,17 +20,18 @@ mixin discovery-jdbc(modelAt = 'backupItem')
     -const model = `${modelAt}.discovery.Jdbc`
     -const required = `${modelAt}.discovery.kind === "Jdbc"`
 
-    .details-row
-        +text('Data source bean name:', `${model}.dataSourceBean`,
-            '"dataSourceBean"', required, 'Input bean name', 'Name of the data source bean in Spring context')
-    .details-row
-        +dialect('Dialect:', `${model}.dialect`, '"dialect"', required,
-            'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect', 'Choose JDBC dialect')
-    .details-row
-        +checkbox('DB schema should be initialized by Ignite', `${model}.initSchema`, '"initSchema"',
-            'Flag indicating whether DB schema should be initialized by Ignite or was explicitly created by user')
-    .details-row(ng-if=`$ctrl.Clusters.requiresProprietaryDrivers(${modelAt})`)
-        label
-            a.link-success(ng-href=`{{ $ctrl.Clusters.JDBCDriverURL(${modelAt}) }}` target='_blank')
-                | Download JDBC drivers?
-    .pcb-flex-grid-break
+    .pc-form-grid-row&attributes(attributes=attributes)
+        .pc-form-grid-col-30
+            +text('Data source bean name:', `${model}.dataSourceBean`,
+                '"dataSourceBean"', required, 'Input bean name', 'Name of the data source bean in Spring context')
+        .pc-form-grid-col-30
+            +dialect('Dialect:', `${model}.dialect`, '"dialect"', required,
+                'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect', 'Choose JDBC dialect')
+        .pc-form-grid-col-60
+            .pc-form-grid__text-only-item
+                +checkbox('DB schema should be initialized by Ignite', `${model}.initSchema`, '"initSchema"',
+                    'Flag indicating whether DB schema should be initialized by Ignite or was explicitly created by user')
+        .pc-form-grid-col-30(ng-if=`$ctrl.Clusters.requiresProprietaryDrivers(${modelAt})`)
+            .pc-form-grid__text-only-item
+                a.link-success(ng-href=`{{ $ctrl.Clusters.JDBCDriverURL(${modelAt}) }}` target='_blank')
+                    | Download JDBC drivers?

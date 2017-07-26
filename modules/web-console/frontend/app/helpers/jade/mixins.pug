@@ -514,33 +514,33 @@ mixin evictionPolicy(model, name, enabled, required, tip)
     -var kind = model + '.kind'
     -var policy = model + '[' + kind + ']'
 
-    +dropdown-required('Eviction policy:', kind, name + '+ "Kind"', enabled, required, 'Not set',
-        '[\
-            {value: "LRU", label: "LRU"},\
-            {value: "FIFO", label: "FIFO"},\
-            {value: "SORTED", label: "Sorted"},\
-            {value: null, label: "Not set"}\
-        ]', tip)
-    span(ng-show=kind)
-        +showHideLink('expanded', 'settings')
-            .details-row
-                +number('Batch size', policy + '.batchSize', name + '+ "batchSize"', enabled, '1', '1',
-                    'Number of entries to remove on shrink')
-            .details-row
-                +number('Max memory size', policy + '.maxMemorySize', name + '+ "maxMemorySize"', enabled, '0', '0',
-                    'Maximum allowed cache size in bytes')
-            .details-row
-                +number('Max size', policy + '.maxSize', name + '+ "maxSize"', enabled, '100000', '0',
-                    'Maximum allowed size of cache before entry will start getting evicted')
+    .pc-form-grid-col-60
+        +dropdown-required('Eviction policy:', kind, name + '+ "Kind"', enabled, required, 'Not set',
+            '[\
+                {value: "LRU", label: "LRU"},\
+                {value: "FIFO", label: "FIFO"},\
+                {value: "SORTED", label: "Sorted"},\
+                {value: null, label: "Not set"}\
+            ]', tip)
+    .pc-form-group.pc-form-grid-row(ng-if=kind)
+        .pc-form-grid-col-20
+            +number('Batch size', policy + '.batchSize', name + '+ "batchSize"', enabled, '1', '1',
+                'Number of entries to remove on shrink')
+        .pc-form-grid-col-20
+            +number('Max memory size', policy + '.maxMemorySize', name + '+ "maxMemorySize"', enabled, '0', '0',
+                'Maximum allowed cache size in bytes')
+        .pc-form-grid-col-20
+            +number('Max size', policy + '.maxSize', name + '+ "maxSize"', enabled, '100000', '0',
+                'Maximum allowed size of cache before entry will start getting evicted')
 
 //- Mixin for clusters dropdown.
 mixin clusters(model, tip)
-    +dropdown-multiple('<span>Clusters:</span>' + '<a ui-sref="base.configuration.tabs.advanced.clusters({linkId: linkId()})"> (add)</a>',
+    +dropdown-multiple('Clusters:',
         model + '.clusters', '"clusters"', true, 'Choose clusters', 'No clusters configured', 'clusters', tip)
 
 //- Mixin for caches dropdown.
 mixin caches(model, tip)
-    +dropdown-multiple('<span>Caches:</span>' + '<a ui-sref="base.configuration.tabs.advanced.caches({linkId: linkId()})"> (add)</a>',
+    +dropdown-multiple('Caches:',
         model + '.caches', '"caches"', true, 'Choose caches', 'No caches configured', 'caches', tip)
 
 //- Mixin for XML, Java, .Net preview.

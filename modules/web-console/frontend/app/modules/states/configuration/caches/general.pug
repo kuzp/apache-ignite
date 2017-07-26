@@ -28,23 +28,23 @@ include /app/helpers/jade/mixins
             a.link-success(href="https://apacheignite.readme.io/docs/data-grid" target="_blank") More info.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='general')
         .pca-panel-body.pca-form-row
-            .pca-form-column-6
-                .settings-row
+            .pca-form-column-6.pc-form-grid-row
+                .pc-form-grid-col-30
                     +text('Name:', `${model}.name`, '"cacheName"', 'true', 'Input name', 'Cache name')
-                .settings-row(ng-if='$ctrl.available("2.1.0")')
+                .pc-form-grid-col-30(ng-if='$ctrl.available("2.1.0")')
                     +text('Group:', `${model}.groupName`, '"groupName"', 'false', 'Input group name',
                         'Cache group name.<br/>\
                         Caches with the same group name share single underlying "physical" cache (partition set), but are logically isolated.')
-                .settings-row
+                .pc-form-grid-col-60
                     +clusters(model, 'Associate clusters with the current cache')
-                .settings-row
-                    +dropdown-multiple('<span>Domain models:</span><a ui-sref="base.configuration.tabs.advanced.domains({linkId: linkId()})"> (add)</a>',
+                .pc-form-grid-col-30
+                    +dropdown-multiple('Domain models:',
                         `${model}.domains`, '"domains"', true, 'Choose domain models', 'No valid domain models configured', 'domains',
                         'Select domain models to describe types in cache')
-                .settings-row
+                .pc-form-grid-col-30
                     +cacheMode('Mode:', `${model}.cacheMode`, '"cacheMode"', 'PARTITIONED')
 
-                .settings-row
+                .pc-form-grid-col-30
                     +dropdown('Atomicity:', `${model}.atomicityMode`, '"atomicityMode"', 'true', 'ATOMIC',
                         '[\
                             {value: "ATOMIC", label: "ATOMIC"},\
@@ -55,14 +55,14 @@ include /app/helpers/jade/mixins
                             <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>\
                             <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>\
                         </ul>')
-                .settings-row(data-ng-show=`${model}.cacheMode === 'PARTITIONED'`)
+                .pc-form-grid-col-30(data-ng-show=`${model}.cacheMode === 'PARTITIONED'`)
                     +number('Backups:', `${model}.backups`, '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
-                .settings-row(data-ng-show=`${model}.cacheMode === 'PARTITIONED' && ${model}.backups`)
+                .pc-form-grid-col-60(data-ng-show=`${model}.cacheMode === 'PARTITIONED' && ${model}.backups`)
                     +checkbox('Read from backup', `${model}.readFromBackup`, '"readFromBackup"',
                         'Flag indicating whether data can be read from backup<br/>\
                         If not set then always get data from primary node (never from backup)')
                 //- Since ignite 2.0
-                .settings-row(ng-if='$ctrl.available("2.0.0")')
+                .pc-form-grid-col-30(ng-if='$ctrl.available("2.0.0")')
                     +dropdown('Partition loss policy:', `${model}.partitionLossPolicy`, '"partitionLossPolicy"', 'true', 'IGNORE',
                     '[\
                         {value: "READ_ONLY_SAFE", label: "READ_ONLY_SAFE"},\
@@ -87,11 +87,11 @@ include /app/helpers/jade/mixins
                             The result of reading from a previously lost and not cleared partition is undefined and may be different\
                             on different nodes in the cluster.</li>\
                     </ul>')
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Copy on read', `${model}.copyOnRead`, '"copyOnRead"',
                         'Flag indicating whether copy of the value stored in cache should be created for cache operation implying return value<br/>\
                         Also if this flag is set copies are created for values passed to CacheInterceptor and to CacheEntryProcessor')
-                .settings-row(ng-show=`${model}.cacheMode === 'PARTITIONED' && ${model}.atomicityMode === 'TRANSACTIONAL'`)
+                .pc-form-grid-col-60(ng-show=`${model}.cacheMode === 'PARTITIONED' && ${model}.atomicityMode === 'TRANSACTIONAL'`)
                     +checkbox('Invalidate near cache', `${model}.isInvalidate`, '"isInvalidate"',
                         'Invalidation flag for near cache entries in transaction<br/>\
                         If set then values will be invalidated (nullified) upon commit in near cache')
