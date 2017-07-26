@@ -85,6 +85,38 @@ page-configure-advanced {
             flex: 6;
         }
     }
+
+    .pc-form-grid-row {
+        &>.pc-form-grid-col-20 {
+            flex: 0 0 calc(100% / 3);
+        }
+
+        &>.pc-form-grid-col-30 {
+            flex: 0 0 calc(100% / 2);
+        }
+
+        &>.pc-form-grid-col-40 {
+            flex: 0 0 calc(100% / 1.5);
+        }
+
+        &>.pc-form-grid-col-60 {
+            flex: 0 0 100%;
+        }
+
+        @media(max-width: 992px) {
+            &>.pc-form-grid-col-20 {
+                flex: 0 0 calc(50%);
+            }
+
+            &>.pc-form-grid-col-30 {
+                flex: 0 0 calc(100%);
+            }
+
+            &>.pc-form-grid-col-60 {
+                flex: 0 0 calc(100%);
+            }
+        }
+    }
 }
 
 .pca-panel {

@@ -26,24 +26,22 @@ mixin discovery-cloud(modelAt='backupItem')
     -const formRegions = 'discoveryCloudRegions'
     -const formZones = 'discoveryCloudZones'
 
-    div
-        .details-row
+    div.pc-form-grid-row&attributes(attributes=attributes)
+        .pc-form-grid-col-30
             +text('Credential:', `${model}.credential`, '"credential"', 'false', 'Input cloud credential',
                 'Credential that is used during authentication on the cloud<br/>\
                 Depending on a cloud platform it can be a password or access key')
-        .details-row
+        .pc-form-grid-col-30
             +text('Path to credential:', `${model}.credentialPath`, '"credentialPath"', 'false', 'Input pathto credential',
                 'Path to a credential that is used during authentication on the cloud<br/>\
                 Access key or private key should be stored in a plain or PEM file without a passphrase')
-        .details-row
+        .pc-form-grid-col-30
             +text('Identity:', `${model}.identity`, '"' + discoveryKind + 'Identity"', required, 'Input identity',
                 'Identity that is used as a user name during a connection to the cloud<br/>\
                 Depending on a cloud platform it can be an email address, user name, etc')
-        .details-row
+        .pc-form-grid-col-30
             +text('Provider:', `${model}.provider`, '"' + discoveryKind + 'Provider"', required, 'Input provider', 'Cloud provider to use')
-        .pcb-flex-grid-break
-        .pcb-flex-grid-break
-        .details-row
+        .details-row.pc-form-grid-col-60
             -var form = formRegions;
             +ignite-form-group(ng-model=`${regions}` ng-form=form)
                 -var uniqueTip = 'Such region already exists!'
@@ -89,7 +87,7 @@ mixin discovery-cloud(modelAt='backupItem')
 
                 .group-content-empty(ng-if=`!(${regions}.length) && !group.add.length`)
                     | Not defined
-        .details-row
+        .details-row.pc-form-grid-col-60
             -var form = formZones;
             +ignite-form-group(ng-model=zones ng-form=form)
                 -var uniqueTip = 'Such zone already exists!'

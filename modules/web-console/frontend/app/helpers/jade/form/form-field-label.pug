@@ -18,6 +18,7 @@ mixin ignite-form-field__label(label, name, required)
     label.ignite-form-field__label(
         id=`{{ ${name} }}Label`
         for=`{{ ${name} }}Input`
-        class=`{{ ${required} ? 'required' : '' }}`
     )
-        span !{label}
+        span(class=`{{ ${required} ? 'required' : '' }}`) !{label}
+        if block
+            block

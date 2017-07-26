@@ -25,12 +25,17 @@ div.pc-content-container
             a(ui-sref='base.configuration.tabs.advanced.clusters({clusterID: $ctrl.$state.params.clusterID})') Advanced
 
     label.pc-tooltips-toggle.switcher--ignite
-        svg(ignite-icon='info').icon-left
+        svg.icon-left(
+            ignite-icon='info'
+            bs-tooltip=''
+            data-title='This setting is needed to hide and show tooltips with hints.'
+            data-placement='left'
+        )
         span Tooltips
         input(type='checkbox' ng-model='$ctrl.tooltipsVisible')
         div
 
-    ui-view(
+    ui-view.theme--ignite(
         ng-class=`{
             'pc-hide-tooltips': !$ctrl.tooltipsVisible
         }`

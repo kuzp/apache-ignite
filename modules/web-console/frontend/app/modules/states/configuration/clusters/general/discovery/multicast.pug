@@ -19,27 +19,25 @@ include /app/helpers/jade/mixins
 mixin discovery-multicast(modelAt = 'backupItem')
     -const model = `${modelAt}.discovery.Multicast`
     -const addresses = `${model}.addresses`
-    -var form = 'general'
 
-    div
-        .details-row
+    div.pc-form-grid-row&attributes(attributes=attributes)
+        .details-row.pc-form-grid-col-30
             +text-ip-address('IP address:', `${model}.multicastGroup`, '"multicastGroup"', 'true', '228.1.2.4', 'IP address of multicast group')
-        .details-row
+        .details-row.pc-form-grid-col-30
             +number-min-max('Port number:', `${model}.multicastPort`, '"multicastPort"', 'true', '47400', '0', '65535', 'Port number which multicast messages are sent to')
-        .details-row
+        .details-row.pc-form-grid-col-20
             +number('Waits for reply:', `${model}.responseWaitTime`, '"responseWaitTime"', 'true', '500', '0',
                 'Time in milliseconds IP finder waits for reply to multicast address request')
-        .details-row
+        .details-row.pc-form-grid-col-20
             +number('Attempts count:', `${model}.addressRequestAttempts`, '"addressRequestAttempts"', 'true', '2', '0',
                 'Number of attempts to send multicast address request<br/>\
                 IP finder re - sends request only in case if no reply for previous request is received')
-        .details-row
+        .details-row.pc-form-grid-col-20
             +text-ip-address('Local address:', `${model}.localAddress`, '"localAddress"', 'true', '0.0.0.0',
                 'Local host address used by this IP finder<br/>\
                 If provided address is non - loopback then multicast socket is bound to this interface<br/>\
                 If local address is not set or is any local address then IP finder creates multicast sockets for all found non - loopback addresses')
-        .pcb-flex-grid-break
-        .details-row
+        .details-row.pc-form-grid-col-60
             -var form = 'discoveryMulticastAddresses';
 
             +ignite-form-group(ng-model=`${addresses}` ng-form=form)
@@ -99,4 +97,3 @@ mixin discovery-multicast(modelAt = 'backupItem')
 
                 .group-content-empty(ng-if=`!(${addresses}.length) && !group.add.length`)
                     | Not defined
-        .pcb-flex-grid-break

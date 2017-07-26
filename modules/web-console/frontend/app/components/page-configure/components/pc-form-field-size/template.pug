@@ -1,0 +1,38 @@
+include /app/helpers/jade/mixins
+
++ignite-form-field__label('{{ ::$ctrl.label }}', '::$ctrl.name', '$ctrl.required')
+    +tooltip('{{::$ctrl.tip}}')
+.ignite-form-field__control
+    .input-tip
+        input.form-control(
+            type='number'
+            ng-model='$ctrl.ngModel'
+            id='{{::$ctrl.id}}'
+            name='{{::$ctrl.name}}'
+            placeholder='{{::$ctrl.placeholder}}'
+            pcb-scale-number="$ctrl.sizeScale.value"
+            min='{{ $ctrl.min/$ctrl.sizeScale.value }}'
+            max='999999999'
+            step='1'
+            ng-required='$ctrl.required'
+        )
+        button.btn-ignite.btn-ignite--secondary(
+            bs-select
+            bs-options='size as size.label for size in $ctrl.sizesMenu'
+            ng-model='$ctrl.sizeScale'
+            protect-from-bs-select-render
+        )
+            | {{ $ctrl.sizeScale.label }}
+            span.fa.fa-caret-down.icon-right
+.ignite-form-field__errors(
+    ng-messages='$ctrl.form[$ctrl.name].$error'
+    ng-if='!$ctrl.form[$ctrl.name].$pristine'
+)
+    div(ng-message='required')
+        | This field could not be empty
+    div(ng-message='min')
+        | Value is less than allowable minimum: {{ $ctrl.min/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
+    div(ng-message='min')
+        | Value is less than allowable maximum: {{ $ctrl.max/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
+    div(ng-message='number')
+        | Only numbers allowed

@@ -45,7 +45,7 @@ page-configure {
     }
 
     .pc-hide-tooltips {
-        .tipField:not(.fa-remove), .icon-help {
+        .tipField:not(.fa-remove), .icon-help, [ignite-icon='info'] {
             display: none;
         }
     }
@@ -73,9 +73,60 @@ page-configure {
             flex: 0 0 auto;
         }
 
+        input {
+            pointer-events: none;
+        }
+
         &>div {
             margin-left: 10px !important;
         }
+    }
+
+    .pc-form-grid-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        // align-items: baseline;
+
+        &>.pc-form-grid-col-20,
+        &>.pc-form-grid-col-30,
+        &>.pc-form-grid-col-60 {
+            margin: 10px 0 0 !important;
+            max-width: initial;
+            padding: 0 10px;
+        }
+
+        .group-section {
+            width: 100%;
+        }
+
+        &>.pc-form-grid__break {
+            flex: 1 0 100%;
+        }
+    }
+    .pc-form-group {
+        $input-height: 36px;
+        width: 100%;
+        border: 1px solid rgba(197, 197, 197, 0.5);
+        border-radius: 4px;
+        padding-bottom: 10px;
+        padding-top: $input-height / 2;
+        margin-top: $input-height / -2;
+
+        &:empty {
+            display: none;
+        }
+    }
+    .pc-form-grid__text-only-item {
+        padding-top: 16px;
+        align-self: flex-start;
+        height: 54px;
+        display: flex;
+        justify-content: center;
+        align-content: center;
+        align-items: center;
+        background: white;
+        z-index: 2;
     }
 }
 .pc-page-header {
@@ -92,3 +143,4 @@ page-configure {
         vertical-align: 2px;
     }
 }
+

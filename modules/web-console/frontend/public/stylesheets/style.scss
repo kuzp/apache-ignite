@@ -1233,7 +1233,7 @@ label {
     margin-right: 5px;
 }
 
-label.required:after {
+.required:after {
     color: $brand-primary;
     content: ' *';
     display: inline;
