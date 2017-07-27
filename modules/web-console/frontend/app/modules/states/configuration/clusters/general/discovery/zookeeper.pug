@@ -74,7 +74,10 @@ mixin discovery-zookeeper(modelAt = 'backupItem')
             +text('Service name:', `${model}.serviceName`, '"serviceName"', 'false', 'ignite',
                 'Service name to use, as defined by Curator&#39;s ServiceDiscovery recipe<br/>\
                 In physical ZooKeeper terms, it represents the node under basePath, under which services will be registered')
-        .pc-form-grid-col-30
+
+        .pc-form-grid__break
+
+        .pc-form-grid-col-60
             +checkbox('Allow duplicate registrations', `${model}.allowDuplicateRegistrations`, '"allowDuplicateRegistrations"',
                 'Whether to register each node only once, or if duplicate registrations are allowed<br/>\
                 Nodes will attempt to register themselves, plus those they know about<br/>\

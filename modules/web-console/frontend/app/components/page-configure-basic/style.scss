@@ -69,26 +69,6 @@ page-configure-basic {
         }
     }
 
-    // .pcb-form-flex-grid {
-    //     $column: 450px;
-
-    //     &,
-    //     &>div:not(.details-row):not(.settings-row):not(.pcb-flex-grid-break) {
-    //         display: flex;
-    //         flex-direction: row;
-    //         flex-wrap: wrap;
-    //     }
-
-    //     .details-row, .settings-row, .pcb-flex-grid-break {
-    //         margin: 0 10px 10px 0 !important;
-    //         flex: 1 1 $column;
-    //     }
-
-    //     .pcb-flex-grid-break {
-    //         height: 0;
-    //     }
-    // }
-
     .pcb-select-existing-cache {
         position: relative;
 
@@ -161,23 +141,29 @@ page-configure-basic {
         box-shadow: 0px -2px 4px -1px rgba(0, 0, 0, 0.2);
     }
 
-    .pc-form-grid-row {
-        &>.pc-form-grid-col-20 {
-            flex: 0 0 calc(100% / 6);
-        }
+    .form-field-checkbox {
+        margin-top: auto;
+        margin-bottom: 8px;
+    }
 
-        &>.pc-form-grid-col-30 {
-            flex: 0 0 calc(100% / 4);
-        }
+    .pcb-form-grid-row {
+        @media(min-width: 992px) {
+            &>.pc-form-grid-col-20 {
+                flex: 0 0 calc(100% / 6);
+            }
 
-        &>.pc-form-grid-col-40 {
-            flex: 0 0 calc(100% / 3);
-        }
+            &>.pc-form-grid-col-30 {
+                flex: 0 0 calc(100% / 4);
+            }
 
-        &>.pc-form-grid-col-60 {
-            flex: 0 0 calc(100% / 2);
-        }
+            &>.pc-form-grid-col-40 {
+                flex: 0 0 calc(100% / 3);
+            }
 
+            &>.pc-form-grid-col-60 {
+                flex: 0 0 calc(100% / 2);
+            }
+        }
         @media(max-width: 992px) {
             &>.pc-form-grid-col-20 {
                 flex: 0 0 calc(100% / 3);
@@ -185,6 +171,10 @@ page-configure-basic {
 
             &>.pc-form-grid-col-30 {
                 flex: 0 0 calc(100% / 2);
+            }
+
+            &>.pc-form-grid-col-40 {
+                flex: 0 0 calc(100% / 1.5);
             }
 
             &>.pc-form-grid-col-60 {
