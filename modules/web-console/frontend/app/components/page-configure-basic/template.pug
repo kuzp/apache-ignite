@@ -32,12 +32,12 @@ include mixins/pcb-form-field-size
 - const tipOpts = {placement: 'top'}
 
 form(novalidate name=form)
-    h2.pcb-section-header Step 1. Cluster Configuration
+    h2.pcb-section-header.pcb-inner-padding Step 1. Cluster Configuration
 
-    .pcb-section-notification(ng-if='!$ctrl.clusters.size')
+    .pcb-section-notification.pcb-inner-padding(ng-if='!$ctrl.clusters.size')
         | You have no clusters.
         | Let’s configure your first and associate it with caches.
-    .pcb-section-notification(ng-if='$ctrl.clusters.size')
+    .pcb-section-notification.pcb-inner-padding(ng-if='$ctrl.clusters.size')
         | Configure cluster properties and associate your cluster with caches and in-memory file systems.
 
     .pc-form-grid-row.pcb-form-grid-row
@@ -71,41 +71,34 @@ form(novalidate name=form)
             +discovery-zookeeper(model)(ng-if=`${modelDiscoveryKind} === 'ZooKeeper'` class='pcb-form-grid-row')
             +discovery-kubernetes(model)(ng-if=`${modelDiscoveryKind} === 'Kubernetes'` class='pcb-form-grid-row')
 
-    h2.pcb-section-header(style='margin-top:30px') Step 2. Caches Configuration
+    h2.pcb-section-header.pcb-inner-padding(style='margin-top:30px') Step 2. Caches Configuration
 
-    .settings-row(ng-show='!$ctrl.caches.size').pcb-section-notification
+    .settings-row.pcb-inner-padding(ng-show='!$ctrl.caches.size').pcb-section-notification
         | You have no caches. Let’s create a new one.
 
-    .settings-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
-        pc-form-field-size(
-            required='true'
-            ng-model='$ctrl.defaultMemoryPolicy.maxSize'
-            id='memory'
-            name='memory'
-            label='Off-heap Size:'
-            placeholder='0.8 * totalMemoryAvailable'
-            min='{{::$ctrl.minMemorySize}}'
-            tip='“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.'
-        )
-    .margin-top-dflt-2x(
+    .pcb-form-grid-row.pc-form-grid-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
+        .pc-form-grid-col-60
+            pc-form-field-size(
+                required='true'
+                ng-model='$ctrl.defaultMemoryPolicy.maxSize'
+                id='memory'
+                name='memory'
+                label='Off-heap Size:'
+                placeholder='0.8 * totalMemoryAvailable'
+                min='{{::$ctrl.minMemorySize}}'
+                tip='“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.'
+            )
+    .pcb-caches-list(
         ng-repeat='cache in $ctrl.allClusterCaches track by cache._id'
         ng-form='cacheForm'
-    ).pcb-caches
-        - form = 'cacheForm'
-        .panel-details
-            .settings-row.pcb-cache-name-row
+    )
+        .pcb-form-grid-row.pc-form-grid-row
+            - form = 'cacheForm'
+            .pc-form-grid-col-60
                 +text('Name:', 'cache.name', '"cacheName"', 'true', 'Input name', 'Cache name')
-                .pcb-cache-remove
-                    button.btn-ignite.btn-ignite--link-dashed-secondary(
-                        type='button'
-                        ng-click='$ctrl.removeCache(cache)'
-                        bs-tooltip=''
-                        data-title='Remove from cluster'
-                    )
-                        svg(ignite-icon='cross').icon
-            .settings-row
+            .pc-form-grid-col-20
                 +cacheMode('Mode:', 'cache.cacheMode', '"cacheMode"', 'PARTITIONED')
-            .settings-row
+            .pc-form-grid-col-20
                 +dropdown('Atomicity:', 'cache.atomicityMode', '"atomicityMode"', 'true', 'ATOMIC',
                     '[\
                         {value: "ATOMIC", label: "ATOMIC"},\
@@ -116,18 +109,19 @@ form(novalidate name=form)
                         <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>\
                         <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>\
                     </ul>')
-            .settings-row(ng-show='cache.cacheMode === "PARTITIONED"')
+            .pc-form-grid-col-20(ng-show='cache.cacheMode === "PARTITIONED"')
                 +number('Backups:', 'cache.backups', '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
-            .settings-row(ng-show='cache.cacheMode === "PARTITIONED" && cache.backups')
-                +checkbox('Read from backup', 'cache.readFromBackup', '"readFromBackup"',
-                    'Flag indicating whether data can be read from backup<br/>\
-                    If not set then always get data from primary node (never from backup)')
-            .settings-row(ng-show='cache.cacheMode === "PARTITIONED" && cache.atomicityMode === "TRANSACTIONAL"')
-                +checkbox('Invalidate near cache', 'cache.isInvalidate', '"isInvalidate"',
-                    'Invalidation flag for near cache entries in transaction<br/>\
-                    If set then values will be invalidated (nullified) upon commit in near cache')
+        .pcb-cache-remove
+            button.btn-ignite.btn-ignite--link-dashed-secondary(
+                type='button'
+                ng-click='$ctrl.removeCache(cache)'
+                bs-tooltip=''
+                data-title='Remove from cluster'
+            )
+                svg(ignite-icon='cross').icon
 
-    .pcb-buttons-group.margin-top-dflt-2x
+
+    .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding
         a.link-primary(
             ng-click='$ctrl.addCache()'
         )
