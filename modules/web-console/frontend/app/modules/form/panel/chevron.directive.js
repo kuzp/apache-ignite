@@ -15,10 +15,7 @@
  * limitations under the License.
  */
 
-const template = `
-    <svg ng-if='isOpen' ignite-icon='collapse'></svg>
-    <svg ng-if='!isOpen' ignite-icon='expand'></svg>
-`;
+const template = `<img ng-src="{{ isOpen ? '/images/collapse.svg' : '/images/expand.svg' }}" style='width:13px;height:13px;' />`;
 
 export default ['igniteFormPanelChevron', ['$timeout', ($timeout) => {
     const controller = [() => {}];
