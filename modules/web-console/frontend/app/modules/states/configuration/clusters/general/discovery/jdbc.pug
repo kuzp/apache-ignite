@@ -28,9 +28,8 @@ mixin discovery-jdbc(modelAt = 'backupItem')
             +dialect('Dialect:', `${model}.dialect`, '"dialect"', required,
                 'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect', 'Choose JDBC dialect')
         .pc-form-grid-col-60
-            .pc-form-grid__text-only-item
-                +checkbox('DB schema should be initialized by Ignite', `${model}.initSchema`, '"initSchema"',
-                    'Flag indicating whether DB schema should be initialized by Ignite or was explicitly created by user')
+            +checkbox('DB schema should be initialized by Ignite', `${model}.initSchema`, '"initSchema"',
+                'Flag indicating whether DB schema should be initialized by Ignite or was explicitly created by user')
         .pc-form-grid-col-30(ng-if=`$ctrl.Clusters.requiresProprietaryDrivers(${modelAt})`)
             .pc-form-grid__text-only-item
                 a.link-success(ng-href=`{{ $ctrl.Clusters.JDBCDriverURL(${modelAt}) }}` target='_blank')

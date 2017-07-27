@@ -53,10 +53,9 @@ mixin hibernateField(name, model, items, valid, save, newItem)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
             .pca-form-column-6
                 .pc-form-grid-row
-                    //- .settings-row
-                        -var storeFactory = `${model}.cacheStoreFactory`;
-                        -var storeFactoryKind = `${storeFactory}.kind`;
-
+                    -var storeFactory = `${model}.cacheStoreFactory`;
+                    -var storeFactoryKind = `${storeFactory}.kind`;
+                    .pc-form-grid-col-60
                         +dropdown('Store factory:', storeFactoryKind, '"cacheStoreFactory"', 'true', 'Not set',
                             '[\
                                 {value: "CacheJdbcPojoStoreFactory", label: "JDBC POJO store factory"},\
@@ -71,134 +70,132 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                                 <li>Hibernate BLOB store factory - Objects are stored in underlying database in BLOB format backed by Hibernate</li>\
                             </ul>'
                         )
-                        span(ng-show=storeFactoryKind ng-init='__.expanded = true')
-                            a.customize(ng-show='__.expanded' ng-click='__.expanded = false') Hide settings
-                            a.customize(ng-hide='__.expanded' ng-click='__.expanded = true') Show settings
-                            .pca-panel-details(ng-show='__.expanded')
-                                div(ng-show=`${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`)
-                                    -var pojoStoreFactory = `${storeFactory}.CacheJdbcPojoStoreFactory`
-                                    -var required = `${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`
+                    .pc-form-group(ng-show=storeFactoryKind)
+                        .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`)
+                            -var pojoStoreFactory = `${storeFactory}.CacheJdbcPojoStoreFactory`
+                            -var required = `${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`
 
-                                    .details-row
-                                        +text('Data source bean name:', `${pojoStoreFactory}.dataSourceBean`,
-                                            '"pojoDataSourceBean"', required, 'Input bean name',
-                                            'Name of the data source bean in Spring context')
-                                    .details-row
-                                        +dialect('Dialect:', `${pojoStoreFactory}.dialect`, '"pojoDialect"', required,
-                                            'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect',
-                                            'Choose JDBC dialect')
-                                    .details-row
-                                        +number('Batch size:', `${pojoStoreFactory}.batchSize`, '"pojoBatchSize"', true, '512', '1',
-                                            'Maximum batch size for writeAll and deleteAll operations')
-                                    .details-row
-                                        +number('Thread count:', `${pojoStoreFactory}.maximumPoolSize`, '"pojoMaximumPoolSize"', true, 'availableProcessors', '1',
-                                            'Maximum workers thread count.<br/>\
-                                            These threads are responsible for load cache.')
-                                    .details-row
-                                        +number('Maximum write attempts:', `${pojoStoreFactory}.maximumWriteAttempts`, '"pojoMaximumWriteAttempts"', true, '2', '0',
-                                            'Maximum write attempts in case of database error')
-                                    .details-row
-                                        +number('Parallel load threshold:', `${pojoStoreFactory}.parallelLoadCacheMinimumThreshold`, '"pojoParallelLoadCacheMinimumThreshold"', true, '512', '0',
-                                            'Parallel load cache minimum threshold.<br/>\
-                                            If <b>0</b> then load sequentially.')
-                                    .details-row
-                                        +java-class('Hasher', `${pojoStoreFactory}.hasher`, '"pojoHasher"', 'true', 'false', 'Hash calculator', required)
-                                    .details-row
-                                        +java-class('Transformer', `${pojoStoreFactory}.transformer`, '"pojoTransformer"', 'true', 'false', 'Types transformer', required)
-                                    .details-row
-                                        +checkbox('Escape table and filed names', `${pojoStoreFactory}.sqlEscapeAll`, '"sqlEscapeAll"',
-                                            'If enabled than all schema, table and field names will be escaped with double quotes (for example: "tableName"."fieldName").<br/>\
-                                            This enforces case sensitivity for field names and also allows having special characters in table and field names.<br/>\
-                                            Escaped names will be used for CacheJdbcPojoStore internal SQL queries.')
-                                div(ng-show=`${storeFactoryKind} === 'CacheJdbcBlobStoreFactory'`)
-                                    -var blobStoreFactory = `${storeFactory}.CacheJdbcBlobStoreFactory`
-                                    -var blobStoreFactoryVia = `${blobStoreFactory}.connectVia`
+                            .pc-form-grid-col-60
+                                +text('Data source bean name:', `${pojoStoreFactory}.dataSourceBean`,
+                                    '"pojoDataSourceBean"', required, 'Input bean name',
+                                    'Name of the data source bean in Spring context')
+                            .pc-form-grid-col-60
+                                +dialect('Dialect:', `${pojoStoreFactory}.dialect`, '"pojoDialect"', required,
+                                    'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect',
+                                    'Choose JDBC dialect')
+                            .pc-form-grid-col-30
+                                +number('Batch size:', `${pojoStoreFactory}.batchSize`, '"pojoBatchSize"', true, '512', '1',
+                                    'Maximum batch size for writeAll and deleteAll operations')
+                            .pc-form-grid-col-30
+                                +number('Thread count:', `${pojoStoreFactory}.maximumPoolSize`, '"pojoMaximumPoolSize"', true, 'availableProcessors', '1',
+                                    'Maximum workers thread count.<br/>\
+                                    These threads are responsible for load cache.')
+                            .pc-form-grid-col-30
+                                +number('Maximum write attempts:', `${pojoStoreFactory}.maximumWriteAttempts`, '"pojoMaximumWriteAttempts"', true, '2', '0',
+                                    'Maximum write attempts in case of database error')
+                            .pc-form-grid-col-30
+                                +number('Parallel load threshold:', `${pojoStoreFactory}.parallelLoadCacheMinimumThreshold`, '"pojoParallelLoadCacheMinimumThreshold"', true, '512', '0',
+                                    'Parallel load cache minimum threshold.<br/>\
+                                    If <b>0</b> then load sequentially.')
+                            .pc-form-grid-col-60
+                                +java-class('Hasher', `${pojoStoreFactory}.hasher`, '"pojoHasher"', 'true', 'false', 'Hash calculator', required)
+                            .pc-form-grid-col-60
+                                +java-class('Transformer', `${pojoStoreFactory}.transformer`, '"pojoTransformer"', 'true', 'false', 'Types transformer', required)
+                            .pc-form-grid-col-60
+                                +checkbox('Escape table and filed names', `${pojoStoreFactory}.sqlEscapeAll`, '"sqlEscapeAll"',
+                                    'If enabled than all schema, table and field names will be escaped with double quotes (for example: "tableName"."fieldName").<br/>\
+                                    This enforces case sensitivity for field names and also allows having special characters in table and field names.<br/>\
+                                    Escaped names will be used for CacheJdbcPojoStore internal SQL queries.')
+                        .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheJdbcBlobStoreFactory'`)
+                            -var blobStoreFactory = `${storeFactory}.CacheJdbcBlobStoreFactory`
+                            -var blobStoreFactoryVia = `${blobStoreFactory}.connectVia`
 
-                                    .details-row
-                                        +dropdown('Connect via:', blobStoreFactoryVia, '"connectVia"', 'true', 'Choose connection method',
-                                            '[\
-                                                {value: "URL", label: "URL"},\
-                                                {value: "DataSource", label: "Data source"}\
-                                            ]',
-                                            'You can connect to database via:\
-                                            <ul>\
-                                                <li>JDBC URL, for example: jdbc:h2:mem:myDatabase</li>\
-                                                <li>Configured data source</li>\
-                                            </ul>')
-                                    div(ng-show=`${blobStoreFactoryVia} === 'URL'`)
-                                        -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} === 'URL'`
+                            .pc-form-grid-col-60
+                                +dropdown('Connect via:', blobStoreFactoryVia, '"connectVia"', 'true', 'Choose connection method',
+                                    '[\
+                                        {value: "URL", label: "URL"},\
+                                        {value: "DataSource", label: "Data source"}\
+                                    ]',
+                                    'You can connect to database via:\
+                                    <ul>\
+                                        <li>JDBC URL, for example: jdbc:h2:mem:myDatabase</li>\
+                                        <li>Configured data source</li>\
+                                    </ul>')
 
-                                        .details-row
-                                            +text('Connection URL:', `${blobStoreFactory}.connectionUrl`, '"connectionUrl"', required, 'Input URL',
-                                                'URL for database access, for example: jdbc:h2:mem:myDatabase')
-                                        .details-row
-                                            +text('User:', `${blobStoreFactory}.user`, '"user"', required, 'Input user name', 'User name for database access')
-                                        .details-row
-                                            label Note, password will be generated as stub
-                                    div(ng-show=`${blobStoreFactoryVia} !== 'URL'`)
-                                        -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} !== 'URL'`
+                            -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} === 'URL'`
 
-                                        .details-row
-                                            +text('Data source bean name:', `${blobStoreFactory}.dataSourceBean`, '"blobDataSourceBean"', required, 'Input bean name',
-                                                'Name of the data source bean in Spring context')
-                                        .details-row
-                                            +dialect('Database:', `${blobStoreFactory}.dialect`, '"blobDialect"', required, 'Supported databases:', 'Generic database', 'Choose database')
-                                    .details-row
-                                        +checkbox('Init schema', `${blobStoreFactory}.initSchema`, '"initSchema"',
-                                            'Flag indicating whether DB schema should be initialized by Ignite (default behaviour) or was explicitly created by user')
-                                    .details-row
-                                        +text('Create query:', `${blobStoreFactory}.createTableQuery`, '"createTableQuery"', 'false', 'SQL for table creation',
-                                            'Query for table creation in underlying database<br/>\
-                                            Default value: create table if not exists ENTRIES (key binary primary key, val binary)')
-                                    .details-row
-                                        +text('Load query:', `${blobStoreFactory}.loadQuery`, '"loadQuery"', 'false', 'SQL for load entry',
-                                            'Query for entry load from underlying database<br/>\
-                                            Default value: select * from ENTRIES where key=?')
-                                    .details-row
-                                        +text('Insert query:', `${blobStoreFactory}.insertQuery`, '"insertQuery"', 'false', 'SQL for insert entry',
-                                            'Query for insert entry into underlying database<br/>\
-                                            Default value: insert into ENTRIES (key, val) values (?, ?)')
-                                    .details-row
-                                        +text('Update query:', `${blobStoreFactory}.updateQuery`, '"updateQuery"', 'false', 'SQL for update entry',
-                                            'Query for update entry in underlying database<br/>\
-                                            Default value: update ENTRIES set val=? where key=?')
-                                    .details-row
-                                        +text('Delete query:', `${blobStoreFactory}.deleteQuery`, '"deleteQuery"', 'false', 'SQL for delete entry',
-                                            'Query for delete entry from underlying database<br/>\
-                                            Default value: delete from ENTRIES where key=?')
+                            .pc-form-grid-col-60(ng-show-start=`${blobStoreFactoryVia} === 'URL'`)
+                                +text('Connection URL:', `${blobStoreFactory}.connectionUrl`, '"connectionUrl"', required, 'Input URL',
+                                    'URL for database access, for example: jdbc:h2:mem:myDatabase')
+                            .pc-form-grid-col-30
+                                +text('User:', `${blobStoreFactory}.user`, '"user"', required, 'Input user name', 'User name for database access')
+                            .pc-form-grid-col-30(ng-show-end)
+                                .pc-form-grid__text-only-item Password will be generated as stub.
 
-                                div(ng-show=`${storeFactoryKind} === 'CacheHibernateBlobStoreFactory'`)
-                                    -var hibernateStoreFactory = `${storeFactory}.CacheHibernateBlobStoreFactory`
-                                    -var hibernateProperties = `${hibernateStoreFactory}.hibernateProperties`
+                            -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} !== 'URL'`
 
-                                    .details-row
-                                        +ignite-form-group(ng-form=form ng-model=hibernateProperties)
-                                            ignite-form-field-label
-                                                | Hibernate properties
-                                            ignite-form-group-tooltip
-                                                | List of Hibernate properties#[br]
-                                                | For example: connection.url=jdbc:h2:mem:exampleDb
-                                            ignite-form-group-add(ng-click='tableNewItem(hibernatePropsTbl)')
-                                                | Add new Hibernate property
+                            .pc-form-grid-col-60(ng-show-start=`${blobStoreFactoryVia} !== 'URL'`)
+                                +text('Data source bean name:', `${blobStoreFactory}.dataSourceBean`, '"blobDataSourceBean"', required, 'Input bean name',
+                                    'Name of the data source bean in Spring context')
+                            .pc-form-grid-col-60(ng-show-end)
+                                +dialect('Database:', `${blobStoreFactory}.dialect`, '"blobDialect"', required, 'Supported databases:', 'Generic database', 'Choose database')
 
-                                            -var tipUnique = 'Property with such key already exists!'
-                                            -var tipPropertySpecified = 'Property should be present in format key=value!'
+                            .pc-form-grid-col-60
+                                +checkbox('Init schema', `${blobStoreFactory}.initSchema`, '"initSchema"',
+                                    'Flag indicating whether DB schema should be initialized by Ignite (default behaviour) or was explicitly created by user')
+                            .pc-form-grid-col-60
+                                +text('Create query:', `${blobStoreFactory}.createTableQuery`, '"createTableQuery"', 'false', 'SQL for table creation',
+                                    'Query for table creation in underlying database<br/>\
+                                    Default value: create table if not exists ENTRIES (key binary primary key, val binary)')
+                            .pc-form-grid-col-60
+                                +text('Load query:', `${blobStoreFactory}.loadQuery`, '"loadQuery"', 'false', 'SQL for load entry',
+                                    'Query for entry load from underlying database<br/>\
+                                    Default value: select * from ENTRIES where key=?')
+                            .pc-form-grid-col-60
+                                +text('Insert query:', `${blobStoreFactory}.insertQuery`, '"insertQuery"', 'false', 'SQL for insert entry',
+                                    'Query for insert entry into underlying database<br/>\
+                                    Default value: insert into ENTRIES (key, val) values (?, ?)')
+                            .pc-form-grid-col-60
+                                +text('Update query:', `${blobStoreFactory}.updateQuery`, '"updateQuery"', 'false', 'SQL for update entry',
+                                    'Query for update entry in underlying database<br/>\
+                                    Default value: update ENTRIES set val=? where key=?')
+                            .pc-form-grid-col-60
+                                +text('Delete query:', `${blobStoreFactory}.deleteQuery`, '"deleteQuery"', 'false', 'SQL for delete entry',
+                                    'Query for delete entry from underlying database<br/>\
+                                    Default value: delete from ENTRIES where key=?')
 
-                                            .group-content-empty(ng-if=`!((${hibernateProperties} && ${hibernateProperties}.length > 0) || tableNewItemActive(hibernatePropsTbl))`)
-                                                | Not defined
-                                            .group-content(ng-show=`(${hibernateProperties} && ${hibernateProperties}.length > 0) || tableNewItemActive(hibernatePropsTbl)`)
-                                                table.links-edit(id='hibernateProps' st-table=hibernateProperties)
-                                                    tbody
-                                                        tr(ng-repeat=`item in ${hibernateProperties}`)
-                                                            td.col-sm-12(ng-hide='tableEditing(hibernatePropsTbl, $index)')
-                                                                a.labelFormField(ng-click='tableStartEdit(backupItem, hibernatePropsTbl, $index)') {{item.name}} = {{item.value}}
-                                                                +btn-remove('tableRemove(backupItem, hibernatePropsTbl, $index)', '"Remove Property"')
-                                                            td.col-sm-12(ng-if='tableEditing(hibernatePropsTbl, $index)')
-                                                            +table-pair-edit('hibernatePropsTbl', 'cur', 'Property name', 'Property value', false, '{{::hibernatePropsTbl.focusId + $index}}', '$index', '=')
-                                                    tfoot(ng-show='tableNewItemActive(hibernatePropsTbl)')
-                                                        tr
-                                                            td.col-sm-12
-                                                            +table-pair-edit('hibernatePropsTbl', 'new', 'Property name', 'Property value', false, '{{::hibernatePropsTbl.focusId + $index}}', '-1', '=')
+                        .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheHibernateBlobStoreFactory'`)
+                            -var hibernateStoreFactory = `${storeFactory}.CacheHibernateBlobStoreFactory`
+                            -var hibernateProperties = `${hibernateStoreFactory}.hibernateProperties`
+
+                            .details-row.pc-form-grid-col-60
+                                +ignite-form-group(ng-form=form ng-model=hibernateProperties)
+                                    ignite-form-field-label
+                                        | Hibernate properties
+                                    ignite-form-group-tooltip
+                                        | List of Hibernate properties#[br]
+                                        | For example: connection.url=jdbc:h2:mem:exampleDb
+                                    ignite-form-group-add(ng-click='tableNewItem(hibernatePropsTbl)')
+                                        | Add new Hibernate property
+
+                                    -var tipUnique = 'Property with such key already exists!'
+                                    -var tipPropertySpecified = 'Property should be present in format key=value!'
+
+                                    .group-content-empty(ng-if=`!((${hibernateProperties} && ${hibernateProperties}.length > 0) || tableNewItemActive(hibernatePropsTbl))`)
+                                        | Not defined
+                                    .group-content(ng-show=`(${hibernateProperties} && ${hibernateProperties}.length > 0) || tableNewItemActive(hibernatePropsTbl)`)
+                                        table.links-edit(id='hibernateProps' st-table=hibernateProperties)
+                                            tbody
+                                                tr(ng-repeat=`item in ${hibernateProperties}`)
+                                                    td.col-sm-12(ng-hide='tableEditing(hibernatePropsTbl, $index)')
+                                                        a.labelFormField(ng-click='tableStartEdit(backupItem, hibernatePropsTbl, $index)') {{item.name}} = {{item.value}}
+                                                        +btn-remove('tableRemove(backupItem, hibernatePropsTbl, $index)', '"Remove Property"')
+                                                    td.col-sm-12(ng-if='tableEditing(hibernatePropsTbl, $index)')
+                                                        +table-pair-edit('hibernatePropsTbl', 'cur', 'Property name', 'Property value', false, '{{::hibernatePropsTbl.focusId + $index}}', '$index', '=')
+                                            tfoot(ng-show='tableNewItemActive(hibernatePropsTbl)')
+                                                tr
+                                                    td.col-sm-12
+                                                        +table-pair-edit('hibernatePropsTbl', 'new', 'Property name', 'Property value', false, '{{::hibernatePropsTbl.focusId + $index}}', '-1', '=')
 
 
                     .pc-form-grid-col-60
@@ -228,7 +225,7 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                             Cache write-behind settings.<br>
                             Write-behind is a special mode when updates to cache accumulated and then asynchronously flushed to persistent store as a bulk operation.
                         `)
-                    .pc-form-group.pc-form-grid-row
+                    .pc-form-group.pc-form-group__text-title.pc-form-grid-row(ng-if=enabled)
                         .pc-form-grid-col-30
                             +number('Batch size:', `${model}.writeBehindBatchSize`, '"writeBehindBatchSize"', enabled, '512', '1',
                                 'Maximum batch size for write-behind cache store operations<br/>\
