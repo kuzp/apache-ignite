@@ -65,7 +65,7 @@ page-configure {
         height: 40px;
         align-items: center;
         width: auto;
-        max-width: initial !important;
+        max-width: none !important;
         user-select: none;
 
         &>*:not(input) {
@@ -82,27 +82,6 @@ page-configure {
         }
     }
 
-    .pc-form-grid-row {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-
-        &>.pc-form-grid-col-20,
-        &>.pc-form-grid-col-30,
-        &>.pc-form-grid-col-60 {
-            margin: 10px 0 0 !important;
-            max-width: initial;
-            padding: 0 10px;
-        }
-
-        .group-section {
-            width: 100%;
-        }
-
-        &>.pc-form-grid__break {
-            flex: 1 0 100%;
-        }
-    }
     .pc-form-group {
         $input-height: 36px;
         width: 100%;
@@ -135,33 +114,89 @@ page-configure {
     }
 
     .pc-form-grid-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+
+        &>.pc-form-grid-col-20,
+        &>.pc-form-grid-col-30,
+        &>.pc-form-grid-col-60 {
+            margin: 10px 0 0 !important;
+            max-width: none;
+            padding: 0 10px;
+            flex-grow: 0;
+            flex-shrink: 0;
+        }
+
+        .group-section {
+            width: 100%;
+        }
+
+        &>.pc-form-grid__break {
+            flex: 1 0 100%;
+        }
+    }
+
+    .pc-form-grid-row {
         &>.pc-form-grid-col-20 {
-            flex: 0 0 calc(100% / 3);
+            flex-basis: calc(100% / 3);
         }
 
         &>.pc-form-grid-col-30 {
-            flex: 0 0 calc(100% / 2);
+            flex-basis: calc(100% / 2);
         }
 
         &>.pc-form-grid-col-40 {
-            flex: 0 0 calc(100% / 1.5);
+            flex-basis: calc(100% / 1.5);
         }
 
         &>.pc-form-grid-col-60 {
-            flex: 0 0 100%;
+            flex-basis: calc(100% / 1);
         }
 
         @media(max-width: 992px) {
             &>.pc-form-grid-col-20 {
-                flex: 0 0 calc(50%);
+                flex-basis: calc(50%);
             }
 
             &>.pc-form-grid-col-30 {
-                flex: 0 0 calc(100%);
+                flex-basis: calc(100%);
             }
 
             &>.pc-form-grid-col-60 {
-                flex: 0 0 calc(100%);
+                flex-basis: calc(100%);
+            }
+        }
+        // IE11 does not count padding towards flex width
+        @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            &>.pc-form-grid-col-20 {
+                flex-basis: calc(99.9% / 3 - 20px);
+            }
+
+            &>.pc-form-grid-col-30 {
+                flex-basis: calc(100% / 2 - 20px);
+            }
+
+            &>.pc-form-grid-col-40 {
+                flex-basis: calc(100% / 1.5 - 20px);
+            }
+
+            &>.pc-form-grid-col-60 {
+                flex-basis: calc(100% / 1 - 20px);
+            }
+
+            @media(max-width: 992px) {
+                &>.pc-form-grid-col-20 {
+                    flex-basis: calc(50% - 20px);
+                }
+
+                &>.pc-form-grid-col-30 {
+                    flex-basis: calc(100% - 20px);
+                }
+
+                &>.pc-form-grid-col-60 {
+                    flex-basis: calc(100% - 20px);
+                }
             }
         }
     }
