@@ -39,13 +39,15 @@ mixin form-field-datalist(label, model, name, disabled, required, placeholder, o
 
     .ignite-form-field
         +ignite-form-field__label(label, name, required)
-        .ignite-form-field__control
             +tooltip(tip, tipOpts)
-
-            +form-field-feedback(name, 'required', errLbl + ' could not be empty!')
-
+        .ignite-form-field__control
+            .input-tip
+                +form-field-input(attributes=attributes)
+        .ignite-form-field__errors(
+            ng-messages=`${form}[${name}].$error`
+            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
+        )
             if block
                 block
 
-            .input-tip
-                +form-field-input(attributes=attributes)
+            +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)

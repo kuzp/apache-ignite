@@ -105,16 +105,16 @@
             }
        }
 
-       .ignite-form-field__errors {
-            color: $ignite-brand-primary;
-            padding: 5px 10px 0px;
-            line-height: 14px;
-            font-size: 12px;
-            clear: both;
-
-            [ng-message] + [ng-message] {
-                margin-top: 10px;
-            }
-       }
     }
+   .ignite-form-field__errors {
+        color: $ignite-brand-primary;
+        padding: 5px 10px 0px;
+        line-height: 14px;
+        font-size: 12px;
+        clear: both;
+
+        [ng-message] + [ng-message] {
+            margin-top: 10px;
+        }
+   }
 }
