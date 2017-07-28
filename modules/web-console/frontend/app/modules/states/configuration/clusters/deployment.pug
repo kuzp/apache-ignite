@@ -36,8 +36,8 @@ include /app/helpers/jade/mixins
             | #[a.link-success(href="https://apacheignite.readme.io/docs/deployment-modes" target="_blank") More info.]
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='deployment')
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
-            .pca-form-column-6
-                .settings-row
+            .pca-form-column-6.pc-form-grid-row
+                .pc-form-grid-col-60
                     +dropdown('Deployment mode:', `${model}.deploymentMode`, '"deploymentMode"', 'true', 'SHARED',
                         '[\
                             {value: "PRIVATE", label: "PRIVATE"},\
@@ -53,15 +53,15 @@ include /app/helpers/jade/mixins
                             <li>SHARED - same as ISOLATED, but now tasks from different master nodes with the same user version and same class loader will share the same class loader on remote nodes</li>\
                             <li>CONTINUOUS - same as SHARED deployment mode, but resources will not be undeployed even after all master nodes left grid</li>\
                         </ul>')
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Enable peer class loading', `${model}.peerClassLoadingEnabled`, '"peerClassLoadingEnabled"', 'Enables/disables peer class loading')
-                .settings-row
+                .pc-form-grid-col-60
                     +number('Missed resources cache size:', `${model}.peerClassLoadingMissedResourcesCacheSize`, '"peerClassLoadingMissedResourcesCacheSize"', enabled, '100', '0',
                         'If size greater than 0, missed resources will be cached and next resource request ignored<br/>\
                         If size is 0, then request for the resource will be sent to the remote node every time this resource is requested')
-                .settings-row
+                .pc-form-grid-col-60
                     +number('Pool size:', `${model}.peerClassLoadingThreadPoolSize`, '"peerClassLoadingThreadPoolSize"', enabled, '2', '1', 'Thread pool size to use for peer class loading')
-                .settings-row
+                .pc-form-grid-col-60
                     +ignite-form-group
                         -var uniqueTip = 'Such package already exists'
 
@@ -116,11 +116,11 @@ include /app/helpers/jade/mixins
                             | Not defined
 
                 //- Since ignite 2.0
-                .settings-row(ng-if='$ctrl.available("2.0.0")')
+                .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
                     +java-class('Class loader:', model + '.classLoader', '"classLoader"', 'true', 'false',
                         'Loader which will be used for instantiating execution context')
 
-                .settings-row
+                .pc-form-grid-col-60
                     +dropdown('Deployment variant:', modelDeployment + '.kind', '"deploymentKind"', 'true', 'Default',
                         '[\
                             {value: "URI", label: "URI"},\
@@ -135,8 +135,8 @@ include /app/helpers/jade/mixins
                             <li>Custom - Custom implementation of DeploymentSpi</li>\
                             <li>Default - Default configuration of LocalDeploymentSpi will be used</li>\
                         </ul>')
-                .panel-details(ng-show=uriDeployment)
-                    .details-row
+                .pc-form-group(ng-show=uriDeployment).pc-form-grid-row
+                    .pc-form-grid-col-60
                         +ignite-form-group()
                             -var uniqueTip = 'Such URI already configured'
 
@@ -179,10 +179,10 @@ include /app/helpers/jade/mixins
 
                             .group-content-empty(ng-if=`!(${uriListModel}.length) && !group.add.length`)
                                 | Not defined
-                    .details-row
+                    .pc-form-grid-col-60
                         +text('Temporary directory path:', modelDeployment + '.URI.temporaryDirectoryPath', '"DeploymentURITemporaryDirectoryPath"', 'false', 'Temporary directory path',
                         'Absolute path to temporary directory which will be used by deployment SPI to keep all deployed classes in')
-                    .details-row
+                    .pc-form-grid-col-60
                         +ignite-form-group()
                             -var uniqueTip = 'Such scanner already configured'
 
@@ -226,17 +226,17 @@ include /app/helpers/jade/mixins
 
                             .group-content-empty(ng-if=`!(${scannerModel}.length) && !group.add.length`)
                                 | Not defined
-                    .details-row
+                    .pc-form-grid-col-60
                         +java-class('Listener:', `${modelDeployment}.URI.listener`, '"DeploymentURIListener"', 'true', 'false', 'Deployment event listener', uriDeployment)
-                    .details-row
+                    .pc-form-grid-col-60
                         +checkbox('Check MD5', `${modelDeployment}.URI.checkMd5`, '"DeploymentURICheckMd5"', 'Exclude files with same md5s from deployment')
-                    .details-row
+                    .pc-form-grid-col-60
                         +checkbox('Encode URI', `${modelDeployment}.URI.encodeUri`, '"DeploymentURIEncodeUri"', 'URI must be encoded before usage')
-                .panel-details(ng-show=localDeployment)
-                    .details-row
+                .pc-form-group(ng-show=localDeployment).pc-form-grid-row
+                    .pc-form-grid-col-60
                         +java-class('Listener:', `${modelDeployment}.Local.listener`, '"DeploymentLocalListener"', 'true', 'false', 'Deployment event listener', localDeployment)
-                .panel-details(ng-show=customDeployment)
-                    .details-row
+                .pc-form-group(ng-show=customDeployment).pc-form-grid-row
+                    .pc-form-grid-col-60
                         +java-class('Class:', `${modelDeployment}.Custom.className`, '"DeploymentCustom"', 'true', customDeployment, 'DeploymentSpi implementation class', customDeployment)
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterDeployment')

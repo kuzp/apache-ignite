@@ -15,6 +15,8 @@
     limitations under the License.
 
 mixin ignite-form-field-number(label, model, name, disabled, required, placeholder, min, max, step, tip)
+    -var errLbl = label.substring(0, label.length - 1)
+
     mixin form-field-input()
         input.form-control(
             id=`{{ ${name} }}Input`
@@ -45,9 +47,9 @@ mixin ignite-form-field-number(label, model, name, disabled, required, placehold
             ng-messages=`${form}[${name}].$error`
             ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
         )
-            +form-field-feedback(name, 'required', 'This field could not be empty')
-            +form-field-feedback(name, 'min', 'Value is less than allowable minimum: '+ min || 0)
-            +form-field-feedback(name, 'max', 'Value is more than allowable maximum: '+ max)
-            +form-field-feedback(name, 'number', 'Only numbers allowed')
+            +form-field-feedback(name, 'required', `${errLbl} could not be empty`)
+            +form-field-feedback(name, 'min', `${errLbl} is less than allowable minimum: ${min || 0}`)
+            +form-field-feedback(name, 'max', `${errLbl} is more than allowable maximum: ${max}`)
+            +form-field-feedback(name, 'number', `Only numbers are allowed`)
             if block
                 block

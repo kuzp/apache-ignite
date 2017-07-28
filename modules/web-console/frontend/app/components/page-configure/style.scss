@@ -117,9 +117,11 @@ page-configure {
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
+        align-content: flex-start;
 
         &>.pc-form-grid-col-20,
         &>.pc-form-grid-col-30,
+        &>.pc-form-grid-col-40,
         &>.pc-form-grid-col-60 {
             margin: 10px 0 0 !important;
             max-width: none;
