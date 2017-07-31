@@ -28,12 +28,12 @@ include /app/helpers/jade/mixins
             a.link-success(href="https://apacheignite-fs.readme.io/docs/in-memory-file-system" target="_blank") More info.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='general')
         .pca-panel-body.pca-form-row
-            .pca-form-column-6
-                .settings-row
+            .pca-form-column-6.pc-form-grid-row
+                .pc-form-grid-col-30.pc-form-grid__text-only-item
                     +text('Name:', `${model}.name`, '"igfsName"', 'true', 'Input name', 'IGFS name')
-                .settings-row
+                .pc-form-grid-col-30
                     +clusters(model, 'Associate clusters with the current IGFS')
-                .settings-row
+                .pc-form-grid-col-30
                     +dropdown('IGFS mode:', `${model}.defaultMode`, '"defaultMode"', 'true', '{{::$ctrl.defaultValues.defaultMode}}',
                     '[\
                         {value: "PRIMARY", label: "PRIMARY"},\
@@ -48,7 +48,7 @@ include /app/helpers/jade/mixins
                         <li>DUAL_SYNC - in this mode IGFS will cache files locally and also <b>synchronously</b> write them through to secondary file system</li>\
                         <li>DUAL_ASYNC - in this mode IGFS will cache files locally and also <b> asynchronously </b> write them through to secondary file system</li>\
                     </ul>')
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Group size:', `${model}.affinnityGroupSize`, '"affinnityGroupSize"', 'true', '{{::$ctrl.defaultValues.affinnityGroupSize}}', '1',
                         'Size of the group in blocks<br/>\
                         Required for construction of affinity mapper in IGFS data cache')

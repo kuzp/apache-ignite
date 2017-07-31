@@ -28,17 +28,17 @@ include /app/helpers/jade/mixins
             a.link-success(href="https://apacheignite-fs.readme.io/docs/secondary-file-system" target="_blank") More info.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
-            .pca-form-column-6
+            .pca-form-column-6.pc-form-grid-row
                 -var enabled = `${model}.secondaryFileSystemEnabled`
                 -var secondaryFileSystem = `${model}.secondaryFileSystem`
 
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Enabled', enabled, '"secondaryFileSystemEnabled"', 'Secondary file system enabled flag')
-                .settings-row
+                .pc-form-grid-col-60
                     +text-enabled('URI:', `${secondaryFileSystem}.uri`, '"hadoopURI"', enabled, 'false', 'hdfs://[namenodehost]:[port]/[path]', 'URI of file system')
-                .settings-row
+                .pc-form-grid-col-60
                     +text-enabled('Config path:', `${secondaryFileSystem}.cfgPath`, '"cfgPath"', enabled, 'false', 'Path to additional config', 'Additional path to Hadoop configuration')
-                .settings-row
+                .pc-form-grid-col-60
                     +text-enabled('User name:', `${secondaryFileSystem}.userName`, '"userName"', enabled, 'false', 'Input user name', 'User name')
             .pca-form-column-6
                 +preview-xml-java(model, 'igfsSecondFS')
