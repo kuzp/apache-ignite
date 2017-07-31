@@ -9,7 +9,7 @@ export default ['$delegate', 'uiGridSelectionService', ($delegate, uiGridSelecti
             if (evt.shiftKey)
                 uiGridSelectionService.shiftSelect(self, row, evt, self.options.multiSelect);
             else
-              uiGridSelectionService.toggleRowSelection(self, row, evt, self.options.multiSelect, self.options.noUnselect);
+                uiGridSelectionService.toggleRowSelection(self, row, evt, self.options.multiSelect, self.options.noUnselect);
         };
         if (pcItemsTable) $scope.selectButtonClick = mySelectButtonClick;
     };

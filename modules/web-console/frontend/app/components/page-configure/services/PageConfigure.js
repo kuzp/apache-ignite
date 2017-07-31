@@ -100,21 +100,19 @@ export default class PageConfigure {
                     type: ADD_CLUSTERS,
                     clusters: toAdd
                 })
-                .merge(
-                    ...toAdd.map((c) => sendRequest(c)
-                        .map(({data}) => ({
-                            type: UPDATE_CLUSTER,
-                            _id: c._id,
-                            cluster: {_id: data}
-                        }))
-                        .catch((e) => {
-                            return Observable.of({
-                                type: REMOVE_CLUSTERS,
-                                clusterIDs: [c._id]
-                            });
-                        })
-                    )
-                );
+                .merge(...toAdd.map((c) => sendRequest(c)
+                    .map(({data}) => ({
+                        type: UPDATE_CLUSTER,
+                        _id: c._id,
+                        cluster: {_id: data}
+                    }))
+                    .catch((e) => {
+                        return Observable.of({
+                            type: REMOVE_CLUSTERS,
+                            clusterIDs: [c._id]
+                        });
+                    })
+                ));
             });
 
         this.removeClusters$.merge(this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
