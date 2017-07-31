@@ -70,12 +70,12 @@ mixin table-db-field-edit(tbl, prefix, focusId, index)
             a.link-success(href="https://apacheignite.readme.io/docs/3rd-party-store" target="_blank") More info.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
-            .pca-form-column-6
-                .settings-row
+            .pca-form-column-6.pc-form-grid-row
+                .pc-form-grid-col-30
                     +text('Database schema:', model + '.databaseSchema', '"databaseSchema"', 'false', 'Input DB schema name', 'Schema name in database')
-                .settings-row
+                .pc-form-grid-col-30
                     +text('Database table:', model + '.databaseTable', '"databaseTable"', 'false', 'Input DB table name', 'Table name in database')
-                .settings-row(ng-init='keysTbl={type: "table-db-fields", model: "keyFields", focusId: "KeyField", ui: "table-db-fields"}')
+                .pc-form-grid-col-60(ng-init='keysTbl={type: "table-db-fields", model: "keyFields", focusId: "KeyField", ui: "table-db-fields"}')
                     +ignite-form-group(ng-form=keyFieldsForm ng-model=keyFields)
                         ignite-form-field-label(id='keyFields')
                             | Key fields
@@ -98,7 +98,7 @@ mixin table-db-field-edit(tbl, prefix, focusId, index)
                                     tr
                                         td
                                             +table-db-field-edit('keysTbl', 'new', 'KeyField', '-1')
-                .settings-row(ng-init='valuesTbl={type: "table-db-fields", model: "valueFields", focusId: "ValueField", ui: "table-db-fields"}')
+                .pc-form-grid-col-60(ng-init='valuesTbl={type: "table-db-fields", model: "valueFields", focusId: "ValueField", ui: "table-db-fields"}')
                     +ignite-form-group(ng-form=valueFieldsForm ng-model=valueFields)
                         ignite-form-field-label(id='valueFields')
                             | Value fields

@@ -49,51 +49,50 @@ mixin table-igfs-path-mode-edit(prefix, focusId, index)
         .pca-panel-heading-description Various miscellaneous IGFS settings.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
-            .pca-form-column-6
-                .settings-row
+            .pca-form-column-6.pc-form-grid-row
+                .pc-form-grid-col-60
                     +number('Block size:', `${model}.blockSize`, '"blockSize"', 'true', '65536', '0', 'File data block size in bytes')
 
                 //- Since ignite 2.0
-                .settings-row(ng-if='$ctrl.available("2.0.0")')
+                .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
                     +number('Buffer size:', `${model}.streamBufferSize`, '"streamBufferSize"', 'true', '65536', '0', 'Read/write buffer size for IGFS stream operations in bytes')
 
                 //- Removed in ignite 2.0
-                div(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
-                    .settings-row
-                        +number('Stream buffer size:', `${model}.streamBufferSize`, '"streamBufferSize"', 'true', '65536', '0', 'Read/write buffer size for IGFS stream operations in bytes')
-                    .settings-row
-                        +number('Maximum space size:', `${model}.maxSpaceSize`, '"maxSpaceSize"', 'true', '0', '0', 'Maximum space available for data cache to store file system entries')
+                .pc-form-grid-col-60(ng-if-start='$ctrl.available(["1.0.0", "2.0.0"])')
+                    +number('Stream buffer size:', `${model}.streamBufferSize`, '"streamBufferSize"', 'true', '65536', '0', 'Read/write buffer size for IGFS stream operations in bytes')
+                .pc-form-grid-col-60(ng-if-end)
+                    +number('Maximum space size:', `${model}.maxSpaceSize`, '"maxSpaceSize"', 'true', '0', '0', 'Maximum space available for data cache to store file system entries')
 
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Maximum task range length:', `${model}.maximumTaskRangeLength`, '"maximumTaskRangeLength"', 'true', '0', '0', 'Maximum default range size of a file being split during IGFS task execution')
-                .settings-row
+                .pc-form-grid-col-30
                     +number-min-max('Management port:', `${model}.managementPort`, '"managementPort"', 'true', '11400', '0', '65535', 'Port number for management endpoint')
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Per node batch size:', `${model}.perNodeBatchSize`, '"perNodeBatchSize"', 'true', '100', '0', 'Number of file blocks collected on local node before sending batch to remote node')
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Per node parallel batch count:', `${model}.perNodeParallelBatchCount`, '"perNodeParallelBatchCount"', 'true', '8', '0', 'Number of file block batches that can be concurrently sent to remote node')
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Prefetch blocks:', `${model}.prefetchBlocks`, '"prefetchBlocks"', 'true', '0', '0', 'Number of pre-fetched blocks if specific file chunk is requested')
-                .settings-row
+                .pc-form-grid-col-30
                     +number('Sequential reads before prefetch:', `${model}.sequentialReadsBeforePrefetch`, '"sequentialReadsBeforePrefetch"', 'true', '0', '0', 'Amount of sequential block reads before prefetch is triggered')
 
                 //- Removed in ignite 2.0
-                .settings-row(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
+                .pc-form-grid-col-60(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
                     +number('Trash purge timeout:', `${model}.trashPurgeTimeout`, '"trashPurgeTimeout"', 'true', '1000', '0', 'Maximum timeout awaiting for trash purging in case data cache oversize is detected')
 
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Colocate metadata', `${model}.colocateMetadata`, '"colocateMetadata"', 'Whether to co-locate metadata on a single node')
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Relaxed consistency', `${model}.relaxedConsistency`, '"relaxedConsistency"',
                         'If value of this flag is <b>true</b>, IGFS will skip expensive consistency checks<br/>\
                         It is recommended to set this flag to <b>false</b> if your application has conflicting\
                         operations, or you do not know how exactly users will use your system')
 
                 //- Since ignite 2.0
-                .settings-row(ng-if='$ctrl.available("2.0.0")')
+                .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
                     +checkbox('Update file length on flush', model + '.updateFileLengthOnFlush', '"updateFileLengthOnFlush"', 'Update file length on flush flag')
 
-                .settings-row
+                .pc-form-grid-col-60
                     +ignite-form-group(ng-model=pathModes ng-form=pathModesForm)
                         ignite-form-field-label
                             | Path modes
