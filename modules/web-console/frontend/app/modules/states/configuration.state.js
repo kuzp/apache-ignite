@@ -47,7 +47,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
         $stateProvider
             .state('base.configuration', {
                 abstract: true,
-                onEnter: AclRoute.checkAccess('configuration'),
+                permission: 'configuration',
                 views: {
                     '@': {
                         template: base2
