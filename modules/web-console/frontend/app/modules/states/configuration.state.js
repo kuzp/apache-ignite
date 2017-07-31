@@ -111,6 +111,11 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 tfMetaTags: {
                     title: 'Configure Clusters'
                 },
+                params: {
+                    clusterID: {
+                        dynamic: true
+                    }
+                },
                 controller: clustersCtrl,
                 controllerAs: '$ctrl'
             })

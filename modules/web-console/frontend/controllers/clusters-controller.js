@@ -49,8 +49,10 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
         this.onClusterAction = (action) => {
             const realItems = action.items.map((item) => $scope.clusters.find(({_id}) => _id === item._id));
             switch (action.type) {
-                case 'EDIT':
+                case 'EDIT': {
+                    if (!realItems.length) return;
                     return $scope.selectItem(realItems[0]);
+                }
                 case 'CLONE':
                     return this.cloneItems(realItems);
                 case 'DELETE':
