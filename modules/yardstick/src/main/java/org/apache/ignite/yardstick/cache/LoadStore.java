@@ -20,6 +20,7 @@ package org.apache.ignite.yardstick.cache;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,6 +36,10 @@ import org.apache.ignite.IgniteBinary;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CacheAtomicityMode;
+import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.QueryEntity;
+import org.apache.ignite.cache.QueryIndex;
 import org.apache.ignite.cache.affinity.AffinityKey;
 import org.apache.ignite.cache.store.CacheStore;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -46,7 +51,7 @@ import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.resources.IgniteInstanceResource;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
-import org.apache.ignite.yardstick.cache.model.ZipEntity;
+import org.apache.ignite.yardstick.cache.model.ZipSmallEntity;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.yardstick.cache.IgniteStreamerZipBenchmark.CompressionType;
@@ -160,7 +165,7 @@ public class LoadStore implements CacheStore<Object, Object> {
     private Object generateKey(
         int i
     ) {
-        return new AffinityKey<>(IgniteUuid.randomUuid(), i);
+        return new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i);
     }
 
     /** {@inheritDoc} */
@@ -229,6 +234,9 @@ public class LoadStore implements CacheStore<Object, Object> {
                 cfg.setPersistentStoreConfiguration(pcfg);
             }
 
+            cfg.setStripedPoolSize(args0.stripedPoolSize);
+            cfg.setDataStreamerThreadPoolSize(args0.streamerPoolSize);
+
             ignite = Ignition.start(cfg);
         }
 
@@ -240,8 +248,42 @@ public class LoadStore implements CacheStore<Object, Object> {
                     }
                 });
 
-        if (args0.idx)
-            ccfg.setIndexedTypes(AffinityKey.class, ZipEntity.class);
+        ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+        ccfg.setCacheMode(CacheMode.PARTITIONED);
+
+        if (args0.idx) {
+            QueryEntity qryEntity = new QueryEntity(String.class.getName(), ZipSmallEntity.class.getName());
+
+            qryEntity.setTableName("ZIP_ENTITY");
+
+            LinkedHashMap<String, String> fields = new LinkedHashMap<>();
+
+            fields.put("BUSINESSDATE", long.class.getName());
+            fields.put("RISKSUBJECTID", String.class.getName());
+            fields.put("SERIESDATE", long.class.getName());
+            fields.put("SNAPVERSION", String.class.getName());
+            fields.put("VARTYPE", String.class.getName());
+
+            qryEntity.setFields(fields);
+
+            QueryIndex idx1 = new QueryIndex("BUSINESSDATE");
+            QueryIndex idx2 = new QueryIndex("RISKSUBJECTID");
+            QueryIndex idx3 = new QueryIndex("SERIESDATE");
+            QueryIndex idx4 = new QueryIndex("SNAPVERSION");
+            QueryIndex idx5 = new QueryIndex("VARTYPE");
+
+            idx1.setInlineSize(10);
+            idx2.setInlineSize(30);
+            idx3.setInlineSize(10);
+            idx4.setInlineSize(30);
+            idx5.setInlineSize(30);
+
+            qryEntity.setIndexes(Arrays.asList(idx1, idx2, idx3, idx4, idx5));
+
+            ccfg.setQueryEntities(Collections.singleton(qryEntity));
+
+            ccfg.setQueryParallelism(args0.qryPar);
+        }
 
         ignite.active(true);
 
@@ -255,11 +297,14 @@ public class LoadStore implements CacheStore<Object, Object> {
      *
      */
     private static class Arguments {
+        /** CPUs. */
+        private static final int CPUS = Runtime.getRuntime().availableProcessors();
+
         /** Compression type. */
         private CompressionType compType = CompressionType.NONE;
 
         /** Load threads. */
-        private int loadThreads = Runtime.getRuntime().availableProcessors();
+        private int loadThreads = CPUS;
 
         /** String randomization. */
         private double strRandomization = 1.0;
@@ -281,6 +326,15 @@ public class LoadStore implements CacheStore<Object, Object> {
 
         /** Wal mode. */
         private WALMode walMode = WALMode.NONE;
+
+        /** Query par. */
+        private int qryPar = CPUS;
+
+        /** Striped pool size. */
+        private int stripedPoolSize = CPUS;
+
+        /** Streamer pool size. */
+        private int streamerPoolSize = CPUS;
 
         /**
          * Default constructor.
@@ -347,6 +401,21 @@ public class LoadStore implements CacheStore<Object, Object> {
                     case "-wm":
                     case "--walMode":
                         args0.walMode = WALMode.valueOf(args[++i]);
+
+                        break;
+
+                    case "-qp":
+                        args0.qryPar = Integer.parseInt(args[++i]);
+
+                        break;
+
+                    case "-ss":
+                        args0.stripedPoolSize = Integer.parseInt(args[++i]);
+
+                        break;
+
+                    case "-sps":
+                        args0.streamerPoolSize = Integer.parseInt(args[++i]);
 
                         break;
                 }
