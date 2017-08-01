@@ -52,7 +52,7 @@ export default class PageConfigureBasicController {
         ];
 
         this.memorySizeScale = this.sizesMenu[2];
-        this.pageService.setCluster(this.$state.params.clusterID || '-1');
+        // this.pageService.setCluster(this.$state.params.clusterID || '-1');
         this.extraFormActions = [
             {text: 'Save changes and download project', click: () => this.saveAndDownload()},
             {text: 'Save changes', click: () => this.save()}
@@ -60,15 +60,21 @@ export default class PageConfigureBasicController {
     }
 
     getObservable(state$, version$) {
-        return state$.combineLatest(version$, (state, version) => ({
-            clusters: state.list.clusters,
-            caches: state.list.caches,
-            state: state.configureBasic,
-            allClusterCaches: this.getAllClusterCaches(state.configureBasic),
-            cachesMenu: this.getCachesMenu(state.list.caches),
-            defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.configureBasic.cluster, version),
+        return state$.pluck('clusterConfiguration')
+        .combineLatest(version$, (clusterConfiguration, version) => ({
+            clusterConfiguration,
+            allClusterCaches: this.getAllClusterCaches(clusterConfiguration),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
         }))
+        // return state$.combineLatest(version$, (state, version) => ({
+        //     clusters: state.list.clusters,
+        //     caches: state.list.caches,
+        //     state: state.configureBasic,
+        //     allClusterCaches: this.getAllClusterCaches(state.configureBasic),
+        //     cachesMenu: this.getCachesMenu(state.list.caches),
+        //     defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.configureBasic.cluster),
+        //     memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
+        // }))
         .do((value) => this.applyValue(value));
     }
 
@@ -80,13 +86,13 @@ export default class PageConfigureBasicController {
         this.subscription.unsubscribe();
     }
 
-    set clusterID(value) {
-        this.pageService.setCluster(value);
-    }
+    // set clusterID(value) {
+    //     this.pageService.setCluster(value);
+    // }
 
-    get clusterID() {
-        return get(this, 'state.clusterID');
-    }
+    // get clusterID() {
+    //     return get(this, 'state.clusterID');
+    // }
 
     set oldClusterCaches(value) {
         this.pageService.setSelectedCaches(value);
@@ -123,8 +129,8 @@ export default class PageConfigureBasicController {
         return [...caches.values()].map((c) => ({_id: c._id, name: c.name}));
     }
 
-    getAllClusterCaches(state = {oldClusterCaches: [], newClusterCaches: []}) {
-        return [...state.oldClusterCaches, ...state.newClusterCaches];
+    getAllClusterCaches(state = {originalCaches: [], newCaches: []}) {
+        return [...state.originalCaches, ...state.newCaches];
     }
 
     getDefaultClusterMemoryPolicy(cluster, version) {

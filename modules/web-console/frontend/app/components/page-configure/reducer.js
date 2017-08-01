@@ -108,3 +108,20 @@ export const reducer = (state = defaults, action) => {
             return state;
     }
 };
+
+
+export const RECEIVE_CLUSTER_EDIT = Symbol('RECEIVE_CLUSTER_EDIT');
+
+export const editReducer = (state = {originalCluster: null}, action) => {
+    switch (action.type) {
+        case RECEIVE_CLUSTER_EDIT:
+            return {
+                ...state,
+                originalCluster: action.cluster,
+                originalCaches: action.caches,
+                newCaches: []
+            };
+        default:
+            return state;
+    }
+};

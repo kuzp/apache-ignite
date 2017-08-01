@@ -17,20 +17,6 @@
 include /app/helpers/jade/mixins
 
 div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters...' ignite-loading-position='top')
-    pc-items-table(
-        table-title='::"My clusters"'
-        column-defs='$ctrl.clustersColumnDefs'
-        items='$ctrl.clustersTable'
-        immediate-edit='true'
-        on-action='$ctrl.onClusterAction($event)'
-        on-filter-changed='$ctrl.onFilterChanged($event)'
-        selected-row-id='backupItem'
-    )
-        footer-slot
-            div(style='font-style: italic' ng-hide='$ctrl.clustersTable.length')
-                | You have no cluster configurations. #[a.link-success(ng-click='createItem()') Create one?]
-            a.link-success(ng-click='createItem()' ng-show='$ctrl.clustersTable.length') + Add new cluster
-
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} cluster {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
 

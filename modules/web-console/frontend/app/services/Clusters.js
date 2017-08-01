@@ -18,6 +18,7 @@
 import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
+import ObjectID from 'bson-objectid';
 
 export default class Clusters {
     static $inject = ['$http'];
@@ -41,6 +42,18 @@ export default class Clusters {
         Object.assign(this, {$http});
     }
 
+    getCluster(clusterID) {
+        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}`);
+    }
+
+    getClusterCaches(clusterID) {
+        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/caches/`);
+    }
+
+    getClustersOverview() {
+        return this.$http.get('/api/v1/configuration/clusters/');
+    }
+
     saveCluster(cluster) {
         return this.$http.post('/api/v1/configuration/clusters/save', cluster);
     }
@@ -59,6 +72,7 @@ export default class Clusters {
 
     getBlankCluster() {
         return {
+            _id: ObjectID.generate().string,
             activeOnStart: true,
             cacheSanityCheckEnabled: true,
             atomicConfiguration: {},
