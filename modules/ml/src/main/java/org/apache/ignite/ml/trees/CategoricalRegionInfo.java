@@ -24,11 +24,6 @@ import java.util.BitSet;
  */
 public class CategoricalRegionInfo extends RegionInfo {
     /**
-     * Indexes of vectors that belong to this region.
-     **/
-    private int[] vectors;
-
-    /**
      * Bitset representing categories of this region.
      */
     private BitSet cats;
@@ -38,20 +33,10 @@ public class CategoricalRegionInfo extends RegionInfo {
      * @param vectors Indexes of vectors that belong to this region.
      * @param cats Bitset representing categories of this region.
      */
-    public CategoricalRegionInfo(double impurity, int[] vectors, BitSet cats) {
+    public CategoricalRegionInfo(double impurity, BitSet cats) {
         super(impurity);
 
-        this.vectors = vectors;
         this.cats = cats;
-    }
-
-    /**
-     * Get indexes of vectors that belong to this region.
-     *
-     * @return Indexes of vectors that belong to this region.
-     */
-    public int[] vectors() {
-        return vectors;
     }
 
     /**

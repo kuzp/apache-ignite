@@ -44,14 +44,14 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
          * @param var Variance in this region.
          * @param mean Mean value in this region.
          */
-        VarianceData(int left, int right, double var, double mean) {
-            super(var, left, right);
+        VarianceData(double var, int size, double mean) {
+            super(var, size);
             this.mean = mean;
         }
     }
 
     /** {@inheritDoc} */
-    @Override public VarianceData calculateRegionInfo(DoubleStream s, int l) {
+    @Override public VarianceData calculateRegionInfo(DoubleStream s, int size) {
         PrimitiveIterator.OfDouble itr = s.iterator();
         int i = 0;
 
@@ -67,7 +67,7 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
             m2 += delta * delta2;
         }
 
-        return new VarianceData(l, l + i - 1, m2 / i, mean);
+        return new VarianceData(m2 / i, size, mean);
     }
 
     /** {@inheritDoc} */

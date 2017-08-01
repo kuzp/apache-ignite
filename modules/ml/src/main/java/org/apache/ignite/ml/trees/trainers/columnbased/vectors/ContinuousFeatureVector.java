@@ -20,16 +20,16 @@ package org.apache.ignite.ml.trees.trainers.columnbased.vectors;
 import com.zaxxer.sparsebits.SparseBitSet;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.ml.math.functions.IgniteFunction;
 import org.apache.ignite.ml.trees.ContinuousRegionInfo;
 import org.apache.ignite.ml.trees.ContinuousSplitCalculator;
 import org.apache.ignite.ml.trees.RegionInfo;
+import org.apache.ignite.ml.trees.trainers.columnbased.Region;
+
+import static org.apache.ignite.ml.trees.trainers.columnbased.vectors.Utils.splitByBitSet;
 
 /**
  * Container of projection of samples on continuous feature.
@@ -42,12 +42,6 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
     /** ContinuousSplitCalculator used for calculating of best split of each region. */
     private final ContinuousSplitCalculator<D> calc;
 
-    /** Samples. */
-    private SampleInfo[] samples;
-
-    /** Information about regions. */
-    private final List<D> regions = new LinkedList<>();
-
     /**
      * @param splitCalc Calculator used for calculating splits.
      * @param data Stream containing projection of samples on this feature in format (sample index, value of
@@ -55,148 +49,121 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
      * @param samplesCnt Number of samples.
      * @param labels Labels of samples.
      */
-    public ContinuousFeatureVector(ContinuousSplitCalculator<D> splitCalc, Stream<IgniteBiTuple<Integer, Double>> data,
-        int samplesCnt, double[] labels) {
-        samples = new SampleInfo[samplesCnt];
-
-        int i = 0;
-        Iterator<IgniteBiTuple<Integer, Double>> itr = data.iterator();
-        while (itr.hasNext()) {
-            IgniteBiTuple<Integer, Double> d = itr.next();
-            samples[i] = new SampleInfo(labels[d.get1()], d.get2(), d.get1());
-            i++;
-        }
-
+    public ContinuousFeatureVector(ContinuousSplitCalculator<D> splitCalc) {
         this.calc = splitCalc;
+//        samples = new SampleInfo[samplesCnt];
+//
+//
+//        int i = 0;
+//        Iterator<IgniteBiTuple<Integer, Double>> itr = data.iterator();
+//        while (itr.hasNext()) {
+//            IgniteBiTuple<Integer, Double> d = itr.next();
+//            samples[i] = new SampleInfo(labels[d.get1()], d.get2(), d.get1());
+//            i++;
+//        }
+//
 
-        Arrays.sort(samples, Comparator.comparingDouble(SampleInfo::getVal));
-        regions.add(calc.calculateRegionInfo(Arrays.stream(samples).mapToDouble(SampleInfo::getLabel), 0));
     }
 
     /** {@inheritDoc} */
-    @Override public SplitInfo<D> findBestSplit() {
-        double maxInfoGain = 0.0;
-        SplitInfo<D> res = null;
+    @Override public SplitInfo<D> findBestSplit(Region<D> ri, int regIdx) {
+        SplitInfo<D> res = calc.splitRegion(Arrays.stream(ri.samples()), regIdx, ri.data());
 
-        // Try to split every possible interval and find the best split.
-        int i = 0;
-        for (D info : regions) {
-            int l = info.left();
-            int r = info.right();
-            int size = (r - l) + 1;
+        if (res == null)
+            return null;
 
-            double curImpurity = info.impurity();
+        double lWeight = res.leftData.getSize() / ri.samples().length;
+        double rWeight = res.rightData.getSize() / ri.samples().length;
 
-            SplitInfo<D> split = calc.splitRegion(Arrays.stream(samples, l, r + 1), i, info);
-
-            if (split == null) {
-                i++;
-                continue;
-            }
-
-            double lWeight = ((double)split.leftData().right() - split.leftData().left() + 1) / size;
-            double rWeight = ((double)split.rightData().right() - split.rightData().left() + 1) / size;
-
-            double infoGain = curImpurity - lWeight * split.leftData().impurity() - rWeight * split.rightData().impurity();
-            if (maxInfoGain < infoGain) {
-                maxInfoGain = infoGain;
-
-                res = split;
-                res.setInfoGain(maxInfoGain);
-            }
-            i++;
-        }
+        double infoGain = ri.data().impurity() - lWeight * res.leftData().impurity() - rWeight * res.rightData().impurity();
+        res.setInfoGain(infoGain);
 
         return res;
+
+//        double maxInfoGain = 0.0;
+//        SplitInfo<D> res = null;
+//
+//        // Try to split every possible interval and find the best split.
+//        int i = 0;
+//        for (D info : regions) {
+//            int l = info.left();
+//            int r = info.right();
+//            int size = (r - l) + 1;
+//
+//            double curImpurity = info.impurity();
+//
+//            SplitInfo<D> split = ;
+//
+//            if (split == null) {
+//                i++;
+//                continue;
+//            }
+//
+
+//
+//            double infoGain = curImpurity - lWeight * split.leftData().impurity() - rWeight * split.rightData().impurity();
+//            if (maxInfoGain < infoGain) {
+//                maxInfoGain = infoGain;
+//
+//                res = split;
+//                res.setInfoGain(maxInfoGain);
+//            }
+//            i++;
+//        }
+
+//        return res;
+    }
+
+    @Override public Region<D> createInitialRegion(SampleInfo[] samples) {
+        Arrays.sort(samples, Comparator.comparingDouble(SampleInfo::getVal));
+        return new Region<>(samples, calc.calculateRegionInfo(Arrays.stream(samples).mapToDouble(SampleInfo::getLabel), 0));
     }
 
     /** {@inheritDoc} */
-    @Override public SparseBitSet calculateOwnershipBitSet(ContinuousSplitInfo<D> s) {
-        int l = s.leftData().left();
-
+    @Override public SparseBitSet calculateOwnershipBitSet(Region<D> reg, ContinuousSplitInfo<D> s) {
         SparseBitSet res = new SparseBitSet();
 
-        for (int i = l; i < s.rightData().left(); i++)
-            res.set(samples[i].getSampleInd());
+        for (int i = 0; i < s.leftData().getSize(); i++)
+            res.set(reg.samples()[i].getSampleInd());
 
         return res;
     }
 
     /** {@inheritDoc} */
-    @Override public double[] calculateRegions(IgniteFunction<DoubleStream, Double> regCalc) {
-        double[] res = new double[regions.size()];
+    @Override public double[] calculateRegions(Map<Integer, Region> regs, IgniteFunction<DoubleStream, Double> regCalc) {
+        double[] res = new double[regs.size()];
 
-        int i = 0;
+        for (Map.Entry<Integer, Region> entry : regs.entrySet()) {
+            Integer regIdx = entry.getKey();
+            Region reg = entry.getValue();
 
-        for (D interval : regions) {
-            int l = interval.left();
-            int r = interval.right();
-
-            res[i] = regCalc.apply(Arrays.stream(samples, l, r + 1).mapToDouble(SampleInfo::getLabel));
-            i++;
+            res[regIdx] = regCalc.apply(Arrays.stream(reg.samples()).mapToDouble(SampleInfo::getLabel));
         }
 
         return res;
     }
 
     /** {@inheritDoc} */
-    @Override public ContinuousFeatureVector<D> performSplit(SparseBitSet bs, int regionIdx, D leftData, D rightData) {
-        D info = regions.get(regionIdx);
-        int l = info.left();
-        int r = info.right();
+    @Override public IgniteBiTuple<Region<D>, Region<D>> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData) {
+        int lSize = leftData.getSize();
+        int rSize = rightData.getSize();
 
-        sortByBitSet(l, r, bs);
+        IgniteBiTuple<SampleInfo[], SampleInfo[]> lrSamples = splitByBitSet(lSize, rSize, reg.samples(), bs);
 
-        regions.set(regionIdx, leftData);
-        regions.add(regionIdx + 1, rightData);
-
-        return this;
+        return new IgniteBiTuple<>(new Region<>(lrSamples.get1(), leftData), new Region<>(lrSamples.get2(), rightData));
     }
 
     /** {@inheritDoc} */
-    @Override public ContinuousFeatureVector<D> performSplitGeneric(SparseBitSet bs, int regionIdx, RegionInfo leftData,
+    @Override public IgniteBiTuple<Region<D>, Region<D>> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
         RegionInfo rightData) {
-        D info = regions.get(regionIdx);
-        int l = info.left();
-        int r = info.right();
-
-        sortByBitSet(l, r, bs);
-
-        int newLSize = bs.cardinality();
-
-        D ld = calc.calculateRegionInfo(Arrays.stream(samples, l, l + newLSize).mapToDouble(SampleInfo::getLabel), l);
-        D rd = calc.calculateRegionInfo(Arrays.stream(samples, l + newLSize, r + 1).mapToDouble(SampleInfo::getLabel), l + newLSize);
-
-        regions.set(regionIdx, ld);
-        regions.add(regionIdx + 1, rd);
-
-        return this;
-    }
-
-    /** */
-    private void sortByBitSet(int l, int r, SparseBitSet bs) {
         int lSize = bs.cardinality();
-        int rSize = r - l + 1 - lSize;
+        int rSize = reg.samples().length - lSize;
 
-        SampleInfo lList[] = new SampleInfo[lSize];
-        SampleInfo rList[] = new SampleInfo[rSize];
+        IgniteBiTuple<SampleInfo[], SampleInfo[]> lrSamples = splitByBitSet(lSize, rSize, reg.samples(), bs);
 
-        int lc = 0;
-        int rc = 0;
+        D ld = calc.calculateRegionInfo(Arrays.stream(lrSamples.get1()).mapToDouble(SampleInfo::getLabel), lSize);
+        D rd = calc.calculateRegionInfo(Arrays.stream(lrSamples.get2()).mapToDouble(SampleInfo::getLabel), rSize);
 
-        for (int i = l; i < r + 1; i++) {
-            SampleInfo fi = samples[i];
-
-            if (bs.get(fi.getSampleInd())) {
-                lList[lc] = fi;
-                lc++;
-            } else {
-                rList[rc] = fi;
-                rc++;
-            }
-        }
-
-        System.arraycopy(lList, 0, samples, l, lSize);
-        System.arraycopy(rList, 0, samples, l + lSize, rSize);
+        return new IgniteBiTuple<>(new Region<>(lrSamples.get1(), ld), new Region<>(lrSamples.get2(), rd));
     }
 }

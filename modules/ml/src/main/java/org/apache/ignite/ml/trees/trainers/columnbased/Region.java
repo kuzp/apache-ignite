@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.trees;
+package org.apache.ignite.ml.trees.trainers.columnbased;
 
-/**
- * Information about region used by continuous features.
- */
-public class ContinuousRegionInfo extends RegionInfo {
-    private int size;
+import org.apache.ignite.ml.trees.trainers.columnbased.vectors.SampleInfo;
 
-    /**
-     * @param impurity Impurity of the region.
-     * @param size Size of this region
-     */
-    public ContinuousRegionInfo(double impurity, int size) {
-        super(impurity);
-        this.size = size;
+public class Region<D> {
+    protected SampleInfo[] samples;
+
+    protected D data;
+
+    public Region(SampleInfo[] samples, D data) {
+        this.samples = samples;
+        this.data = data;
     }
 
-    public int getSize() {
-        return size;
+    public SampleInfo[] samples() {
+        return samples;
+    }
+
+    public D data() {
+        return data;
     }
 }

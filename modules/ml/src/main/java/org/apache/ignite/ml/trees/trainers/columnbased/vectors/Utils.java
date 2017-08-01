@@ -15,24 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.trees;
+package org.apache.ignite.ml.trees.trainers.columnbased.vectors;
 
-/**
- * Information about region used by continuous features.
- */
-public class ContinuousRegionInfo extends RegionInfo {
-    private int size;
+import com.zaxxer.sparsebits.SparseBitSet;
+import org.apache.ignite.lang.IgniteBiTuple;
 
-    /**
-     * @param impurity Impurity of the region.
-     * @param size Size of this region
-     */
-    public ContinuousRegionInfo(double impurity, int size) {
-        super(impurity);
-        this.size = size;
-    }
+public class Utils {
+    /** */
+    public static IgniteBiTuple<SampleInfo[], SampleInfo[]> splitByBitSet(int lSize, int rSize, SampleInfo[] samples, SparseBitSet bs) {
+        SampleInfo lArr[] = new SampleInfo[lSize];
+        SampleInfo rArr[] = new SampleInfo[rSize];
 
-    public int getSize() {
-        return size;
+        int lc = 0;
+        int rc = 0;
+
+        for (int i = 0; i < lSize + rSize; i++) {
+            SampleInfo fi = samples[i];
+
+            if (bs.get(fi.getSampleInd())) {
+                lArr[lc] = fi;
+                lc++;
+            } else {
+                rArr[rc] = fi;
+                rc++;
+            }
+        }
+
+        return new IgniteBiTuple<>(lArr, rArr);
     }
 }
