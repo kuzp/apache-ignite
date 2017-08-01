@@ -35,7 +35,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
-import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
+import org.apache.ignite.yardstick.cache.IgniteStreamerZipBenchmark;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
@@ -108,28 +108,54 @@ public class IgniteBenchmarkUtils {
      * @throws Exception If failed.
      */
     public static void main(String[] args) throws Exception {
-        final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
+        final String cfg = "modules/yardstick/config/ignite-base-streamer-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgnitePutBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgniteStreamerZipBenchmark.class;
 
         final int threads = 1;
 
         final boolean clientDriverNode = true;
 
-        final int extraNodes = 1;
+        final int extraNodes = 3;
 
         final int warmUp = 60;
         final int duration = 120;
 
-        final int range = 100_000;
+        final int range = 1_000_000;
 
         final boolean throughputLatencyProbe = false;
 
         for (int i = 0; i < extraNodes; i++) {
-            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "grid.cfg");
+            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "base-ignite.cfg");
 
             nodeCfg.setIgniteInstanceName("node-" + i);
             nodeCfg.setMetricsLogFrequency(0);
+//
+//            CacheConfiguration ccfg = new CacheConfiguration("streamer-zip");
+//            ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+//            ccfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+//            ccfg.setBackups(1);
+//            ccfg.setOnheapCacheEnabled(false);
+//            ccfg.setCacheMode(CacheMode.PARTITIONED);
+//            ccfg.setRebalanceThrottle(0);
+//            ccfg.setRebalanceBatchSize(5 * 1024 * 1024); //5MB
+//            ccfg.setRebalanceThreadPoolSize(4);
+////            ccfg.setIndexedTypes(String.class, ZipEntity.class);
+//            QueryEntity qryEntity = new QueryEntity();
+//
+//            qryEntity.setTableName("ZIP_ENTITY");
+//            qryEntity.setKeyType("java.lang.String");
+//            qryEntity.setValueType(ZipEntity.class.getName());
+//
+//            qryEntity.addQueryField("BUSINESSDATE", "java.lang.String", "BUSINESSDATE");
+//            qryEntity.addQueryField("RISKSUBJECTID", "java.lang.String", "RISKSUBJECTID");
+//            qryEntity.addQueryField("SERIESDATE", "java.lang.String", "SERIESDATE");
+//            qryEntity.addQueryField("SNAPVERSION", "java.lang.String", "SNAPVERSION");
+//            qryEntity.addQueryField("VARTYPE", "java.lang.String", "VARTYPE");
+//
+//            ccfg.setQueryEntities(Collections.singleton(qryEntity));
+//
+//            nodeCfg.setCacheConfiguration(ccfg);
 
             Ignition.start(nodeCfg);
         }
@@ -144,6 +170,9 @@ public class IgniteBenchmarkUtils {
         addArg(args0, "-sn", "IgniteNode");
         addArg(args0, "-cfg", cfg);
         addArg(args0, "-wom", "PRIMARY");
+        addArg(args0, "-cts", 8);
+        addArg(args0, "-ct", "SNAPPY");
+        addArg(args0, "-sr", "0.9");
 
         if (throughputLatencyProbe)
             addArg(args0, "-pr", "ThroughputLatencyProbe");

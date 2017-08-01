@@ -18,6 +18,9 @@
 package org.apache.ignite.yardstick;
 
 import com.beust.jcommander.Parameter;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.configuration.MemoryConfiguration;
 import org.apache.ignite.configuration.PersistentStoreConfiguration;
@@ -25,9 +28,6 @@ import org.apache.ignite.internal.util.tostring.GridToStringBuilder;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
-
-import java.util.ArrayList;
-import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -221,6 +221,39 @@ public class IgniteBenchmarkArguments {
     /** */
     @Parameter(names = {"-pds", "--persistentStore"}, description = "Persistent store flag")
     private boolean persistentStoreEnabled;
+
+    /** */
+    @Parameter(names = {"-stcp", "--streamerCachesPrefix"}, description = "Cache name prefix for streamer benchmark")
+    private String streamerCachesPrefix = "streamer";
+
+    /** */
+    @Parameter(names = {"-stci", "--streamerCachesIndex"}, description = "First cache index for streamer benchmark")
+    private int streamerCacheIndex;
+
+    /** */
+    @Parameter(names = {"-stcc", "--streamerConcCaches"}, description = "Number of concurrently loaded caches for streamer benchmark")
+    private int streamerConcurrentCaches = 1;
+
+    /** */
+    @Parameter(names = {"-stbs", "--streamerBufSize"}, description = "Data streamer buffer size")
+    private int streamerBufSize = IgniteDataStreamer.DFLT_PER_NODE_BUFFER_SIZE;
+
+    /** */
+    @Parameter(names = {"-ct", "--compressorType"}, description = "Compressor type.")
+    private String compressorType = "NONE";
+
+    @Parameter(names = {"-cts", "--compressThreads"}, description = "Number of threads that generate entities.")
+    private int compressThreads;
+
+    @Parameter(names = {"-sr", "--stringRandomization"}, description = "Coefficient of non repeated strings.")
+    private double stringRandomization = 1.0;
+
+    @Parameter(names = {"-gi", "--groupIndex"}, description = "Group index.")
+    private boolean grpIndex;
+
+    /** */
+    @Parameter(names = {"-stpo", "--streamerParallelOps"}, description = "Data streamer max parallel ops")
+    private int streamerPerNodeParallelOps = Runtime.getRuntime().availableProcessors() * 8;
 
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
@@ -550,6 +583,69 @@ public class IgniteBenchmarkArguments {
     public String description() {
         return "-nn=" + nodes + "-b=" + backups + "-sm=" + syncMode + "-cl=" + clientOnly + "-nc=" + nearCacheFlag +
             "-txc=" + txConcurrency + "-rd=" + restartDelay + "-rs=" + restartSleep;
+    }
+
+    /**
+     * @return Cache name prefix for caches to be used in {@link IgniteStreamerBenchmark}.
+     */
+    public String streamerCachesPrefix() {
+        return streamerCachesPrefix;
+    }
+
+    /**
+     * @return First cache index for {@link IgniteStreamerBenchmark}.
+     */
+    public int streamerCacheIndex() {
+        return streamerCacheIndex;
+    }
+
+    /**
+     * @return Number of concurrently loaded caches for {@link IgniteStreamerBenchmark}.
+     */
+    public int streamerConcurrentCaches() {
+        return streamerConcurrentCaches;
+    }
+
+    /**
+     * @return Streamer buffer size {@link IgniteStreamerBenchmark} (see {@link IgniteDataStreamer#perNodeBufferSize()}.
+     */
+    public int streamerBufferSize() {
+        return streamerBufSize;
+    }
+
+    /**
+     * @return Compress threads.
+     */
+    public int compressThreads() {
+        return compressThreads;
+    }
+
+    /**
+     * @return Compressor type.
+     */
+    public String compressorType() {
+        return compressorType;
+    }
+
+    /**
+     * @return String randomization.
+     */
+    public double stringRandomization() {
+        return stringRandomization;
+    }
+
+    /**
+     * @return Group index.
+     */
+    public boolean groupIndex() {
+        return grpIndex;
+    }
+
+    /**
+     * @return Streamer per node parallel ops.
+     */
+    public int getStreamerPerNodeParallelOps() {
+        return streamerPerNodeParallelOps;
     }
 
     /** {@inheritDoc} */
