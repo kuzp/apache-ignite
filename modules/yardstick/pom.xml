@@ -119,6 +119,13 @@
             <artifactId>postgresql</artifactId>
             <version>${postgres.connector.version}</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
+        <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <version>1.1.2.6</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -183,6 +190,15 @@
                 <version>2.4</version>
                 <configuration>
                     <outputDirectory>${basedir}/target/assembly/libs</outputDirectory>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>./</classpathPrefix>
+                            <mainClass>
+                                org.apache.ignite.yardstick.cache.LoadStore
+                            </mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
 
