@@ -30,11 +30,11 @@ angular
     $stateProvider
     .state('signin', {
         url: '/?invite',
-        // params: {
-        //     invite: {
-        //         type: 'query'
-        //     }
-        // },
+        params: {
+            invite: {
+                type: 'query'
+            }
+        },
         templateUrl,
         redirectTo: (trans) => {
             return trans.injector().get('User').read()
