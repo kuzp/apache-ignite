@@ -71,7 +71,7 @@ export default class PageConfigureOverviewController {
             {
                 name: 'caches',
                 displayName: 'Caches',
-                field: 'caches',
+                field: 'cachesCount',
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
@@ -81,7 +81,7 @@ export default class PageConfigureOverviewController {
             {
                 name: 'models',
                 displayName: 'Models',
-                field: 'models',
+                field: 'modelsCount',
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
@@ -91,7 +91,7 @@ export default class PageConfigureOverviewController {
             {
                 name: 'igfs',
                 displayName: 'IGFS',
-                field: 'igfs',
+                field: 'igfsCount',
                 cellClass: 'ui-grid-number-cell',
                 url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
@@ -103,17 +103,7 @@ export default class PageConfigureOverviewController {
 
     getObservable(state$) {
         return state$
-        .pluck('list')
-        .map((list) => ({
-            clustersTable: this.getClustersTable(list)
-        }))
-        .merge(
-            state$.pluck('list', 'clusters', 'size')
-            .take(1)
-            .filter((size) => size === 0)
-            .do(() => this.PageConfigure.editCluster())
-            .switchMap(() => Observable.empty())
-        )
+        .pluck('configurationOverview')
         .do((value) => this.applyValue(value));
     }
 
@@ -142,7 +132,8 @@ export default class PageConfigureOverviewController {
     onClustersAction(action) {
         switch (action.type) {
             case 'EDIT':
-                return this.PageConfigure.editCluster(action.items[0]._id);
+                return this.$state.go('^.tabs', {clusterID: action.items[0]._id});
+                // return this.PageConfigure.editCluster(action.items[0]._id);
             case 'CLONE':
                 return this.PageConfigure.cloneClusters(action.items);
             case 'DELETE':

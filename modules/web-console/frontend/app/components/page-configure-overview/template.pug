@@ -17,9 +17,10 @@
 h1.pc-page-header Configuration
 
 .pco-relative-root
-    button.btn-ignite.btn-ignite--primary.pco-table-context-button(
+    a.btn-ignite.btn-ignite--primary.pco-table-context-button(
         type='button'
-        ng-click='$ctrl.createCluster()'
+        ui-sref='^.tabs({clusterID: "new"})'
+        n_g-click='$ctrl.createCluster()'
     )
         svg.icon-left(ignite-icon='plus')
         | Create Cluster Configuration

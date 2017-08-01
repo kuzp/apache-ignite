@@ -36,6 +36,9 @@ import igfsCtrl from 'Controllers/igfs-controller';
 
 import base2 from 'views/base2.pug';
 
+import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
+import {RECEIVE_CLUSTER_EDIT} from 'app/components/page-configure/reducer';
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
@@ -56,40 +59,80 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.overview', {
                 url: '/configuration/overview',
-                template: '<page-configure-overview></page-configure-overview>',
+                component: 'pageConfigureOverview',
+                // template: '<page-configure-overview></page-configure-overview>',
                 metaTags: {
                     title: 'Configuration'
                 },
                 resolve: {
-                    list: ['IgniteConfigurationResource', 'PageConfigure', (configuration, pageConfigure) => {
-                        return configuration.read().then((data) => {
-                            pageConfigure.loadList(data);
+                    clustersTable: ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
+                        return Clusters.getClustersOverview()
+                        .then(({data}) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_CONFIGURE_OVERVIEW,
+                                clustersTable: data
+                            });
                         });
                     }]
                 }
             })
             .state('base.configuration.tabs', {
-                url: '/configuration',
+                url: '/configuration/{clusterID:string}',
                 permission: 'configuration',
-                template: '<page-configure></page-configure>',
-                redirectTo: (trans) => {
-                    const PageConfigure = trans.injector().get('PageConfigure');
+                component: 'pageConfigure',
+                resolve: {
+                    cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
+                        const newCluster = Promise.resolve(Clusters.getBlankCluster());
+                        const {clusterID} = $transition$.params();
+                        const cluster = clusterID === 'new'
+                            ? newCluster
+                            : Clusters.getCluster(clusterID).then(({data}) => data);
+                        const caches = clusterID === 'new'
+                            ? Promise.resolve([])
+                            // : Caches.getCachesOverview().then(({data}) => data);
+                            : Clusters.getClusterCaches(clusterID).then(({data}) => data);
 
-                    return PageConfigure.onStateEnterRedirect(trans.to());
+                        return Promise.all([cluster, caches]).then(([cluster, caches]) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_CLUSTER_EDIT,
+                                cluster,
+                                caches
+                            });
+                            return cluster;
+                        });
+                    }]
                 },
+                redirectTo: ($transition$) => {
+                    return $transition$.injector().getAsync('cluster').then((cluster) => {
+                        return cluster.caches.length > 10
+                            ? 'base.configuration.tabs.advanced'
+                            : 'base.configuration.tabs.basic';
+                    });
+                },
+                // redirectTo: (trans) => {
+                //     const PageConfigure = trans.injector().get('PageConfigure');
+
+                //     return PageConfigure.onStateEnterRedirect(trans.to());
+                // },
                 tfMetaTags: {
                     title: 'Configuration'
                 }
             })
             .state('base.configuration.tabs.basic', {
-                url: '/basic?{clusterID:string}',
+                url: '/basic',
                 permission: 'configuration',
-                template: '<page-configure-basic></page-configure-basic>',
+                // url: '/basic?{clusterID:string}',
+                // template: '<page-configure-basic></page-configure-basic>',
                 tfMetaTags: {
                     title: 'Basic Configuration'
-                },
-                resolve: {
-                    list: ['IgniteConfigurationResource', 'PageConfigure', (configuration, pageConfigure) => {
+                }
+                /*                resolve: {
+                    cluster: ['Clusters', 'ConfigureState', '$q', '$transition$', (Clusters, ConfigureState, $q, $transition$) => {
+                        return $q.all([
+                            Clusters.getCluster($transition$.params().clusterID)
+                        ]);
+                    }]
+                  list: ['IgniteConfigurationResource', 'PageConfigure', (configuration, pageConfigure) => {
                         // TODO IGNITE-5271: remove when advanced config is hooked into ConfigureState too.
                         // This resolve ensures that basic always has fresh data, i.e. after going back from advanced
                         // after adding a cluster.
@@ -97,25 +140,25 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             pageConfigure.loadList(data);
                         });
                     }]
-                }
+                }*/
             })
             .state('base.configuration.tabs.advanced', {
                 url: '/advanced',
-                template: '<page-configure-advanced></page-configure-advanced>',
-                redirectTo: 'base.configuration.tabs.advanced.clusters'
+                component: 'pageConfigureAdvanced',
+                redirectTo: 'base.configuration.tabs.advanced.cluster'
             })
-            .state('base.configuration.tabs.advanced.clusters', {
-                url: '/clusters?{clusterID:string}',
+            .state('base.configuration.tabs.advanced.cluster', {
+                url: '/cluster',
                 templateUrl: clustersTpl,
                 permission: 'configuration',
                 tfMetaTags: {
                     title: 'Configure Clusters'
                 },
-                params: {
-                    clusterID: {
-                        dynamic: true
-                    }
-                },
+                // params: {
+                //     clusterID: {
+                //         dynamic: true
+                //     }
+                // },
                 controller: clustersCtrl,
                 controllerAs: '$ctrl'
             })

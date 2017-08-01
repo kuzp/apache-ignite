@@ -22,7 +22,7 @@ div.pc-content-container
         li(role='presentation' ui-sref-active='active')
             a(ui-sref='base.configuration.tabs.basic({clusterID: $ctrl.$state.params.clusterID})') Basic
         li(role='presentation' ui-sref-active='{active: "base.configuration.tabs.advanced"}')
-            a(ui-sref='base.configuration.tabs.advanced.clusters({clusterID: $ctrl.$state.params.clusterID})') Advanced
+            a(ui-sref='base.configuration.tabs.advanced.cluster({clusterID: $ctrl.$state.params.clusterID})') Advanced
 
     label.pc-tooltips-toggle.switcher--ignite
         svg.icon-left(

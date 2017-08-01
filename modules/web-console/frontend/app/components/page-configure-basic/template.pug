@@ -26,7 +26,7 @@ include /app/modules/states/configuration/clusters/general/discovery/zookeeper
 include /app/modules/states/configuration/clusters/general/discovery/kubernetes
 include mixins/pcb-form-field-size
 
-- const model = '$ctrl.state.cluster'
+- const model = '$ctrl.clusterConfiguration.originalCluster'
 - const modelDiscoveryKind = `${model}.discovery.kind`
 - let form = '$ctrl.form'
 - const tipOpts = {placement: 'top'}
