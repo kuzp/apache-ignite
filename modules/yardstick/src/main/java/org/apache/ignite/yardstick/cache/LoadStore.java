@@ -84,6 +84,7 @@ public class LoadStore implements CacheStore<Object, Object> {
             ", smallEntry=" + args0.smallEntry +
             ", persistenceEnabled=" + args0.persistenceEnabled +
             ", WALMode=" + args0.walMode +
+            ", affinityKey=" + args0.affinityKey +
             ']');
 
         ThreadPoolExecutor exec = new ThreadPoolExecutor(
@@ -125,7 +126,7 @@ public class LoadStore implements CacheStore<Object, Object> {
                         // 1. put condition to the loop.
                         // 2. put real values (read from files?).
                         for (int i = 0; i < entriesPerThread; i++) {
-                            clo.apply(generateKey(parts0[rnd.nextInt(parts0.length)]),
+                            clo.apply(generateKey(args0.affinityKey, parts0[rnd.nextInt(parts0.length)]),
                                 create(binary, args0.compType, args0.strRandomization, args0.smallEntry));
                         }
 
@@ -162,10 +163,12 @@ public class LoadStore implements CacheStore<Object, Object> {
      * @param i Partition to map key to.
      * @return Generated affinity key.
      */
-    private Object generateKey(
+    private Object generateKey(boolean affKey,
         int i
     ) {
-        return new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i);
+        return affKey
+            ? new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i)
+            : String.valueOf(IgniteUuid.randomUuid());
     }
 
     /** {@inheritDoc} */
@@ -252,7 +255,8 @@ public class LoadStore implements CacheStore<Object, Object> {
         ccfg.setCacheMode(CacheMode.PARTITIONED);
 
         if (args0.idx) {
-            QueryEntity qryEntity = new QueryEntity(AffinityKey.class.getName(), ZipSmallEntity.class.getName());
+            QueryEntity qryEntity = new QueryEntity(args0.affinityKey
+                ? AffinityKey.class.getName() : String.class.getName(), ZipSmallEntity.class.getName());
 
             qryEntity.setTableName("ZIP_ENTITY");
 
@@ -336,6 +340,9 @@ public class LoadStore implements CacheStore<Object, Object> {
         /** Streamer pool size. */
         private int streamerPoolSize = CPUS;
 
+        /** Affinity key. */
+        private boolean affinityKey;
+
         /**
          * Default constructor.
          */
@@ -416,6 +423,11 @@ public class LoadStore implements CacheStore<Object, Object> {
 
                     case "-sps":
                         args0.streamerPoolSize = Integer.parseInt(args[++i]);
+
+                        break;
+
+                    case "-ak":
+                        args0.affinityKey = true;
 
                         break;
                 }
