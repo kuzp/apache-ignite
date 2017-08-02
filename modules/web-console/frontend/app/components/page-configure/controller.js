@@ -22,6 +22,10 @@ export default class PageConfigureController {
         Object.assign(this, {$state});
     }
 
+    restoreTitle() {
+        return this.setTitle('Configuration');
+    }
+
     setTitle(title) {
         return this.title = title;
     }
