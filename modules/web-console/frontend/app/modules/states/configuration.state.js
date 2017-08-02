@@ -117,12 +117,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
                         const {clusterID} = $transition$.params();
-                        return Clusters.getClusterCaches(clusterID).then(({data}) => {
+                        const caches = clusterID === 'new'
+                            ? Promise.resolve([])
+                            : Clusters.getClusterCaches(clusterID).then(({data}) => data);
+
+                        return caches.then((caches) => {
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CACHES_EDIT,
-                                caches: data
+                                caches
                             });
-                            return data;
+                            return caches;
                         });
                     }]
                 },
@@ -150,14 +154,33 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
                         const {clusterID} = $transition$.params();
-                        return Clusters.getClusterCaches(clusterID).then(({data}) => {
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_CACHES_EDIT,
-                                caches: data
+                        return clusterID === 'new'
+                            ? Promise.resolve([])
+                            : Clusters.getClusterCaches(clusterID).then(({data}) => {
+                                ConfigureState.dispatchAction({
+                                    type: RECEIVE_CACHES_EDIT,
+                                    caches: data
+                                });
+                                return data;
                             });
-                            return data;
-                        });
                     }]
+                },
+                redirectTo: ($transition$) => {
+                    const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
+                    const fromState = $transition$.from();
+                    const toState = $transition$.to();
+                    return fromState.name === cacheStateName
+                        ? toState
+                        : $transition$.injector().getAsync('caches').then((caches) => {
+                            return caches.length
+                                ? {
+                                    state: cacheStateName,
+                                    params: {
+                                        cacheID: caches[0]._id
+                                    }
+                                }
+                                : toState;
+                        });
                 },
                 tfMetaTags: {
                     title: 'Configure Caches'

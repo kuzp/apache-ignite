@@ -504,8 +504,8 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
                 if (LegacyUtils.getQueryVariable('new'))
                     $state.go('base.configuration.tabs.advanced.clusters');
             }
-
-            FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
+            selectItem();
+            // FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
         };
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';

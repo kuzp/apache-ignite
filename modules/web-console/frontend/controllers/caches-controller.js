@@ -148,7 +148,7 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
         };
 
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
-        $scope.backupItem = emptyCache;
+        // $scope.backupItem = emptyCache;
 
         $scope.ui = FormUtils.formUI();
         $scope.ui.activePanels = [0];
@@ -159,7 +159,7 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
         $scope.offHeapMode = 'DISABLED';
 
         $scope.contentVisible = function() {
-            return !$scope.backupItem.empty;
+            return !get($scope, 'backupItem.empty');
         };
 
         $scope.toggleExpanded = function() {
