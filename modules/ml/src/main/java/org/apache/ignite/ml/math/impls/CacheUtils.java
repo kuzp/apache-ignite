@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import javax.cache.Cache;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -423,6 +424,40 @@ public class CacheUtils {
                 for (Cache.Entry<K, V> entry : cache.query(new ScanQuery<K, V>(part, (k, v) -> affinity.mapPartitionToNode(p) == locNode && (keyFilter == null || keyFilter.apply(k)))))
                     fun.accept(new CacheEntry<>(entry, cache));
             }
+        });
+    }
+
+    /**
+     * @param cacheName Cache name.
+     * @param fun An operation that accepts a cache entry and processes it.
+     * @param keysGen Keys generator.
+     * @param <K> Cache key object type.
+     * @param <V> Cache value object type.
+     */
+    public static <K, V, W> void update(String cacheName,
+                                        IgniteFunction<Cache.Entry<K, V>, Stream<Cache.Entry<K, V>>> fun, IgniteSupplier<Set<K>> keysGen) {
+        bcast(cacheName, () -> {
+            Ignite ignite = Ignition.localIgnite();
+            IgniteCache<K, V> cache = ignite.getOrCreateCache(cacheName);
+
+            Affinity<K> affinity = ignite.affinity(cacheName);
+            ClusterNode locNode = ignite.cluster().localNode();
+
+            Collection<K> ks = affinity.mapKeysToNodes(keysGen.get()).get(locNode);
+
+            if (ks == null)
+                return;
+
+            Map<K, V> m = new ConcurrentHashMap<>();
+
+            for (K k : ks) {
+                V v = cache.localPeek(k);
+                (fun.apply(new CacheEntryImpl<>(k, v))).forEach(ent -> m.put(ent.getKey(), ent.getValue()));
+            }
+
+            long before = System.currentTimeMillis();
+            cache.putAll(m);
+            System.out.println("PutAll took: " + (System.currentTimeMillis() - before));
         });
     }
 

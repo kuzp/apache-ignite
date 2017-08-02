@@ -72,7 +72,7 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
 
     /** {@inheritDoc} */
     @Override public SplitInfo<VarianceData> splitRegion(Stream<SampleInfo> s, int regionIdx, VarianceData d) {
-        int size = d.right() - d.left() + 1;
+        int size = d.getSize();
 
         double lm2 = 0.0;
         double rm2 = d.impurity() * size;
@@ -140,8 +140,8 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
         if (lSize == size)
             return null;
 
-        VarianceData lData = new VarianceData(d.left(), d.left() + lSize - 1, lm2 / (lSize != 0 ? lSize : 1), lMean);
-        VarianceData rData = new VarianceData(d.left() + lSize, d.right(), rm2 / ((size - lSize) != 0 ? (size - lSize) : 1), rMean);
+        VarianceData lData = new VarianceData(lm2 / (lSize != 0 ? lSize : 1), lSize, lMean);
+        VarianceData rData = new VarianceData(rm2 / ((size - lSize) != 0 ? (size - lSize) : 1), size - lSize, rMean);
 
         return new ContinuousSplitInfo<>(regionIdx, threshold, lData, rData);
     }

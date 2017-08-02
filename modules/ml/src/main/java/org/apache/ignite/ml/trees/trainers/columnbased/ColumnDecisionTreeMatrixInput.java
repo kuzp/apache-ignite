@@ -46,7 +46,6 @@ public class ColumnDecisionTreeMatrixInput extends ColumnDecisionTreeCacheInput<
                 double[] res = new double[m.rowSize()];
 
                 IntStream.range(0, m.rowSize()).forEach(k -> res[k] = mp.getOrDefault(k, 0.0));
-                Arrays.stream(res).forEach(a -> System.out.println("lb: " + a));
                 return res;
             },
             i -> new IgniteBiTuple<>(i, ((SparseDistributedMatrixStorage)m.getStorage()).getUUID()),

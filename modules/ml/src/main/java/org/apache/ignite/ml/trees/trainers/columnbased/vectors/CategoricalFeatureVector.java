@@ -140,12 +140,12 @@ public class CategoricalFeatureVector
         return res;
     }
 
-    @Override public IgniteBiTuple<Region<CategoricalRegionInfo>, Region<CategoricalRegionInfo>> performSplit(SparseBitSet bs,
+    @Override public IgniteBiTuple<Region, Region> performSplit(SparseBitSet bs,
         Region<CategoricalRegionInfo> reg, CategoricalRegionInfo leftData, CategoricalRegionInfo rightData) {
         return performSplitGeneric(bs, reg, leftData, rightData);
     }
 
-    @Override public IgniteBiTuple<Region<CategoricalRegionInfo>, Region<CategoricalRegionInfo>> performSplitGeneric(
+    @Override public IgniteBiTuple<Region, Region> performSplitGeneric(
         SparseBitSet bs, Region<CategoricalRegionInfo> reg, RegionInfo leftData, RegionInfo rightData) {
         IgniteBiTuple<SampleInfo[], SampleInfo[]> lrSamples = splitByBitSet(bs.cardinality(), reg.samples().length - bs.cardinality(), reg.samples(), bs);
         BitSet leftCats = calculateCats(lrSamples.get1());
@@ -208,7 +208,7 @@ public class CategoricalFeatureVector
         BitSet res = new BitSet();
 
         for (SampleInfo smpl : smpls)
-            res.set((int)smpl.getLabel());
+            res.set((int)smpl.getVal());
 
         return res;
     }

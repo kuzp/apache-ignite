@@ -72,8 +72,8 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
         if (res == null)
             return null;
 
-        double lWeight = res.leftData.getSize() / ri.samples().length;
-        double rWeight = res.rightData.getSize() / ri.samples().length;
+        double lWeight = (double)res.leftData.getSize() / ri.samples().length;
+        double rWeight = (double)res.rightData.getSize() / ri.samples().length;
 
         double infoGain = ri.data().impurity() - lWeight * res.leftData().impurity() - rWeight * res.rightData().impurity();
         res.setInfoGain(infoGain);
@@ -116,7 +116,7 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
 
     @Override public Region<D> createInitialRegion(SampleInfo[] samples) {
         Arrays.sort(samples, Comparator.comparingDouble(SampleInfo::getVal));
-        return new Region<>(samples, calc.calculateRegionInfo(Arrays.stream(samples).mapToDouble(SampleInfo::getLabel), 0));
+        return new Region<>(samples, calc.calculateRegionInfo(Arrays.stream(samples).mapToDouble(SampleInfo::getLabel), samples.length));
     }
 
     /** {@inheritDoc} */
@@ -144,7 +144,7 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteBiTuple<Region<D>, Region<D>> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData) {
+    @Override public IgniteBiTuple<Region, Region> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData) {
         int lSize = leftData.getSize();
         int rSize = rightData.getSize();
 
@@ -154,7 +154,7 @@ public class ContinuousFeatureVector<D extends ContinuousRegionInfo> implements
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteBiTuple<Region<D>, Region<D>> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
+    @Override public IgniteBiTuple<Region, Region> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
         RegionInfo rightData) {
         int lSize = bs.cardinality();
         int rSize = reg.samples().length - lSize;

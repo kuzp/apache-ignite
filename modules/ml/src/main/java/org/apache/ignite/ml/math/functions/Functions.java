@@ -76,11 +76,11 @@ public final class Functions {
     /** Function that returns {@code max(abs(a), abs(b))}. */
     public static final IgniteBiFunction<Double, Double, Double> MAX_ABS = (a, b) -> Math.max(Math.abs(a), Math.abs(b));
 
-    public static final <T> IgniteTriFunction<T, T, Comparator<T>, T> MAX_GENERIC() {
-        return (a, b, f) -> f.compare(a, b) == 1 ? a : b;
+    public static <T> T MAX_GENERIC(T a, T b, Comparator<T> f) {
+        return f.compare(a, b) == 1 ? a : b;
     }
 
-    public static final <T> IgniteTriFunction<T, T, Comparator<T>, T> MIN_GENERIC() {
+    public static <T> IgniteTriFunction<T, T, Comparator<T>, T> MIN_GENERIC() {
         return (a, b, f) -> f.compare(a, b) == -1 ? a : b;
     }
 

@@ -57,8 +57,7 @@ public class ColumnDecisionTreeTrainerTest extends BaseDecisionTreeTest {
         SplitDataGenerator<DenseLocalOnHeapVector> gen = new SplitDataGenerator<>(
             featCnt, catsInfo, () -> new DenseLocalOnHeapVector(featCnt + 1), rnd).
             split(0, 1, new int[] {0, 2}).
-            split(1, 0, -10.0).
-            split(0, 0, 0.0);
+            split(1, 0, -10.0);
 
         testByGen(totalPts, catsInfo, gen, RegionCalculators.MEAN, rnd);
     }
@@ -131,6 +130,8 @@ public class ColumnDecisionTreeTrainerTest extends BaseDecisionTreeTest {
 
         byRegion.keySet().stream().forEach(k -> {
             LabeledVectorDouble sp = byRegion.get(k).get(0);
+            Tracer.showAscii(sp.vector());
+            System.out.println("Act: " + sp.label() + " " + " pred: " + mdl.predict(sp.vector()));
             assert mdl.predict(sp.vector()) == sp.doubleLabel();
         });
 

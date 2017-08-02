@@ -40,7 +40,8 @@ public class GiniSplitCalculator implements ContinuousSplitCalculator<GiniSplitC
 
         DoubleSummaryStatistics stat = m.values().stream().mapToDouble(v -> (double)v / size * (1 - (double)v / size)).summaryStatistics();
 
-        return new GiniData(stat.getSum(), l, l + (int)stat.getCount(), m);
+//        return new GiniData(stat.getSum(), stat, m);
+        return null;
     }
 
     /** {@inheritDoc} */
@@ -55,8 +56,8 @@ public class GiniSplitCalculator implements ContinuousSplitCalculator<GiniSplitC
         private Double2IntOpenHashMap m;
 
         /** {@inheritDoc} */
-        public GiniData(double impurity, int left, int right, Double2IntOpenHashMap m) {
-            super(impurity, left, right);
+        public GiniData(double impurity, int size, Double2IntOpenHashMap m) {
+            super(impurity, size);
             this.m = m;
         }
     }

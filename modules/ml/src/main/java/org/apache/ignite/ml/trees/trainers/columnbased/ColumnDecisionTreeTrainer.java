@@ -18,12 +18,8 @@
 package org.apache.ignite.ml.trees.trainers.columnbased;
 
 import com.zaxxer.sparsebits.SparseBitSet;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -41,11 +37,13 @@ import org.apache.ignite.cache.affinity.Affinity;
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.internal.processors.cache.CacheEntryImpl;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.ml.Trainer;
 import org.apache.ignite.ml.math.Destroyable;
 import org.apache.ignite.ml.math.Vector;
+import org.apache.ignite.ml.math.functions.Functions;
 import org.apache.ignite.ml.math.functions.IgniteFunction;
 import org.apache.ignite.ml.math.functions.IgniteSupplier;
 import org.apache.ignite.ml.math.impls.CacheUtils;
@@ -118,6 +116,18 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         public IndexAndSplitInfo(int featureIdx, SplitInfo info) {
             this.featureIdx = featureIdx;
             this.info = info;
+        }
+
+        public IndexAndSplitInfo() {
+            this.featureIdx = -1;
+        }
+
+        @Override
+        public String toString() {
+            return "IndexAndSplitInfo{" +
+                    "featureIdx=" + featureIdx +
+                    ", info=" + info +
+                    '}';
         }
     }
 
@@ -265,7 +275,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         double[] labels = i.labels();
 
         cache = newCache();
-        IgniteUuid uuid = new IgniteUuid();
+        IgniteUuid uuid = IgniteUuid.randomUuid();
 
         CacheUtils.bcast(cache.getName(), () -> {
             Ignite ignite = Ignition.localIgnite();
@@ -300,7 +310,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         return res;
     }
 
-    private RegionKey getCacheKey(int featureIdx, int regIdx, , IgniteUuid uuid, Object aff) {
+    private RegionKey getCacheKey(int featureIdx, int regIdx, IgniteUuid uuid, Object aff) {
         return new RegionKey(featureIdx, regIdx, uuid, aff);
     }
 
@@ -321,57 +331,51 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         while (curDepth < maxDepth) {
             // Keys of all regions.
             int rc = regsCnt;
-            IgniteSupplier<Set<RegionKey>> keysGen = () -> IntStream.range(0, size).boxed().flatMap(fIdx ->
-                IntStream.range(0, rc).boxed().map(regIdx -> getCacheKey(fIdx, regIdx, uuid, input.affinityKey(fIdx)))).collect(Collectors.toSet());
 
             // Get locally (for node) optimal (by information gain) splits.
             long before = System.currentTimeMillis();
 
-            List<IndexAndSplitInfo> splits = CacheUtils.sparseFold(cache.getName(),
-                (Cache.Entry<RegionKey, Region> e, List<IndexAndSplitInfo> lst) -> {
-                    int featIdx = e.getKey().featureIdx();
-                    int regIdx = e.getKey().regionIdx();
+            IndexAndSplitInfo best = CacheUtils.sparseFold(cache.getName(),
+                    // TODO: rewrite using 'max'
+                    (Cache.Entry<RegionKey, Region> e, IndexAndSplitInfo si) -> {
+                        int featIdx = e.getKey().featureIdx();
+                        int regIdx = e.getKey().regionIdx();
 
-                    FeatureVector vector = vector(input, featIdx);
+                        FeatureVector vector = vector(input, featIdx);
 
-                    SplitInfo locallyBest = vector.findBestSplit(e.getValue(), regIdx);
-                    if (locallyBest != null)
-                        lst.add(new IndexAndSplitInfo(featIdx, locallyBest));
-                    return lst;
-                },
-                keysGen,
-                (infos, infos2) -> {
-                    List<IndexAndSplitInfo> res = new LinkedList<>();
-                    res.addAll(infos);
-                    res.addAll(infos2);
-                    return res;
-                },
-                LinkedList::new,
-                null,
-                null,
-                0,
-                true
+                        IndexAndSplitInfo bestForReg = new IndexAndSplitInfo(featIdx, vector.findBestSplit(e.getValue(), regIdx));
+                        System.out.println(bestForReg);
+                        return Functions.MAX_GENERIC(si, bestForReg, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
+                    },
+                    allKeys(input, regsCnt, uuid),
+                    (i1, i2) -> {
+                        return Functions.MAX_GENERIC(i1, i2, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
+                    },
+                    IndexAndSplitInfo::new,
+                    null,
+                    null,
+                    0,
+                    true
             );
             long total = System.currentTimeMillis() - before;
 
-            // Find globally optimal split.
-            IndexAndSplitInfo best = splits.stream().max(Comparator.comparingDouble(o -> o.info.infoGain())).orElse(null);
-
-            if (best != null && best.info.infoGain() > MIN_INFO_GAIN) {
+            if (best != null && best.info != null && best.info.infoGain() > MIN_INFO_GAIN) {
                 regsCnt++;
                 System.out.println("Globally best: " + best.info + " time: " + total);
                 // Request bitset for split region.
-                SparseBitSet bs = cache.invoke(getCacheKey(best.featureIdx, input.affinityKey(best.featureIdx)), (entry, arguments) -> entry.getValue().calculateOwnershipBitSet(best.info));
+                int ind = best.info.regionIndex();
+                RegionKey bestRegKey = getCacheKey(best.featureIdx, ind, uuid, input.affinityKey(best.featureIdx));
+                SparseBitSet bs = cache.invoke(bestRegKey, (entry, arguments) -> vector(input, best.featureIdx).calculateOwnershipBitSet(entry.getValue(), best.info));
 
                 // Update decision tree.
-                int ind = best.info.regionIndex();
+
                 SplitNode sn = best.info.createSplitNode(best.featureIdx);
 
                 TreeTip tipToSplit = tips.get(ind);
                 tipToSplit.leafSetter.accept(sn);
                 tipToSplit.leafSetter = sn::setLeft;
                 int d = tipToSplit.depth++;
-                tips.add(ind + 1, new TreeTip(sn::setRight, d));
+                tips.add(new TreeTip(sn::setRight, d));
 
                 if (d > curDepth) {
                     curDepth = d;
@@ -383,36 +387,67 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
 
                 before = System.currentTimeMillis();
                 // Perform split on all feature vectors.
+                IgniteSupplier<Set<RegionKey>> bestRegsKeys = () -> IntStream.range(0, input.featuresCount()).
+                        mapToObj(fIdx -> getCacheKey(fIdx, ind, uuid, input.affinityKey(fIdx))).collect(Collectors.toSet());
+
                 CacheUtils.update(cache.getName(),
-                    (Cache.Entry<FeatureVectorKey, FeatureVector> e) -> {
+                    (Cache.Entry<RegionKey, Region> e) -> {
+                        RegionKey k = e.getKey();
+                        Region v = e.getValue();
+                        IgniteBiTuple<Region, Region> regs;
+                        int fIdx = k.featureIdx();
 
-                        FeatureVectorKey k = e.getKey();
-                        FeatureVector v = e.getValue();
-
-                        if ((!catFeaturesInfo.containsKey(k.rowKey.get1()) && !catFeaturesInfo.containsKey(best.featureIdx)))
-                            v.performSplit(bs, ind, best.info.leftData(), best.info.rightData());
+                        if (!catFeaturesInfo.containsKey(fIdx) && !catFeaturesInfo.containsKey(best.featureIdx))
+                            // TODO: rewrite;
+                            regs = new ContinuousFeatureVector<>(calc).performSplit(bs, v, (D)best.info.leftData(), (D)best.info.rightData());
                         else
-                            v.performSplitGeneric(bs, ind, best.info.leftData(), best.info.rightData());
-                    },
-                    keysGen);
+                            regs = vector(input, k.featureIdx).performSplitGeneric(bs, v, best.info.leftData(), best.info.rightData());
 
+                        return Stream.of(new CacheEntryImpl<>(k, regs.get1()), new CacheEntryImpl<>(getCacheKey(fIdx, rc, uuid, input.affinityKey(fIdx)), regs.get2()));
+                    },
+                    bestRegsKeys);
                 System.out.println("Update took " + (System.currentTimeMillis() - before));
             }
             else
                 break;
         }
 
-        // Ask to calculate values in regions.
-        double[] vals = cache.invoke(getCacheKey(0, input.affinityKey(0)), (mutableEntry, objects) -> mutableEntry.getValue().calculateRegions(regCalc));
+        int rc = regsCnt;
+
+        IgniteSupplier<Set<RegionKey>> featZeroRegs = () -> IntStream.range(0, rc).
+                mapToObj(rIdx -> getCacheKey(0, rIdx, uuid, input.affinityKey(0))).collect(Collectors.toSet());
+
+        Map<Integer, Double> vals = CacheUtils.sparseFold(cache.getName(),
+                // TODO: rewrite using 'max'
+                (Cache.Entry<RegionKey, Region> e, Map<Integer, Double> m) -> {
+                    int regIdx = e.getKey().regionIdx();
+
+                    Double apply = regCalc.apply(Arrays.stream(e.getValue().samples()).mapToDouble(SampleInfo::getLabel));
+                    m.put(regIdx, apply);
+
+                    return m;
+                },
+                featZeroRegs,
+                (infos, infos2) -> {
+                    Map<Integer, Double> res = new HashMap<>();
+                    res.putAll(infos);
+                    res.putAll(infos2);
+                    return res;
+                },
+                HashMap::new,
+                null,
+                null,
+                0,
+                true
+        );
 
         int i = 0;
         for (TreeTip tip : tips) {
-            tip.leafSetter.accept(new Leaf(vals[i]));
+            tip.leafSetter.accept(new Leaf(vals.get(i)));
             i++;
         }
 
-        cache.removeAll(
-            IntStream.range(0, input.featuresCount()).mapToObj(j -> getCacheKey(j, input.affinityKey(j))).collect(Collectors.toSet()));
+        cache.removeAll(allKeys(input, regsCnt, uuid).get());
 
         return new DecisionTreeModel(root.s);
     }
@@ -450,16 +485,11 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         cache.destroy();
     }
 
-//    /**
-//     * Get internal cache key by feature index and affinity key of input entry.
-//     *
-//     * @param featureIdx Feature index.
-//     * @param affinityKey Affinity key of input entry.
-//     * @return Internal cache key by feature index and affinity key of input entry.
-//     */
-//    private FeatureVectorKey getCacheKey(int featureIdx, Object affinityKey) {
-//        return new FeatureVectorKey(affinityKey, new IgniteBiTuple<>(featureIdx, uuid));
-//    }
+    private IgniteSupplier<Set<RegionKey>> allKeys(ColumnDecisionTreeInput i, int regCnt, IgniteUuid uuid) {
+        return () -> IntStream.range(0, i.featuresCount()).boxed().flatMap(fIdx ->
+                IntStream.range(0, regCnt).boxed().map(regIdx -> getCacheKey(fIdx, regIdx, uuid, i.affinityKey(fIdx)))).collect(Collectors.toSet());
+
+    }
 
     private FeatureVector vector(ColumnDecisionTreeInput i, int featureIdx) {
         return i.catFeaturesInfo().containsKey(featureIdx) ?

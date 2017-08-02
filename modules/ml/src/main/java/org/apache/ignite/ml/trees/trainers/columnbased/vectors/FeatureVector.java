@@ -60,7 +60,7 @@ public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
      * @param rightData Data of the right subregion.
      * @return This feature vector.
      */
-    IgniteBiTuple<Region<D>, Region<D>> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData)
+    IgniteBiTuple<Region, Region> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData);
 
     /**
      * Splits given region using bitset which maps data point to left or right subregion. This method is used iff the
@@ -73,7 +73,7 @@ public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
      * @param rightData Data of the right subregion.
      * @return This feature vector.
      */
-    IgniteBiTuple<Region<D>, Region<D>> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
+    IgniteBiTuple<Region, Region> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
         RegionInfo rightData);
 
     /**
