@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
@@ -83,6 +84,7 @@ public class LoadStore implements CacheStore<Object, Object> {
             ", smallEntry=" + args0.smallEntry +
             ", persistenceEnabled=" + args0.persistenceEnabled +
             ", WALMode=" + args0.walMode +
+            ", affinityKey=" + args0.affinityKey +
             ']');
 
         ThreadPoolExecutor exec = new ThreadPoolExecutor(
@@ -113,7 +115,7 @@ public class LoadStore implements CacheStore<Object, Object> {
             exec.submit(
                 new Callable<Object>() {
                     @Override public Object call() throws Exception {
-//                        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+                        ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
                         IgniteBinary binary = ignite.binary();
 
@@ -124,7 +126,7 @@ public class LoadStore implements CacheStore<Object, Object> {
                         // 1. put condition to the loop.
                         // 2. put real values (read from files?).
                         for (int i = 0; i < entriesPerThread; i++) {
-                            clo.apply(generateKey(0),
+                            clo.apply(generateKey(args0.affinityKey, parts0[rnd.nextInt(parts0.length)]),
                                 create(binary, args0.compType, args0.strRandomization, args0.smallEntry));
                         }
 
@@ -161,11 +163,12 @@ public class LoadStore implements CacheStore<Object, Object> {
      * @param i Partition to map key to.
      * @return Generated affinity key.
      */
-    private Object generateKey(
+    private Object generateKey(boolean affKey,
         int i
     ) {
-//        return new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i);
-        return String.valueOf(IgniteUuid.randomUuid());
+        return affKey
+            ? new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i)
+            : String.valueOf(IgniteUuid.randomUuid());
     }
 
     /** {@inheritDoc} */
@@ -336,6 +339,9 @@ public class LoadStore implements CacheStore<Object, Object> {
         /** Streamer pool size. */
         private int streamerPoolSize = CPUS;
 
+        /** Affinity key. */
+        private boolean affinityKey;
+
         /**
          * Default constructor.
          */
@@ -416,6 +422,11 @@ public class LoadStore implements CacheStore<Object, Object> {
 
                     case "-sps":
                         args0.streamerPoolSize = Integer.parseInt(args[++i]);
+
+                        break;
+
+                    case "-ak":
+                        args0.affinityKey = true;
 
                         break;
                 }

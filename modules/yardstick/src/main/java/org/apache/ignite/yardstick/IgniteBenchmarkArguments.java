@@ -256,6 +256,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-stpo", "--streamerParallelOps"}, description = "Data streamer max parallel ops")
     private int streamerPerNodeParallelOps = Runtime.getRuntime().availableProcessors() * 8;
 
+    @Parameter(names = {"-ak", "--affinityKey"}, description = "Use affinity key per partition for datastreamer test.")
+    private boolean streamerAffinityKey;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -647,6 +650,13 @@ public class IgniteBenchmarkArguments {
      */
     public int getStreamerPerNodeParallelOps() {
         return streamerPerNodeParallelOps;
+    }
+
+    /**
+     * @return Streamer affinity key.
+     */
+    public boolean streamerAffinityKey() {
+        return streamerAffinityKey;
     }
 
     /** {@inheritDoc} */
