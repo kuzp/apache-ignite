@@ -27,6 +27,7 @@ import projectStructurePreview from './components/pc-project-structure-preview';
 import itemsTable from './components/pc-items-table';
 import pcUiGridFilters from './components/pc-ui-grid-filters';
 import pcFormFieldSize from './components/pc-form-field-size';
+import pcListEditable from './components/pc-list-editable';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -38,6 +39,7 @@ export default angular
     .module('ignite-console.page-configure', [
         pcFormFieldSize.name,
         pcUiGridFilters.name,
+        pcListEditable.name,
         projectStructurePreview.name,
         itemsTable.name
     ])
