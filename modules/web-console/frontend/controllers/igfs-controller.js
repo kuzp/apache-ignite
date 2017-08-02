@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
+import get from 'lodash/get';
+
 // Controller for IGFS screen.
-export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
-    function($scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q, IGFSs) {
+export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
+    function(ConfigureState, $scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q, IGFSs) {
+        Object.assign(this, {ConfigureState, $scope, $state});
+
         this.available = Version.available.bind(Version);
 
-        UnsavedChangesGuard.install($scope);
+        // UnsavedChangesGuard.install($scope);
 
         const emptyIgfs = {empty: true};
 
@@ -32,7 +36,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         };
 
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
-        $scope.backupItem = emptyIgfs;
+        // $scope.backupItem = emptyIgfs;
 
         $scope.ui = FormUtils.formUI();
         $scope.ui.activePanels = [0];
@@ -42,6 +46,28 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         $scope.compactJavaName = FormUtils.compactJavaName;
         $scope.widthIsSufficient = FormUtils.widthIsSufficient;
         $scope.saveBtnTipText = FormUtils.saveBtnTipText;
+
+        this.$onInit = function() {
+            this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+        };
+
+        this.getObservable = function(state$) {
+            // return state$.pluck('clusterConfiguration.originalCaches').distinctUntilChanged()
+            return state$.pluck('clusterConfiguration')
+            .do((value) => this.applyValue(value));
+        };
+
+        this.applyValue = function(state) {
+            this.$scope.$applyAsync(() => {
+                this.assignIGFSs(state.originalIGFSs);
+                this.$scope.selectItem(state.originalIGFS);
+            });
+        };
+
+        this.assignIGFSs = function(igfss) {
+            this.$scope.igfss = igfss;
+            this.IGFSsTable = this.buildIGFSsTable(this.$scope.igfss);
+        };
 
         $scope.tableSave = function(field, index, stopEdit) {
             if (field.type === 'pathModes' && LegacyTable.tablePairSaveVisible(field, index))
@@ -117,7 +143,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
         $scope.igfsModes = LegacyUtils.mkOptions(['PRIMARY', 'PROXY', 'DUAL_SYNC', 'DUAL_ASYNC']);
 
         $scope.contentVisible = function() {
-            return !$scope.backupItem.empty;
+            return !get($scope, 'backupItem.empty');
         };
 
         $scope.toggleExpanded = function() {
@@ -142,7 +168,9 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             const realItems = action.items.map((item) => $scope.igfss.find(({_id}) => _id === item._id));
             switch (action.type) {
                 case 'EDIT':
-                    return $scope.selectItem(realItems[0]);
+                    return this.$state.go('base.configuration.tabs.advanced.igfs.igfs', {
+                        igfsID: action.items[0] ? action.items[0]._id : null
+                    });
                 case 'CLONE':
                     return this.cloneItems(realItems);
                 case 'DELETE':
@@ -181,8 +209,6 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
             }
         ];
 
-        $scope.igfss = [];
-        this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
         $scope.clusters = [];
 
         function selectFirstItem() {
@@ -192,60 +218,60 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 $scope.createItem();
         }
 
-        Loading.start('loadingIgfsScreen');
+        // Loading.start('loadingIgfsScreen');
 
         // When landing on the page, get IGFSs and show them.
-        Resource.read()
-            .then(({spaces, clusters, igfss}) => {
-                $scope.spaces = spaces;
+        // Resource.read()
+        //     .then(({spaces, clusters, igfss}) => {
+        //         $scope.spaces = spaces;
 
-                $scope.igfss = igfss || [];
-                this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
+        //         $scope.igfss = igfss || [];
+        //         this.IGFSsTable = this.buildIGFSsTable($scope.igfss);
 
-                // For backward compatibility set colocateMetadata and relaxedConsistency default values.
-                _.forEach($scope.igfss, (igfs) => {
-                    if (_.isUndefined(igfs.colocateMetadata))
-                        igfs.colocateMetadata = true;
+        //         // For backward compatibility set colocateMetadata and relaxedConsistency default values.
+        //         _.forEach($scope.igfss, (igfs) => {
+        //             if (_.isUndefined(igfs.colocateMetadata))
+        //                 igfs.colocateMetadata = true;
 
-                    if (_.isUndefined(igfs.relaxedConsistency))
-                        igfs.relaxedConsistency = true;
-                });
+        //             if (_.isUndefined(igfs.relaxedConsistency))
+        //                 igfs.relaxedConsistency = true;
+        //         });
 
-                $scope.clusters = _.map(clusters || [], (cluster) => ({
-                    label: cluster.name,
-                    value: cluster._id
-                }));
+        //         $scope.clusters = _.map(clusters || [], (cluster) => ({
+        //             label: cluster.name,
+        //             value: cluster._id
+        //         }));
 
-                selectFirstItem();
+        //         selectFirstItem();
 
-                $scope.$watch('ui.inputForm.$valid', function(valid) {
-                    if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
-                        $scope.ui.inputForm.$dirty = false;
-                });
+        //         $scope.$watch('ui.inputForm.$valid', function(valid) {
+        //             if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
+        //                 $scope.ui.inputForm.$dirty = false;
+        //         });
 
-                $scope.$watch('backupItem', function(val) {
-                    if (!$scope.ui.inputForm)
-                        return;
+        //         $scope.$watch('backupItem', function(val) {
+        //             if (!$scope.ui.inputForm)
+        //                 return;
 
-                    const form = $scope.ui.inputForm;
+        //             const form = $scope.ui.inputForm;
 
-                    if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
-                        form.$setPristine();
-                    else
-                        form.$setDirty();
-                }, true);
+        //             if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
+        //                 form.$setPristine();
+        //             else
+        //                 form.$setDirty();
+        //         }, true);
 
-                $scope.$watch('ui.activePanels.length', () => {
-                    ErrorPopover.hide();
-                });
-            })
-            .catch(Messages.showError)
-            .then(() => {
-                $scope.ui.ready = true;
-                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
+        //         $scope.$watch('ui.activePanels.length', () => {
+        //             ErrorPopover.hide();
+        //         });
+        //     })
+        //     .catch(Messages.showError)
+        //     .then(() => {
+        //         $scope.ui.ready = true;
+        //         $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                Loading.finish('loadingIgfsScreen');
-            });
+        //         Loading.finish('loadingIgfsScreen');
+        //     });
 
         $scope.selectItem = function(item, backup) {
             function selectItem() {
@@ -272,8 +298,7 @@ export default ['$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegac
                 if (LegacyUtils.getQueryVariable('new'))
                     $state.go('base.configuration.tabs.advanced.igfs');
             }
-
-            FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
+            selectItem();
         };
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';

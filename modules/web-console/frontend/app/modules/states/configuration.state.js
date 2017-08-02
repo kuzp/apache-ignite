@@ -37,10 +37,17 @@ import igfsCtrl from 'Controllers/igfs-controller';
 import base2 from 'views/base2.pug';
 
 import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
-import {RECEIVE_CLUSTER_EDIT, RECEIVE_CACHES_EDIT, RECEIVE_CACHE_EDIT} from 'app/components/page-configure/reducer';
+import {
+    RECEIVE_CLUSTER_EDIT,
+    RECEIVE_CACHES_EDIT,
+    RECEIVE_CACHE_EDIT,
+    RECEIVE_IGFSS_EDIT,
+    RECEIVE_IGFS_EDIT
+} from 'app/components/page-configure/reducer';
 import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
 import pageConfigureAdvancedDomainsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-domains/component';
 import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
+import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
@@ -63,7 +70,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.overview', {
                 url: '/configuration/overview',
                 component: 'pageConfigureOverview',
-                // template: '<page-configure-overview></page-configure-overview>',
                 metaTags: {
                     title: 'Configuration'
                 },
@@ -176,7 +182,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 ? {
                                     state: cacheStateName,
                                     params: {
-                                        cacheID: caches[0]._id
+                                        cacheID: caches[0]._id,
+                                        clusterID: $transition$.params().clusterID
                                     }
                                 }
                                 : toState;
@@ -218,13 +225,63 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.tabs.advanced.igfs', {
-                url: '/igfs?{clusterID:string}',
-                templateUrl: igfsTpl,
+                url: '/igfs',
+                component: pageConfigureAdvancedIGFSComponent.name,
                 permission: 'configuration',
+                resolve: {
+                    igfss: ['IgniteConfigurationResource', '$transition$', 'ConfigureState', (IgniteConfigurationResource, $transition$, ConfigureState) => {
+                        const {clusterID} = $transition$.params();
+                        return clusterID === 'new'
+                            ? Promise.resolve([])
+                            : IgniteConfigurationResource.read().then(({igfss}) => {
+                                igfss = igfss.filter((i) => i.clusters.some((id) => id === clusterID));
+                                ConfigureState.dispatchAction({
+                                    type: RECEIVE_IGFSS_EDIT,
+                                    igfss
+                                });
+                                return igfss;
+                            });
+                    }]
+                },
+                redirectTo: ($transition$) => {
+                    const igfsStateName = 'base.configuration.tabs.advanced.igfs.igfs';
+                    const fromState = $transition$.from();
+                    const toState = $transition$.to();
+                    return fromState.name === igfsStateName
+                        ? toState
+                        : $transition$.injector().getAsync('igfss').then((igfss) => {
+                            return igfss.length
+                                ? {
+                                    state: igfsStateName,
+                                    params: {
+                                        igfsID: igfss[0]._id,
+                                        clusterID: $transition$.params().clusterID
+                                    }
+                                }
+                                : toState;
+                        });
+                },
                 tfMetaTags: {
                     title: 'Configure IGFS'
-                },
-                controller: igfsCtrl,
-                controllerAs: '$ctrl'
+                }
+            })
+            .state('base.configuration.tabs.advanced.igfs.igfs', {
+                url: '/{igfsID:string}',
+                resolve: {
+                    igfs: ['IgniteConfigurationResource', '$transition$', 'ConfigureState', (IgniteConfigurationResource, $transition$, ConfigureState) => {
+                        const {igfsID, clusterID} = $transition$.params();
+                        const igfs = igfsID
+                            ? IgniteConfigurationResource.read().then(({igfss}) => igfss.filter((i) => i.clusters.some((id) => id === clusterID)).find((i) => i._id === igfsID))
+                            : Promise.resolve(null);
+
+                        return igfs.then((igfs) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_IGFS_EDIT,
+                                igfs
+                            });
+                            return igfs;
+                        });
+                    }]
+                }
             });
     }]);

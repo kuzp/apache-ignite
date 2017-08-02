@@ -18,7 +18,7 @@
 // Controller for Clusters screen.
 export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
     function(ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        Object.assign(this, {ConfigureState, Clusters, $scope});
+        Object.assign(this, {ConfigureState, Clusters, $scope, Confirm});
 
         this.$onInit = function() {
             this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
@@ -26,7 +26,7 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
 
         this.$onDestroy = function() {
             this.subscription.unsubscribe();
-            if (this.$pageConfigure) this.$pageConfigure.restoreTitle();
+            // if (this.$pageConfigure) this.$pageConfigure.restoreTitle();
         };
 
         this.uiCanExit = function() {
@@ -43,13 +43,13 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
 
         this.applyValue = function(state) {
             this.$scope.selectItem(state.originalCluster);
-            if (this.$pageConfigure) {
-                const bi = this.$scope.backupItem;
-                const isNew = this.$state.params.clusterID === 'new';
-                this.$pageConfigure.setTitle(
-                    `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${bi.name}’`}`
-                );
-            }
+            // if (this.$pageConfigure) {
+            //     const bi = this.$scope.backupItem;
+            //     const isNew = this.$state.params.clusterID === 'new';
+            //     this.$pageConfigure.setTitle(
+            //         `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${bi.name}’`}`
+            //     );
+            // }
         };
 
         this.clustersColumnDefs = [

@@ -29,10 +29,8 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='general')
         .pca-panel-body.pca-form-row
             .pca-form-column-6.pc-form-grid-row
-                .pc-form-grid-col-30.pc-form-grid__text-only-item
+                .pc-form-grid-col-60.pc-form-grid__text-only-item
                     +text('Name:', `${model}.name`, '"igfsName"', 'true', 'Input name', 'IGFS name')
-                .pc-form-grid-col-30
-                    +clusters(model, 'Associate clusters with the current IGFS')
                 .pc-form-grid-col-30
                     +dropdown('IGFS mode:', `${model}.defaultMode`, '"defaultMode"', 'true', '{{::$ctrl.defaultValues.defaultMode}}',
                     '[\
