@@ -22,9 +22,6 @@ import controller from './controller';
 export default {
     template,
     controller,
-    require: {
-        $pageConfigure: '?^pageConfigure'
-    },
     bindings: {
         originalCluster: '<'
     }

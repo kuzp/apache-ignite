@@ -15,22 +15,27 @@
  * limitations under the License.
  */
 
+import get from 'lodash/get';
+
 export default class PageConfigureController {
-    static $inject = ['$state'];
+    static $inject = ['$state', 'ConfigureState'];
 
-    constructor($state) {
-        Object.assign(this, {$state});
-    }
-
-    restoreTitle() {
-        return this.setTitle('Configuration');
-    }
-
-    setTitle(title) {
-        return this.title = title;
+    constructor($state, ConfigureState) {
+        Object.assign(this, {$state, ConfigureState});
     }
 
     $onInit() {
+        this.subscription = this.ConfigureState.state$.pluck('clusterConfiguration')
+        .do((clusterConfiguration) => {
+            const clusterName = get(clusterConfiguration, 'originalCluster.name');
+            const isNew = this.$state.params.clusterID === 'new';
+            this.title = `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${clusterName}’`}`;
+        })
+        .subscribe();
         this.tooltipsVisible = true;
+    }
+
+    $onDestroy() {
+        this.subscription.unsubscribe();
     }
 }
