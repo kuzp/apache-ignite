@@ -154,9 +154,9 @@ public class IgniteBenchmarkUtils {
             qryEntity.setKeyType("java.lang.String");
             qryEntity.setValueType(ZipEntity.class.getName());
 
-            qryEntity.addQueryField("BUSINESSDATE", "java.lang.String", "BUSINESSDATE");
+            qryEntity.addQueryField("BUSINESSDATE", "long", "BUSINESSDATE");
             qryEntity.addQueryField("RISKSUBJECTID", "java.lang.String", "RISKSUBJECTID");
-            qryEntity.addQueryField("SERIESDATE", "java.lang.String", "SERIESDATE");
+            qryEntity.addQueryField("SERIESDATE", "long", "SERIESDATE");
             qryEntity.addQueryField("SNAPVERSION", "java.lang.String", "SNAPVERSION");
             qryEntity.addQueryField("VARTYPE", "java.lang.String", "VARTYPE");
 
