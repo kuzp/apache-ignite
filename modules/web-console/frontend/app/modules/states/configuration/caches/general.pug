@@ -36,8 +36,6 @@ include /app/helpers/jade/mixins
                     +text('Group:', `${model}.groupName`, '"groupName"', 'false', 'Input group name',
                         'Cache group name.<br/>\
                         Caches with the same group name share single underlying "physical" cache (partition set), but are logically isolated.')
-                .pc-form-grid-col-60
-                    +clusters(model, 'Associate clusters with the current cache')
                 .pc-form-grid-col-30
                     +dropdown-multiple('Domain models:',
                         `${model}.domains`, '"domains"', true, 'Choose domain models', 'No valid domain models configured', 'domains',

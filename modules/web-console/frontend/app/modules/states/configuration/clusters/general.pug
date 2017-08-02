@@ -49,9 +49,6 @@ include ./general/discovery/kubernetes
                         That means that all services will be available on all network interfaces of the host machine')
 
                 .pc-form-grid-col-60
-                    +caches(model, 'Select caches to start in cluster or add a new cache')
-
-                .pc-form-grid-col-60
                     +dropdown('Discovery:', `${model}.discovery.kind`, '"discovery"', 'true', 'Choose discovery', 'discoveries',
                     'Discovery allows to discover remote nodes in grid\
                     <ul>\
