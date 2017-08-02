@@ -332,7 +332,7 @@ public class InlineIndexHelper {
      */
     public int compare(long pageAddr, int off, int maxSize, Value v, Comparator<Value> comp) {
         if (type == v.getType() && type == Value.STRING) {
-            byte[] bytes = v.getBytesNoCopy();
+            byte[] bytes = v.getString().getBytes();
 
             int len = PageUtils.getShort(pageAddr, off + 1) & 0x7FFF;
 
@@ -341,7 +341,7 @@ public class InlineIndexHelper {
             if (lenCmp != 0)
                 return lenCmp;
 
-            long addr = pageAddr + off + 5; // Skip length and type byte.
+            long addr = pageAddr + off + 3; // Skip length and type byte.
 
             final int words = len / 8;
 
