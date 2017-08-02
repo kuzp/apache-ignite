@@ -17,12 +17,16 @@
 
 import _ from 'lodash';
 import angular from 'angular';
+import negate from 'lodash/negate';
+import isNil from 'lodash/isNil';
+import isEmpty from 'lodash/isEmpty';
+import mixin from 'lodash/mixin';
 
-const nonNil = _.negate(_.isNil);
-const nonEmpty = _.negate(_.isEmpty);
+const nonNil = negate(isNil);
+const nonEmpty = negate(isEmpty);
 const id8 = (uuid) => uuid.substring(0, 8).toUpperCase();
 
-_.mixin({
+mixin({
     nonNil,
     nonEmpty,
     id8

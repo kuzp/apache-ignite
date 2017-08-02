@@ -16,9 +16,26 @@
  */
 
 // Controller for Clusters screen.
-export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
-    function($root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        this.Clusters = Clusters;
+export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
+    function(ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
+        Object.assign(this, {ConfigureState, Clusters, $scope});
+
+        this.$onInit = function() {
+            this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+        };
+
+        this.$onDestroy = function() {
+            this.subscription.unsubscribe();
+        };
+
+        this.getObservable = function(state$) {
+            return state$.pluck('clusterConfiguration')
+            .do((value) => this.applyValue(value));
+        };
+
+        this.applyValue = function(state) {
+            this.$scope.selectItem(state.originalCluster);
+        };
 
         this.clustersColumnDefs = [
             {
@@ -338,117 +355,117 @@ export default ['$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLe
 
         }
 
-        Loading.start('loadingClustersScreen');
+        // Loading.start('loadingClustersScreen');
 
         // When landing on the page, get clusters and show them.
-        Resource.read()
-            .then(({spaces, clusters, caches, domains, igfss}) => {
-                $scope.spaces = spaces;
+        // Resource.read()
+        //     .then(({spaces, clusters, caches, domains, igfss}) => {
+        //         $scope.spaces = spaces;
 
-                $scope.clusters = clusters;
-                this.clustersTable = this.buildClustersTable($scope.clusters);
+        //         $scope.clusters = clusters;
+        //         this.clustersTable = this.buildClustersTable($scope.clusters);
 
-                $scope.caches = _.map(caches, (cache) => {
-                    cache.domains = _.filter(domains, ({_id}) => _.includes(cache.domains, _id));
+        //         $scope.caches = _.map(caches, (cache) => {
+        //             cache.domains = _.filter(domains, ({_id}) => _.includes(cache.domains, _id));
 
-                    if (_.get(cache, 'nodeFilter.kind') === 'IGFS')
-                        cache.nodeFilter.IGFS.instance = _.find(igfss, {_id: cache.nodeFilter.IGFS.igfs});
+        //             if (_.get(cache, 'nodeFilter.kind') === 'IGFS')
+        //                 cache.nodeFilter.IGFS.instance = _.find(igfss, {_id: cache.nodeFilter.IGFS.igfs});
 
-                    return {value: cache._id, label: cache.name, cache};
-                });
+        //             return {value: cache._id, label: cache.name, cache};
+        //         });
 
-                $scope.igfss = _.map(igfss, (igfs) => ({value: igfs._id, label: igfs.name, igfs}));
+        //         $scope.igfss = _.map(igfss, (igfs) => ({value: igfs._id, label: igfs.name, igfs}));
 
-                _.forEach($scope.clusters, (cluster) => {
-                    cluster.label = _clusterLbl(cluster);
+        //         _.forEach($scope.clusters, (cluster) => {
+        //             cluster.label = _clusterLbl(cluster);
 
-                    if (!cluster.collision || !cluster.collision.kind)
-                        cluster.collision = {kind: 'Noop', JobStealing: {stealingEnabled: true}, PriorityQueue: {starvationPreventionEnabled: true}};
+        //             if (!cluster.collision || !cluster.collision.kind)
+        //                 cluster.collision = {kind: 'Noop', JobStealing: {stealingEnabled: true}, PriorityQueue: {starvationPreventionEnabled: true}};
 
-                    if (!cluster.failoverSpi)
-                        cluster.failoverSpi = [];
+        //             if (!cluster.failoverSpi)
+        //                 cluster.failoverSpi = [];
 
-                    if (!cluster.logger)
-                        cluster.logger = {Log4j: { mode: 'Default'}};
+        //             if (!cluster.logger)
+        //                 cluster.logger = {Log4j: { mode: 'Default'}};
 
-                    if (!cluster.peerClassLoadingLocalClassPathExclude)
-                        cluster.peerClassLoadingLocalClassPathExclude = [];
+        //             if (!cluster.peerClassLoadingLocalClassPathExclude)
+        //                 cluster.peerClassLoadingLocalClassPathExclude = [];
 
-                    if (!cluster.deploymentSpi) {
-                        cluster.deploymentSpi = {URI: {
-                            uriList: [],
-                            scanners: []
-                        }};
-                    }
+        //             if (!cluster.deploymentSpi) {
+        //                 cluster.deploymentSpi = {URI: {
+        //                     uriList: [],
+        //                     scanners: []
+        //                 }};
+        //             }
 
-                    if (!cluster.memoryConfiguration)
-                        cluster.memoryConfiguration = { memoryPolicies: [] };
+        //             if (!cluster.memoryConfiguration)
+        //                 cluster.memoryConfiguration = { memoryPolicies: [] };
 
-                    if (!cluster.dataStorageConfiguration)
-                        cluster.dataStorageConfiguration = { dataRegionConfigurations: [] };
+        //             if (!cluster.dataStorageConfiguration)
+        //                 cluster.dataStorageConfiguration = { dataRegionConfigurations: [] };
 
-                    if (!cluster.hadoopConfiguration)
-                        cluster.hadoopConfiguration = { nativeLibraryNames: [] };
+        //             if (!cluster.hadoopConfiguration)
+        //                 cluster.hadoopConfiguration = { nativeLibraryNames: [] };
 
-                    if (!cluster.serviceConfigurations)
-                        cluster.serviceConfigurations = [];
+        //             if (!cluster.serviceConfigurations)
+        //                 cluster.serviceConfigurations = [];
 
-                    if (!cluster.executorConfiguration)
-                        cluster.executorConfiguration = [];
-                });
+        //             if (!cluster.executorConfiguration)
+        //                 cluster.executorConfiguration = [];
+        //         });
 
-                selectCurrentItem();
+        //         selectCurrentItem();
 
-                $scope.$watch('ui.inputForm.$valid', function(valid) {
-                    if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
-                        $scope.ui.inputForm.$dirty = false;
-                });
+        //         $scope.$watch('ui.inputForm.$valid', function(valid) {
+        //             if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
+        //                 $scope.ui.inputForm.$dirty = false;
+        //         });
 
-                $scope.$watch('backupItem', function(val) {
-                    if (!$scope.ui.inputForm)
-                        return;
+        //         $scope.$watch('backupItem', function(val) {
+        //             if (!$scope.ui.inputForm)
+        //                 return;
 
-                    const form = $scope.ui.inputForm;
+        //             const form = $scope.ui.inputForm;
 
-                    if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
-                        form.$setPristine();
-                    else
-                        form.$setDirty();
+        //             if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
+        //                 form.$setPristine();
+        //             else
+        //                 form.$setDirty();
 
-                    $scope.clusterCaches = _.filter($scope.caches,
-                        (cache) => _.find($scope.backupItem.caches,
-                            (selCache) => selCache === cache.value
-                        )
-                    );
+        //             $scope.clusterCaches = _.filter($scope.caches,
+        //                 (cache) => _.find($scope.backupItem.caches,
+        //                     (selCache) => selCache === cache.value
+        //                 )
+        //             );
 
-                    $scope.clusterCachesEmpty = _.clone($scope.clusterCaches);
-                    $scope.clusterCachesEmpty.push({label: 'Not set'});
-                }, true);
+        //             $scope.clusterCachesEmpty = _.clone($scope.clusterCaches);
+        //             $scope.clusterCachesEmpty.push({label: 'Not set'});
+        //         }, true);
 
-                $scope.$watch('ui.activePanels.length', () => {
-                    ErrorPopover.hide();
-                });
+        //         $scope.$watch('ui.activePanels.length', () => {
+        //             ErrorPopover.hide();
+        //         });
 
-                if ($root.IgniteDemoMode && sessionStorage.showDemoInfo !== 'true') {
-                    sessionStorage.showDemoInfo = 'true';
+        //         if ($root.IgniteDemoMode && sessionStorage.showDemoInfo !== 'true') {
+        //             sessionStorage.showDemoInfo = 'true';
 
-                    DemoInfo.show();
-                }
-            })
-            .catch(Messages.showError)
-            .then(() => {
-                $scope.ui.ready = true;
-                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
+        //             DemoInfo.show();
+        //         }
+        //     })
+        //     .catch(Messages.showError)
+        //     .then(() => {
+        //         $scope.ui.ready = true;
+        //         $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                Loading.finish('loadingClustersScreen');
-            });
+        //         Loading.finish('loadingClustersScreen');
+        //     });
 
         $scope.clusterCaches = [];
         $scope.clusterCachesEmpty = [];
 
         $scope.selectItem = function(item, backup) {
             function selectItem() {
-                $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
+                // $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
                 $scope.selectedItem = item;
 
                 if (backup)

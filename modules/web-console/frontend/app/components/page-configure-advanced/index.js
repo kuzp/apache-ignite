@@ -19,7 +19,15 @@ import angular from 'angular';
 import component from './component';
 import service from './service';
 
+import cluster from './components/page-configure-advanced-cluster';
+import domains from './components/page-configure-advanced-domains';
+import caches from './components/page-configure-advanced-caches';
+
 export default angular
-    .module('ignite-console.page-configure-advanced', [])
+    .module('ignite-console.page-configure-advanced', [
+        cluster.name,
+        domains.name,
+        caches.name
+    ])
     .component('pageConfigureAdvanced', component)
     .service('PageConfigureAdvanced', service);

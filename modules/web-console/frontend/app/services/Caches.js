@@ -36,4 +36,8 @@ export default class Caches {
     saveCache(cache) {
         return this.$http.post('/api/v1/configuration/caches/save', cache);
     }
+
+    getCache(cacheID) {
+        return this.$http.get(`/api/v1/configuration/caches/${cacheID}`);
+    }
 }
