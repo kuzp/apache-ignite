@@ -255,7 +255,8 @@ public class LoadStore implements CacheStore<Object, Object> {
         ccfg.setCacheMode(CacheMode.PARTITIONED);
 
         if (args0.idx) {
-            QueryEntity qryEntity = new QueryEntity(AffinityKey.class.getName(), ZipSmallEntity.class.getName());
+            QueryEntity qryEntity = new QueryEntity(args0.affinityKey
+                ? AffinityKey.class.getName() : String.class.getName(), ZipSmallEntity.class.getName());
 
             qryEntity.setTableName("ZIP_ENTITY");
 
