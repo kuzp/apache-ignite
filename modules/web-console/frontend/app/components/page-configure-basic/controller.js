@@ -21,6 +21,7 @@ import 'rxjs/add/operator/combineLatest';
 
 export default class PageConfigureBasicController {
     static $inject = [
+        'IgniteConfirm',
         '$scope',
         'PageConfigureBasic',
         'Clusters',
@@ -31,8 +32,8 @@ export default class PageConfigureBasicController {
         '$element'
     ];
 
-    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element) {
-        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element});
+    constructor(IgniteConfirm, $scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element) {
+        Object.assign(this, {IgniteConfirm, $scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element});
     }
 
     $postLink() {
@@ -89,6 +90,11 @@ export default class PageConfigureBasicController {
         }
     }
 
+    uiCanExit() {
+        // TODO Refactor this
+        return !this.form.$dirty || this.IgniteConfirm.confirm(`
+            You have unsaved changes. Are you sure want to discard them?
+        `);
     }
 
     $onDestroy() {

@@ -129,7 +129,7 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
             }
         });
 
-        UnsavedChangesGuard.install($scope);
+        // UnsavedChangesGuard.install($scope);
 
         const emptyCache = {empty: true};
 

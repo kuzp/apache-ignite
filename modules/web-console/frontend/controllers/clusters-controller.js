@@ -28,6 +28,12 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             this.subscription.unsubscribe();
             if (this.$pageConfigure) this.$pageConfigure.restoreTitle();
         };
+
+        this.uiCanExit = function() {
+            // TODO Refactor this
+            return !this.$scope.ui.inputForm.$dirty || this.Confirm.confirm(`
+                You have unsaved changes. Are you sure want to discard them?
+            `);
         };
 
         this.getObservable = function(state$) {
@@ -143,7 +149,7 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             }
         });
 
-        UnsavedChangesGuard.install($scope);
+        // UnsavedChangesGuard.install($scope);
 
         const emptyCluster = {empty: true};
 
