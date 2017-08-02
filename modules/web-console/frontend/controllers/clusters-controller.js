@@ -315,8 +315,8 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         $scope.ui.activePanels = [0];
         $scope.ui.topPanels = [0];
 
-        $scope.saveBtnTipText = FormUtils.saveBtnTipText;
-        $scope.widthIsSufficient = FormUtils.widthIsSufficient;
+        // $scope.saveBtnTipText = FormUtils.saveBtnTipText;
+        // $scope.widthIsSufficient = FormUtils.widthIsSufficient;
 
         $scope.contentVisible = function() {
             return !$scope.backupItem.empty;
