@@ -18,6 +18,7 @@
 package org.apache.ignite.yardstick;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -28,7 +29,12 @@ import java.util.concurrent.TimeUnit;
 import javax.cache.CacheException;
 import org.apache.ignite.IgniteTransactions;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CacheAtomicityMode;
+import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.CacheWriteSynchronizationMode;
+import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cluster.ClusterTopologyException;
+import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.transactions.Transaction;
 import org.apache.ignite.transactions.TransactionConcurrency;
@@ -36,6 +42,7 @@ import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
 import org.apache.ignite.yardstick.cache.IgniteStreamerZipBenchmark;
+import org.apache.ignite.yardstick.cache.model.ZipEntity;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
@@ -118,7 +125,7 @@ public class IgniteBenchmarkUtils {
 
         final int extraNodes = 3;
 
-        final int warmUp = 60;
+        final int warmUp = 0;
         final int duration = 120;
 
         final int range = 1_000_000;
@@ -130,32 +137,32 @@ public class IgniteBenchmarkUtils {
 
             nodeCfg.setIgniteInstanceName("node-" + i);
             nodeCfg.setMetricsLogFrequency(0);
-//
-//            CacheConfiguration ccfg = new CacheConfiguration("streamer-zip");
-//            ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
-//            ccfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
-//            ccfg.setBackups(1);
+
+            CacheConfiguration ccfg = new CacheConfiguration("streamer-zip");
+            ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+            ccfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+            ccfg.setBackups(0);
 //            ccfg.setOnheapCacheEnabled(false);
-//            ccfg.setCacheMode(CacheMode.PARTITIONED);
+            ccfg.setCacheMode(CacheMode.PARTITIONED);
 //            ccfg.setRebalanceThrottle(0);
 //            ccfg.setRebalanceBatchSize(5 * 1024 * 1024); //5MB
-//            ccfg.setRebalanceThreadPoolSize(4);
-////            ccfg.setIndexedTypes(String.class, ZipEntity.class);
-//            QueryEntity qryEntity = new QueryEntity();
-//
-//            qryEntity.setTableName("ZIP_ENTITY");
-//            qryEntity.setKeyType("java.lang.String");
-//            qryEntity.setValueType(ZipEntity.class.getName());
-//
-//            qryEntity.addQueryField("BUSINESSDATE", "java.lang.String", "BUSINESSDATE");
-//            qryEntity.addQueryField("RISKSUBJECTID", "java.lang.String", "RISKSUBJECTID");
-//            qryEntity.addQueryField("SERIESDATE", "java.lang.String", "SERIESDATE");
-//            qryEntity.addQueryField("SNAPVERSION", "java.lang.String", "SNAPVERSION");
-//            qryEntity.addQueryField("VARTYPE", "java.lang.String", "VARTYPE");
-//
-//            ccfg.setQueryEntities(Collections.singleton(qryEntity));
-//
-//            nodeCfg.setCacheConfiguration(ccfg);
+            ccfg.setRebalanceThreadPoolSize(4);
+//            ccfg.setIndexedTypes(String.class, ZipEntity.class);
+            QueryEntity qryEntity = new QueryEntity();
+
+            qryEntity.setTableName("ZIP_ENTITY");
+            qryEntity.setKeyType("java.lang.String");
+            qryEntity.setValueType(ZipEntity.class.getName());
+
+            qryEntity.addQueryField("BUSINESSDATE", "java.lang.String", "BUSINESSDATE");
+            qryEntity.addQueryField("RISKSUBJECTID", "java.lang.String", "RISKSUBJECTID");
+            qryEntity.addQueryField("SERIESDATE", "java.lang.String", "SERIESDATE");
+            qryEntity.addQueryField("SNAPVERSION", "java.lang.String", "SNAPVERSION");
+            qryEntity.addQueryField("VARTYPE", "java.lang.String", "VARTYPE");
+
+            ccfg.setQueryEntities(Collections.singleton(qryEntity));
+
+            nodeCfg.setCacheConfiguration(ccfg);
 
             Ignition.start(nodeCfg);
         }
@@ -171,7 +178,7 @@ public class IgniteBenchmarkUtils {
         addArg(args0, "-cfg", cfg);
         addArg(args0, "-wom", "PRIMARY");
         addArg(args0, "-cts", 8);
-        addArg(args0, "-ct", "SNAPPY");
+        addArg(args0, "-ct", "NONE");
         addArg(args0, "-sr", "0.9");
 
         if (throughputLatencyProbe)
