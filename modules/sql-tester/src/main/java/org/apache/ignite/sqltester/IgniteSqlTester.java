@@ -58,7 +58,7 @@ public class IgniteSqlTester {
             e.printStackTrace();//TODO
         }
 
-        String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpfile") :
+        String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpFile") :
             props.getProperty("workDir") + File.separator + "sqltestlog" + System.currentTimeMillis() + ".log";
 
         writer = new PrintWriter(new FileOutputStream(
