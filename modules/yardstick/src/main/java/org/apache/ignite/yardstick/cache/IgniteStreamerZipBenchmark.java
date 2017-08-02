@@ -229,7 +229,7 @@ public class IgniteStreamerZipBenchmark extends IgniteAbstractBenchmark {
 
                             final int num = args.compressThreads();
 
-                            int[] parts = ignite().affinity(cacheName).primaryPartitions(ignite().cluster().localNode());
+                            int[] parts = ignite().affinity(cacheName).primaryPartitions(ignite().cluster().forServers().node());
 
                             int partsLen0 = parts.length / num;
                             int partsLenDiff = parts.length % num;
