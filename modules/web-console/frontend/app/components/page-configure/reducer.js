@@ -113,6 +113,8 @@ export const reducer = (state = defaults, action) => {
 export const RECEIVE_CLUSTER_EDIT = Symbol('RECEIVE_CLUSTER_EDIT');
 export const RECEIVE_CACHES_EDIT = Symbol('RECEIVE_CACHES_EDIT');
 export const RECEIVE_CACHE_EDIT = Symbol('RECEIVE_CACHES_EDIT');
+export const RECEIVE_IGFSS_EDIT = Symbol('RECEIVE_IGFSS_EDIT');
+export const RECEIVE_IGFS_EDIT = Symbol('RECEIVE_IGFS_EDIT');
 
 export const editReducer = (state = {originalCluster: null}, action) => {
     switch (action.type) {
@@ -133,6 +135,18 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return {
                 ...state,
                 originalCache: action.cache
+            };
+        }
+        case RECEIVE_IGFSS_EDIT:
+            return {
+                ...state,
+                originalIGFSs: action.igfss,
+                newIGFSs: []
+            };
+        case RECEIVE_IGFS_EDIT: {
+            return {
+                ...state,
+                originalIGFS: action.igfs
             };
         }
         default:

@@ -22,12 +22,14 @@ import service from './service';
 import cluster from './components/page-configure-advanced-cluster';
 import domains from './components/page-configure-advanced-domains';
 import caches from './components/page-configure-advanced-caches';
+import igfs from './components/page-configure-advanced-igfs';
 
 export default angular
     .module('ignite-console.page-configure-advanced', [
         cluster.name,
         domains.name,
-        caches.name
+        caches.name,
+        igfs.name
     ])
     .component('pageConfigureAdvanced', component)
     .service('PageConfigureAdvanced', service);
