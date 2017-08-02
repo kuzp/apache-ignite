@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import org.apache.ignite.internal.pagemem.PageUtils;
+import org.apache.ignite.internal.util.GridUnsafe;
 import org.h2.result.SortOrder;
 import org.h2.table.IndexColumn;
 import org.h2.value.Value;
@@ -330,6 +331,43 @@ public class InlineIndexHelper {
      * @return Compare result (-2 means we can't compare).
      */
     public int compare(long pageAddr, int off, int maxSize, Value v, Comparator<Value> comp) {
+        if (type == v.getType() && type == Value.STRING) {
+            byte[] bytes = v.getBytesNoCopy();
+
+            int len = PageUtils.getShort(pageAddr, off + 1) & 0x7FFF;
+
+            int lenCmp = Integer.compare(len, bytes.length);
+
+            if (lenCmp != 0)
+                return lenCmp;
+
+            long addr = pageAddr + off + 5; // Skip length and type byte.
+
+            final int words = len / 8;
+
+            for (int i = 0; i < words; i++) {
+                int off0 = i * 8;
+
+                long b1 = PageUtils.getLong(addr, off0);
+                long b2 = GridUnsafe.getLong(bytes, GridUnsafe.BYTE_ARR_OFF + off0);
+
+                int cmp = Long.compare(b1, b2);
+
+                if (cmp != 0)
+                    return cmp;
+            }
+
+            for (int i = words * 8; i < len; i++) {
+                byte b1 = PageUtils.getByte(addr, i);
+                byte b2 = bytes[i];
+
+                if (b1 != b2)
+                    return b1 > b2 ? 1 : -1;
+            }
+
+            return 0;
+        }
+
         Value v1 = get(pageAddr, off, maxSize);
 
         if (v1 == null)
