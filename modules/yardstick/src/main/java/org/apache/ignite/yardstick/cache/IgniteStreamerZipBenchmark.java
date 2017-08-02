@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 import org.apache.ignite.IgniteBinary;
@@ -34,6 +35,7 @@ import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.binary.BinaryObjectBuilder;
+import org.apache.ignite.cache.affinity.AffinityKey;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteUuid;
@@ -121,6 +123,7 @@ public class IgniteStreamerZipBenchmark extends IgniteAbstractBenchmark {
             ", compressorType=" + args.compressorType() +
             ", compressThreads=" + args.compressThreads() +
             ", stringRandomization=" + args.stringRandomization() +
+            ", affinityKey=" + args.streamerAffinityKey() +
             ']');
 
         final CompressionType type = CompressionType.valueOf(args.compressorType());
@@ -226,16 +229,31 @@ public class IgniteStreamerZipBenchmark extends IgniteAbstractBenchmark {
 
                             final int num = args.compressThreads();
 
+                            int[] parts = ignite().affinity(cacheName).primaryPartitions(ignite().cluster().forServers().node());
+
+                            int partsLen0 = parts.length / num;
+                            int partsLenDiff = parts.length % num;
+                            int k = 0;
+
                             List<Future<Object>> futs = new ArrayList<>(num);
 
                             for (int i = 0; i < num; i++) {
+                                final int[] parts0 = new int[partsLen0 + (partsLenDiff > 0 ? 1 : 0)];
+
+                                partsLenDiff--;
+
+                                for (int j = 0; j < parts0.length; j++)
+                                    parts0[j] = parts[k++];
+
                                 Future<Object> fut = generatorExecutor.submit(new Callable<Object>() {
                                     @Override public Object call() throws Exception {
                                         IgniteBinary binary = ignite().binary();
 
+                                        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+
                                         for (int i = 0; i < entries / num; i++) {
-                                            streamer.addData(String.valueOf(IgniteUuid.randomUuid()), create(binary, type,
-                                                args.stringRandomization(), true));
+                                            streamer.addData(generateKey(args.streamerAffinityKey(), parts0[rnd.nextInt(parts0.length)]),
+                                                create(binary, type, args.stringRandomization(), true));
 
                                             if (i > 0 && i % 1000 == 0) {
                                                 if (stop.get())
@@ -267,6 +285,7 @@ public class IgniteStreamerZipBenchmark extends IgniteAbstractBenchmark {
                                 ", parOps=" + args.getStreamerPerNodeParallelOps() +
                                 ", totalTimeMillis=" + time +
                                 ", entriesInCache=" + ignite().cache(cacheName).size() +
+                                ", affinityKey=" + args.streamerAffinityKey() +
                                 ", queryParallelism=" + ignite().cache(cacheName)
                                 .getConfiguration(CacheConfiguration.class).getQueryParallelism() + ']');
 
@@ -295,6 +314,18 @@ public class IgniteStreamerZipBenchmark extends IgniteAbstractBenchmark {
         }
 
         return false;
+    }
+
+    /**
+     * @param i Partition to map key to.
+     * @return Generated affinity key.
+     */
+    private Object generateKey(boolean affKey,
+        int i
+    ) {
+        return affKey
+            ? new AffinityKey<>(String.valueOf(IgniteUuid.randomUuid()), i)
+            : String.valueOf(IgniteUuid.randomUuid());
     }
 
     /** {@inheritDoc} */
