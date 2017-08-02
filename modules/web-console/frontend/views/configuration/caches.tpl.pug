@@ -31,6 +31,8 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
     h2.pc-page-header(ng-hide='backupItem.empty')
         | {{ backupItem._id ? 'Edit' : 'Create' }} cache {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
 
+    //- pre {{ $ctrl.__cache | json }}
+
     div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
             include /app/modules/states/configuration/caches/general

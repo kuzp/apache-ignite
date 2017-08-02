@@ -16,6 +16,9 @@
  */
 
 import angular from 'angular';
+
+import {Visualizer} from '@uirouter/visualizer';
+
 import component from './component';
 import ConfigureState from './services/ConfigureState';
 import PageConfigure from './services/PageConfigure';
@@ -38,7 +41,8 @@ export default angular
         projectStructurePreview.name,
         itemsTable.name
     ])
-    .run(['ConfigureState', (ConfigureState) => {
+    .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
+        $uiRouter.plugin(Visualizer);
         if (devTools) {
             devTools.subscribe((e) => {
                 if (e.type === 'DISPATCH' && e.state) ConfigureState.actions$.next(e);

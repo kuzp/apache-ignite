@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import debounce from 'lodash/debounce';
+
 export default class ItemsTableController {
     static $inject = ['$scope', 'gridUtil', '$timeout', 'uiGridSelectionService'];
 
@@ -51,6 +53,7 @@ export default class ItemsTableController {
                 });
             }
         };
+        this.onAction = debounce(this.onAction);
     }
 
     onRowsSelectionChange() {

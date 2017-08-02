@@ -1225,72 +1225,72 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         $scope.importCommon = {};
 
         // When landing on the page, get domain models and show them.
-        Loading.start('loadingDomainModelsScreen');
+        // Loading.start('loadingDomainModelsScreen');
 
-        Resource.read()
-            .then(({spaces, clusters, caches, domains}) => {
-                $scope.spaces = spaces;
+        // Resource.read()
+        //     .then(({spaces, clusters, caches, domains}) => {
+        //         $scope.spaces = spaces;
 
-                $scope.clusters = _.map(clusters, (cluster) => ({
-                    label: cluster.name,
-                    value: cluster._id
-                }));
+        //         $scope.clusters = _.map(clusters, (cluster) => ({
+        //             label: cluster.name,
+        //             value: cluster._id
+        //         }));
 
-                $scope.caches = _mapCaches(caches);
+        //         $scope.caches = _mapCaches(caches);
 
-                $scope.domains = _.sortBy(domains, 'valueType');
-                this.modelsTable = this.buildModelsTable($scope.domains);
+        //         $scope.domains = _.sortBy(domains, 'valueType');
+        //         this.modelsTable = this.buildModelsTable($scope.domains);
 
-                _.forEach($scope.clusters, (cluster) => $scope.ui.generatedCachesClusters.push(cluster.value));
+        //         _.forEach($scope.clusters, (cluster) => $scope.ui.generatedCachesClusters.push(cluster.value));
 
-                if (!_.isEmpty($scope.caches)) {
-                    $scope.importActions.push({
-                        label: 'Associate with existing cache',
-                        shortLabel: 'Associate',
-                        value: IMPORT_DM_ASSOCIATE_CACHE
-                    });
-                }
+        //         if (!_.isEmpty($scope.caches)) {
+        //             $scope.importActions.push({
+        //                 label: 'Associate with existing cache',
+        //                 shortLabel: 'Associate',
+        //                 value: IMPORT_DM_ASSOCIATE_CACHE
+        //             });
+        //         }
 
-                $scope.$watch('importCommon.action', _fillCommonCachesOrTemplates($scope.importCommon), true);
+        //         $scope.$watch('importCommon.action', _fillCommonCachesOrTemplates($scope.importCommon), true);
 
-                $scope.importCommon.action = IMPORT_DM_NEW_CACHE;
+        //         $scope.importCommon.action = IMPORT_DM_NEW_CACHE;
 
-                selectFirstItem();
+        //         selectFirstItem();
 
-                $scope.$watch('ui.inputForm.$valid', function(valid) {
-                    if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
-                        $scope.ui.inputForm.$dirty = false;
-                });
+        //         $scope.$watch('ui.inputForm.$valid', function(valid) {
+        //             if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
+        //                 $scope.ui.inputForm.$dirty = false;
+        //         });
 
-                $scope.$watch('backupItem', function(val) {
-                    if (!$scope.ui.inputForm)
-                        return;
+        //         $scope.$watch('backupItem', function(val) {
+        //             if (!$scope.ui.inputForm)
+        //                 return;
 
-                    const form = $scope.ui.inputForm;
+        //             const form = $scope.ui.inputForm;
 
-                    if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
-                        form.$setPristine();
-                    else {
-                        form.$setDirty();
+        //             if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
+        //                 form.$setPristine();
+        //             else {
+        //                 form.$setDirty();
 
-                        const general = form.general;
+        //                 const general = form.general;
 
-                        FormUtils.markPristineInvalidAsDirty(general.keyType);
-                        FormUtils.markPristineInvalidAsDirty(general.valueType);
-                    }
-                }, true);
+        //                 FormUtils.markPristineInvalidAsDirty(general.keyType);
+        //                 FormUtils.markPristineInvalidAsDirty(general.valueType);
+        //             }
+        //         }, true);
 
-                $scope.$watch('ui.activePanels.length', () => {
-                    ErrorPopover.hide();
-                });
-            })
-            .catch(Messages.showError)
-            .then(() => {
-                $scope.ui.ready = true;
-                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
+        //         $scope.$watch('ui.activePanels.length', () => {
+        //             ErrorPopover.hide();
+        //         });
+        //     })
+        //     .catch(Messages.showError)
+        //     .then(() => {
+        //         $scope.ui.ready = true;
+        //         $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                Loading.finish('loadingDomainModelsScreen');
-            });
+        //         Loading.finish('loadingDomainModelsScreen');
+        //     });
 
         const clearFormDefaults = (ngFormCtrl) => {
             if (!ngFormCtrl)

@@ -111,24 +111,6 @@ export default class PageConfigureOverviewController {
         this.$scope.$applyAsync(() => Object.assign(this, value));
     }
 
-    getClustersTable(list) {
-        const countClusterDomains = flow(
-            get('caches'),
-            flatMap(flow(list.caches.get.bind(list.caches), get('domains'))),
-            uniq,
-            get('length')
-        );
-        return [...list.clusters.values()].map((cluster) => ({
-            name: cluster.name,
-            _id: cluster._id,
-            version: null,
-            discovery: cluster.discovery.kind,
-            caches: cluster.caches.length,
-            models: countClusterDomains(cluster),
-            igfs: cluster.igfss.length
-        }));
-    }
-
     onClustersAction(action) {
         switch (action.type) {
             case 'EDIT':

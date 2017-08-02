@@ -23,6 +23,10 @@
 @import "./blocks/error";
 @import "./form-field";
 
+body {
+    overflow-y: scroll;
+}
+
 hr {
     margin: 20px 0;
 }

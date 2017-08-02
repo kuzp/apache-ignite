@@ -29,7 +29,7 @@ import cachesTpl from 'views/configuration/caches.tpl.pug';
 import domainsTpl from 'views/configuration/domains.tpl.pug';
 import igfsTpl from 'views/configuration/igfs.tpl.pug';
 
-import clustersCtrl from 'Controllers/clusters-controller';
+// import clustersCtrl from 'Controllers/clusters-controller';
 import domainsCtrl from 'Controllers/domains-controller';
 import cachesCtrl from 'Controllers/caches-controller';
 import igfsCtrl from 'Controllers/igfs-controller';
@@ -37,7 +37,10 @@ import igfsCtrl from 'Controllers/igfs-controller';
 import base2 from 'views/base2.pug';
 
 import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
-import {RECEIVE_CLUSTER_EDIT} from 'app/components/page-configure/reducer';
+import {RECEIVE_CLUSTER_EDIT, RECEIVE_CACHES_EDIT, RECEIVE_CACHE_EDIT} from 'app/components/page-configure/reducer';
+import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
+import pageConfigureAdvancedDomainsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-domains/component';
+import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
 
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
@@ -77,7 +80,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.tabs', {
-                url: '/configuration/{clusterID:string}',
+                url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {
@@ -87,16 +90,11 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const cluster = clusterID === 'new'
                             ? newCluster
                             : Clusters.getCluster(clusterID).then(({data}) => data);
-                        const caches = clusterID === 'new'
-                            ? Promise.resolve([])
-                            // : Caches.getCachesOverview().then(({data}) => data);
-                            : Clusters.getClusterCaches(clusterID).then(({data}) => data);
 
-                        return Promise.all([cluster, caches]).then(([cluster, caches]) => {
+                        return cluster.then((cluster) => {
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CLUSTER_EDIT,
-                                cluster,
-                                caches
+                                cluster
                             });
                             return cluster;
                         });
@@ -104,16 +102,11 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 },
                 redirectTo: ($transition$) => {
                     return $transition$.injector().getAsync('cluster').then((cluster) => {
-                        return cluster.caches.length > 10
+                        return cluster.caches.length > 5
                             ? 'base.configuration.tabs.advanced'
                             : 'base.configuration.tabs.basic';
                     });
                 },
-                // redirectTo: (trans) => {
-                //     const PageConfigure = trans.injector().get('PageConfigure');
-
-                //     return PageConfigure.onStateEnterRedirect(trans.to());
-                // },
                 tfMetaTags: {
                     title: 'Configuration'
                 }
@@ -121,26 +114,21 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.tabs.basic', {
                 url: '/basic',
                 permission: 'configuration',
-                // url: '/basic?{clusterID:string}',
-                // template: '<page-configure-basic></page-configure-basic>',
+                resolve: {
+                    caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+                        const {clusterID} = $transition$.params();
+                        return Clusters.getClusterCaches(clusterID).then(({data}) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_CACHES_EDIT,
+                                caches: data
+                            });
+                            return data;
+                        });
+                    }]
+                },
                 tfMetaTags: {
                     title: 'Basic Configuration'
                 }
-                /*                resolve: {
-                    cluster: ['Clusters', 'ConfigureState', '$q', '$transition$', (Clusters, ConfigureState, $q, $transition$) => {
-                        return $q.all([
-                            Clusters.getCluster($transition$.params().clusterID)
-                        ]);
-                    }]
-                  list: ['IgniteConfigurationResource', 'PageConfigure', (configuration, pageConfigure) => {
-                        // TODO IGNITE-5271: remove when advanced config is hooked into ConfigureState too.
-                        // This resolve ensures that basic always has fresh data, i.e. after going back from advanced
-                        // after adding a cluster.
-                        return configuration.read().then((data) => {
-                            pageConfigure.loadList(data);
-                        });
-                    }]
-                }*/
             })
             .state('base.configuration.tabs.advanced', {
                 url: '/advanced',
@@ -149,38 +137,62 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.tabs.advanced.cluster', {
                 url: '/cluster',
-                templateUrl: clustersTpl,
+                component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
                 tfMetaTags: {
-                    title: 'Configure Clusters'
-                },
-                // params: {
-                //     clusterID: {
-                //         dynamic: true
-                //     }
-                // },
-                controller: clustersCtrl,
-                controllerAs: '$ctrl'
+                    title: 'Configure Cluster'
+                }
             })
             .state('base.configuration.tabs.advanced.caches', {
-                url: '/caches?{clusterID:string}',
-                templateUrl: cachesTpl,
+                url: '/caches',
                 permission: 'configuration',
+                component: pageConfigureAdvancedCachesComponent.name,
+                resolve: {
+                    caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+                        const {clusterID} = $transition$.params();
+                        return Clusters.getClusterCaches(clusterID).then(({data}) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_CACHES_EDIT,
+                                caches: data
+                            });
+                            return data;
+                        });
+                    }]
+                },
                 tfMetaTags: {
                     title: 'Configure Caches'
+                }
+            })
+            .state('base.configuration.tabs.advanced.caches.cache', {
+                url: '/{cacheID:string}',
+                resolve: {
+                    cache: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
+                        const {cacheID} = $transition$.params();
+                        console.debug(`Loading cache: ${cacheID}`);
+                        const cache = cacheID
+                            ? Caches.getCache(cacheID).then(({data}) => data)
+                            : Promise.resolve(null);
+
+                        return cache.then((cache) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_CACHE_EDIT,
+                                cache
+                            });
+                            return cache;
+                        });
+                    }]
                 },
-                controller: cachesCtrl,
-                controllerAs: '$ctrl'
+                tfMetaTags: {
+                    title: 'Configure Caches'
+                }
             })
             .state('base.configuration.tabs.advanced.domains', {
-                url: '/domains?{clusterID:string}',
-                templateUrl: domainsTpl,
+                url: '/domains',
+                component: pageConfigureAdvancedDomainsComponent.name,
                 permission: 'configuration',
                 tfMetaTags: {
                     title: 'Configure Domain Model'
-                },
-                controller: domainsCtrl,
-                controllerAs: '$ctrl'
+                }
             })
             .state('base.configuration.tabs.advanced.igfs', {
                 url: '/igfs?{clusterID:string}',

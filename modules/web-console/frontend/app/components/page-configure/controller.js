@@ -22,6 +22,10 @@ export default class PageConfigureController {
         Object.assign(this, {$state});
     }
 
+    setTitle(title) {
+        return this.title = title;
+    }
+
     $onInit() {
         this.tooltipsVisible = true;
     }

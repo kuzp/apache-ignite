@@ -111,16 +111,30 @@ export const reducer = (state = defaults, action) => {
 
 
 export const RECEIVE_CLUSTER_EDIT = Symbol('RECEIVE_CLUSTER_EDIT');
+export const RECEIVE_CACHES_EDIT = Symbol('RECEIVE_CACHES_EDIT');
+export const RECEIVE_CACHE_EDIT = Symbol('RECEIVE_CACHES_EDIT');
 
 export const editReducer = (state = {originalCluster: null}, action) => {
     switch (action.type) {
         case RECEIVE_CLUSTER_EDIT:
             return {
                 ...state,
-                originalCluster: action.cluster,
+                originalCluster: action.cluster
+                // originalCaches: action.caches,
+                // newCaches: []
+            };
+        case RECEIVE_CACHES_EDIT:
+            return {
+                ...state,
                 originalCaches: action.caches,
                 newCaches: []
             };
+        case RECEIVE_CACHE_EDIT: {
+            return {
+                ...state,
+                originalCache: action.cache
+            };
+        }
         default:
             return state;
     }
