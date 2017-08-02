@@ -80,10 +80,20 @@ export default class PageConfigureBasicController {
 
     applyValue(value) {
         this.$scope.$applyAsync(() => Object.assign(this, value));
+        if (this.$pageConfigure) {
+            const name = get(value, 'clusterConfiguration.originalCluster.name');
+            const isNew = this.$state.params.clusterID === 'new';
+            this.$pageConfigure.setTitle(
+                `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${name}’`}`
+            );
+        }
+    }
+
     }
 
     $onDestroy() {
         this.subscription.unsubscribe();
+        if (this.$pageConfigure) this.$pageConfigure.restoreTitle();
     }
 
     // set clusterID(value) {

@@ -17,9 +17,6 @@
 include /app/helpers/jade/mixins
 
 div(ignite-loading='loadingClustersScreen' ignite-loading-text='Loading clusters...' ignite-loading-position='top')
-    h2.pc-page-header(ng-hide='backupItem.empty')
-        | {{ backupItem._id ? 'Edit' : 'Create' }} cluster {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
-
     div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
             .panel-group

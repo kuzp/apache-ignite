@@ -5,6 +5,9 @@ export default {
     name: 'pageConfigureAdvancedCluster',
     templateUrl,
     controller,
+    require: {
+        $pageConfigure: '?^pageConfigure'
+    },
     bindings: {
         currentCluster: '<'
     }
