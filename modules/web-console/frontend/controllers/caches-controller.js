@@ -16,6 +16,7 @@
  */
 
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
+import get from 'lodash/get';
 
 // Controller for Caches screen.
 export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
