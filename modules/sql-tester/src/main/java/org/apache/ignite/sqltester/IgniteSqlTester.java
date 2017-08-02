@@ -58,8 +58,11 @@ public class IgniteSqlTester {
             e.printStackTrace();//TODO
         }
 
+        String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpfile") :
+            props.getProperty("workDir") + File.separator + "sqltestlog" + System.currentTimeMillis() + ".log";
+
         writer = new PrintWriter(new FileOutputStream(
-            new File(props.getProperty("workDir") + File.separator + "sqltestlog" + System.currentTimeMillis() + ".log"),
+            new File(dumpFile),
             true));
 
         // Initialize Spring factory.
