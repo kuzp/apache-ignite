@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-import _ from 'lodash';
+// import _ from 'lodash';
+
+import merge from 'lodash/merge';
 
 // Java built-in class names.
 import JAVA_CLASSES from '../data/java-classes.json';
@@ -48,7 +50,7 @@ export default class JavaTypes {
     static $inject = ['IgniteClusterDefaults', 'IgniteCacheDefaults', 'IgniteIGFSDefaults'];
 
     constructor(clusterDflts, cacheDflts, igfsDflts) {
-        this.enumClasses = _.uniq(this._enumClassesAcc(_.merge(clusterDflts, cacheDflts, igfsDflts), []));
+        this.enumClasses = _.uniq(this._enumClassesAcc(merge(clusterDflts, cacheDflts, igfsDflts), []));
         this.shortEnumClasses = _.map(this.enumClasses, (cls) => this.shortClassName(cls));
 
         JAVA_CLASS_STRINGS.push({short: 'byte[]', full: 'byte[]', stringValue: '[B'});

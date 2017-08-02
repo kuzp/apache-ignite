@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+import isEmpty from 'lodash/isEmpty';
+import {nonEmpty} from 'app/utils/lodashMixins';
+
 // Service to show various information and error messages.
 export default ['IgniteMessages', ['$alert', ($alert) => {
     // Common instance of alert modal.
@@ -30,8 +33,8 @@ export default ['IgniteMessages', ['$alert', ($alert) => {
             if (err.hasOwnProperty('message'))
                 return prefix + err.message;
 
-            if (_.nonEmpty(err.className)) {
-                if (_.isEmpty(prefix))
+            if (nonEmpty(err.className)) {
+                if (isEmpty(prefix))
                     prefix = 'Internal cluster error: ';
 
                 return prefix + err.className;
