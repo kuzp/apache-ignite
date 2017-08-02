@@ -72,7 +72,7 @@ export default class Clusters {
 
     getBlankCluster() {
         return {
-            _id: ObjectID.generate().string,
+            _id: ObjectID.generate(),
             activeOnStart: true,
             cacheSanityCheckEnabled: true,
             atomicConfiguration: {},
