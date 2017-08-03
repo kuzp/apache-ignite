@@ -42,7 +42,7 @@ export default angular
         itemsTable.name
     ])
     .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
-        $uiRouter.plugin(Visualizer);
+        // $uiRouter.plugin(Visualizer);
         if (devTools) {
             devTools.subscribe((e) => {
                 if (e.type === 'DISPATCH' && e.state) ConfigureState.actions$.next(e);

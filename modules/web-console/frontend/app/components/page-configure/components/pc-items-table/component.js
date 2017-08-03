@@ -31,8 +31,8 @@ export default {
         onFilterChanged: '&?',
         columnDefs: '<',
         tableTitle: '<',
-        immediateEdit: '<?',
         selectedRowId: '<?',
-        maxRowsToShow: '@?'
+        maxRowsToShow: '@?',
+        onSelectionChange: '&?'
     }
 };
