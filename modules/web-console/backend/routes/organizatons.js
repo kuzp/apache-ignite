@@ -99,7 +99,7 @@ module.exports.factory = function (_, express, mongo, errors, settings, mailsSer
         // Find invite and return data.
         router.post('/info', (req, res) => {
             mongo.Invite.findOne({token: '12345'})
-                .then(res.api.ok({organization: {name: 'Test'}, email: 'test@test.com'}))
+                .then(res.api.ok({organization: {name: 'Test'}, email: 'test@test.com', found: false}))
                 .catch(res.api.error);
         });
 
