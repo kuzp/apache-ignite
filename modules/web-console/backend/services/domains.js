@@ -144,6 +144,18 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
     };
 
     class DomainsService {
+        static shortList(userId, demo, clusterId) {
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => mongo.Cluster.findOne({space: {$in: spaceIds}, _id: clusterId}).select('caches').exec())
+                .then((cluster) => mongo.Cache.find({_id: {$in: cluster.caches}}).select('domains').exec())
+                .then((caches) => mongo.DomainModel.find({_id: {$in: _.uniq(_.flatMap(caches, 'domains'))}}).select('keyType valueType').sort('valueType').exec());
+        }
+
+        static get(userId, demo, _id) {
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => mongo.DomainModel.findOne({space: {$in: spaceIds}, _id}).lean().exec());
+        }
+
         /**
          * Batch merging domains.
          *

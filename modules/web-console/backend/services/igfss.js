@@ -88,6 +88,16 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
     };
 
     class IgfssService {
+        static shortList(userId, demo, clusterId) {
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => mongo.Igfs.find({space: {$in: spaceIds}, clusters: clusterId }).select('name defaultMode affinnityGroupSize').sort('name').lean().exec());
+        }
+
+        static get(userId, demo, _id) {
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => mongo.Igfs.findOne({space: {$in: spaceIds}, _id}).lean().exec());
+        }
+
         /**
          * Create or update IGFS.
          *

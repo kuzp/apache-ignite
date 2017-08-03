@@ -28,6 +28,12 @@ module.exports.factory = function(_, express, mongo, igfssService) {
     return new Promise((factoryResolve) => {
         const router = new express.Router();
 
+        router.get('/:_id', (req, res) => {
+            igfssService.get(req.currentUserId(), req.demo(), req.params._id)
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
         /**
          * Save IGFS.
          */

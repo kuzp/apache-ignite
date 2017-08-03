@@ -34,12 +34,6 @@ module.exports.factory = function(_, express, mongo, cachesService) {
                 .catch(res.api.error);
         });
 
-        router.get('/', (req, res) => {
-            cachesService.shortList(req.currentUserId(), req.demo())
-                .then(res.api.ok)
-                .catch(res.api.error);
-        });
-
         /**
          * Save cache.
          */

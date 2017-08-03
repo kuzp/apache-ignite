@@ -21,18 +21,31 @@
 
 module.exports = {
     implements: 'routes/clusters',
-    inject: ['require(lodash)', 'require(express)', 'mongo', 'services/clusters', 'services/caches']
+    inject: ['require(lodash)', 'require(express)', 'mongo', 'services/clusters', 'services/caches', 'services/domains', 'services/igfss']
 };
 
-module.exports.factory = function(_, express, mongo, clustersService, cachesService) {
+module.exports.factory = function(_, express, mongo, clustersService, cachesService, domainsService, igfssService) {
     return new Promise((factoryResolve) => {
         const router = new express.Router();
 
-        router.get('/:_id/caches/', (req, res) => {
+        router.get('/:_id/caches', (req, res) => {
             cachesService.shortList(req.currentUserId(), req.demo(), req.params._id)
                 .then(res.api.ok)
                 .catch(res.api.error);
         });
+
+        router.get('/:_id/models', (req, res) => {
+            domainsService.shortList(req.currentUserId(), req.demo(), req.params._id)
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
+        router.get('/:_id/igfss', (req, res) => {
+            igfssService.shortList(req.currentUserId(), req.demo(), req.params._id)
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
 
         router.get('/:_id', (req, res) => {
             clustersService.get(req.currentUserId(), req.demo(), req.params._id)
