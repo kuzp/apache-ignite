@@ -331,117 +331,17 @@ public class InlineIndexHelper {
      * @return Compare result (-2 means we can't compare).
      */
     public int compare(long pageAddr, int off, int maxSize, Value v, Comparator<Value> comp) {
-        if (type == v.getType() && type == Value.STRING) {
-            String s = v.getString();
+        int c = tryCompareOptimized(pageAddr, off, maxSize, v);
 
-            int len1 = PageUtils.getShort(pageAddr, off + 1) & 0x7FFF;
-            int len2 = s.length();
-
-            int c, c2, c3, cntr1 = 0, cntr2 = 0;
-            char v1, v2;
-
-            long addr = pageAddr + off + 3; // Skip length and type byte.
-
-            // try reading ascii
-            while (cntr1 < len1 && cntr2 < len2) {
-                c = (int) GridUnsafe.getByte(addr) & 0xff;
-
-                if (c > 127)
-                    break;
-
-                cntr1++; addr++;
-
-                v1 = (char)c;
-                v2 = s.charAt(cntr2++);
-
-                if (v1 != v2)
-                    return fixSort(v1 - v2, sortType());
-            }
-
-            // read other
-            while (cntr1 < len1 && cntr2 < len2) {
-                c = (int) GridUnsafe.getByte(addr++) & 0xff;
-
-                switch (c >> 4) {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    /* 0xxxxxxx*/
-                        cntr1++;
-
-                        v1 = (char)c;
-
-                        break;
-                    case 12:
-                    case 13:
-                    /* 110x xxxx   10xx xxxx*/
-                        cntr1 += 2;
-
-                        if (cntr1 > len1)
-                            throw new IllegalStateException("Malformed input: partial character at end");
-
-                        c2 = (int) GridUnsafe.getByte(addr++);
-
-                        if ((c2 & 0xC0) != 0x80)
-                            throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 1));
-
-                        v1 = (char)(((c & 0x1F) << 6) | (c2 & 0x3F));
-
-                        break;
-                    case 14:
-                    /* 1110 xxxx  10xx xxxx  10xx xxxx */
-                        cntr1 += 3;
-
-                        if (cntr1 > len1)
-                            throw new IllegalStateException("Malformed input: partial character at end");
-
-                        c2 = (int) GridUnsafe.getByte(addr++);
-
-                        c3 = (int) GridUnsafe.getByte(addr++);
-
-                        if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80))
-                            throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 1));
-
-                        v1 = (char)(((c & 0x0F) << 12) |
-                                ((c2 & 0x3F) << 6) | (c3 & 0x3F));
-
-                        break;
-                    default:
-                    /* 10xx xxxx,  1111 xxxx */
-                        throw new IllegalStateException("Malformed input around byte: " + cntr1);
-                }
-
-                v2 = s.charAt(cntr2++);
-
-                if (v1 != v2)
-                    return fixSort(v1 - v2, sortType());
-            }
-
-            int res = cntr1 == len1 && cntr2 == len2 ? 0 : cntr1 == len1 ? -1 : 1;
-
-            if (isValueFull(pageAddr, off))
-                return fixSort(res, sortType());
-
-            if (res >= 0)
-                // There are two cases:
-                // a) The values are equal but the stored value is truncated, so that it's bigger.
-                // b) Even truncated current value is longer, so that it's bigger.
-                return fixSort(1, sortType());
-
-            return -2;
-        }
+        if (c != Integer.MIN_VALUE)
+            return c;
 
         Value v1 = get(pageAddr, off, maxSize);
 
         if (v1 == null)
             return -2;
 
-        int c = comp.compare(v1, v);
+        c = comp.compare(v1, v);
         c = c != 0 ? c > 0 ? 1 : -1 : 0;
 
         if (size > 0)
@@ -449,6 +349,160 @@ public class InlineIndexHelper {
 
         if (isValueFull(pageAddr, off) || canRelyOnCompare(c, v1, v))
             return fixSort(c, sortType());
+
+        return -2;
+    }
+
+    /**
+     * @param pageAddr Page address.
+     * @param off Offset.
+     * @param maxSize Maximum size to read.
+     * @param v Value to compare.
+     * @return Compare result ({@code Integer.MIN_VALUE} means unsupported operation).
+     */
+    private int tryCompareOptimized(long pageAddr, int off, int maxSize, Value v) {
+        int type;
+
+        if ((size > 0 && size + 1 > maxSize)
+                || maxSize < 1
+                || (type = PageUtils.getByte(pageAddr, off)) == Value.NULL
+                || type == Value.UNKNOWN)
+            return Integer.MIN_VALUE;
+
+        if (this.type != type)
+            throw new UnsupportedOperationException("invalid fast index type " + type);
+
+        type = Value.getHigherOrder(type, v.getType());
+
+        switch (type) {
+            case Value.STRING:
+            case Value.STRING_FIXED:
+            case Value.STRING_IGNORECASE:
+
+                return compareAsString(pageAddr, off, (ValueString) v, type == Value.STRING_IGNORECASE);
+            default:
+                return Integer.MIN_VALUE;
+        }
+    }
+
+    /**
+     * @param pageAddr Page address.
+     * @param off Offset.
+     * @param v Value to compare.
+     * @param ignoreCase {@code True} if a case-insensitive comparison should be used.
+     * @return Compare result ({@code -2} means we can't compare).
+     */
+    private int compareAsString(long pageAddr, int off, ValueString v, boolean ignoreCase) {
+        String s = v.getString();
+
+        int len1 = PageUtils.getShort(pageAddr, off + 1) & 0x7FFF;
+        int len2 = s.length();
+
+        int c, c2, c3, cntr1 = 0, cntr2 = 0;
+        char v1, v2;
+
+        long addr = pageAddr + off + 3; // Skip length and type byte.
+
+        // try reading ascii
+        while (cntr1 < len1 && cntr2 < len2) {
+            c = (int) GridUnsafe.getByte(addr) & 0xff;
+
+            if (c > 127)
+                break;
+
+            cntr1++; addr++;
+
+            v1 = (char)c;
+            v2 = s.charAt(cntr2++);
+
+            if (ignoreCase) {
+                v1 = Character.toUpperCase(v1);
+                v2 = Character.toUpperCase(v2);
+            }
+
+            if (v1 != v2)
+                return fixSort(v1 - v2, sortType());
+        }
+
+        // read other
+        while (cntr1 < len1 && cntr2 < len2) {
+            c = (int) GridUnsafe.getByte(addr++) & 0xff;
+
+            switch (c >> 4) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                /* 0xxxxxxx*/
+                    cntr1++;
+
+                    v1 = (char)c;
+
+                    break;
+                case 12:
+                case 13:
+                /* 110x xxxx   10xx xxxx*/
+                    cntr1 += 2;
+
+                    if (cntr1 > len1)
+                        throw new IllegalStateException("Malformed input: partial character at end");
+
+                    c2 = (int) GridUnsafe.getByte(addr++);
+
+                    if ((c2 & 0xC0) != 0x80)
+                        throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 1));
+
+                    v1 = (char)(((c & 0x1F) << 6) | (c2 & 0x3F));
+
+                    break;
+                case 14:
+                /* 1110 xxxx  10xx xxxx  10xx xxxx */
+                    cntr1 += 3;
+
+                    if (cntr1 > len1)
+                        throw new IllegalStateException("Malformed input: partial character at end");
+
+                    c2 = (int) GridUnsafe.getByte(addr++);
+
+                    c3 = (int) GridUnsafe.getByte(addr++);
+
+                    if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80))
+                        throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 1));
+
+                    v1 = (char)(((c & 0x0F) << 12) |
+                            ((c2 & 0x3F) << 6) | (c3 & 0x3F));
+
+                    break;
+                default:
+                /* 10xx xxxx,  1111 xxxx */
+                    throw new IllegalStateException("Malformed input around byte: " + cntr1);
+            }
+
+            v2 = s.charAt(cntr2++);
+
+            if (ignoreCase) {
+                v1 = Character.toUpperCase(v1);
+                v2 = Character.toUpperCase(v2);
+            }
+
+            if (v1 != v2)
+                return fixSort(v1 - v2, sortType());
+        }
+
+        int res = cntr1 == len1 && cntr2 == len2 ? 0 : cntr1 == len1 ? -1 : 1;
+
+        if (isValueFull(pageAddr, off))
+            return fixSort(res, sortType());
+
+        if (res >= 0)
+            // There are two cases:
+            // a) The values are equal but the stored value is truncated, so that it's bigger.
+            // b) Even truncated current value is longer, so that it's bigger.
+            return fixSort(1, sortType());
 
         return -2;
     }
