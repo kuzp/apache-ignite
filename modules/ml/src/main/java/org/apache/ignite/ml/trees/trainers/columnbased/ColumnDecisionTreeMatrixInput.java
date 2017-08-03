@@ -17,13 +17,15 @@
 
 package org.apache.ignite.ml.trees.trainers.columnbased;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.ml.math.functions.IgniteFunction;
 import org.apache.ignite.ml.math.impls.matrix.SparseDistributedMatrix;
 import org.apache.ignite.ml.math.impls.storage.matrix.SparseDistributedMatrixStorage;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Adapter of SparseDistributedMatrix to ColumnDecisionTreeInput.
@@ -41,16 +43,30 @@ public class ColumnDecisionTreeMatrixInput extends ColumnDecisionTreeCacheInput<
         // TODO: Separate labmdas.
         super(((SparseDistributedMatrixStorage)m.getStorage()).cache(),
             new IgniteBiTuple<>(m.columnSize() - 1, ((SparseDistributedMatrixStorage)m.getStorage()).getUUID()),
-            map -> IntStream.range(0, m.rowSize()).mapToObj(k -> new IgniteBiTuple<>(k, map.getOrDefault(k, 0.0))),
-            mp -> {
-                double[] res = new double[m.rowSize()];
-
-                IntStream.range(0, m.rowSize()).forEach(k -> res[k] = mp.getOrDefault(k, 0.0));
-                return res;
-            },
-            i -> new IgniteBiTuple<>(i, ((SparseDistributedMatrixStorage)m.getStorage()).getUUID()),
+            valuesMapper(m),
+            labels(m),
+            keyMapper(m),
             catFeaturesInfo,
             m.columnSize() - 1,
             m.rowSize());
+    }
+
+    @NotNull private static IgniteFunction<Map<Integer, Double>, Stream<IgniteBiTuple<Integer, Double>>> valuesMapper(
+        SparseDistributedMatrix m) {
+        return map -> IntStream.range(0, m.rowSize()).mapToObj(k -> new IgniteBiTuple<>(k, map.getOrDefault(k, 0.0)));
+    }
+
+    @NotNull
+    private static IgniteFunction<Integer, IgniteBiTuple<Integer, IgniteUuid>> keyMapper(SparseDistributedMatrix m) {
+        return i -> new IgniteBiTuple<>(i, ((SparseDistributedMatrixStorage)m.getStorage()).getUUID());
+    }
+
+    @NotNull private static IgniteFunction<Map<Integer, Double>, double[]> labels(SparseDistributedMatrix m) {
+        return mp -> {
+            double[] res = new double[m.rowSize()];
+
+            IntStream.range(0, m.rowSize()).forEach(k -> res[k] = mp.getOrDefault(k, 0.0));
+            return res;
+        };
     }
 }

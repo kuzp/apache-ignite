@@ -105,11 +105,6 @@ public class ColumnDecisionTreeCacheInput<K, V> implements ColumnDecisionTreeInp
     }
 
     /** {@inheritDoc} */
-    @Override public int samplesCount() {
-        return samplesCnt;
-    }
-
-    /** {@inheritDoc} */
     @Override public int featuresCount() {
         return featuresCnt;
     }

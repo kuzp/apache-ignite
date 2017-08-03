@@ -32,7 +32,7 @@ public class Utils {
         for (int i = 0; i < lSize + rSize; i++) {
             SampleInfo fi = samples[i];
 
-            if (bs.get(fi.getSampleInd())) {
+            if (bs.get(fi.sampleInd())) {
                 lArr[lc] = fi;
                 lc++;
             } else {

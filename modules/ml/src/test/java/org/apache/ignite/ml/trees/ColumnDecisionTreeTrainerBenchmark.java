@@ -99,11 +99,11 @@ public class ColumnDecisionTreeTrainerBenchmark extends BaseDecisionTreeTest {
     public void testMNIST() throws IOException {
         IgniteUtils.setCurrentIgniteName(ignite.configuration().getIgniteInstanceName());
 
-        int ptsCnt = 4000;
+        int ptsCnt = 50000;
         int featCnt = 28 * 28;
 
         Stream<DenseLocalOnHeapVector> trainingMnistStream = ReadMnistData.mnist("/home/enny/Downloads/train-images-idx3-ubyte", "/home/enny/Downloads/train-labels-idx1-ubyte", ptsCnt);
-        Stream<DenseLocalOnHeapVector> testMnistStream = ReadMnistData.mnist("/home/enny/Downloads/t10k-images-idx3-ubyte", "/home/enny/Downloads/t10k-labels-idx1-ubyte", ptsCnt / 10);
+        Stream<DenseLocalOnHeapVector> testMnistStream = ReadMnistData.mnist("/home/enny/Downloads/t10k-images.idx3-ubyte", "/home/enny/Downloads/t10k-labels.idx1-ubyte", 10_000);
 
         SparseDistributedMatrix m = new SparseDistributedMatrix(ptsCnt, featCnt + 1, StorageConstants.COLUMN_STORAGE_MODE, StorageConstants.RANDOM_ACCESS_MODE);
 

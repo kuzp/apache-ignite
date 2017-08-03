@@ -19,21 +19,52 @@ package org.apache.ignite.ml.trees.trainers.columnbased;
 
 import org.apache.ignite.ml.trees.trainers.columnbased.vectors.SampleInfo;
 
-public class Region<D> {
+/**
+ * Projection of region on given feature.
+ * @param <D> Data of region.
+ */
+public class RegionProjection<D> {
+    /** Samples projections. */
     protected SampleInfo[] samples;
 
+    /** Region data */
     protected D data;
 
-    public Region(SampleInfo[] samples, D data) {
+    /** Depth of this region. */
+    protected int depth;
+
+    /**
+     * @param samples Samples projections.
+     * @param data Region data.
+     * @param depth Depth of this region.
+     */
+    public RegionProjection(SampleInfo[] samples, D data, int depth) {
         this.samples = samples;
         this.data = data;
+        this.depth = depth;
     }
 
+    /**
+     * Get samples projections.
+     * @return Samples projections.
+     */
     public SampleInfo[] samples() {
         return samples;
     }
 
+    /**
+     * Get region data.
+     * @return Region data.
+     */
     public D data() {
         return data;
+    }
+
+    /**
+     * Get region depth.
+     * @return Region depth.
+     */
+    public int depth() {
+        return depth;
     }
 }

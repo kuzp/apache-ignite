@@ -39,9 +39,6 @@ public interface ColumnDecisionTreeInput {
     /** Information about which features are categorical in the form of feature index -> number of categories. */
     Map<Integer, Integer> catFeaturesInfo();
 
-    /** Numbers of samples in this input. */
-    int samplesCount();
-
     /** Number of features. */
     int featuresCount();
 

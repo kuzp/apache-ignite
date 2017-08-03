@@ -31,7 +31,7 @@ public interface ContinuousSplitCalculator<C extends ContinuousRegionInfo> {
      * Calculate region info 'from scratch'.
      * @param s Stream of labels in this region.
      * @param l Index of sample projection on this feature in array sorted by this projection value and intervals bitsets.
-     *      ({@see org.apache.ignite.ml.trees.trainers.columnbased.vectors.ContinuousFeatureVector}).
+     *      ({@see org.apache.ignite.ml.trees.trainers.columnbased.vectors.ContinuousFeatureProcessor}).
      * @return Region info.
      */
     C calculateRegionInfo(DoubleStream s, int l);

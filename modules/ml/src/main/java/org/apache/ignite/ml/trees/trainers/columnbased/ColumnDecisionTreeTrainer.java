@@ -53,9 +53,9 @@ import org.apache.ignite.ml.trees.models.DecisionTreeModel;
 import org.apache.ignite.ml.trees.nodes.DecisionTreeNode;
 import org.apache.ignite.ml.trees.nodes.Leaf;
 import org.apache.ignite.ml.trees.nodes.SplitNode;
-import org.apache.ignite.ml.trees.trainers.columnbased.vectors.CategoricalFeatureVector;
-import org.apache.ignite.ml.trees.trainers.columnbased.vectors.ContinuousFeatureVector;
-import org.apache.ignite.ml.trees.trainers.columnbased.vectors.FeatureVector;
+import org.apache.ignite.ml.trees.trainers.columnbased.vectors.CategoricalFeatureProcessor;
+import org.apache.ignite.ml.trees.trainers.columnbased.vectors.ContinuousFeatureProcessor;
+import org.apache.ignite.ml.trees.trainers.columnbased.vectors.FeatureProcessor;
 import org.apache.ignite.ml.trees.trainers.columnbased.vectors.SampleInfo;
 import org.apache.ignite.ml.trees.trainers.columnbased.vectors.SplitInfo;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +73,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
     private final IgniteFunction<DoubleStream, Double> catImpCalc;
 
     /** Cache used for storing data for training. */
-    private IgniteCache<RegionKey, Region> cache;
+    private IgniteCache<RegionKey, RegionProjection> cache;
 
     /** Minimal information gain. */
     private static double MIN_INFO_GAIN = 1E-10;
@@ -122,56 +122,8 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
             this.featureIdx = -1;
         }
 
-        @Override
-        public String toString() {
-            return "IndexAndSplitInfo{" +
-                    "featureIdx=" + featureIdx +
-                    ", info=" + info +
-                    '}';
-        }
-    }
-
-    /**
-     * Class used as key in the internal cache of this trainer.
-     */
-    private static class FeatureVectorKey {
-        /** Affinity key used to guarantee internal cache entry collocation with entries from trainer input. */
-        @AffinityKeyMapped
-        private Object parentRowKey;
-
-        /** Key of feature row. */
-        private IgniteBiTuple<Integer, IgniteUuid> rowKey;
-
-        /**
-         * @param parentRowKey Affinity key used to guarantee internal cache entry collocation with entries from trainer
-         * input.
-         * @param rowKey Key of feature row.
-         */
-        public FeatureVectorKey(Object parentRowKey,
-            IgniteBiTuple<Integer, IgniteUuid> rowKey) {
-            this.parentRowKey = parentRowKey;
-            this.rowKey = rowKey;
-        }
-
-        /** {@inheritDoc} */
-        @Override public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-
-            FeatureVectorKey key = (FeatureVectorKey)o;
-
-            if (parentRowKey != null ? !parentRowKey.equals(key.parentRowKey) : key.parentRowKey != null)
-                return false;
-            return rowKey != null ? rowKey.equals(key.rowKey) : key.rowKey == null;
-        }
-
-        /** {@inheritDoc} */
-        @Override public int hashCode() {
-            int res = parentRowKey != null ? parentRowKey.hashCode() : 0;
-            res = 31 * res + (rowKey != null ? rowKey.hashCode() : 0);
-            return res;
+        @Override public String toString() {
+            return "IndexAndSplitInfo [featureIdx=" + featureIdx + ", info=" + info + ']';
         }
     }
 
@@ -180,10 +132,13 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         @AffinityKeyMapped
         private Object parentRowKey;
 
+        /** Feature index. */
         private int featureIdx;
 
+        /** Region index. */
         private int regIdx;
 
+        /** Training UUID. */
         private IgniteUuid trainingUUID;
 
         public RegionKey(int featureIdx, int regIdx, IgniteUuid trainingUUID, Object parentRowKey) {
@@ -209,6 +164,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
             return parentRowKey;
         }
 
+        /** {@inheritDoc} */
         @Override public boolean equals(Object o) {
             if (this == o)
                 return true;
@@ -226,6 +182,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
             return trainingUUID != null ? trainingUUID.equals(key.trainingUUID) : key.trainingUUID == null;
         }
 
+        /** {@inheritDoc} */
         @Override public int hashCode() {
             int result = parentRowKey != null ? parentRowKey.hashCode() : 0;
             result = 31 * result + featureIdx;
@@ -279,7 +236,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
 
         CacheUtils.bcast(cache.getName(), () -> {
             Ignite ignite = Ignition.localIgnite();
-            IgniteCache<RegionKey, Region> targetCache = ignite.getOrCreateCache(COLUMN_DECISION_TREE_TRAINER_CACHE_NAME);
+            IgniteCache<RegionKey, RegionProjection> targetCache = ignite.getOrCreateCache(COLUMN_DECISION_TREE_TRAINER_CACHE_NAME);
             Affinity<RegionKey> targetAffinity = ignite.affinity(COLUMN_DECISION_TREE_TRAINER_CACHE_NAME);
 
             ClusterNode locNode = ignite.cluster().localNode();
@@ -290,9 +247,9 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                     collect(Collectors.toSet())).getOrDefault(locNode, Collections.emptyList()).
                 stream().
                 forEach(k -> {
-                    FeatureVector vec;
+                    FeatureProcessor vec;
                     int featureIdx = k.featureIdx();
-                    vec = vector(i, featureIdx);
+                    vec = vectorProcessor(i, featureIdx);
                     targetCache.put(k, vec.createInitialRegion(getSamples(i.values(featureIdx), labels)));
                 });
 
@@ -328,7 +285,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         // TODO: IGNITE-5893 Currently if the best split makes tree deeper than max depth process will be terminated, but actually we should
         // only stop when *any* improving split makes tree deeper than max depth. Can be fixed if we will store which
         // regions cannot be split more and split only those that can.
-        while (curDepth < maxDepth) {
+        while (true) {
             // Keys of all regions.
             int rc = regsCnt;
             System.out.println("Regs cnt: " + rc);
@@ -337,20 +294,17 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
             long before = System.currentTimeMillis();
 
             IndexAndSplitInfo best = CacheUtils.sparseFold(cache.getName(),
-                    // TODO: rewrite using 'max'
-                    (Cache.Entry<RegionKey, Region> e, IndexAndSplitInfo si) -> {
+                    (Cache.Entry<RegionKey, RegionProjection> e, IndexAndSplitInfo si) -> {
                         int featIdx = e.getKey().featureIdx();
                         int regIdx = e.getKey().regionIdx();
 
-                        FeatureVector vector = vector(input, featIdx);
-
-                        IndexAndSplitInfo bestForReg = new IndexAndSplitInfo(featIdx, vector.findBestSplit(e.getValue(), regIdx));
+                        FeatureProcessor vector = vectorProcessor(input, featIdx);
+                        RegionProjection reg = e.getValue();
+                        IndexAndSplitInfo bestForReg = reg.depth < maxDepth ? new IndexAndSplitInfo(featIdx, vector.findBestSplit(reg, regIdx)) : new IndexAndSplitInfo();
                         return Functions.MAX_GENERIC(si, bestForReg, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
                     },
                     allKeys(input, regsCnt, uuid),
-                    (i1, i2) -> {
-                        return Functions.MAX_GENERIC(i1, i2, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
-                    },
+                    (i1, i2) -> Functions.MAX_GENERIC(i1, i2, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY)),
                     IndexAndSplitInfo::new,
                     null,
                     null,
@@ -365,7 +319,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                 // Request bitset for split region.
                 int ind = best.info.regionIndex();
                 RegionKey bestRegKey = getCacheKey(best.featureIdx, ind, uuid, input.affinityKey(best.featureIdx));
-                SparseBitSet bs = cache.invoke(bestRegKey, (entry, arguments) -> vector(input, best.featureIdx).calculateOwnershipBitSet(entry.getValue(), best.info));
+                SparseBitSet bs = cache.invoke(bestRegKey, (entry, arguments) -> vectorProcessor(input, best.featureIdx).calculateOwnershipBitSet(entry.getValue(), best.info));
 
                 // Update decision tree.
 
@@ -391,17 +345,17 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                         mapToObj(fIdx -> getCacheKey(fIdx, ind, uuid, input.affinityKey(fIdx))).collect(Collectors.toSet());
 
                 CacheUtils.update(cache.getName(),
-                    (Cache.Entry<RegionKey, Region> e) -> {
+                    (Cache.Entry<RegionKey, RegionProjection> e) -> {
                         RegionKey k = e.getKey();
-                        Region v = e.getValue();
-                        IgniteBiTuple<Region, Region> regs;
+                        RegionProjection v = e.getValue();
+                        IgniteBiTuple<RegionProjection, RegionProjection> regs;
                         int fIdx = k.featureIdx();
 
                         if (!catFeaturesInfo.containsKey(fIdx) && !catFeaturesInfo.containsKey(best.featureIdx))
                             // TODO: rewrite;
-                            regs = new ContinuousFeatureVector<>(calc).performSplit(bs, v, (D)best.info.leftData(), (D)best.info.rightData());
+                            regs = new ContinuousFeatureProcessor<>(calc).performSplit(bs, v, (D)best.info.leftData(), (D)best.info.rightData());
                         else
-                            regs = vector(input, k.featureIdx).performSplitGeneric(bs, v, best.info.leftData(), best.info.rightData());
+                            regs = vectorProcessor(input, k.featureIdx).performSplitGeneric(bs, v, best.info.leftData(), best.info.rightData());
 
                         return Stream.of(new CacheEntryImpl<>(k, regs.get1()), new CacheEntryImpl<>(getCacheKey(fIdx, rc, uuid, input.affinityKey(fIdx)), regs.get2()));
                     },
@@ -418,11 +372,10 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                 mapToObj(rIdx -> getCacheKey(0, rIdx, uuid, input.affinityKey(0))).collect(Collectors.toSet());
 
         Map<Integer, Double> vals = CacheUtils.sparseFold(cache.getName(),
-                // TODO: rewrite using 'max'
-                (Cache.Entry<RegionKey, Region> e, Map<Integer, Double> m) -> {
+                (Cache.Entry<RegionKey, RegionProjection> e, Map<Integer, Double> m) -> {
                     int regIdx = e.getKey().regionIdx();
 
-                    Double apply = regCalc.apply(Arrays.stream(e.getValue().samples()).mapToDouble(SampleInfo::getLabel));
+                    Double apply = regCalc.apply(Arrays.stream(e.getValue().samples()).mapToDouble(SampleInfo::label));
                     m.put(regIdx, apply);
 
                     return m;
@@ -455,8 +408,8 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
     /**
      * Create new cache for ColumnDecisionTreeTrainer if needed.
      */
-    private IgniteCache<RegionKey, Region> newCache() {
-        CacheConfiguration<RegionKey, Region> cfg = new CacheConfiguration<>();
+    private IgniteCache<RegionKey, RegionProjection> newCache() {
+        CacheConfiguration<RegionKey, RegionProjection> cfg = new CacheConfiguration<>();
 
         // Write to primary.
         cfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.PRIMARY_SYNC);
@@ -485,15 +438,23 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         cache.destroy();
     }
 
+    /**
+     * All keys supplier.
+     * @param i Input.
+     * @param regCnt Count of regions.
+     * @param uuid
+     * @return
+     */
     private IgniteSupplier<Set<RegionKey>> allKeys(ColumnDecisionTreeInput i, int regCnt, IgniteUuid uuid) {
         return () -> IntStream.range(0, i.featuresCount()).boxed().flatMap(fIdx ->
                 IntStream.range(0, regCnt).boxed().map(regIdx -> getCacheKey(fIdx, regIdx, uuid, i.affinityKey(fIdx)))).collect(Collectors.toSet());
 
     }
 
-    private FeatureVector vector(ColumnDecisionTreeInput i, int featureIdx) {
+    /** Get vector processor. */
+    private FeatureProcessor vectorProcessor(ColumnDecisionTreeInput i, int featureIdx) {
         return i.catFeaturesInfo().containsKey(featureIdx) ?
-            new CategoricalFeatureVector(catImpCalc, i.catFeaturesInfo().get(featureIdx)) :
-            new ContinuousFeatureVector<>(calc);
+            new CategoricalFeatureProcessor(catImpCalc, i.catFeaturesInfo().get(featureIdx)) :
+            new ContinuousFeatureProcessor<>(calc);
     }
 }

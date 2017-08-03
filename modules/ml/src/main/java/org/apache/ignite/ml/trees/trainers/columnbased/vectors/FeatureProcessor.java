@@ -18,12 +18,9 @@
 package org.apache.ignite.ml.trees.trainers.columnbased.vectors;
 
 import com.zaxxer.sparsebits.SparseBitSet;
-import java.util.Map;
-import java.util.stream.DoubleStream;
 import org.apache.ignite.lang.IgniteBiTuple;
-import org.apache.ignite.ml.math.functions.IgniteFunction;
 import org.apache.ignite.ml.trees.RegionInfo;
-import org.apache.ignite.ml.trees.trainers.columnbased.Region;
+import org.apache.ignite.ml.trees.trainers.columnbased.RegionProjection;
 
 /**
  * Base interface for feature vectors used in {@see org.apache.ignite.ml.trees.trainers.columnbased.ColumnDecisionTreeTrainer}
@@ -31,15 +28,20 @@ import org.apache.ignite.ml.trees.trainers.columnbased.Region;
  * @param <D> Class representing data of regions resulted from split.
  * @param <S> Class representing data of split.
  */
-public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
+public interface FeatureProcessor<D extends RegionInfo, S extends SplitInfo<D>> {
     /**
      * Finds best split by this feature among all splits of all regions.
      *
      * @return best split by this feature among all splits of all regions.
      */
-    SplitInfo findBestSplit(Region<D> region, int regIdx);
+    SplitInfo findBestSplit(RegionProjection<D> regionProjection, int regIdx);
 
-    Region<D> createInitialRegion(SampleInfo[] samples);
+    /**
+     * Creates initial region from samples.
+     * @param samples samples.
+     * @return region.
+     */
+    RegionProjection<D> createInitialRegion(SampleInfo[] samples);
 
     /**
      * Calculates the bitset mapping each data point to left (corresponding bit is set) or right subregion.
@@ -47,7 +49,7 @@ public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
      * @param s data used for calculating the split.
      * @return Bitset mapping each data point to left (corresponding bit is set) or right subregion.
      */
-    SparseBitSet calculateOwnershipBitSet(Region<D> region, S s);
+    SparseBitSet calculateOwnershipBitSet(RegionProjection<D> regionProjection, S s);
 
     /**
      * Splits given region using bitset which maps data point to left or right subregion.
@@ -60,7 +62,7 @@ public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
      * @param rightData Data of the right subregion.
      * @return This feature vector.
      */
-    IgniteBiTuple<Region, Region> performSplit(SparseBitSet bs, Region<D> reg, D leftData, D rightData);
+    IgniteBiTuple<RegionProjection, RegionProjection> performSplit(SparseBitSet bs, RegionProjection<D> reg, D leftData, D rightData);
 
     /**
      * Splits given region using bitset which maps data point to left or right subregion. This method is used iff the
@@ -73,14 +75,6 @@ public interface FeatureVector<D extends RegionInfo, S extends SplitInfo<D>> {
      * @param rightData Data of the right subregion.
      * @return This feature vector.
      */
-    IgniteBiTuple<Region, Region> performSplitGeneric(SparseBitSet bs, Region<D> reg, RegionInfo leftData,
+    IgniteBiTuple<RegionProjection, RegionProjection> performSplitGeneric(SparseBitSet bs, RegionProjection<D> reg, RegionInfo leftData,
         RegionInfo rightData);
-
-    /**
-     * Calculates values of all regions with a given function.
-     *
-     * @param regCalc Function used for calculation value of any region.
-     * @return Values in regions.
-     */
-    double[] calculateRegions(Map<Integer, Region> regs, IgniteFunction<DoubleStream, Double> regCalc);
 }

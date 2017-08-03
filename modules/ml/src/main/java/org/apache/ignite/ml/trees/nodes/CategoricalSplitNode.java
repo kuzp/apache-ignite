@@ -45,8 +45,6 @@ public class CategoricalSplitNode extends SplitNode {
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return "CategoricalSplitNode{" +
-            "bs=" + bs +
-            '}';
+        return "CategoricalSplitNode [bs=" + bs + ']';
     }
 }

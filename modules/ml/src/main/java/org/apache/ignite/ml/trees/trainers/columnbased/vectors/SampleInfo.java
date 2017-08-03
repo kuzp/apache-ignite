@@ -46,7 +46,7 @@ public class SampleInfo {
      *
      * @return Label of this sample.
      */
-    public double getLabel() {
+    public double label() {
         return lb;
     }
 
@@ -55,7 +55,7 @@ public class SampleInfo {
      *
      * @return Value of projection of this sample on given fixed feature.
      */
-    public double getVal() {
+    public double val() {
         return val;
     }
 
@@ -64,7 +64,7 @@ public class SampleInfo {
      *
      * @return Sample index.
      */
-    public int getSampleInd() {
+    public int sampleInd() {
         return sampleInd;
     }
 }

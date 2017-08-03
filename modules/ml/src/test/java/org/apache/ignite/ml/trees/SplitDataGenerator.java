@@ -135,7 +135,7 @@ public class SplitDataGenerator<V extends Vector> {
         }
 
         @Override public String toString() {
-            return "Region{" +
+            return "RegionProjection{" +
                 "catCoords=" + catCoords +
                 ", contCoords=" + contCoords +
                 '}';

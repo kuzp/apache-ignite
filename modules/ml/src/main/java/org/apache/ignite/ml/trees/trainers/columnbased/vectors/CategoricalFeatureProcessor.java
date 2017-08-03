@@ -18,7 +18,6 @@
 package org.apache.ignite.ml.trees.trainers.columnbased.vectors;
 
 import com.zaxxer.sparsebits.SparseBitSet;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
@@ -35,62 +34,42 @@ import org.apache.ignite.ml.math.functions.IgniteFunction;
 import org.apache.ignite.ml.trees.CategoricalRegionInfo;
 import org.apache.ignite.ml.trees.CategoricalSplitInfo;
 import org.apache.ignite.ml.trees.RegionInfo;
-import org.apache.ignite.ml.trees.trainers.columnbased.Region;
+import org.apache.ignite.ml.trees.trainers.columnbased.RegionProjection;
 
 import static org.apache.ignite.ml.trees.trainers.columnbased.vectors.Utils.splitByBitSet;
 
 /**
- * Categorical feature vector implementation used by {@see ColumnDecisionTreeTrainer}.
+ * Categorical feature vector processor implementation used by {@see ColumnDecisionTreeTrainer}.
  */
-public class CategoricalFeatureVector
-    implements FeatureVector<CategoricalRegionInfo, CategoricalSplitInfo<CategoricalRegionInfo>> {
+public class CategoricalFeatureProcessor
+    implements FeatureProcessor<CategoricalRegionInfo, CategoricalSplitInfo<CategoricalRegionInfo>> {
     private final int catsCnt;
+
     /** Function for calculating impurity of a given region of points. */
     private IgniteFunction<DoubleStream, Double> calc;
 
-    /** Minimal information gain value which is regarded as positive information gain. */
-    private static double MIN_INGORMATION_GAIN = 1E-10;
-
     /**
      * @param calc Function for calculating impurity of a given region of points.
-     * @param data Projection of samples on given feature in format of stream of (sample index, projection value).
-     * @param samplesCnt Number of samples.
-     * @param labels Labels of samples.
      * @param catsCnt Number of categories.
      */
-    public CategoricalFeatureVector(IgniteFunction<DoubleStream, Double> calc, int catsCnt) {
-//        samples = new ArrayList<>(samplesCnt);
+    public CategoricalFeatureProcessor(IgniteFunction<DoubleStream, Double> calc, int catsCnt) {
         this.calc = calc;
         this.catsCnt = catsCnt;
-    }
-
-    /** {@inheritDoc} */
-    @Override public double[] calculateRegions(Map<Integer, Region> regs, IgniteFunction<DoubleStream, Double> regCalc) {
-        double[] res = new double[regs.size()];
-
-        for (Map.Entry<Integer, Region> entry : regs.entrySet()) {
-            Integer regIdx = entry.getKey();
-            Region reg = entry.getValue();
-
-            res[regIdx] = regCalc.apply(Arrays.stream(reg.samples()).mapToDouble(SampleInfo::getLabel));
-        }
-
-        return res;
     }
 
     /** */
     private SplitInfo<CategoricalRegionInfo> split(BitSet leftCats, int intervalIdx, Map<Integer, Integer> mapping,
         SampleInfo[] samples, double impurity) {
         Map<Boolean, List<SampleInfo>> leftRight = Arrays.stream(samples).
-            collect(Collectors.partitioningBy((smpl) -> leftCats.get(mapping.get((int)smpl.getVal()))));
+            collect(Collectors.partitioningBy((smpl) -> leftCats.get(mapping.get((int)smpl.val()))));
 
         List<SampleInfo> left = leftRight.get(true);
         int leftSize = left.size();
-        double leftImpurity = calc.apply(left.stream().mapToDouble(SampleInfo::getLabel));
+        double leftImpurity = calc.apply(left.stream().mapToDouble(SampleInfo::label));
 
         List<SampleInfo> right = leftRight.get(false);
         int rightSize = right.size();
-        double rightImpurity = calc.apply(right.stream().mapToDouble(SampleInfo::getLabel));
+        double rightImpurity = calc.apply(right.stream().mapToDouble(SampleInfo::label));
 
         int totalSize = leftSize + rightSize;
 
@@ -115,38 +94,45 @@ public class CategoricalFeatureVector
         return StreamSupport.stream(iterable.spliterator(), false);
     }
 
-    @Override public SplitInfo findBestSplit(Region<CategoricalRegionInfo> region, int regIdx) {
-        Map<Integer, Integer> mapping = mapping(region.data().cats());
+    /** {@inheritDoc} */
+    @Override public SplitInfo findBestSplit(RegionProjection<CategoricalRegionInfo> regionProjection, int regIdx) {
+        Map<Integer, Integer> mapping = mapping(regionProjection.data().cats());
 
-        return powerSet(region.data().cats().length()).
-            map(s -> split(s, regIdx, mapping, region.samples(), region.data().impurity())).
+        return powerSet(regionProjection.data().cats().length()).
+            map(s -> split(s, regIdx, mapping, regionProjection.samples(), regionProjection.data().impurity())).
             max(Comparator.comparingDouble(SplitInfo::infoGain)).
             orElse(null);
     }
 
-    @Override public Region<CategoricalRegionInfo> createInitialRegion(SampleInfo[] samples) {
+    /** {@inheritDoc} */
+    @Override public RegionProjection<CategoricalRegionInfo> createInitialRegion(SampleInfo[] samples) {
         BitSet set = new BitSet();
         set.set(0, catsCnt);
 
-        Double impurity = calc.apply(Arrays.stream(samples).mapToDouble(SampleInfo::getVal));
+        Double impurity = calc.apply(Arrays.stream(samples).mapToDouble(SampleInfo::val));
 
-        return new Region<>(samples, new CategoricalRegionInfo(impurity, set));
+        return new RegionProjection<>(samples, new CategoricalRegionInfo(impurity, set), 0);
     }
 
-    @Override public SparseBitSet calculateOwnershipBitSet(Region<CategoricalRegionInfo> region,
+    /** {@inheritDoc} */
+    @Override public SparseBitSet calculateOwnershipBitSet(RegionProjection<CategoricalRegionInfo> regionProjection,
         CategoricalSplitInfo<CategoricalRegionInfo> s) {
         SparseBitSet res = new SparseBitSet();
-        Arrays.stream(region.samples()).forEach(smpl -> res.set(smpl.getSampleInd(), s.bitSet().get((int)smpl.getVal())));
+        Arrays.stream(regionProjection.samples()).forEach(smpl -> res.set(smpl.sampleInd(), s.bitSet().get((int)smpl.val())));
         return res;
     }
 
-    @Override public IgniteBiTuple<Region, Region> performSplit(SparseBitSet bs,
-        Region<CategoricalRegionInfo> reg, CategoricalRegionInfo leftData, CategoricalRegionInfo rightData) {
+    /** {@inheritDoc} */
+    @Override public IgniteBiTuple<RegionProjection, RegionProjection> performSplit(SparseBitSet bs,
+        RegionProjection<CategoricalRegionInfo> reg, CategoricalRegionInfo leftData, CategoricalRegionInfo rightData) {
         return performSplitGeneric(bs, reg, leftData, rightData);
     }
 
-    @Override public IgniteBiTuple<Region, Region> performSplitGeneric(
-        SparseBitSet bs, Region<CategoricalRegionInfo> reg, RegionInfo leftData, RegionInfo rightData) {
+    /** {@inheritDoc} */
+    @Override public IgniteBiTuple<RegionProjection, RegionProjection> performSplitGeneric(
+        SparseBitSet bs, RegionProjection<CategoricalRegionInfo> reg, RegionInfo leftData, RegionInfo rightData) {
+        int depth = reg.depth();
+
         IgniteBiTuple<SampleInfo[], SampleInfo[]> lrSamples = splitByBitSet(bs.cardinality(), reg.samples().length - bs.cardinality(), reg.samples(), bs);
         BitSet leftCats = calculateCats(lrSamples.get1());
         CategoricalRegionInfo lInfo = new CategoricalRegionInfo(leftData.impurity(), leftCats);
@@ -154,7 +140,7 @@ public class CategoricalFeatureVector
         // TODO: IGNITE-5892 Check how it will work with sparse data.
         BitSet rightCats = calculateCats(lrSamples.get2());
         CategoricalRegionInfo rInfo = new CategoricalRegionInfo(rightData.impurity(), rightCats);
-        return new IgniteBiTuple<>(new Region<>(lrSamples.get1(), lInfo), new Region<>(lrSamples.get2(), rInfo));
+        return new IgniteBiTuple<>(new RegionProjection<>(lrSamples.get1(), lInfo, depth + 1), new RegionProjection<>(lrSamples.get2(), rInfo, depth + 1));
     }
 
     /**
@@ -208,7 +194,7 @@ public class CategoricalFeatureVector
         BitSet res = new BitSet();
 
         for (SampleInfo smpl : smpls)
-            res.set((int)smpl.getVal());
+            res.set((int)smpl.val());
 
         return res;
     }

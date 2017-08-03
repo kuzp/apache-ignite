@@ -96,11 +96,11 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
             // Process all values equal to prev.
             while (itr.hasNext()) {
                 i++;
-                lrImps = moveLeft(next.getLabel(), lrImps[2], i, lrImps[0], lrImps[3], size - i, lrImps[1]);
+                lrImps = moveLeft(next.label(), lrImps[2], i, lrImps[0], lrImps[3], size - i, lrImps[1]);
                 curImpurity = (1.0 / size) * (lrImps[0] + lrImps[1]);
-                curThreshold = next.getVal();
+                curThreshold = next.val();
 
-                if (next.getVal() != (next = itr.next()).getVal()) {
+                if (next.val() != (next = itr.next()).val()) {
                     if (curImpurity < minImpurity) {
                         lSize = i;
 
@@ -121,9 +121,9 @@ public class VarianceSplitCalculator implements ContinuousSplitCalculator<Varian
         while (itr.hasNext());
 
         i++;
-        lrImps = moveLeft(next.getLabel(), lrImps[2], i, lrImps[0], lrImps[3], size - i, lrImps[1]);
+        lrImps = moveLeft(next.label(), lrImps[2], i, lrImps[0], lrImps[3], size - i, lrImps[1]);
         curImpurity = (1.0 / size) * (lrImps[0] + lrImps[1]);
-        curThreshold = next.getVal();
+        curThreshold = next.val();
 
         if (curImpurity < minImpurity) {
             lSize = i;
