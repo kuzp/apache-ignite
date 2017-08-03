@@ -85,6 +85,7 @@ angular.module('ignite-console.user', [
                 }
 
                 return $state.target(trans.to().failState || '403');
-            });
+            })
+            .catch(() => false);
     });
 }]);
