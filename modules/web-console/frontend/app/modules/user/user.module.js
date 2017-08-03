@@ -69,19 +69,19 @@ angular.module('ignite-console.user', [
         AclService.attachRole(role);
     });
 
-    $transitions.onEnter({}, (trans) => {
+    $transitions.onBefore({}, (trans) => {
         const $state = trans.router.stateService;
         const {name, permission} = trans.to();
 
         if (_.isEmpty(permission))
-            return;
+            return true;
 
-        trans.injector().get('User').read()
+        return trans.injector().get('User').read()
             .then(() => {
                 if (AclService.can(permission)) {
                     Activities.post({action: $state.href(name, trans.params('to'))});
 
-                    return;
+                    return true;
                 }
 
                 return $state.target(trans.to().failState || '403');
