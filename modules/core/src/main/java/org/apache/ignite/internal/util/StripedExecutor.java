@@ -91,9 +91,10 @@ public class StripedExecutor implements ExecutorService {
                         poolName,
                         i,
                         log);
-
-                stripes[i].start();
             }
+
+            for (int i = 0; i < cnt; i++)
+                stripes[i].start();
 
             success = true;
         }
