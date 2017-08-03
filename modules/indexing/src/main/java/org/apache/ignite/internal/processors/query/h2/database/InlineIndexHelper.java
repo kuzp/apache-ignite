@@ -349,8 +349,7 @@ public class InlineIndexHelper {
                 if (c > 127)
                     break;
 
-                cntr1++;
-                addr++;
+                cntr1++; addr++;
 
                 v1 = (char)c;
                 v2 = s.charAt(cntr2++);
@@ -389,7 +388,7 @@ public class InlineIndexHelper {
                         c2 = (int) GridUnsafe.getByte(addr++);
 
                         if ((c2 & 0xC0) != 0x80)
-                            throw new IllegalStateException("Malformed input around byte: " + cntr1);
+                            throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 1));
 
                         v1 = (char)(((c & 0x1F) << 6) | (c2 & 0x3F));
 
@@ -428,8 +427,10 @@ public class InlineIndexHelper {
             if (isValueFull(pageAddr, off))
                 return fixSort(res, sortType());
 
-            if (res == 0)
-                // the values are equal but current value is truncated, so that it's bigger.
+            if (res >= 0)
+                // There are two cases:
+                // a) The values are equal but the stored value is truncated, so that it's bigger.
+                // b) Even truncated current value is longer, so that it's bigger.
                 return fixSort(1, sortType());
 
             return -2;
@@ -658,6 +659,8 @@ public class InlineIndexHelper {
      * @return Fixed compare result.
      */
     public static int fixSort(int c, int sortType) {
+        c = c != 0 ? c > 0 ? 1 : -1 : 0;
+
         return sortType == SortOrder.ASCENDING ? c : -c;
     }
 }
