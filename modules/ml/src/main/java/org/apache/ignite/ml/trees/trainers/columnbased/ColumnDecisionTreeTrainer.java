@@ -331,6 +331,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         while (curDepth < maxDepth) {
             // Keys of all regions.
             int rc = regsCnt;
+            System.out.println("Regs cnt: " + rc);
 
             // Get locally (for node) optimal (by information gain) splits.
             long before = System.currentTimeMillis();
@@ -344,7 +345,6 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                         FeatureVector vector = vector(input, featIdx);
 
                         IndexAndSplitInfo bestForReg = new IndexAndSplitInfo(featIdx, vector.findBestSplit(e.getValue(), regIdx));
-                        System.out.println(bestForReg);
                         return Functions.MAX_GENERIC(si, bestForReg, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
                     },
                     allKeys(input, regsCnt, uuid),

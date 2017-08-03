@@ -94,16 +94,16 @@ public class ColumnDecisionTreeTrainerBenchmark extends BaseDecisionTreeTest {
         testByGenStreamerLoad(ptsPerReg, catsInfo, gen, rnd);
     }
 
-    @Ignore
+//    @Ignore
     @Test
     public void testMNIST() throws IOException {
         IgniteUtils.setCurrentIgniteName(ignite.configuration().getIgniteInstanceName());
 
-        int ptsCnt = 20000;
+        int ptsCnt = 4000;
         int featCnt = 28 * 28;
 
         Stream<DenseLocalOnHeapVector> trainingMnistStream = ReadMnistData.mnist("/home/enny/Downloads/train-images-idx3-ubyte", "/home/enny/Downloads/train-labels-idx1-ubyte", ptsCnt);
-        Stream<DenseLocalOnHeapVector> testMnistStream = ReadMnistData.mnist("/home/enny/Downloads/t10k-images.idx3-ubyte", "/home/enny/Downloads/t10k-labels.idx1-ubyte", ptsCnt / 10);
+        Stream<DenseLocalOnHeapVector> testMnistStream = ReadMnistData.mnist("/home/enny/Downloads/t10k-images-idx3-ubyte", "/home/enny/Downloads/t10k-labels-idx1-ubyte", ptsCnt / 10);
 
         SparseDistributedMatrix m = new SparseDistributedMatrix(ptsCnt, featCnt + 1, StorageConstants.COLUMN_STORAGE_MODE, StorageConstants.RANDOM_ACCESS_MODE);
 
@@ -112,7 +112,7 @@ public class ColumnDecisionTreeTrainerBenchmark extends BaseDecisionTreeTest {
         loadVectorsIntoCache(sto.cache().getName(), sto.getUUID(), trainingMnistStream.iterator(), featCnt + 1);
 
         ColumnDecisionTreeTrainer<VarianceSplitCalculator.VarianceData> trainer =
-            new ColumnDecisionTreeTrainer<>(10, ContinuousSplitCalculators.VARIANCE, RegionCalculators.VARIANCE, RegionCalculators.MOST_COMMON);
+            new ColumnDecisionTreeTrainer<>(11, ContinuousSplitCalculators.VARIANCE, RegionCalculators.VARIANCE, RegionCalculators.MOST_COMMON);
 
         System.out.println(">>> Training started");
         long before = System.currentTimeMillis();
@@ -126,7 +126,7 @@ public class ColumnDecisionTreeTrainerBenchmark extends BaseDecisionTreeTest {
         trainer.destroy();
     }
 
-    @Ignore
+//    @Ignore
     @Test
     public void testF1() {
         IgniteUtils.setCurrentIgniteName(ignite.configuration().getIgniteInstanceName());
@@ -151,7 +151,7 @@ public class ColumnDecisionTreeTrainerBenchmark extends BaseDecisionTreeTest {
         IgniteFunction<DoubleStream, Double> regCalc = s -> s.average().orElse(0.0);
 
         ColumnDecisionTreeTrainer<VarianceSplitCalculator.VarianceData> trainer =
-            new ColumnDecisionTreeTrainer<>(11, new VarianceSplitCalculator(), RegionCalculators.VARIANCE, regCalc);
+            new ColumnDecisionTreeTrainer<>(10, new VarianceSplitCalculator(), RegionCalculators.VARIANCE, regCalc);
 
         System.out.println(">>> Training started");
         long before = System.currentTimeMillis();

@@ -31,6 +31,7 @@ import javax.cache.Cache;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CachePeekMode;
 import org.apache.ignite.cache.affinity.Affinity;
 import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cluster.ClusterGroup;
@@ -448,16 +449,17 @@ public class CacheUtils {
             if (ks == null)
                 return;
 
-            Map<K, V> m = new ConcurrentHashMap<>();
+            Map<K, V> m = new HashMap<>();
 
             for (K k : ks) {
                 V v = cache.localPeek(k);
                 (fun.apply(new CacheEntryImpl<>(k, v))).forEach(ent -> m.put(ent.getKey(), ent.getValue()));
             }
+//            System.out.println("Iteration took: " + (System.currentTimeMillis() - before));
 
-            long before = System.currentTimeMillis();
+//            before = System.currentTimeMillis();
             cache.putAll(m);
-            System.out.println("PutAll took: " + (System.currentTimeMillis() - before));
+
         });
     }
 
@@ -640,10 +642,15 @@ public class CacheUtils {
             if (ks == null)
                 return a;
 
-            for (K k : ks) {
-                V v = cache.localPeek(k);
-                a = folder.apply(new CacheEntryImpl<>(k, v), a);
+//            for (K k : ks) {
+//                V v = cache.localPeek(k);
+//                a = folder.apply(new CacheEntryImpl<>(k, v), a);
+//            }
+
+            for (Cache.Entry<K, V> kvEntry : cache.localEntries(CachePeekMode.PRIMARY)) {
+                a = folder.apply(kvEntry, a);
             }
+
             return a;
         });
         return totalRes.stream().reduce(defRes, accumulator);

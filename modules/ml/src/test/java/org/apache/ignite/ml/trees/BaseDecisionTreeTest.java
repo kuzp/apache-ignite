@@ -11,7 +11,7 @@ import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
 
 public class BaseDecisionTreeTest extends GridCommonAbstractTest {
-    private static final int NODE_COUNT = 2;
+    private static final int NODE_COUNT = 6;
 
     /** Grid instance. */
     protected Ignite ignite;
