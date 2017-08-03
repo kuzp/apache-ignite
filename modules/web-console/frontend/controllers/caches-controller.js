@@ -21,7 +21,7 @@ import get from 'lodash/get';
 // Controller for Caches screen.
 export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
     function(ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {ConfigureState, $scope, $state});
+        Object.assign(this, {ConfigureState, $scope, $state, Confirm});
 
         this.$onInit = function() {
             this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
@@ -29,6 +29,13 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
 
         this.$onDestroy = function() {
             this.subscription.unsubscribe();
+        };
+
+        this.uiCanExit = function() {
+            // TODO Refactor this
+            return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
+                You have unsaved changes. Are you sure want to discard them?
+            `);
         };
 
         this.getObservable = function(state$) {
