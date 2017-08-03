@@ -43,8 +43,13 @@ export default class ItemsTableController {
             },
             onRegisterApi: (api) => {
                 this.gridAPI = api;
-                api.selection.on.rowSelectionChanged(this.$scope, (e) => this.onRowsSelectionChange([e]));
-                api.selection.on.rowSelectionChangedBatch(this.$scope, (e) => this.onRowsSelectionChange(e));
+                api.selection.on.rowSelectionChanged(this.$scope, (row, e) => {
+                    // e.isSelected = false;
+                    this.onRowsSelectionChange([row], e);
+                });
+                api.selection.on.rowSelectionChangedBatch(this.$scope, (rows, e) => {
+                    this.onRowsSelectionChange(rows, e);
+                });
                 api.core.on.rowsVisibleChanged(this.$scope, () => {
                     const visibleRows = api.core.getVisibleRows();
                     if (this.onFilterChanged) this.onFilterChanged({$event: visibleRows});
@@ -54,19 +59,14 @@ export default class ItemsTableController {
             }
         };
         this.onAction = debounce(this.onAction);
+        this.onRowsSelectionChange = debounce(this.onRowsSelectionChange);
     }
 
-    onRowsSelectionChange() {
+    onRowsSelectionChange(rows, e) {
         this.actionsMenu = this.makeActionsMenu();
-        if (this.immediateEdit) {
-            const selected = this.gridAPI.selection.getSelectedRows();
-            this.onAction({
-                $event: {
-                    type: 'EDIT',
-                    items: selected.length === 1 ? [selected[0]] : []
-                }
-            });
-        }
+        if (e.ignore) return;
+        const selected = this.gridAPI.selection.getSelectedRows();
+        if (this.onSelectionChange) this.onSelectionChange({$event: selected});
     }
 
     makeActionsMenu() {
@@ -101,22 +101,28 @@ export default class ItemsTableController {
             this.grid
         ) {
             this.grid.data = this.prepareData(changes.items.currentValue);
+            this.gridAPI.grid.modifyRows(this.grid.data);
             this.adjustHeight(this.gridAPI, this.grid.data.length);
         }
         if (
             'selectedRowId' in changes &&
             changes.selectedRowId.currentValue !== changes.selectedRowId.previousValue &&
             this.grid && this.grid.data
-        ) {
-            // TODO: refactor this
-            if (changes.selectedRowId.currentValue.empty) return;
+        )
+            this.applyIncomingSelection(changes.selectedRowId.currentValue);
+
+
+    }
+
+    applyIncomingSelection(selected = []) {
+        this.gridAPI.selection.clearSelectedRows({ignore: true});
+        const rows = this.grid.data.filter((r) => selected.includes(r._id));
+        rows.forEach((r) => {
+            this.gridAPI.selection.selectRow(r, {ignore: true});
+        });
+        if (rows.length === 1) {
             this.$timeout(() => {
-                this.gridAPI.grid.rows.forEach((row) => {
-                    const match = row.entity._id === changes.selectedRowId.currentValue._id;
-                    row.setSelected(match);
-                    if (match) this.gridAPI.core.scrollToIfNecessary(row, null);
-                });
-                this.actionsMenu = this.makeActionsMenu();
+                this.gridAPI.grid.scrollToIfNecessary(this.gridAPI.grid.getRow(rows[0]), null);
             });
         }
     }

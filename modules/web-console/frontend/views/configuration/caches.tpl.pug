@@ -19,9 +19,9 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
         table-title='::"My caches"'
         column-defs='$ctrl.cachesColumnDefs'
         items='$ctrl.cachesTable'
-        immediate-edit='true'
         on-action='$ctrl.onCacheAction($event)'
-        selected-row-id='backupItem'
+        selected-row-id='$ctrl.selectedItemIDs'
+        on-selection-change='$ctrl.selectionHook($event)'
     )
         footer-slot
             div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
@@ -29,7 +29,7 @@ div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...'
             a.link-success(ng-click='createItem()' ng-show='$ctrl.cachesTable.length') + Add new cache
 
     h2.pc-page-header(ng-hide='backupItem.empty')
-        | {{ backupItem._id ? 'Edit' : 'Create' }} cache {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
+        | {{ selectedItem._id ? 'Edit' : 'Create' }} cache {{ selectedItem._id ? '‘'+selectedItem.name+'’' : '' }}
 
     div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')

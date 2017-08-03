@@ -17,29 +17,36 @@
 
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 import get from 'lodash/get';
+import angular from 'angular';
 
 // Controller for Caches screen.
-export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
-    function(ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {ConfigureState, $scope, $state, Confirm});
+export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
+    function($transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+        Object.assign(this, {$transitions, ConfigureState, $scope, $state, Confirm});
 
         this.$onInit = function() {
             this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+            this.off = this.$transitions.onBefore({
+                from: 'base.configuration.tabs.advanced.caches.cache'
+            }, ($transition$) => {
+                // TODO Find a better way to prevent target
+                // this.$scope.backupItem = angular.copy(this.$scope.backupItem);
+                const oldCacheID = this.$state.params.cacheID;
+                return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
+                    You have unsaved changes. Are you sure want to discard them?
+                `).catch(() => {
+                    this.selectedItemIDs = [oldCacheID];
+                    return Promise.reject();
+                });
+            });
         };
 
         this.$onDestroy = function() {
             this.subscription.unsubscribe();
-        };
-
-        this.uiCanExit = function() {
-            // TODO Refactor this
-            return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
-                You have unsaved changes. Are you sure want to discard them?
-            `);
+            this.off();
         };
 
         this.getObservable = function(state$) {
-            // return state$.pluck('clusterConfiguration.originalCaches').distinctUntilChanged()
             return state$.pluck('clusterConfiguration')
             .do((value) => this.applyValue(value));
         };
@@ -47,8 +54,8 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
         this.applyValue = function(state) {
             this.$scope.$applyAsync(() => {
                 this.assignCaches(state.originalCaches);
-                // this.__cache = state.originalCache;
                 this.$scope.selectItem(state.originalCache);
+                this.selectedItemIDs = [state.originalCache._id];
             });
         };
 
@@ -89,10 +96,6 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
         this.onCacheAction = (action) => {
             const realItems = action.items.map((item) => $scope.caches.find(({_id}) => _id === item._id));
             switch (action.type) {
-                case 'EDIT':
-                    return this.$state.go('base.configuration.tabs.advanced.caches.cache', {
-                        cacheID: action.items[0] ? action.items[0]._id : null
-                    });
                 case 'CLONE':
                     return this.cloneItems(realItems);
                 case 'DELETE':
@@ -102,6 +105,17 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
                 default:
                     return;
             }
+        };
+
+        this.selectionHook = function(selected) {
+            this.selectedItemIDs = selected.map((r) => r._id);
+            console.debug(selected);
+            if (selected.length !== 1) this.$scope.selectItem(null);
+            return this.selectedItemIDs.length === 1
+                ? this.$state.go('base.configuration.tabs.advanced.caches.cache', {
+                    cacheID: this.selectedItemIDs[0]
+                })
+                : this.$state.go('base.configuration.tabs.advanced.caches');
         };
 
         this.available = Version.available.bind(Version);
@@ -379,8 +393,7 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
                 // if (LegacyUtils.getQueryVariable('new'))
                 //     $state.go('base.configuration.tabs.advanced.caches');
             };
-
-            FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
+            selectItem();
         };
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
