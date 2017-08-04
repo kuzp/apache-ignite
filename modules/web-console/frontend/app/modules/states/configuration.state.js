@@ -193,6 +193,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         });
                     }]
                 },
+                resolvePolicy: {
+                    async: 'NOWAIT'
+                },
                 tfMetaTags: {
                     title: 'Basic Configuration'
                 }
@@ -216,6 +219,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
                     caches: cachesResolve
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
@@ -264,6 +270,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         });
                     }]
                 },
+                resolvePolicy: {
+                    async: 'NOWAIT'
+                },
                 tfMetaTags: {
                     title: 'Configure Caches'
                 }
@@ -293,6 +302,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             });
                     }],
                     caches: cachesResolve
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
                     const modelStateName = 'base.configuration.tabs.advanced.models.model';
@@ -341,6 +353,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             return model;
                         });
                     }]
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 }
             })
             .state('base.configuration.tabs.advanced.igfs', {
@@ -367,6 +382,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 return data;
                             });
                     }]
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
                     const igfsStateName = 'base.configuration.tabs.advanced.igfs.igfs';
@@ -414,6 +432,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             return igfs;
                         });
                     }]
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 }
             });
     }]);
