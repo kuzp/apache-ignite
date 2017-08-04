@@ -44,7 +44,9 @@ import {
     RECEIVE_MODELS_EDIT,
     RECEIVE_MODEL_EDIT,
     RECEIVE_IGFSS_EDIT,
-    RECEIVE_IGFS_EDIT
+    RECEIVE_IGFS_EDIT,
+    SHOW_CONFIG_LOADING,
+    HIDE_CONFIG_LOADING
 } from 'app/components/page-configure/reducer';
 import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
 import pageConfigureAdvancedModelsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-models/component';
@@ -55,9 +57,16 @@ import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-ad
 // TODO: move into effects or service
 const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
     const {clusterID} = $transition$.params();
+    ConfigureState.dispatchAction({
+        type: SHOW_CONFIG_LOADING,
+        loadingText: 'Loading caches…'
+    });
     return clusterID === 'new'
         ? Promise.resolve([])
         : Clusters.getClusterCaches(clusterID).then(({data}) => {
+            ConfigureState.dispatchAction({
+                type: HIDE_CONFIG_LOADING
+            });
             ConfigureState.dispatchAction({
                 type: RECEIVE_CACHES_EDIT,
                 caches: data
@@ -92,8 +101,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 },
                 resolve: {
                     clustersTable: ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading clusters…'
+                        });
+
                         return Clusters.getClustersOverview()
                         .then(({data}) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CONFIGURE_OVERVIEW,
                                 clustersTable: data
@@ -114,7 +131,19 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? newCluster
                             : Clusters.getCluster(clusterID).then(({data}) => data);
 
+                        ConfigureState.dispatchAction({
+                            type: RECEIVE_CLUSTER_EDIT,
+                            cluster: null
+                        });
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading cluster…'
+                        });
+
                         return cluster.then((cluster) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CLUSTER_EDIT,
                                 cluster
@@ -122,6 +151,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             return cluster;
                         });
                     }]
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
                     return $transition$.injector().getAsync('cluster').then((cluster) => {
@@ -144,7 +176,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? Promise.resolve([])
                             : Clusters.getClusterCaches(clusterID).then(({data}) => data);
 
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading caches…'
+                        });
+
                         return caches.then((caches) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CACHES_EDIT,
                                 caches
@@ -208,8 +248,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const cache = cacheID
                             ? Caches.getCache(cacheID).then(({data}) => data)
                             : Promise.resolve(null);
-
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading cache…'
+                        });
                         return cache.then((cache) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CACHE_EDIT,
                                 cache
@@ -229,9 +275,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     models: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
                         const {clusterID} = $transition$.params();
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading models…'
+                        });
                         return clusterID === 'new'
                             ? Promise.resolve([])
                             : Clusters.getClusterModels(clusterID).then(({data}) => {
+                                ConfigureState.dispatchAction({
+                                    type: HIDE_CONFIG_LOADING
+                                });
                                 ConfigureState.dispatchAction({
                                     type: RECEIVE_MODELS_EDIT,
                                     models: data
@@ -272,7 +325,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? Models.getModel(modelID).then(({data}) => data)
                             : Promise.resolve(null);
 
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading model…'
+                        });
+
                         return model.then((model) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_MODEL_EDIT,
                                 model
@@ -289,9 +350,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     igfss: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
                         const {clusterID} = $transition$.params();
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading IGFSs…'
+                        });
                         return clusterID === 'new'
                             ? Promise.resolve([])
                             : Clusters.getClusterIGFSs(clusterID).then(({data}) => {
+                                ConfigureState.dispatchAction({
+                                    type: HIDE_CONFIG_LOADING
+                                });
                                 ConfigureState.dispatchAction({
                                     type: RECEIVE_IGFSS_EDIT,
                                     igfss: data
@@ -330,8 +398,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const igfs = igfsID
                             ? IGFSs.getIGFS(igfsID).then(({data}) => data)
                             : Promise.resolve(null);
+                        ConfigureState.dispatchAction({
+                            type: SHOW_CONFIG_LOADING,
+                            loadingText: 'Loading IGFS…'
+                        });
 
                         return igfs.then((igfs) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_IGFS_EDIT,
                                 igfs

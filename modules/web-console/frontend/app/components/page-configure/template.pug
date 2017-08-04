@@ -36,6 +36,9 @@ div.pc-content-container
         div
 
     ui-view.theme--ignite(
+        ignite-loading='configuration'
+        ignite-loading-text='{{ $ctrl.loadingText }}'
+        ignite-loading-position='top'
         ng-class=`{
             'pc-hide-tooltips': !$ctrl.tooltipsVisible
         }`
