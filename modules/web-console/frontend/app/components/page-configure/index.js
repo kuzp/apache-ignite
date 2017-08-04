@@ -31,7 +31,7 @@ import pcFormFieldSize from './components/pc-form-field-size';
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
 
-import {reducer, editReducer} from './reducer';
+import {reducer, editReducer, loadingReducer} from './reducer';
 import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegration';
 
 export default angular
@@ -57,7 +57,8 @@ export default angular
         }
         ConfigureState.addReducer((state, action) => Object.assign(state, {
             list: reducer(state.list, action),
-            clusterConfiguration: editReducer(state.clusterConfiguration, action)
+            clusterConfiguration: editReducer(state.clusterConfiguration, action),
+            configurationLoading: loadingReducer(state.configurationLoading, action)
         }));
     }])
     .component('pageConfigure', component)

@@ -18,18 +18,24 @@
 import get from 'lodash/get';
 
 export default class PageConfigureController {
-    static $inject = ['$state', 'ConfigureState'];
+    static $inject = ['$state', 'ConfigureState', 'IgniteLoading'];
 
-    constructor($state, ConfigureState) {
-        Object.assign(this, {$state, ConfigureState});
+    constructor($state, ConfigureState, IgniteLoading) {
+        Object.assign(this, {$state, ConfigureState, IgniteLoading});
     }
 
     $onInit() {
-        this.subscription = this.ConfigureState.state$.pluck('clusterConfiguration')
-        .do((clusterConfiguration) => {
-            const clusterName = get(clusterConfiguration, 'originalCluster.name');
+        this.subscription = this.ConfigureState.state$
+        .do((state) => {
+            const clusterName = get(state, 'clusterConfiguration.originalCluster.name');
             const isNew = this.$state.params.clusterID === 'new';
             this.title = `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${clusterName}’`}`;
+            const {loadingText, isLoading} =
+            this.loadingText = state.configurationLoading.loadingText;
+            if (state.configurationLoading.isLoading)
+                this.IgniteLoading.start('configuration');
+            else
+                this.IgniteLoading.finish('configuration');
         })
         .subscribe();
         this.tooltipsVisible = true;

@@ -17,6 +17,9 @@
 
 page-configure {
     font-family: Roboto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 
     .pc-form-actions-panel {
         display: flex;
@@ -52,6 +55,12 @@ page-configure {
 
     .pc-content-container {
         position: relative;
+
+        &, &>ui-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
 
         .pc-tooltips-toggle {
             position: absolute;

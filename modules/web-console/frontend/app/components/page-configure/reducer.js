@@ -167,3 +167,19 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return state;
     }
 };
+
+
+export const SHOW_CONFIG_LOADING = Symbol('SHOW_CONFIG_LOADING');
+export const HIDE_CONFIG_LOADING = Symbol('HIDE_CONFIG_LOADING');
+const loadingDefaults = {isLoading: false, loadingText: 'Loading...'};
+
+export const loadingReducer = (state = loadingDefaults, action) => {
+    switch (action.type) {
+        case SHOW_CONFIG_LOADING:
+            return {...state, isLoading: true, loadingText: action.loadingText};
+        case HIDE_CONFIG_LOADING:
+            return {...state, isLoading: false};
+        default:
+            return state;
+    }
+};

@@ -27,6 +27,12 @@ body {
     overflow-y: scroll !important;
 }
 
+.flex-full-height {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 hr {
     margin: 20px 0;
 }
