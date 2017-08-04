@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import {nonEmpty} from 'app/utils/lodashMixins';
+
 export default class {
     static $inject = ['AgentManager'];
 
@@ -33,7 +35,7 @@ export default class {
 
                 const removed = _.differenceBy(ctrl.clusters, clusters, 'id');
 
-                if (_.nonEmpty(removed))
+                if (nonEmpty(removed))
                     _.pullAll(ctrl.clusters, removed);
 
                 const added = _.differenceBy(clusters, ctrl.clusters, 'id');
