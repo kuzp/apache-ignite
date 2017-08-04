@@ -24,7 +24,7 @@
 @import "./form-field";
 
 body {
-    overflow-y: scroll;
+    overflow-y: scroll !important;
 }
 
 hr {
