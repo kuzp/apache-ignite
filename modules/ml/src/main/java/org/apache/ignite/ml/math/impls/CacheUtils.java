@@ -435,8 +435,8 @@ public class CacheUtils {
      * @param <K> Cache key object type.
      * @param <V> Cache value object type.
      */
-    public static <K, V, W> void update(String cacheName,
-                                        IgniteFunction<Cache.Entry<K, V>, Stream<Cache.Entry<K, V>>> fun, IgniteSupplier<Set<K>> keysGen) {
+    public static <K, V> void update(String cacheName,
+        IgniteFunction<Cache.Entry<K, V>, Stream<Cache.Entry<K, V>>> fun, IgniteSupplier<Set<K>> keysGen) {
         bcast(cacheName, () -> {
             Ignite ignite = Ignition.localIgnite();
             IgniteCache<K, V> cache = ignite.getOrCreateCache(cacheName);
@@ -455,11 +455,8 @@ public class CacheUtils {
                 V v = cache.localPeek(k);
                 (fun.apply(new CacheEntryImpl<>(k, v))).forEach(ent -> m.put(ent.getKey(), ent.getValue()));
             }
-//            System.out.println("Iteration took: " + (System.currentTimeMillis() - before));
 
-//            before = System.currentTimeMillis();
             cache.putAll(m);
-
         });
     }
 

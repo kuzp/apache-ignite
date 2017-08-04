@@ -282,6 +282,8 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         int curDepth = 0;
         int regsCnt = 1;
 
+        Map<Integer, SplitInfo> optimalForFeature = getOptimals(input, allKeys(input, regsCnt, uuid));
+
         // TODO: IGNITE-5893 Currently if the best split makes tree deeper than max depth process will be terminated, but actually we should
         // only stop when *any* improving split makes tree deeper than max depth. Can be fixed if we will store which
         // regions cannot be split more and split only those that can.
@@ -293,39 +295,47 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
             // Get locally (for node) optimal (by information gain) splits.
             long before = System.currentTimeMillis();
 
-            IndexAndSplitInfo best = CacheUtils.sparseFold(cache.getName(),
-                    (Cache.Entry<RegionKey, RegionProjection> e, IndexAndSplitInfo si) -> {
-                        int featIdx = e.getKey().featureIdx();
-                        int regIdx = e.getKey().regionIdx();
+//            IndexAndSplitInfo best = CacheUtils.sparseFold(cache.getName(),
+//                    (Cache.Entry<RegionKey, RegionProjection> e, IndexAndSplitInfo si) -> {
+//                        int featIdx = e.getKey().featureIdx();
+//                        int regIdx = e.getKey().regionIdx();
+//
+//                        FeatureProcessor vector = vectorProcessor(input, featIdx);
+//                        RegionProjection reg = e.getValue();
+//                        IndexAndSplitInfo bestForReg = reg.depth < maxDepth ? new IndexAndSplitInfo(featIdx, vector.findBestSplit(reg, regIdx)) : new IndexAndSplitInfo();
+//                        return Functions.MAX_GENERIC(si, bestForReg, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
+//                    },
+//                    allKeys(input, regsCnt, uuid),
+//                    (i1, i2) -> Functions.MAX_GENERIC(i1, i2, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY)),
+//                    IndexAndSplitInfo::new,
+//                    null,
+//                    null,
+//                    0,
+//                    true
+//            );
+            Map.Entry<Integer, SplitInfo> bestEntry = optimalForFeature.entrySet().stream().
+                max(Comparator.comparingDouble(en -> en.getValue().infoGain())).orElse(null);
 
-                        FeatureProcessor vector = vectorProcessor(input, featIdx);
-                        RegionProjection reg = e.getValue();
-                        IndexAndSplitInfo bestForReg = reg.depth < maxDepth ? new IndexAndSplitInfo(featIdx, vector.findBestSplit(reg, regIdx)) : new IndexAndSplitInfo();
-                        return Functions.MAX_GENERIC(si, bestForReg, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY));
-                    },
-                    allKeys(input, regsCnt, uuid),
-                    (i1, i2) -> Functions.MAX_GENERIC(i1, i2, Comparator.comparingDouble(x -> x.info != null ? x.info.infoGain() : Double.NEGATIVE_INFINITY)),
-                    IndexAndSplitInfo::new,
-                    null,
-                    null,
-                    0,
-                    true
-            );
             long total = System.currentTimeMillis() - before;
 
-            if (best != null && best.info != null && best.info.infoGain() > MIN_INFO_GAIN) {
+            if (bestEntry != null && bestEntry.getValue().infoGain() > MIN_INFO_GAIN) {
                 regsCnt++;
-                System.out.println("Globally best: " + best.info + " time: " + total);
+
+                SplitInfo bestInfo = bestEntry.getValue();
+                int bestRegIdx = bestInfo.regionIndex();
+                int bestFeatIdx = bestEntry.getKey();
+                System.out.println("Globally best: " + bestInfo + " time: " + total);
+
+                RegionKey bestRegKey = getCacheKey(bestFeatIdx, bestRegIdx, uuid, input.affinityKey(bestFeatIdx));
+
                 // Request bitset for split region.
-                int ind = best.info.regionIndex();
-                RegionKey bestRegKey = getCacheKey(best.featureIdx, ind, uuid, input.affinityKey(best.featureIdx));
-                SparseBitSet bs = cache.invoke(bestRegKey, (entry, arguments) -> vectorProcessor(input, best.featureIdx).calculateOwnershipBitSet(entry.getValue(), best.info));
+                SparseBitSet bs = cache.invoke(bestRegKey,
+                    (e, args) -> vectorProcessor(input, bestFeatIdx).calculateOwnershipBitSet(e.getValue(), bestInfo));
 
                 // Update decision tree.
+                SplitNode sn = bestInfo.createSplitNode(bestFeatIdx);
 
-                SplitNode sn = best.info.createSplitNode(best.featureIdx);
-
-                TreeTip tipToSplit = tips.get(ind);
+                TreeTip tipToSplit = tips.get(bestRegIdx);
                 tipToSplit.leafSetter.accept(sn);
                 tipToSplit.leafSetter = sn::setLeft;
                 int d = tipToSplit.depth++;
@@ -342,7 +352,7 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                 before = System.currentTimeMillis();
                 // Perform split on all feature vectors.
                 IgniteSupplier<Set<RegionKey>> bestRegsKeys = () -> IntStream.range(0, input.featuresCount()).
-                        mapToObj(fIdx -> getCacheKey(fIdx, ind, uuid, input.affinityKey(fIdx))).collect(Collectors.toSet());
+                        mapToObj(fIdx -> getCacheKey(fIdx, bestRegIdx, uuid, input.affinityKey(fIdx))).collect(Collectors.toSet());
 
                 CacheUtils.update(cache.getName(),
                     (Cache.Entry<RegionKey, RegionProjection> e) -> {
@@ -351,15 +361,37 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
                         IgniteBiTuple<RegionProjection, RegionProjection> regs;
                         int fIdx = k.featureIdx();
 
-                        if (!catFeaturesInfo.containsKey(fIdx) && !catFeaturesInfo.containsKey(best.featureIdx))
-                            // TODO: rewrite;
-                            regs = new ContinuousFeatureProcessor<>(calc).performSplit(bs, v, (D)best.info.leftData(), (D)best.info.rightData());
+                        if (!catFeaturesInfo.containsKey(fIdx) && !catFeaturesInfo.containsKey(bestFeatIdx))
+                            regs = new ContinuousFeatureProcessor<>(calc).performSplit(bs, v, (D)bestInfo.leftData(), (D)bestInfo.rightData());
                         else
-                            regs = vectorProcessor(input, k.featureIdx).performSplitGeneric(bs, v, best.info.leftData(), best.info.rightData());
+                            regs = vectorProcessor(input, k.featureIdx).performSplitGeneric(bs, v, bestInfo.leftData(), bestInfo.rightData());
 
                         return Stream.of(new CacheEntryImpl<>(k, regs.get1()), new CacheEntryImpl<>(getCacheKey(fIdx, rc, uuid, input.affinityKey(fIdx)), regs.get2()));
                     },
                     bestRegsKeys);
+
+                // Recalculate optimals for each feature. There are 2 cases.
+
+                // (1): For all features except one be which the split has been done,
+                // new optimal split can be calculated as max(previouslyOptimal, newRegion1, newRegion2) (max taken by information gain).
+                IgniteSupplier<Set<RegionKey>> nonOpts = () -> IntStream.range(0, input.featuresCount()).
+                    filter(i -> i != bestFeatIdx && optimalForFeature.containsKey(i)).boxed().
+                    flatMap(fIdx -> Stream.of(optimalForFeature.get(fIdx).regionIndex(), bestRegIdx, rc).map(rIdx -> getCacheKey(fIdx, rIdx, uuid, input.affinityKey(fIdx)))).
+                    collect(Collectors.toSet());
+
+                Map<Integer, SplitInfo> m = getOptimals(input, nonOpts);
+                updateOptimals(optimalForFeature, m, bestFeatIdx);
+
+                // (2): For feature by which split has been done we calculate all regions splits and chose optimal one.
+                IgniteSupplier<Set<RegionKey>> opts = () -> IntStream.range(0, input.featuresCount()).
+                    filter(i -> !m.containsKey(i)).boxed().
+                    flatMap(fIdx -> IntStream.range(0, rc + 1).boxed().map(rIdx -> getCacheKey(fIdx, rIdx, uuid, input.affinityKey(fIdx)))).
+                    collect(Collectors.toSet());
+                //IgniteSupplier<Set<RegionKey>> opts = () -> IntStream.range(0, rc + 1).mapToObj(rIdx -> getCacheKey(bestFeatIdx, rIdx, uuid, input.affinityKey(bestFeatIdx))).collect(Collectors.toSet());
+                m.clear();
+                m.putAll(getOptimals(input, opts));
+                updateOptimals(optimalForFeature, m, null);
+
                 System.out.println("Update took " + (System.currentTimeMillis() - before));
             }
             else
@@ -403,6 +435,40 @@ public class ColumnDecisionTreeTrainer<D extends ContinuousRegionInfo> implement
         cache.removeAll(allKeys(input, regsCnt, uuid).get());
 
         return new DecisionTreeModel(root.s);
+    }
+
+    private Map<Integer, SplitInfo> getOptimals(ColumnDecisionTreeInput input, IgniteSupplier<Set<RegionKey>> keys) {
+        return CacheUtils.sparseFold(cache.getName(),
+                (Cache.Entry<RegionKey, RegionProjection> e, Map<Integer, SplitInfo> si) -> {
+                    int featIdx = e.getKey().featureIdx();
+                    int regIdx = e.getKey().regionIdx();
+
+                    FeatureProcessor vector = vectorProcessor(input, featIdx);
+                    RegionProjection reg = e.getValue();
+                    SplitInfo bestForReg = (reg.depth < maxDepth) ? vector.findBestSplit(reg, regIdx) : null;
+                    si.compute(featIdx, (idx, info) -> Functions.MAX_GENERIC(info, bestForReg, Comparator.comparingDouble(x -> x != null ? x.infoGain() : Double.NEGATIVE_INFINITY)));
+                    return si;
+                },
+                keys,
+                (opts1, opts2) -> {
+                    opts2.putAll(opts1);
+                    return opts2;
+                },
+                HashMap::new,
+                null,
+                null,
+                0,
+                true
+            );
+    }
+    private void updateOptimals(Map<Integer, SplitInfo> optimals, Map<Integer, SplitInfo> updater, Integer key) {
+        Set<Integer> ks = new HashSet<>(optimals.keySet());
+        ks.forEach(k -> {
+            if (!updater.containsKey(k) && !k.equals(key))
+                optimals.remove(k);
+            else
+                optimals.put(k, updater.get(k));
+        });
     }
 
     /**
