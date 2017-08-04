@@ -59,6 +59,8 @@ export default class PageConfigureOverviewController {
                 filter: {
                     placeholder: 'Filter by name…'
                 },
+                url: (row) => `base.configuration.tabs.advanced.cluster({clusterID: '${row.entity._id}'})`,
+                cellTemplate,
                 minWidth: 165
             },
             {
