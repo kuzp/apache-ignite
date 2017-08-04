@@ -236,7 +236,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     cache: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
                         const {cacheID} = $transition$.params();
-                        console.debug(`Loading cache: ${cacheID}`);
                         const cache = cacheID
                             ? Caches.getCache(cacheID).then(({data}) => data)
                             : Promise.resolve(null);
