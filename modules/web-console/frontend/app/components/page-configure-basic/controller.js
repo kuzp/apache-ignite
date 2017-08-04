@@ -45,15 +45,6 @@ export default class PageConfigureBasicController {
         this.discoveries = this.Clusters.discoveries;
         this.minMemorySize = this.Clusters.minMemoryPolicySize;
 
-        // TODO IGNITE-5271: extract into size input component
-        this.sizesMenu = [
-            {label: 'Kb', value: 1024},
-            {label: 'Mb', value: 1024 * 1024},
-            {label: 'Gb', value: 1024 * 1024 * 1024}
-        ];
-
-        this.memorySizeScale = this.sizesMenu[2];
-        // this.pageService.setCluster(this.$state.params.clusterID || '-1');
         this.extraFormActions = [
             {text: 'Save changes and download project', click: () => this.saveAndDownload()},
             {text: 'Save changes', click: () => this.save()}
