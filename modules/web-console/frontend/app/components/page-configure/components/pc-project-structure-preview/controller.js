@@ -49,11 +49,12 @@ export default class ProjectStructurePreviewController {
                     '$scope',
                     'cluster',
                     'ConfigurationDownload',
-                    'IgniteLoading'
+                    'IgniteLoading',
+                    'IgniteMessages'
                 ];
 
-                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading) {
-                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading});
+                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages) {
+                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages});
                     this.$onInit();
                 }
 
@@ -129,6 +130,10 @@ export default class ProjectStructurePreviewController {
                         ];
                         this.showPreview(this.selectedNode);
                         this.IgniteLoading.finish('projectStructurePreview');
+                    })
+                    .catch((e) => {
+                        this.IgniteMessages.showError(`Failed to generate project files. ${e.message}`);
+                        this.$scope.$hide();
                     });
                 }
 
