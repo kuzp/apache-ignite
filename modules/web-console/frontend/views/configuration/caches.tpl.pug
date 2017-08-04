@@ -14,47 +14,46 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-div(ignite-loading='loadingCachesScreen' ignite-loading-text='Loading caches...' ignite-loading-position='top')
-    pc-items-table(
-        table-title='::"My caches"'
-        column-defs='$ctrl.cachesColumnDefs'
-        items='$ctrl.cachesTable'
-        on-action='$ctrl.onCacheAction($event)'
-        selected-row-id='$ctrl.selectedItemIDs'
-        on-selection-change='$ctrl.selectionHook($event)'
+pc-items-table(
+    table-title='::"My caches"'
+    column-defs='$ctrl.cachesColumnDefs'
+    items='$ctrl.cachesTable'
+    on-action='$ctrl.onCacheAction($event)'
+    selected-row-id='$ctrl.selectedItemIDs'
+    on-selection-change='$ctrl.selectionHook($event)'
+)
+    footer-slot
+        div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
+            | You have no caches. #[a.link-success(ng-click='createItem()') Create one?]                
+        a.link-success(ng-click='createItem()' ng-show='$ctrl.cachesTable.length') + Add new cache
+
+h2.pc-page-header(ng-hide='backupItem.empty')
+    | {{ selectedItem._id ? 'Edit' : 'Create' }} cache {{ selectedItem._id ? '‘'+selectedItem.name+'’' : '' }}
+
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+        include /app/modules/states/configuration/caches/general
+        include /app/modules/states/configuration/caches/memory
+        include /app/modules/states/configuration/caches/query
+        include /app/modules/states/configuration/caches/store
+
+        include /app/modules/states/configuration/caches/affinity
+        include /app/modules/states/configuration/caches/concurrency
+        include /app/modules/states/configuration/caches/near-cache-client
+        include /app/modules/states/configuration/caches/near-cache-server
+        include /app/modules/states/configuration/caches/node-filter
+        include /app/modules/states/configuration/caches/rebalance
+        include /app/modules/states/configuration/caches/statistics
+
+.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
+    .pc-form-actions-panel__right-after
+    button.btn-ignite.btn-ignite--link-success(
+        type='button'
+        ng-disabled='!ui.inputForm.$dirty'
+        ng-click='ui.inputForm.$dirty && resetAll()'
     )
-        footer-slot
-            div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
-                | You have no caches. #[a.link-success(ng-click='createItem()') Create one?]                
-            a.link-success(ng-click='createItem()' ng-show='$ctrl.cachesTable.length') + Add new cache
-
-    h2.pc-page-header(ng-hide='backupItem.empty')
-        | {{ selectedItem._id ? 'Edit' : 'Create' }} cache {{ selectedItem._id ? '‘'+selectedItem.name+'’' : '' }}
-
-    div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-        form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
-            include /app/modules/states/configuration/caches/general
-            include /app/modules/states/configuration/caches/memory
-            include /app/modules/states/configuration/caches/query
-            include /app/modules/states/configuration/caches/store
-
-            include /app/modules/states/configuration/caches/affinity
-            include /app/modules/states/configuration/caches/concurrency
-            include /app/modules/states/configuration/caches/near-cache-client
-            include /app/modules/states/configuration/caches/near-cache-server
-            include /app/modules/states/configuration/caches/node-filter
-            include /app/modules/states/configuration/caches/rebalance
-            include /app/modules/states/configuration/caches/statistics
-
-    .pc-form-actions-panel
-        .pc-form-actions-panel__right-after
-        button.btn-ignite.btn-ignite--link-success(
-            type='button'
-            ng-disabled='!ui.inputForm.$dirty'
-            ng-click='ui.inputForm.$dirty && resetAll()'
-        )
-            | Cancel
-        button.btn-ignite.btn-ignite--success(
-            ng-disabled='!ui.inputForm.$dirty'
-            ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
-        ) Save
+        | Cancel
+    button.btn-ignite.btn-ignite--success(
+        ng-disabled='!ui.inputForm.$dirty'
+        ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+    ) Save

@@ -14,44 +14,43 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS...' ignite-loading-position='top')
-    pc-items-table(
-        table-title='::"My IGFS"'
-        column-defs='$ctrl.IGFSColumnDefs'
-        items='$ctrl.IGFSsTable'
-        on-action='$ctrl.onIGFSAction($event)'
-        selected-row-id='$ctrl.selectedItemIDs'
-        on-selection-change='$ctrl.selectionHook($event)'
+pc-items-table(
+    table-title='::"My IGFS"'
+    column-defs='$ctrl.IGFSColumnDefs'
+    items='$ctrl.IGFSsTable'
+    on-action='$ctrl.onIGFSAction($event)'
+    selected-row-id='$ctrl.selectedItemIDs'
+    on-selection-change='$ctrl.selectionHook($event)'
+)
+    footer-slot
+        div(style='font-style: italic' ng-hide='$ctrl.IGFSsTable.length')
+            | You have no IGFS. #[a.link-success(ng-click='createItem()') Create one?]
+        a.link-success(ng-click='createItem()' ng-show='$ctrl.IGFSsTable.length') + Add new IGFS
+
+h2.pc-page-header(ng-hide='backupItem.empty')
+    | {{ backupItem._id ? 'Edit' : 'Create' }} IGFS {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
+
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+        include /app/modules/states/configuration/igfs/general
+
+        include /app/modules/states/configuration/igfs/secondary
+        include /app/modules/states/configuration/igfs/ipc
+        include /app/modules/states/configuration/igfs/fragmentizer
+
+        //- Removed in ignite 2.0
+        include /app/modules/states/configuration/igfs/dual
+        include /app/modules/states/configuration/igfs/misc
+
+.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
+    .pc-form-actions-panel__right-after
+    button.btn-ignite.btn-ignite--link-success(
+        type='button'
+        ng-disabled='!ui.inputForm.$dirty'
+        ng-click='ui.inputForm.$dirty && resetAll()'
     )
-        footer-slot
-            div(style='font-style: italic' ng-hide='$ctrl.IGFSsTable.length')
-                | You have no IGFS. #[a.link-success(ng-click='createItem()') Create one?]
-            a.link-success(ng-click='createItem()' ng-show='$ctrl.IGFSsTable.length') + Add new IGFS
-
-    h2.pc-page-header(ng-hide='backupItem.empty')
-        | {{ backupItem._id ? 'Edit' : 'Create' }} IGFS {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
-
-    div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-        form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
-            include /app/modules/states/configuration/igfs/general
-
-            include /app/modules/states/configuration/igfs/secondary
-            include /app/modules/states/configuration/igfs/ipc
-            include /app/modules/states/configuration/igfs/fragmentizer
-
-            //- Removed in ignite 2.0
-            include /app/modules/states/configuration/igfs/dual
-            include /app/modules/states/configuration/igfs/misc
-
-    .pc-form-actions-panel
-        .pc-form-actions-panel__right-after
-        button.btn-ignite.btn-ignite--link-success(
-            type='button'
-            ng-disabled='!ui.inputForm.$dirty'
-            ng-click='ui.inputForm.$dirty && resetAll()'
-        )
-            | Cancel
-        button.btn-ignite.btn-ignite--success(
-            ng-disabled='!ui.inputForm.$dirty'
-            ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
-        ) Save
+        | Cancel
+    button.btn-ignite.btn-ignite--success(
+        ng-disabled='!ui.inputForm.$dirty'
+        ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+    ) Save
