@@ -47,7 +47,15 @@ export default class Clusters {
     }
 
     getClusterCaches(clusterID) {
-        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/caches/`);
+        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/caches`);
+    }
+
+    getClusterModels(clusterID) {
+        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/models`);
+    }
+
+    getClusterIGFSs(clusterID) {
+        return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/igfss`);
     }
 
     getClustersOverview() {

@@ -15,21 +15,14 @@
  * limitations under the License.
  */
 
-import angular from 'angular';
-import component from './component';
-import service from './service';
+export default class Models {
+    static $inject = ['$http'];
 
-import cluster from './components/page-configure-advanced-cluster';
-import models from './components/page-configure-advanced-models';
-import caches from './components/page-configure-advanced-caches';
-import igfs from './components/page-configure-advanced-igfs';
+    constructor($http) {
+        Object.assign(this, {$http});
+    }
 
-export default angular
-    .module('ignite-console.page-configure-advanced', [
-        cluster.name,
-        models.name,
-        caches.name,
-        igfs.name
-    ])
-    .component('pageConfigureAdvanced', component)
-    .service('PageConfigureAdvanced', service);
+    getModel(modelID) {
+        return this.$http.get(`/api/v1/configuration/domains/${modelID}`);
+    }
+}

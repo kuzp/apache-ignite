@@ -15,11 +15,62 @@
  * limitations under the License.
  */
 
+import get from 'lodash/get';
 import templateUrl from 'views/configuration/domains-import.tpl.pug';
 
 // Controller for Domain model screen.
-export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'AgentManager', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'JavaTypes', 'SqlTypes', 'IgniteActivitiesData', 'IgniteVersion', '$q',
-    function($root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version, $q) {
+export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'AgentManager', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'JavaTypes', 'SqlTypes', 'IgniteActivitiesData', 'IgniteVersion', '$q',
+    function($transitions, ConfigureState, $root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version, $q) {
+        Object.assign(this, {$transitions, ConfigureState, $scope, $state, Confirm});
+
+        this.$onInit = function() {
+            this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+            this.off = this.$transitions.onBefore({
+                from: 'base.configuration.tabs.advanced.models.model'
+            }, ($transition$) => {
+                // TODO Find a better way to prevent target
+                const oldID = this.$state.params.igfsID;
+                return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
+                    You have unsaved changes. Are you sure want to discard them?
+                `).catch(() => {
+                    this.selectedItemIDs = [oldID];
+                    return Promise.reject();
+                });
+            });
+        };
+
+        this.$onDestroy = function() {
+            this.subscription.unsubscribe();
+            this.off();
+        };
+
+        this.getObservable = function(state$) {
+            return state$.pluck('clusterConfiguration').do((value) => this.applyValue(value));
+        };
+
+        this.applyValue = function(state) {
+            this.$scope.$applyAsync(() => {
+                this.assignModels(state.originalModels);
+                this.$scope.selectItem(state.originalModel);
+                this.selectedItemIDs = [state.originalModel._id];
+            });
+        };
+
+        this.assignModels = function(models) {
+            this.$scope.domains = models;
+            this.modelsTable = this.buildModelsTable(models);
+        };
+
+        this.selectionHook = function(selected) {
+            this.selectedItemIDs = selected.map((r) => r._id);
+            if (selected.length !== 1) this.$scope.selectItem(null);
+            return this.selectedItemIDs.length === 1
+                ? this.$state.go('base.configuration.tabs.advanced.models.model', {
+                    modelID: this.selectedItemIDs[0]
+                })
+                : this.$state.go('base.configuration.tabs.advanced.models');
+        };
+
         this.modelsColumnDefs = [];
         this.modelsTable = [];
         this.buildModelsTable = (models = []) => models.map((i) => ({
@@ -65,7 +116,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
             }
         };
 
-        UnsavedChangesGuard.install($scope);
+        // UnsavedChangesGuard.install($scope);
 
         this.available = Version.available.bind(Version);
 
@@ -1305,50 +1356,33 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
         };
 
         $scope.selectItem = function(item, backup) {
-            function selectItem() {
-                clearFormDefaults($scope.ui.inputForm);
+            clearFormDefaults($scope.ui.inputForm);
 
-                LegacyTable.tableReset();
+            LegacyTable.tableReset();
 
-                $scope.selectedItem = item;
+            $scope.selectedItem = item;
 
-                try {
-                    if (item && item._id)
-                        sessionStorage.lastSelectedDomain = angular.toJson(item._id);
-                    else
-                        sessionStorage.removeItem('lastSelectedDomain');
-                }
-                catch (ignored) {
-                    // Ignore possible errors when read from storage.
-                }
+            if (backup)
+                $scope.backupItem = backup;
+            else if (item)
+                $scope.backupItem = angular.copy(item);
+            else
+                $scope.backupItem = emptyDomain;
 
-                if (backup)
-                    $scope.backupItem = backup;
-                else if (item)
-                    $scope.backupItem = angular.copy(item);
-                else
-                    $scope.backupItem = emptyDomain;
+            $scope.backupItem = _.merge({}, blank, $scope.backupItem);
 
-                $scope.backupItem = _.merge({}, blank, $scope.backupItem);
-
-                if ($scope.ui.inputForm) {
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
-                }
-
-                __original_value = ModelNormalizer.normalize($scope.backupItem);
-
-                if (LegacyUtils.isDefined($scope.backupItem) && !LegacyUtils.isDefined($scope.backupItem.queryMetadata))
-                    $scope.backupItem.queryMetadata = 'Configuration';
-
-                if (LegacyUtils.isDefined($scope.selectedItem) && !LegacyUtils.isDefined($scope.selectedItem.queryMetadata))
-                    $scope.selectedItem.queryMetadata = 'Configuration';
-
-                if (LegacyUtils.getQueryVariable('new'))
-                    $state.go('base.configuration.tabs.advanced.domains');
+            if ($scope.ui.inputForm) {
+                $scope.ui.inputForm.$error = {};
+                $scope.ui.inputForm.$setPristine();
             }
 
-            FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
+            __original_value = ModelNormalizer.normalize($scope.backupItem);
+
+            if (LegacyUtils.isDefined($scope.backupItem) && !LegacyUtils.isDefined($scope.backupItem.queryMetadata))
+                $scope.backupItem.queryMetadata = 'Configuration';
+
+            if (LegacyUtils.isDefined($scope.selectedItem) && !LegacyUtils.isDefined($scope.selectedItem.queryMetadata))
+                $scope.selectedItem.queryMetadata = 'Configuration';
         };
 
         // Add new domain model.

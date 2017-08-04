@@ -115,6 +115,8 @@ export const RECEIVE_CACHES_EDIT = Symbol('RECEIVE_CACHES_EDIT');
 export const RECEIVE_CACHE_EDIT = Symbol('RECEIVE_CACHES_EDIT');
 export const RECEIVE_IGFSS_EDIT = Symbol('RECEIVE_IGFSS_EDIT');
 export const RECEIVE_IGFS_EDIT = Symbol('RECEIVE_IGFS_EDIT');
+export const RECEIVE_MODELS_EDIT = Symbol('RECEIVE_MODELS_EDIT');
+export const RECEIVE_MODEL_EDIT = Symbol('RECEIVE_MODEL_EDIT');
 
 export const editReducer = (state = {originalCluster: null}, action) => {
     switch (action.type) {
@@ -147,6 +149,18 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return {
                 ...state,
                 originalIGFS: action.igfs
+            };
+        }
+        case RECEIVE_MODELS_EDIT:
+            return {
+                ...state,
+                originalModels: action.models,
+                nowModels: []
+            };
+        case RECEIVE_MODEL_EDIT: {
+            return {
+                ...state,
+                originalModel: action.model
             };
         }
         default:

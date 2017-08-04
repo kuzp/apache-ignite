@@ -20,7 +20,7 @@ export default class PageConfigureAdvancedController {
 
     static menuItems = [
         { text: 'Cluster', sref: 'base.configuration.tabs.advanced.cluster' },
-        { text: 'Model', sref: 'base.configuration.tabs.advanced.domains' },
+        { text: 'SQL Scheme', sref: 'base.configuration.tabs.advanced.models' },
         { text: 'Caches', sref: 'base.configuration.tabs.advanced.caches' },
         { text: 'IGFS', sref: 'base.configuration.tabs.advanced.igfs' }
     ];

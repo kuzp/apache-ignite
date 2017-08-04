@@ -19,9 +19,9 @@ div(ignite-loading='loadingDomainModelsScreen' ignite-loading-text='Loading doma
         table-title='::"My domain models"'
         column-defs='$ctrl.modelsColumnDefs'
         items='$ctrl.modelsTable'
-        immediate-edit='true'
         on-action='$ctrl.onModelAction($event)'
-        selected-row-id='backupItem'
+        selected-row-id='$ctrl.selectedItemIDs'
+        on-selection-change='$ctrl.selectionHook($event)'
     )
         footer-slot
             div(style='font-style: italic' ng-hide='$ctrl.modelsTable.length')

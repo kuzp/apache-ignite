@@ -94,6 +94,7 @@ import UnsavedChangesGuard from './services/UnsavedChangesGuard.service';
 import Clusters from './services/Clusters';
 import Caches from './services/Caches';
 import IGFSs from './services/IGFSs';
+import Models from './services/Models';
 
 import AngularStrapTooltip from './services/AngularStrapTooltip.decorator';
 import AngularStrapSelect from './services/AngularStrapSelect.decorator';
@@ -260,6 +261,7 @@ angular.module('ignite-console', [
 .service('Clusters', Clusters)
 .service('Caches', Caches)
 .service('IGFSs', IGFSs)
+.service('Models', Models)
 // Controllers.
 .controller(...resetPassword)
 .controller(...profile)
