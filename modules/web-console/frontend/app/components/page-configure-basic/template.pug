@@ -126,7 +126,7 @@ form(novalidate name=form)
             ng-click='$ctrl.addCache()'
         )
             | + Add one more cache
-        a.link-primary.pcb-select-existing-cache(ng-show='$ctrl.caches.size')
+        a.link-primary.pcb-select-existing-cache(ng-show='$ctrl.caches.length')
             button(
                 bs-select
                 ng-model='$ctrl.oldClusterCaches'

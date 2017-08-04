@@ -55,7 +55,9 @@ export default class PageConfigureBasicController {
         return state$.pluck('clusterConfiguration')
         .combineLatest(version$, (clusterConfiguration, version) => ({
             clusterConfiguration,
+            caches: clusterConfiguration.originalCaches,
             allClusterCaches: this.getAllClusterCaches(clusterConfiguration),
+            cachesMenu: this.getCachesMenu(this.getAllClusterCaches(clusterConfiguration)),
             defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(clusterConfiguration.originalCluster),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
         }))
