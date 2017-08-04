@@ -96,25 +96,30 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => Promise.all([
                     mongo.Cluster.find({space: {$in: spaceIds}}).select('name discovery.kind caches igfss').sort('name').lean().exec(),
-                    mongo.Cache.aggregate([{$match: {space: {$in: spaceIds}}}, {$unwind: '$domains'}, {$group: {_id: '$_id', domains: { $addToSet: '$domains' }}}]).exec()
+                    mongo.Cache.find({space: {$in: spaceIds}}).select('domains').lean().exec()
                 ])
-                .then(([clusters, caches]) => _.map(clusters, (cluster) => {
-                    const modelsCount = _.reduce(caches, (acc, c) => {
-                        if (_.find(cluster.caches, (id) => _.isEqual(id, c._id)))
-                            return acc + _.size(c.domains);
+                .then(([clusters, caches]) => {
+                    const cmap = _.keyBy(caches, '_id');
 
-                        return acc;
-                    }, 0);
+                    return _.map(clusters, (cluster) => {
+                        const models = _.reduce(cluster.caches, (acc, cacheId) => {
+                            const models = _.map(_.get(cmap[cacheId], 'domains'), (modelId) => modelId.toString());
 
-                    return {
-                        _id: cluster._id,
-                        name: cluster.name,
-                        discovery: cluster.discovery.kind,
-                        cachesCount: _.size(cluster.caches),
-                        modelsCount,
-                        igfsCount: _.size(cluster.igfss)
-                    };
-                })));
+                            acc.add(...models);
+
+                            return acc;
+                        }, new Set());
+
+                        return {
+                            _id: cluster._id,
+                            name: cluster.name,
+                            discovery: cluster.discovery.kind,
+                            cachesCount: _.size(cluster.caches),
+                            modelsCount: models.size,
+                            igfsCount: _.size(cluster.igfss)
+                        };
+                    });
+                }));
         }
 
         static get(userId, demo, _id) {
