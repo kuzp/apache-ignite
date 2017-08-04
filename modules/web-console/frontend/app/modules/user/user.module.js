@@ -86,6 +86,11 @@ angular.module('ignite-console.user', [
 
                 return $state.target(trans.to().failState || '403');
             })
-            .catch(() => false);
+            .catch(() => {
+                if (_.includes(['', 'signin'], name))
+                    return true;
+
+                return $state.target('signin');
+            });
     });
 }]);

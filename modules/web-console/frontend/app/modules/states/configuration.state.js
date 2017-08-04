@@ -86,9 +86,13 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         // TODO IGNITE-5271: remove when advanced config is hooked into ConfigureState too.
                         // This resolve ensures that basic always has fresh data, i.e. after going back from advanced
                         // after adding a cluster.
-                        return configuration.read().then((data) => {
-                            pageConfigure.loadList(data);
-                        });
+                        return configuration.read()
+                            .then((data) => {
+                                pageConfigure.loadList(data);
+                            })
+                            .catch(() => {
+                                pageConfigure.loadList({});
+                            });
                     }]
                 }
             })

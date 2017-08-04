@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import _ from 'lodash';
+
 export const LOAD_LIST = Symbol('LOAD_LIST');
 export const ADD_CLUSTER = Symbol('ADD_CLUSTER');
 export const REMOVE_CLUSTER = Symbol('REMOVE_CLUSTER');
@@ -27,7 +29,7 @@ export const REMOVE_CACHE = Symbol('REMOVE_CACHE');
 
 const defaults = {clusters: new Map(), caches: new Map(), spaces: new Map()};
 const mapByID = (array) => {
-    return new Map(array.map((item) => [item._id, item]));
+    return new Map(_.map(array, (item) => [item._id, item]));
 };
 
 export const reducer = (state = defaults, action) => {
