@@ -41,7 +41,7 @@ angular
 
                         return restored.valid() ? restored : 'base.configuration.overview';
                     } catch (ignored) {
-                        return 'base.configuration.tabs';
+                        return 'base.configuration.overview';
                     }
                 })
                 .catch(() => true);
