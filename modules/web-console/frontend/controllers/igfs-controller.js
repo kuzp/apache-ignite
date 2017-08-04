@@ -77,7 +77,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
             this.$scope.$applyAsync(() => {
                 this.assignIGFSs(state.originalIGFSs);
                 this.$scope.selectItem(state.originalIGFS);
-                this.selectedItemIDs = [state.originalIGFS._id];
+                if (state.originalIGFS) this.selectedItemIDs = [state.originalIGFS._id];
             });
         };
 

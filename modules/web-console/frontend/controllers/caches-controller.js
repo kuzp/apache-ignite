@@ -55,7 +55,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
             this.$scope.$applyAsync(() => {
                 this.assignCaches(state.originalCaches);
                 this.$scope.selectItem(state.originalCache);
-                this.selectedItemIDs = [state.originalCache._id];
+                if (state.originalCache) this.selectedItemIDs = [state.originalCache._id];
             });
         };
 
