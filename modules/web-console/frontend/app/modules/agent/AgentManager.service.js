@@ -18,7 +18,7 @@
 import _ from 'lodash';
 import negate from 'lodash/negate';
 import isNil from 'lodash/isNil';
-const nonNil = negate(isNil);
+import {nonEmpty, nonNil} from 'app/utils/lodashMixins';
 
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
@@ -75,7 +75,7 @@ class ConnectionState {
     }
 
     useConnectedCluster() {
-        if (_.nonEmpty(this.clusters) && !this.cluster.connected) {
+        if (nonEmpty(this.clusters) && !this.cluster.connected) {
             this.cluster = _.head(this.clusters);
 
             this.cluster.connected = true;
