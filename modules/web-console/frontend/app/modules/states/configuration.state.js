@@ -24,16 +24,6 @@ import previewPanel from './configuration/preview-panel.directive.js';
 import ConfigurationResource from './configuration/Configuration.resource';
 import IgniteSummaryZipper from './configuration/summary/summary-zipper.service';
 
-import clustersTpl from 'views/configuration/clusters.tpl.pug';
-import cachesTpl from 'views/configuration/caches.tpl.pug';
-import domainsTpl from 'views/configuration/domains.tpl.pug';
-import igfsTpl from 'views/configuration/igfs.tpl.pug';
-
-// import clustersCtrl from 'Controllers/clusters-controller';
-import domainsCtrl from 'Controllers/domains-controller';
-import cachesCtrl from 'Controllers/caches-controller';
-import igfsCtrl from 'Controllers/igfs-controller';
-
 import base2 from 'views/base2.pug';
 
 import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
@@ -55,7 +45,7 @@ import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-ad
 
 
 // TODO: move into effects or service
-const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
     const {clusterID} = $transition$.params();
     ConfigureState.dispatchAction({
         type: SHOW_CONFIG_LOADING,
@@ -72,6 +62,16 @@ const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, 
                 caches: data
             });
             return data;
+        })
+        .catch((e) => {
+            ConfigureState.dispatchAction({
+                type: HIDE_CONFIG_LOADING
+            });
+            $transition$.router.stateService.go('base.configuration.overview', null, {
+                location: 'replace'
+            });
+            IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${e.message}`);
+            return Promise.reject(e);
         });
 }];
 
@@ -124,7 +124,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {
-                    cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
+                    cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
                         const newCluster = Promise.resolve(Clusters.getBlankCluster());
                         const {clusterID} = $transition$.params();
                         const cluster = clusterID === 'new'
@@ -149,6 +149,13 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 cluster
                             });
                             return cluster;
+                        })
+                        .catch((e) => {
+                            IgniteMessages.showError(`Failed to load cluster ${clusterID}. ${e.message}`);
+                            $transition$.router.stateService.go('base.configuration.overview', null, {
+                                location: 'replace'
+                            });
+                            return Promise.reject(e);
                         });
                     }]
                 },
@@ -170,28 +177,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/basic',
                 permission: 'configuration',
                 resolve: {
-                    caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
-                        const {clusterID} = $transition$.params();
-                        const caches = clusterID === 'new'
-                            ? Promise.resolve([])
-                            : Clusters.getClusterCaches(clusterID).then(({data}) => data);
-
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading caches…'
-                        });
-
-                        return caches.then((caches) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_CACHES_EDIT,
-                                caches
-                            });
-                            return caches;
-                        });
-                    }]
+                    caches: cachesResolve
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
