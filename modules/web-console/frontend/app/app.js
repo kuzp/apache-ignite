@@ -95,6 +95,7 @@ import Caches from './services/Caches';
 import {CSV} from './services/CSV';
 import {$exceptionHandler} from './services/exceptionHandler.js';
 import IGFSs from './services/IGFSs';
+import Models from './services/Models';
 
 import AngularStrapTooltip from './services/AngularStrapTooltip.decorator';
 import AngularStrapSelect from './services/AngularStrapSelect.decorator';
@@ -272,6 +273,7 @@ angular.module('ignite-console', [
 .service('Caches', Caches)
 .service(CSV.name, CSV)
 .service('IGFSs', IGFSs)
+.service('Models', Models)
 // Controllers.
 .controller(...resetPassword)
 .controller(...profile)

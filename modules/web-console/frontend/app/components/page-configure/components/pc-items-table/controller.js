@@ -44,7 +44,6 @@ export default class ItemsTableController {
             onRegisterApi: (api) => {
                 this.gridAPI = api;
                 api.selection.on.rowSelectionChanged(this.$scope, (row, e) => {
-                    // e.isSelected = false;
                     this.onRowsSelectionChange([row], e);
                 });
                 api.selection.on.rowSelectionChangedBatch(this.$scope, (rows, e) => {
@@ -62,7 +61,7 @@ export default class ItemsTableController {
         this.onRowsSelectionChange = debounce(this.onRowsSelectionChange);
     }
 
-    onRowsSelectionChange(rows, e) {
+    onRowsSelectionChange(rows, e = {}) {
         this.actionsMenu = this.makeActionsMenu();
         if (e.ignore) return;
         const selected = this.gridAPI.selection.getSelectedRows();

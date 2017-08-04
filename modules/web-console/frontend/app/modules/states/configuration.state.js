@@ -41,11 +41,13 @@ import {
     RECEIVE_CLUSTER_EDIT,
     RECEIVE_CACHES_EDIT,
     RECEIVE_CACHE_EDIT,
+    RECEIVE_MODELS_EDIT,
+    RECEIVE_MODEL_EDIT,
     RECEIVE_IGFSS_EDIT,
     RECEIVE_IGFS_EDIT
 } from 'app/components/page-configure/reducer';
 import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
-import pageConfigureAdvancedDomainsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-domains/component';
+import pageConfigureAdvancedModelsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-models/component';
 import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
 import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
@@ -216,12 +218,63 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure Caches'
                 }
             })
-            .state('base.configuration.tabs.advanced.domains', {
-                url: '/domains',
-                component: pageConfigureAdvancedDomainsComponent.name,
+            .state('base.configuration.tabs.advanced.models', {
+                url: '/models',
+                component: pageConfigureAdvancedModelsComponent.name,
                 permission: 'configuration',
+                resolve: {
+                    models: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+                        const {clusterID} = $transition$.params();
+                        return clusterID === 'new'
+                            ? Promise.resolve([])
+                            : Clusters.getClusterModels(clusterID).then(({data}) => {
+                                ConfigureState.dispatchAction({
+                                    type: RECEIVE_MODELS_EDIT,
+                                    models: data
+                                });
+                                return data;
+                            });
+                    }]
+                },
+                redirectTo: ($transition$) => {
+                    const modelStateName = 'base.configuration.tabs.advanced.models.model';
+                    const fromState = $transition$.from();
+                    const toState = $transition$.to();
+                    return fromState.name === modelStateName
+                        ? toState
+                        : $transition$.injector().getAsync('models').then((models) => {
+                            return models.length
+                                ? {
+                                    state: modelStateName,
+                                    params: {
+                                        modelID: models[0]._id,
+                                        clusterID: $transition$.params().clusterID
+                                    }
+                                }
+                                : toState;
+                        });
+                },
                 tfMetaTags: {
-                    title: 'Configure Domain Model'
+                    title: 'Configure SQL Schemes'
+                }
+            })
+            .state('base.configuration.tabs.advanced.models.model', {
+                url: '/{modelID:string}',
+                resolve: {
+                    model: ['Models', '$transition$', 'ConfigureState', (Models, $transition$, ConfigureState) => {
+                        const {modelID, clusterID} = $transition$.params();
+                        const model = modelID
+                            ? Models.getModel(modelID).then(({data}) => data)
+                            : Promise.resolve(null);
+
+                        return model.then((model) => {
+                            ConfigureState.dispatchAction({
+                                type: RECEIVE_MODEL_EDIT,
+                                model
+                            });
+                            return model;
+                        });
+                    }]
                 }
             })
             .state('base.configuration.tabs.advanced.igfs', {
@@ -229,17 +282,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedIGFSComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    igfss: ['IgniteConfigurationResource', '$transition$', 'ConfigureState', (IgniteConfigurationResource, $transition$, ConfigureState) => {
+                    igfss: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
                         const {clusterID} = $transition$.params();
                         return clusterID === 'new'
                             ? Promise.resolve([])
-                            : IgniteConfigurationResource.read().then(({igfss}) => {
-                                igfss = igfss.filter((i) => i.clusters.some((id) => id === clusterID));
+                            : Clusters.getClusterIGFSs(clusterID).then(({data}) => {
                                 ConfigureState.dispatchAction({
                                     type: RECEIVE_IGFSS_EDIT,
-                                    igfss
+                                    igfss: data
                                 });
-                                return igfss;
+                                return data;
                             });
                     }]
                 },
@@ -268,10 +320,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.tabs.advanced.igfs.igfs', {
                 url: '/{igfsID:string}',
                 resolve: {
-                    igfs: ['IgniteConfigurationResource', '$transition$', 'ConfigureState', (IgniteConfigurationResource, $transition$, ConfigureState) => {
+                    igfs: ['IGFSs', '$transition$', 'ConfigureState', (IGFSs, $transition$, ConfigureState) => {
                         const {igfsID, clusterID} = $transition$.params();
                         const igfs = igfsID
-                            ? IgniteConfigurationResource.read().then(({igfss}) => igfss.filter((i) => i.clusters.some((id) => id === clusterID)).find((i) => i._id === igfsID))
+                            ? IGFSs.getIGFS(igfsID).then(({data}) => data)
                             : Promise.resolve(null);
 
                         return igfs.then((igfs) => {

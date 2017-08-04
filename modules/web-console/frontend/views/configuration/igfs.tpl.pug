@@ -19,9 +19,9 @@ div(ignite-loading='loadingIgfsScreen' ignite-loading-text='Loading IGFS...' ign
         table-title='::"My IGFS"'
         column-defs='$ctrl.IGFSColumnDefs'
         items='$ctrl.IGFSsTable'
-        immediate-edit='true'
         on-action='$ctrl.onIGFSAction($event)'
-        selected-row-id='backupItem'
+        selected-row-id='$ctrl.selectedItemIDs'
+        on-selection-change='$ctrl.selectionHook($event)'
     )
         footer-slot
             div(style='font-style: italic' ng-hide='$ctrl.IGFSsTable.length')

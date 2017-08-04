@@ -83,7 +83,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Models',
                 field: 'modelsCount',
                 cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.domains({clusterID: '${row.entity._id}'})`,
+                url: (row) => `base.configuration.tabs.advanced.models({clusterID: '${row.entity._id}'})`,
                 cellTemplate,
                 enableFiltering: false,
                 width: 95

@@ -16,10 +16,20 @@
  */
 
 export default class IGFSs {
+    static $inject = ['$http'];
+
     igfsModes = [
         {value: 'PRIMARY', label: 'PRIMARY'},
         {value: 'PROXY', label: 'PROXY'},
         {value: 'DUAL_SYNC', label: 'DUAL_SYNC'},
         {value: 'DUAL_ASYNC', label: 'DUAL_ASYNC'}
     ];
+
+    constructor($http) {
+        Object.assign(this, {$http});
+    }
+
+    getIGFS(igfsID) {
+        return this.$http.get(`/api/v1/configuration/igfs/${igfsID}`);
+    }
 }

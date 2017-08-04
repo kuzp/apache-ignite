@@ -18,9 +18,9 @@
 import get from 'lodash/get';
 
 // Controller for IGFS screen.
-export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
-    function(ConfigureState, $scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q, IGFSs) {
-        Object.assign(this, {ConfigureState, $scope, $state});
+export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
+    function($transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, LegacyTable, Resource, ErrorPopover, FormUtils, Version, $q, IGFSs) {
+        Object.assign(this, {$transitions, ConfigureState, $scope, $state, Confirm});
 
         this.available = Version.available.bind(Version);
 
@@ -49,10 +49,26 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
 
         this.$onInit = function() {
             this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+            this.off = this.$transitions.onBefore({
+                from: 'base.configuration.tabs.advanced.igfs.igfs'
+            }, ($transition$) => {
+                // TODO Find a better way to prevent target
+                const oldID = this.$state.params.igfsID;
+                return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
+                    You have unsaved changes. Are you sure want to discard them?
+                `).catch(() => {
+                    this.selectedItemIDs = [oldID];
+                    return Promise.reject();
+                });
+            });
+        };
+
+        this.$onDestroy = function() {
+            this.subscription.unsubscribe();
+            this.off();
         };
 
         this.getObservable = function(state$) {
-            // return state$.pluck('clusterConfiguration.originalCaches').distinctUntilChanged()
             return state$.pluck('clusterConfiguration')
             .do((value) => this.applyValue(value));
         };
@@ -61,12 +77,23 @@ export default ['ConfigureState', '$scope', '$http', '$state', '$filter', '$time
             this.$scope.$applyAsync(() => {
                 this.assignIGFSs(state.originalIGFSs);
                 this.$scope.selectItem(state.originalIGFS);
+                this.selectedItemIDs = [state.originalIGFS._id];
             });
         };
 
         this.assignIGFSs = function(igfss) {
             this.$scope.igfss = igfss;
             this.IGFSsTable = this.buildIGFSsTable(this.$scope.igfss);
+        };
+
+        this.selectionHook = function(selected) {
+            this.selectedItemIDs = selected.map((r) => r._id);
+            if (selected.length !== 1) this.$scope.selectItem(null);
+            return this.selectedItemIDs.length === 1
+                ? this.$state.go('base.configuration.tabs.advanced.igfs.igfs', {
+                    igfsID: this.selectedItemIDs[0]
+                })
+                : this.$state.go('base.configuration.tabs.advanced.igfs');
         };
 
         $scope.tableSave = function(field, index, stopEdit) {
