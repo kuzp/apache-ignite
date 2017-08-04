@@ -29,7 +29,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
                 from: 'base.configuration.tabs.advanced.models.model'
             }, ($transition$) => {
                 // TODO Find a better way to prevent target
-                const oldID = this.$state.params.igfsID;
+                const oldID = this.$state.params.modelID;
                 return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
                     You have unsaved changes. Are you sure want to discard them?
                 `).catch(() => {
