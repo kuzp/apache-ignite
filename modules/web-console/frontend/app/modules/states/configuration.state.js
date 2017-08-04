@@ -51,6 +51,21 @@ import pageConfigureAdvancedModelsComponent from 'app/components/page-configure-
 import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
 import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
+
+// TODO: move into effects or service
+const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+    const {clusterID} = $transition$.params();
+    return clusterID === 'new'
+        ? Promise.resolve([])
+        : Clusters.getClusterCaches(clusterID).then(({data}) => {
+            ConfigureState.dispatchAction({
+                type: RECEIVE_CACHES_EDIT,
+                caches: data
+            });
+            return data;
+        });
+}];
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
@@ -160,18 +175,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
-                    caches: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
-                        const {clusterID} = $transition$.params();
-                        return clusterID === 'new'
-                            ? Promise.resolve([])
-                            : Clusters.getClusterCaches(clusterID).then(({data}) => {
-                                ConfigureState.dispatchAction({
-                                    type: RECEIVE_CACHES_EDIT,
-                                    caches: data
-                                });
-                                return data;
-                            });
-                    }]
+                    caches: cachesResolve
                 },
                 redirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
@@ -234,7 +238,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 });
                                 return data;
                             });
-                    }]
+                    }],
+                    caches: cachesResolve
                 },
                 redirectTo: ($transition$) => {
                     const modelStateName = 'base.configuration.tabs.advanced.models.model';

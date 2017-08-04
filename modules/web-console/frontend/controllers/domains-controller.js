@@ -23,6 +23,12 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
     function($transitions, ConfigureState, $root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version, $q) {
         Object.assign(this, {$transitions, ConfigureState, $scope, $state, Confirm});
 
+        function _mapCaches(caches) {
+            return caches.map((cache) => {
+                return {label: cache.name, value: cache._id, cache};
+            });
+        }
+
         this.$onInit = function() {
             this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
             this.off = this.$transitions.onBefore({
@@ -53,6 +59,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
                 this.assignModels(state.originalModels);
                 this.$scope.selectItem(state.originalModel);
                 this.selectedItemIDs = [state.originalModel._id];
+                this.$scope.caches = _mapCaches(state.originalCaches);
             });
         };
 
@@ -164,12 +171,6 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
         $scope.ui.generateTypeAliases = true;
         $scope.ui.generateFieldAliases = true;
         $scope.ui.generatedCachesClusters = [];
-
-        function _mapCaches(caches) {
-            return _.map(caches, (cache) => {
-                return {label: cache.name, value: cache._id, cache};
-            });
-        }
 
         $scope.contentVisible = function() {
             return !$scope.backupItem.empty;
