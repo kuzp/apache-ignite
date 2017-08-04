@@ -240,6 +240,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? Caches.getCache(cacheID).then(({data}) => data)
                             : Promise.resolve(null);
                         ConfigureState.dispatchAction({
+                            type: RECEIVE_CACHE_EDIT,
+                            cache: null
+                        });
+                        ConfigureState.dispatchAction({
                             type: SHOW_CONFIG_LOADING,
                             loadingText: 'Loading cache…'
                         });
@@ -323,6 +327,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             : Promise.resolve(null);
 
                         ConfigureState.dispatchAction({
+                            type: RECEIVE_MODEL_EDIT,
+                            model: null
+                        });
+                        ConfigureState.dispatchAction({
                             type: SHOW_CONFIG_LOADING,
                             loadingText: 'Loading model…'
                         });
@@ -401,6 +409,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const igfs = igfsID
                             ? IGFSs.getIGFS(igfsID).then(({data}) => data)
                             : Promise.resolve(null);
+                        ConfigureState.dispatchAction({
+                            type: RECEIVE_IGFS_EDIT,
+                            igfs: null
+                        });
                         ConfigureState.dispatchAction({
                             type: SHOW_CONFIG_LOADING,
                             loadingText: 'Loading IGFS…'
