@@ -33,7 +33,11 @@ const allNames = (items) => items.map((i) => i.name).join(', ');
 
 const cellTemplate = `
     <div class="ui-grid-cell-contents">
-        <a class="link-success" ui-sref="{{ ::col.colDef.url(row) }}")>{{ row.entity[col.field] }}</a>
+        <a
+            class="link-success"
+            ui-sref="{{ ::col.colDef.url(row) }}")
+            title='Click to edit'
+        >{{ row.entity[col.field] }}</a>
     </div>
 `;
 
