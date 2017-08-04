@@ -23,7 +23,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
     function($transitions, ConfigureState, $root, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Focus, Confirm, ConfirmBatch, Input, Loading, ModelNormalizer, UnsavedChangesGuard, agentMgr, LegacyTable, Resource, ErrorPopover, FormUtils, JavaTypes, SqlTypes, ActivitiesData, Version, $q) {
         Object.assign(this, {$transitions, ConfigureState, $scope, $state, Confirm});
 
-        function _mapCaches(caches) {
+        function _mapCaches(caches = []) {
             return caches.map((cache) => {
                 return {label: cache.name, value: cache._id, cache};
             });

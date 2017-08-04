@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import get from 'lodash/get';
+
 // Controller for Clusters screen.
 export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
     function(ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
@@ -30,7 +32,7 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
 
         this.uiCanExit = function() {
             // TODO Refactor this
-            return !this.$scope.ui.inputForm.$dirty || this.Confirm.confirm(`
+            return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
                 You have unsaved changes. Are you sure want to discard them?
             `);
         };
