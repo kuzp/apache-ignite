@@ -98,6 +98,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.overview', {
                 url: '/configuration/overview',
                 component: 'pageConfigureOverview',
+                permission: 'configuration',
                 metaTags: {
                     title: 'Configuration'
                 },
@@ -177,6 +178,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.tabs.basic', {
                 url: '/basic',
+                component: 'pageConfigureBasic',
                 permission: 'configuration',
                 resolve: {
                     caches: cachesResolve
@@ -191,6 +193,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.tabs.advanced', {
                 url: '/advanced',
                 component: 'pageConfigureAdvanced',
+                permission: 'configuration',
                 redirectTo: 'base.configuration.tabs.advanced.cluster'
             })
             .state('base.configuration.tabs.advanced.cluster', {
@@ -235,6 +238,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.tabs.advanced.caches.cache', {
                 url: '/{cacheID:string}',
+                permission: 'configuration',
                 resolve: {
                     cache: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
                         const {cacheID} = $transition$.params();
@@ -349,6 +353,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         });
                     }]
                 },
+                permission: 'configuration',
                 resolvePolicy: {
                     async: 'NOWAIT'
                 }
@@ -405,6 +410,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.tabs.advanced.igfs.igfs', {
                 url: '/{igfsID:string}',
+                permission: 'configuration',
                 resolve: {
                     igfs: ['IGFSs', '$transition$', 'ConfigureState', (IGFSs, $transition$, ConfigureState) => {
                         const {igfsID, clusterID} = $transition$.params();
