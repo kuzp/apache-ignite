@@ -16,6 +16,7 @@
  */
 
 'use strict';
+import Invites from "../../frontend/app/services/Invites";
 
 // Fire me up!
 
@@ -44,11 +45,8 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                 .catch(res.api.error);
         });
 
-        /**
-         * Register new account.
-         */
-        router.post('/signup', (req, res) => {
-            usersService.create(req.origin(), req.body)
+        const _signup = (req, res, user) => {
+            return usersService.create(req.origin(), user)
                 .then((user) => new Promise((resolve, reject) => {
                     req.logIn(user, {}, (err) => {
                         if (err)
@@ -59,12 +57,9 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                 }))
                 .then(res.api.ok)
                 .catch(res.api.error);
-        });
+        };
 
-        /**
-         * Sign in into exist account.
-         */
-        router.post('/signin', (req, res, next) => {
+        const _signin = (req, res, next, cb) => {
             passport.authenticate('local', (errAuth, user) => {
                 if (errAuth)
                     return res.status(401).send(errAuth.message);
@@ -76,9 +71,47 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                     if (errLogIn)
                         return res.status(401).send(errLogIn.message);
 
+                    if (cb)
+                        return cb(req, res);
+
                     return res.sendStatus(200);
                 });
             })(req, res, next);
+        };
+
+        /**
+         * Register new account.
+         */
+        router.post('/signup', (req, res) => _signup(req, res, req.body));
+
+        /**
+         * Sign in into exist account.
+         */
+        router.post('/signin', (req, res, next) => _signin(req, res, next));
+
+        /**
+         * Sign in into exist account.
+         */
+        router.post('/invite/accept', (req, res, next) => {
+            const data = req.body;
+
+            mongo.Invite.findOne({token: data.token});
+
+
+            if (data.existingUser)
+                return _signin(req, res, next);
+
+            const user = {
+                email: data.email
+            };
+
+            _signup(req, res, user)
+                .then((data) => {
+                    // TODO IGNITE-4775
+                    console.log("Accepted new user: " + data);
+                })
+                .then(res.api.ok)
+                .catch(res.api.error);
         });
 
         /**

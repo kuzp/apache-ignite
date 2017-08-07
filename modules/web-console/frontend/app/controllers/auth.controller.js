@@ -22,10 +22,12 @@ export default class SigninCtrl {
     constructor($scope, $uiRouterGlobals, Focus, Countries, Auth, Invites) {
         const self = this;
 
-        self.auth = Auth.auth;
+        self.signup = Auth.signup;
+        self.signin = Auth.signin;
+        self.acceptInvite = Auth.acceptInvite;
         self.forgotPassword = Auth.forgotPassword;
-        self.action = 'signin';
         self.countries = Countries.getAll();
+        self.action = 'signin';
         self.showSignIn = false;
         self.ui = {};
         self.ui_signup = {};
