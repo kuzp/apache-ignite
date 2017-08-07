@@ -16,6 +16,9 @@ export default {
         placeholder: '@',
         min: '@',
         tip: '@',
-        required: '<?'
+        required: '<?',
+        sizeScaleLabel: '@?',
+        onScaleChange: '&?',
+        ngDisabled: '<?'
     }
 };
