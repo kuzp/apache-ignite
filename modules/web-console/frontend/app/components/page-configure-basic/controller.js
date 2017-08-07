@@ -132,7 +132,7 @@ export default class PageConfigureBasicController {
     }
 
     getAllClusterCaches(state = {originalCaches: [], newCaches: []}) {
-        return [...state.originalCaches, ...state.newCaches];
+        return [...state.originalCaches || [], ...state.newCaches || []];
     }
 
     getDefaultClusterMemoryPolicy(cluster, version) {
