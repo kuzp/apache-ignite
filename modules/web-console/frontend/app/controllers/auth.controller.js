@@ -20,29 +20,28 @@ export default class SigninCtrl {
     static $inject = ['$scope', '$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites'];
 
     constructor($scope, $uiRouterGlobals, Focus, Countries, Auth, Invites) {
-        this.auth = Auth.auth;
-        this.forgotPassword = Auth.forgotPassword;
-        this.action = 'signin';
-        this.countries = Countries.getAll();
-        this.showSignIn = false;
-        this.ui = {};
-        this.ui_signup = {};
         const self = this;
 
-        this.invite = _.get($uiRouterGlobals.params, 'invite');
+        self.auth = Auth.auth;
+        self.forgotPassword = Auth.forgotPassword;
+        self.action = 'signin';
+        self.countries = Countries.getAll();
+        self.showSignIn = false;
+        self.ui = {};
+        self.ui_signup = {};
+        self.invite = {};
 
-        this.signInByInvite = _.nonEmpty(this.invite);
+        self.invite.token = _.get($uiRouterGlobals.params, 'invite');
 
-        if (this.signInByInvite) {
-            Invites.find(this.invite)
+        if (_.nonEmpty(self.invite.token)) {
+            Invites.find(self.invite.token)
                 .then((res) => {
-                    if (res.data.found) {
-                        self.ui.email = res.data.email;
-                        self.ui.company = res.data.organization.name;
-                    }
-                    else {
-                        self.ui_signup.email = res.data.email;
-                        self.ui_signup.company = res.data.organization.name;
+                    self.invite.found = res.data.found;
+
+                    if (self.invite.found) {
+                        self.invite.organization = res.data.organization.name;
+                        self.invite.existingUser = res.data.existingUser;
+                        self.invite.email = res.data.email;
                     }
 
                     self.showSignIn = true;
