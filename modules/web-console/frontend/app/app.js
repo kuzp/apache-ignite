@@ -44,6 +44,7 @@ import './modules/dialog/dialog.module';
 import './modules/ace.module';
 import './modules/socket.module';
 import './modules/loading/loading.module';
+import servicesModule from './services';
 // endignite
 
 // Data
@@ -90,7 +91,6 @@ import LegacyUtils from './services/LegacyUtils.service';
 import Messages from './services/Messages.service';
 import ModelNormalizer from './services/ModelNormalizer.service.js';
 import UnsavedChangesGuard from './services/UnsavedChangesGuard.service';
-import Clusters from './services/Clusters';
 import Caches from './services/Caches';
 import {CSV} from './services/CSV';
 import {$exceptionHandler} from './services/exceptionHandler.js';
@@ -221,6 +221,7 @@ angular.module('ignite-console', [
     AngularStrapSelect.name,
     listEditable.name,
     clusterSelector.name,
+    servicesModule.name,
     connectedClusters.name,
     igniteListOfRegisteredUsers.name,
     // Ignite modules.
@@ -269,7 +270,6 @@ angular.module('ignite-console', [
 .service(...LegacyUtils)
 .service(...UnsavedChangesGuard)
 .service('IgniteActivitiesUserDialog', IgniteActivitiesUserDialog)
-.service('Clusters', Clusters)
 .service('Caches', Caches)
 .service(CSV.name, CSV)
 .service('IGFSs', IGFSs)
