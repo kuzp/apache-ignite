@@ -9,18 +9,20 @@ include /app/helpers/jade/mixins
             ng-model='$ctrl.ngModel'
             id='{{::$ctrl.id}}'
             name='{{::$ctrl.name}}'
-            placeholder='{{::$ctrl.placeholder}}'
+            placeholder='{{$ctrl.placeholder}}'
             pcb-scale-number="$ctrl.sizeScale.value"
             min='{{ $ctrl.min/$ctrl.sizeScale.value }}'
             max='999999999'
             step='1'
             ng-required='$ctrl.required'
+            ng-disabled='$ctrl.ngDisabled'
         )
         button.btn-ignite.btn-ignite--secondary(
             bs-select
             bs-options='size as size.label for size in $ctrl.sizesMenu'
             ng-model='$ctrl.sizeScale'
             protect-from-bs-select-render
+            ng-disabled='$ctrl.ngDisabled'
         )
             | {{ $ctrl.sizeScale.label }}
             span.fa.fa-caret-down.icon-right
