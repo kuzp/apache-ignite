@@ -51,28 +51,30 @@ const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMess
         type: SHOW_CONFIG_LOADING,
         loadingText: 'Loading caches…'
     });
-    return clusterID === 'new'
+    const caches = clusterID === 'new'
         ? Promise.resolve([])
-        : Clusters.getClusterCaches(clusterID).then(({data}) => {
-            ConfigureState.dispatchAction({
-                type: HIDE_CONFIG_LOADING
-            });
-            ConfigureState.dispatchAction({
-                type: RECEIVE_CACHES_EDIT,
-                caches: data
-            });
-            return data;
-        })
-        .catch((e) => {
-            ConfigureState.dispatchAction({
-                type: HIDE_CONFIG_LOADING
-            });
-            $transition$.router.stateService.go('base.configuration.overview', null, {
-                location: 'replace'
-            });
-            IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${e.message}`);
-            return Promise.reject(e);
+        : Clusters.getClusterCaches(clusterID).then(({data}) => data);
+
+    return caches.then((caches) => {
+        ConfigureState.dispatchAction({
+            type: HIDE_CONFIG_LOADING
         });
+        ConfigureState.dispatchAction({
+            type: RECEIVE_CACHES_EDIT,
+            caches
+        });
+        return caches;
+    })
+    .catch((e) => {
+        ConfigureState.dispatchAction({
+            type: HIDE_CONFIG_LOADING
+        });
+        $transition$.router.stateService.go('base.configuration.overview', null, {
+            location: 'replace'
+        });
+        IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${e.message}`);
+        return Promise.reject(e);
+    });
 }];
 
 angular.module('ignite-console.states.configuration', ['ui.router'])
