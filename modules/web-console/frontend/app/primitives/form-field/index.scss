@@ -113,6 +113,10 @@
         font-size: 12px;
         clear: both;
 
+        &:empty {
+            display: none;
+        }
+
         [ng-message] + [ng-message] {
             margin-top: 10px;
         }
