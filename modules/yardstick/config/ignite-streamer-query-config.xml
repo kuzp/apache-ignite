@@ -42,39 +42,26 @@
 
                     <property name="queryEntities">
                         <bean class="org.apache.ignite.cache.QueryEntity">
-                            <property name="tableName" value="QUERY_ENTITY"/>
+                            <property name="tableName" value="ZIP_QUERY_ENTITY"/>
                             <property name="keyType" value="java.lang.String"/>
-                            <property name="valueType" value="org.apache.ignite.yardstick.cache.model.ZipSmallEntity"/>
+                            <property name="valueType" value="org.apache.ignite.yardstick.cache.model.ZipQueryEntity"/>
                             <property name="fields">
                                 <map>
+                                    <entry key="TOTALVALUE" value="double"/>
+                                    <entry key="SYS_AUDIT_TRACE" value="java.lang.String"/>
                                     <entry key="BUSINESSDATE" value="java.lang.String"/>
-                                    <entry key="RISKSUBJECTID" value="java.lang.String"/>
-                                    <entry key="SERIESDATE" value="java.lang.String"/>
-                                    <entry key="SNAPVERSION" value="java.lang.String"/>
-                                    <entry key="VARTYPE" value="java.lang.String"/>
+                                    <entry key="BOOKSOURCESYSTEMCODE" value="java.lang.String"/>
                                 </map>
                             </property>
                             <property name="indexes">
                                 <list>
                                     <bean class="org.apache.ignite.cache.QueryIndex">
                                         <constructor-arg value="BUSINESSDATE"/>
-                                        <property name="inlineSize" value="30"/>
+                                        <property name="inlineSize" value="12"/>
                                     </bean>
                                     <bean class="org.apache.ignite.cache.QueryIndex">
-                                        <constructor-arg value="RISKSUBJECTID"/>
-                                        <property name="inlineSize" value="30"/>
-                                    </bean>
-                                    <bean class="org.apache.ignite.cache.QueryIndex">
-                                        <constructor-arg value="SERIESDATE"/>
-                                        <property name="inlineSize" value="30"/>
-                                    </bean>
-                                    <bean class="org.apache.ignite.cache.QueryIndex">
-                                        <constructor-arg value="SNAPVERSION"/>
-                                        <property name="inlineSize" value="30"/>
-                                    </bean>
-                                    <bean class="org.apache.ignite.cache.QueryIndex">
-                                        <constructor-arg value="VARTYPE"/>
-                                        <property name="inlineSize" value="30"/>
+                                        <constructor-arg value="BOOKSOURCESYSTEMCODE"/>
+                                        <property name="inlineSize" value="12"/>
                                     </bean>
                                 </list>
                             </property>
