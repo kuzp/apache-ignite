@@ -269,7 +269,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         writeBehindFlushThreadCount: Number,
         writeBehindCoalescing: {type: Boolean, default: true},
 
-        invalidate: Boolean,
+        isInvalidate: Boolean,
         defaultLockTimeout: Number,
         atomicWriteOrderMode: {type: String, enum: ['CLOCK', 'PRIMARY']},
         writeSynchronizationMode: {type: String, enum: ['FULL_SYNC', 'FULL_ASYNC', 'PRIMARY_SYNC']},

@@ -20,25 +20,24 @@
 // Fire me up!
 
 module.exports = {
-    implements: 'middlewares:api'
+    implements: 'middlewares:api',
+    inject: ['require(lodash)']
 };
 
-module.exports.factory = () => {
+module.exports.factory = (_) => {
     return (req, res, next) => {
         res.api = {
             error(err) {
-                if (err.name === 'MongoError')
+                if (_.includes(['MongoError', 'MongooseError'], err.name))
                     return res.status(500).send(err.message);
 
                 res.status(err.httpCode || err.code || 500).send(err.message);
             },
             ok(data) {
-                res.status(200).json(data);
-            },
-            serverError(err) {
-                err.httpCode = 500;
+                if (_.isNil(data))
+                    return res.sendStatus(404);
 
-                res.api.error(err);
+                res.status(200).json(data);
             }
         };
 

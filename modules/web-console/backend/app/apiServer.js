@@ -52,10 +52,7 @@ module.exports.factory = function(Express, configure, routes) {
             app.use((err, req, res) => {
                 res.status(err.status || 500);
 
-                res.render('error', {
-                    message: err.message,
-                    error: {}
-                });
+                res.send(err.message);
             });
 
             srv.addListener('request', app);

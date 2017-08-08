@@ -192,6 +192,34 @@ suite('ClusterServiceTestsSuite', () => {
             .catch(done);
     });
 
+    test('Create new cluster without space', (done) => {
+        const cluster = _.cloneDeep(_.head(testClusters));
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        delete cluster.space;
+
+        db.drop()
+            .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
+            .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
+            .then(() => done())
+            .catch(done);
+    });
+
+    test('Create new cluster with duplicated name', (done) => {
+        const cluster = _.cloneDeep(_.head(testClusters));
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        cluster.name = _.last(testClusters).name;
+
+        clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches})
+            .then(done)
+            .catch((err) => {
+                assert.instanceOf(err, errors.DuplicateKeyException);
+
+                done();
+            });
+    });
+
     test('Update cluster from basic', (done) => {
         const cluster = _.head(testClusters);
 
@@ -224,7 +252,8 @@ suite('ClusterServiceTestsSuite', () => {
 
                 _.forEach(savedCluster.memoryConfiguration.memoryPolicies, (plc) => delete plc._id);
 
-                assert.deepEqual(savedCluster.memoryConfiguration, cluster.memoryConfiguration);
+                assert.notEqual(savedCluster.memoryConfiguration.defaultMemoryPolicySize, cluster.memoryConfiguration.defaultMemoryPolicySize);
+                assert.deepEqual(savedCluster.memoryConfiguration.memoryPolicies, cluster.memoryConfiguration.memoryPolicies);
 
                 assert.notDeepEqual(savedCluster.igfss.map((c) => c.toString()), cluster.igfss);
                 assert.notDeepEqual(savedCluster.communication, cluster.communication);

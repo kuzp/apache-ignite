@@ -69,15 +69,15 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
      */
     const create = (cluster) => {
         return mongo.Cluster.create(cluster)
+            .catch((err) => {
+                if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                    throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
+            })
             .then((savedCluster) =>
                 mongo.Cache.update({_id: {$in: savedCluster.caches}}, {$addToSet: {clusters: savedCluster._id}}, {multi: true}).exec()
                     .then(() => mongo.Igfs.update({_id: {$in: savedCluster.igfss}}, {$addToSet: {clusters: savedCluster._id}}, {multi: true}).exec())
                     .then(() => savedCluster)
-            )
-            .catch((err) => {
-                if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
-                    throw new errors.DuplicateKeyException('Cluster with name: "' + cluster.name + '" already exist.');
-            });
+            );
     };
 
     /**
@@ -129,31 +129,41 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
         }
 
         static upsertBasic(userId, demo, {cluster, caches}) {
+            if (_.isNil(cluster._id))
+                return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
+
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
-                    const {space, _id} = cluster;
+                    if (_.isNil(cluster.space))
+                        cluster.space = _.head(spaceIds);
 
-                    if (!_.includes(spaceIds, space))
-                        return Promise.reject(new errors.IllegalAccessError('Wrong space for cluster'));
+                    const query = _.pick(cluster, ['space', '_id']);
+                    const newDoc = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
 
-                    return create(cluster)
+                    return mongo.Cluster.update(query, {$set: newDoc}, {upsert: true}).exec()
                         .catch((err) => {
-                            if (err instanceof errors.DuplicateKeyException) {
-                                return mongo.Cluster.update({space, _id},
-                                    {$set: _.pick(cluster, ['name', 'discovery', 'caches', 'memoryConfiguration.defaultMemoryPolicySize', 'memoryConfiguration.memoryPolicies'])}, {upsert: true}).exec();
-                            }
+                            if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                                throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
 
                             throw err;
                         })
-                        .then((originalCluster) => {
-                            const removedCacheIds = _.differenceBy(originalCluster.caches, cluster.caches, _.isEqual);
+                        .then((updated) => {
+                            if (_.isNil(updated))
+                                return mongo.Cluster.update(query, {$set: cluster}, {upsert: true}).exec();
+
+                            const removedCacheIds = _.differenceBy(updated.caches, cluster.caches, _.isEqual);
 
                             if (_.isEmpty(removedCacheIds))
                                 return;
 
                             return Promise.all(_.map(removedCacheIds, cachesService.remove));
                         })
-                        .then(() => Promise.all(_.map(caches, cachesService.upsertBasic)));
+                        .then(() => Promise.all(_.map(caches, (c) => {
+                            if (_.isNil(c.space))
+                                c.space = _.head(spaceIds);
+
+                            return cachesService.upsertBasic(c);
+                        })));
                 });
         }
 

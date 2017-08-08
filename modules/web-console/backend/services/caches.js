@@ -107,16 +107,24 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
         }
 
         static upsertBasic(cache) {
-            return create(cache)
-                .catch((err) => {
-                    console.log(err, err instanceof errors.DuplicateKeyException);
+            if (_.isNil(cache._id))
+                return Promise.reject(new errors.IllegalArgumentException('Cache id can not be undefined or null'));
 
-                    if (err instanceof errors.DuplicateKeyException) {
-                        return mongo.Cache.update({_id: cache._id},
-                            _.pick(cache, ['name', 'cacheMode', 'atomicityMode', 'backups']), {upsert: true}).exec();
-                    }
+            const query = _.pick(cache, ['space', '_id']);
+            const newDoc = _.pick(cache, ['space', '_id', 'name', 'cacheMode', 'atomicityMode', 'backups']);
+
+            return mongo.Cache.update(query, {$set: newDoc}, {upsert: true}).exec()
+                .catch((err) => {
+                    if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                        throw new errors.DuplicateKeyException(`Cache with name: "${cache.name}" already exist.`);
 
                     throw err;
+                })
+                .then((updated) => {
+                    if (_.isNil(updated))
+                        return mongo.Cache.update(query, {$set: cache}, {upsert: true}).exec();
+
+                    return updated;
                 });
         }
 
