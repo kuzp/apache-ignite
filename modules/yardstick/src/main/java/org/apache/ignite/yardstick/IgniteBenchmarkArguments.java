@@ -262,6 +262,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-be", "--bigEntry"}, description = "Use big entry for query.")
     private boolean bigEntry;
 
+    @Parameter(names = {"-cmp", "--compute"}, description = "Use compute and local SQL query.")
+    private boolean compute;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -667,6 +670,13 @@ public class IgniteBenchmarkArguments {
      */
     public boolean bigEntry() {
         return bigEntry;
+    }
+
+    /**
+     * @return Compute.
+     */
+    public boolean compute() {
+        return compute;
     }
 
     /** {@inheritDoc} */

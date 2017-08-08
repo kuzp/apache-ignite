@@ -25,10 +25,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.query.FieldsQueryCursor;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.cluster.ClusterGroup;
+import org.apache.ignite.lang.IgniteCallable;
+import org.apache.ignite.resources.IgniteInstanceResource;
 import org.apache.ignite.yardstick.IgniteAbstractBenchmark;
 import org.apache.ignite.yardstick.cache.model.ZipEntity;
 import org.apache.ignite.yardstick.cache.model.ZipQueryEntity;
@@ -127,15 +131,32 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
         final long startQry = System.currentTimeMillis();
 
         try {
-            SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
+            if (!args.compute()) {
+                SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
 
-            sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
+                sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
 
-            IgniteCache<Object, Object> cache = ignite().cache(cacheName);
+                IgniteCache<Object, Object> cache = ignite().cache(cacheName);
 
-            FieldsQueryCursor<List<?>> cur = cache.query(sqlQry);
+                FieldsQueryCursor<List<?>> cur = cache.query(sqlQry);
 
-            cur.close();
+                cur.close();
+            }
+            else {
+                ClusterGroup grp = ignite().cluster().forServers();
+
+                ignite().compute(grp).broadcast(new IgniteCallable<Object>() {
+                    @IgniteInstanceResource
+                    private Ignite ignite;
+
+                    @Override public Object call() throws Exception {
+                        ignite.cache(cacheName).query(new SqlFieldsQuery(qry)
+                            .setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109").setLocal(true));
+
+                        return null;
+                    }
+                });
+            }
         }
         finally {
             final long endQry = System.currentTimeMillis();
