@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
+const _ = require('lodash');
 const assert = require('chai').assert;
 const injector = require('../injector');
+
 const testClusters = require('../data/clusters.json');
+const testCaches = require('../data/caches.json');
 const testAccounts = require('../data/accounts.json');
 const testSpaces = require('../data/spaces.json');
 
 let clusterService;
+let cacheService;
 let mongo;
 let errors;
 let db;
@@ -29,12 +33,14 @@ let db;
 suite('ClusterServiceTestsSuite', () => {
     suiteSetup(() => {
         return Promise.all([injector('services/clusters'),
+            injector('services/caches'),
             injector('mongo'),
             injector('errors'),
             injector('dbHelper')])
-            .then(([_clusterService, _mongo, _errors, _db]) => {
+            .then(([_clusterService, _cacheService, _mongo, _errors, _db]) => {
                 mongo = _mongo;
                 clusterService = _clusterService;
+                cacheService = _cacheService;
                 errors = _errors;
                 db = _db;
             });
@@ -152,6 +158,86 @@ suite('ClusterServiceTestsSuite', () => {
                 assert.isNotNull(clusters[0].cachesCount);
                 assert.isNotNull(clusters[0].modelsCount);
                 assert.isNotNull(clusters[0].igfsCount);
+            })
+            .then(done)
+            .catch(done);
+    });
+
+    test('Create new cluster from basic', (done) => {
+        const cluster = _.head(testClusters);
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        db.drop()
+            .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
+            .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
+            .then(() => clusterService.get(testAccounts[0]._id, false, cluster._id))
+            .then((savedCluster) => {
+                assert.isNotNull(savedCluster);
+
+                assert.equal(savedCluster._id, cluster._id);
+                assert.equal(savedCluster.name, cluster.name);
+                assert.notStrictEqual(savedCluster.caches, cluster.caches);
+
+                assert.notStrictEqual(savedCluster, cluster);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, caches[0]._id))
+            .then((cb1) => {
+                assert.isNotNull(cb1);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, caches[1]._id))
+            .then((cb2) => {
+                assert.isNotNull(cb2);
+            })
+            .then(done)
+            .catch(done);
+    });
+
+    test('Update cluster from basic', (done) => {
+        const cluster = _.head(testClusters);
+
+        cluster.communication.tcpNoDelay = false;
+        cluster.igfss = [];
+
+        cluster.memoryConfiguration = {
+            defaultMemoryPolicySize: 10,
+            memoryPolicies: [
+                {
+                    name: 'default',
+                    maxSize: 100
+                }
+            ]
+        };
+
+        cluster.caches = _.dropRight(cluster.caches, 1);
+
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        _.head(caches).cacheMode = 'REPLICATED';
+        _.head(caches).readThrough = false;
+
+        clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches})
+            .then(() => clusterService.get(testAccounts[0]._id, false, cluster._id))
+            .then((savedCluster) => {
+                assert.isNotNull(savedCluster);
+
+                assert.deepEqual(savedCluster.caches.map((c) => c.toString()), cluster.caches);
+
+                _.forEach(savedCluster.memoryConfiguration.memoryPolicies, (plc) => delete plc._id);
+
+                assert.deepEqual(savedCluster.memoryConfiguration, cluster.memoryConfiguration);
+
+                assert.notDeepEqual(savedCluster.igfss.map((c) => c.toString()), cluster.igfss);
+                assert.notDeepEqual(savedCluster.communication, cluster.communication);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, _.head(caches)._id))
+            .then((cb1) => {
+                assert.isNotNull(cb1);
+                assert.equal(cb1.cacheMode, 'REPLICATED');
+                assert.isTrue(cb1.readThrough);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, _.head(testClusters).caches[1]))
+            .then((cb2) => {
+                assert.isNull(cb2);
             })
             .then(done)
             .catch(done);

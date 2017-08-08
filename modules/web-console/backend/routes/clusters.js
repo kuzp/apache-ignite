@@ -46,7 +46,6 @@ module.exports.factory = function(_, express, mongo, clustersService, cachesServ
                 .catch(res.api.error);
         });
 
-
         router.get('/:_id', (req, res) => {
             clustersService.get(req.currentUserId(), req.demo(), req.params._id)
                 .then(res.api.ok)
@@ -55,6 +54,12 @@ module.exports.factory = function(_, express, mongo, clustersService, cachesServ
 
         router.get('/', (req, res) => {
             clustersService.shortList(req.currentUserId(), req.demo())
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
+        router.put('/basic', (req, res) => {
+            clustersService.upsertBasic(req.currentUserId(), req.demo(), req.body)
                 .then(res.api.ok)
                 .catch(res.api.error);
         });

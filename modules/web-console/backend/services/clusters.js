@@ -21,17 +21,18 @@
 
 module.exports = {
     implements: 'services/clusters',
-    inject: ['require(lodash)', 'mongo', 'services/spaces', 'errors']
+    inject: ['require(lodash)', 'mongo', 'services/spaces', 'services/caches', 'errors']
 };
 
 /**
  * @param _
  * @param mongo
  * @param {SpacesService} spacesService
+ * @param {CachesService} cachesService
  * @param errors
  * @returns {ClustersService}
  */
-module.exports.factory = (_, mongo, spacesService, errors) => {
+module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
     /**
      * Convert remove status operation to own presentation.
      *
@@ -125,6 +126,35 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
         static get(userId, demo, _id) {
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => mongo.Cluster.findOne({space: {$in: spaceIds}, _id}).lean().exec());
+        }
+
+        static upsertBasic(userId, demo, {cluster, caches}) {
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => {
+                    const {space, _id} = cluster;
+
+                    if (!_.includes(spaceIds, space))
+                        return Promise.reject(new errors.IllegalAccessError('Wrong space for cluster'));
+
+                    return create(cluster)
+                        .catch((err) => {
+                            if (err instanceof errors.DuplicateKeyException) {
+                                return mongo.Cluster.update({space, _id},
+                                    {$set: _.pick(cluster, ['name', 'discovery', 'caches', 'memoryConfiguration.defaultMemoryPolicySize', 'memoryConfiguration.memoryPolicies'])}, {upsert: true}).exec();
+                            }
+
+                            throw err;
+                        })
+                        .then((originalCluster) => {
+                            const removedCacheIds = _.differenceBy(originalCluster.caches, cluster.caches, _.isEqual);
+
+                            if (_.isEmpty(removedCacheIds))
+                                return;
+
+                            return Promise.all(_.map(removedCacheIds, cachesService.remove));
+                        })
+                        .then(() => Promise.all(_.map(caches, cachesService.upsertBasic)));
+                });
         }
 
         /**

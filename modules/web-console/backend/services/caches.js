@@ -106,6 +106,20 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                 .then((spaceIds) => mongo.Cache.findOne({space: {$in: spaceIds}, _id}).lean().exec());
         }
 
+        static upsertBasic(cache) {
+            return create(cache)
+                .catch((err) => {
+                    console.log(err, err instanceof errors.DuplicateKeyException);
+
+                    if (err instanceof errors.DuplicateKeyException) {
+                        return mongo.Cache.update({_id: cache._id},
+                            _.pick(cache, ['name', 'cacheMode', 'atomicityMode', 'backups']), {upsert: true}).exec();
+                    }
+
+                    throw err;
+                });
+        }
+
         /**
          * Create or update cache.
          *
