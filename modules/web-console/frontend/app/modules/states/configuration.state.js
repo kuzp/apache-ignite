@@ -43,6 +43,9 @@ import pageConfigureAdvancedModelsComponent from 'app/components/page-configure-
 import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
 import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
+import {uniqueName} from 'app/utils/uniqueName';
+
+const getErrorMessage = (e) => e.message || e.data || e;
 
 // TODO: move into effects or service
 export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
@@ -72,7 +75,7 @@ export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'Ign
         $transition$.router.stateService.go('base.configuration.overview', null, {
             location: 'replace'
         });
-        IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${e.message}`);
+        IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${getErrorMessage(e)}`);
         return Promise.reject(e);
     });
 }];
@@ -158,7 +161,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             return cluster;
                         })
                         .catch((e) => {
-                            IgniteMessages.showError(`Failed to load cluster ${clusterID}. ${e.message}`);
+                            IgniteMessages.showError(`Failed to load cluster ${clusterID}. ${getErrorMessage(e)}`);
                             $transition$.router.stateService.go('base.configuration.overview', null, {
                                 location: 'replace'
                             });
@@ -268,6 +271,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 cache
                             });
                             return cache;
+                        })
+                        .catch((e) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
+                            $transition$.router.stateService.go('base.configuration.tabs.advanced.caches', null, {
+                                location: 'replace'
+                            });
+                            IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            return Promise.reject(e);
                         });
                     }]
                 },
