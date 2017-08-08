@@ -29,7 +29,7 @@ export default class PageConfigureController {
         .do((state) => {
             const clusterName = get(state, 'clusterConfiguration.originalCluster.name');
             const isNew = this.$state.params.clusterID === 'new';
-            this.title = `${isNew ? 'Create' : 'Edit'} cluster ${isNew ? '' : `‘${clusterName}’`}`;
+            this.title = `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${clusterName}’`}`;
             const {loadingText, isLoading} =
             this.loadingText = state.configurationLoading.loadingText;
             if (state.configurationLoading.isLoading)
