@@ -99,6 +99,26 @@ const clustersTableResolve = ['Clusters', 'ConfigureState', (Clusters, Configure
     });
 }];
 
+const modelsResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
+    const {clusterID} = $transition$.params();
+    ConfigureState.dispatchAction({
+        type: SHOW_CONFIG_LOADING,
+        loadingText: 'Loading models…'
+    });
+    return clusterID === 'new'
+        ? Promise.resolve([])
+        : Clusters.getClusterModels(clusterID).then(({data}) => {
+            ConfigureState.dispatchAction({
+                type: HIDE_CONFIG_LOADING
+            });
+            ConfigureState.dispatchAction({
+                type: RECEIVE_MODELS_EDIT,
+                models: data
+            });
+            return data;
+        });
+}];
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
@@ -218,7 +238,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
-                    caches: cachesResolve
+                    caches: cachesResolve,
+                    models: modelsResolve
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -249,23 +270,28 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{cacheID:string}',
                 permission: 'configuration',
                 resolve: {
-                    cache: ['Caches', 'Clusters', '$transition$', 'ConfigureState', (Caches, Clusters, $transition$, ConfigureState) => {
-                        const {cacheID} = $transition$.params();
-                        const cache = cacheID
-                            ? Caches.getCache(cacheID).then(({data}) => data)
-                            : Promise.resolve(null);
-                        ConfigureState.dispatchAction({
-                            type: RECEIVE_CACHE_EDIT,
-                            cache: null
-                        });
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading cache…'
-                        });
+                    cache: ['IgniteMessages', 'Caches', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Caches, Clusters, $transition$, ConfigureState) => {
+                        const cluster = $transition$.injector().getAsync('cluster');
+                        const caches = $transition$.injector().getAsync('caches');
+                        const {cacheID, clusterID} = $transition$.params();
+                        const cache = cacheID === 'new'
+                            ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
+                                name: uniqueName('New cache', caches),
+                                clusters: [cluster._id]
+                            }))
+                            : Caches.getCache(cacheID).then(({data}) => data);
+                        // ConfigureState.dispatchAction({
+                        //     type: RECEIVE_CACHE_EDIT,
+                        //     cache: null
+                        // });
+                        // ConfigureState.dispatchAction({
+                        //     type: SHOW_CONFIG_LOADING,
+                        //     loadingText: 'Loading cache…'
+                        // });
                         return cache.then((cache) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
+                            // ConfigureState.dispatchAction({
+                            //     type: HIDE_CONFIG_LOADING
+                            // });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CACHE_EDIT,
                                 cache
@@ -296,25 +322,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedModelsComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    models: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
-                        const {clusterID} = $transition$.params();
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading models…'
-                        });
-                        return clusterID === 'new'
-                            ? Promise.resolve([])
-                            : Clusters.getClusterModels(clusterID).then(({data}) => {
-                                ConfigureState.dispatchAction({
-                                    type: HIDE_CONFIG_LOADING
-                                });
-                                ConfigureState.dispatchAction({
-                                    type: RECEIVE_MODELS_EDIT,
-                                    models: data
-                                });
-                                return data;
-                            });
-                    }],
+                    models: modelsResolve,
                     caches: cachesResolve
                 },
                 resolvePolicy: {
