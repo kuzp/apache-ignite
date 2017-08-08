@@ -347,9 +347,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     model: ['Models', '$transition$', 'ConfigureState', (Models, $transition$, ConfigureState) => {
                         const {modelID, clusterID} = $transition$.params();
-                        const model = modelID
-                            ? Models.getModel(modelID).then(({data}) => data)
-                            : Promise.resolve(null);
+                        const model = modelID === 'new'
+                            ? Promise.resolve(Models.getBlankModel())
+                            : Models.getModel(modelID).then(({data}) => data);
 
                         ConfigureState.dispatchAction({
                             type: RECEIVE_MODEL_EDIT,
