@@ -38,7 +38,7 @@ h2.pc-page-header(ng-hide='backupItem.empty' ng-if='contentVisible()')
     | {{ $ctrl.$state.params.cacheID !== 'new' ? 'Edit' : 'Create' }} cache {{ $ctrl.$state.params.cacheID !== 'new' ? '‘'+selectedItem.name+'’' : '' }}
 
 div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+    form.form-horizontal(name='ui.inputForm' novalidate ng-class='{"pca-form-blocked": !contentVisible()}')
         include /app/modules/states/configuration/caches/general
         include /app/modules/states/configuration/caches/memory
         include /app/modules/states/configuration/caches/query
@@ -52,7 +52,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         include /app/modules/states/configuration/caches/rebalance
         include /app/modules/states/configuration/caches/statistics
 
-.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": !contentVisible()}')
     .pc-form-actions-panel__right-after
     button.btn-ignite.btn-ignite--link-success(
         type='button'
@@ -61,6 +61,6 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
-        ng-disabled='!ui.inputForm.$dirty'
-        ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+        n_g-disabled='!ui.inputForm.$dirty'
+        ng-click='$ctrl.saveItem(backupItem)'
     ) Save
