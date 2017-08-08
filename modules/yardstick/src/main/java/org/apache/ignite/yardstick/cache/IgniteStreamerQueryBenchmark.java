@@ -117,32 +117,18 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             exec.shutdown();
         }
 
-        final String qry = "UPDATE " + (args.bigEntry() ? "ZIP_ENTITY " : "ZIP_QUERY_ENTITY ") +
-            "SET totalvalue=?, " +
-            "sys_audit_trace = concat(" +
-            " casewhen(sys_audit_trace is not null, concat(sys_audit_trace,','),'')," +
-            " concat('{\\\"aid\\\":\\\"', ?, '\\\",\\\"changes\\\":{\\\"totalvalue\\\":\\\"')," +
-            "nvl(totalvalue,'')," +
-            "'\\\"}}')" +
-            "WHERE businessdate=? AND booksourcesystemcode=?";
+        final QueryType qryType = QueryType.valueOf(args.queryType());
 
-        BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry + ", bigEntry=" + args.bigEntry()
+        final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry());
+
+        BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry.getSql() + ", bigEntry=" + args.bigEntry()
             + ", compute=" + args.compute() + ']');
 
         final long startQry = System.currentTimeMillis();
 
         try {
-            if (!args.compute()) {
-                SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
-
-                sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
-
-                IgniteCache<Object, Object> cache = ignite().cache(cacheName);
-
-                FieldsQueryCursor<List<?>> cur = cache.query(sqlQry);
-
-                cur.close();
-            }
+            if (!args.compute())
+                executeQuery(ignite(), cacheName, qry, startQry, qryType);
             else {
                 ClusterGroup grp = ignite().cluster().forServers();
 
@@ -151,11 +137,12 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
                     private Ignite ignite;
 
                     @Override public Object call() throws Exception {
-                        ignite.cache(cacheName).query(new SqlFieldsQuery(qry)
-                            .setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109").setLocal(true));
+                        executeQuery(ignite, cacheName, qry.setLocal(true), startQry, qryType);
 
                         return null;
                     }
+
+
                 });
             }
         }
@@ -175,6 +162,32 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
     }
 
     /**
+     * @param ignite Ignite.
+     * @param cacheName Cache name.
+     * @param qry Query.
+     * @param startQry Start query.
+     */
+    private static void executeQuery(Ignite ignite, String cacheName, SqlFieldsQuery qry, long startQry, QueryType qryType) {
+        FieldsQueryCursor<List<?>> cur = ignite.cache(cacheName).query(qry);
+
+        if (qryType == QueryType.SELECT) {
+            int items = 0;
+
+            for (List<?> item : cur) {
+                items++;
+
+                if (items % 1_000 == 0)
+                    System.out.println("== Loaded " + items + " in " + (System.currentTimeMillis() - startQry));
+            }
+
+            System.out.println("IgniteStreamerQueryBenchmark got: [items=" + items + ", time="
+                + (System.currentTimeMillis() - startQry) + ']');
+        }
+
+        cur.close();
+    }
+
+    /**
      * @param bigEntry Big entry.
      */
     private Object createEntry(boolean bigEntry) {
@@ -188,5 +201,47 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
         }
         else
             return ZipQueryEntity.generateHard();
+    }
+
+    /**
+     * @param type Type.
+     * @param bigEntry Big entry.
+     */
+    private static SqlFieldsQuery createQuery(QueryType type, boolean bigEntry) {
+        if (type == QueryType.UPDATE) {
+            final String qry = "UPDATE " + (bigEntry ? "ZIP_ENTITY " : "ZIP_QUERY_ENTITY ") +
+                "SET totalvalue=?, " +
+                "sys_audit_trace = concat(" +
+                " casewhen(sys_audit_trace is not null, concat(sys_audit_trace,','),'')," +
+                " concat('{\\\"aid\\\":\\\"', ?, '\\\",\\\"changes\\\":{\\\"totalvalue\\\":\\\"')," +
+                "nvl(totalvalue,'')," +
+                "'\\\"}}')" +
+                "WHERE businessdate=? AND booksourcesystemcode=?";
+
+            SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
+
+            sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
+
+            return sqlQry;
+        }
+        else if (type == QueryType.SELECT) {
+            final String qry = "SELECT * FROM " + (bigEntry ? "ZIP_ENTITY " : "ZIP_QUERY_ENTITY ") +
+                "WHERE businessdate=? AND booksourcesystemcode=?";
+
+            SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
+
+            sqlQry.setArgs("2017-06-30", "93013109");
+
+            return sqlQry;
+        }
+
+        throw new IllegalArgumentException("Unsupported query type: " + type);
+    }
+
+    /**
+     *
+     */
+    private enum QueryType {
+        /** Update. */UPDATE, /** Select. */SELECT
     }
 }

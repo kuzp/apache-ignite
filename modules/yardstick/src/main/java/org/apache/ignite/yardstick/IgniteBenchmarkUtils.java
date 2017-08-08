@@ -151,6 +151,7 @@ public class IgniteBenchmarkUtils {
         addArg(args0, "-cts", 8);
         addArg(args0, "-ct", "NONE");
         addArg(args0, "-sr", "0.9");
+        addArg(args0, "-qt", "SELECT");
 
         if (throughputLatencyProbe)
             addArg(args0, "-pr", "ThroughputLatencyProbe");

@@ -265,6 +265,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-cmp", "--compute"}, description = "Use compute and local SQL query.")
     private boolean compute;
 
+    @Parameter(names = {"-qt", "--queryType"}, description = "SELECT, UPDATE")
+    private String queryType = "UPDATE";
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -677,6 +680,13 @@ public class IgniteBenchmarkArguments {
      */
     public boolean compute() {
         return compute;
+    }
+
+    /**
+     * @return Query type.
+     */
+    public String queryType() {
+        return queryType;
     }
 
     /** {@inheritDoc} */
