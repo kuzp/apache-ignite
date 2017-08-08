@@ -45,7 +45,7 @@ import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-ad
 
 
 // TODO: move into effects or service
-const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
+export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
     const {clusterID} = $transition$.params();
     ConfigureState.dispatchAction({
         type: SHOW_CONFIG_LOADING,
