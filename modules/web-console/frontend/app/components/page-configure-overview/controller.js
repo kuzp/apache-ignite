@@ -31,11 +31,11 @@ import uniq from 'lodash/fp/uniq';
 
 const allNames = (items) => items.map((i) => i.name).join(', ');
 
-const cellTemplate = `
+const cellTemplate = (section) => `
     <div class="ui-grid-cell-contents">
         <a
             class="link-success"
-            ui-sref="{{ ::col.colDef.url(row) }}")
+            ui-sref="base.configuration.tabs.advanced.${section}({clusterID: row.entity._id})"
             title='Click to edit'
         >{{ row.entity[col.field] }}</a>
     </div>
@@ -63,8 +63,7 @@ export default class PageConfigureOverviewController {
                 filter: {
                     placeholder: 'Filter by name…'
                 },
-                url: (row) => `base.configuration.tabs.advanced.cluster({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
+                cellTemplate: cellTemplate('cluster'),
                 minWidth: 165
             },
             {
@@ -79,8 +78,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Caches',
                 field: 'cachesCount',
                 cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.caches({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
+                cellTemplate: cellTemplate('caches'),
                 enableFiltering: false,
                 width: 95
             },
@@ -89,8 +87,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Models',
                 field: 'modelsCount',
                 cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.models({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
+                cellTemplate: cellTemplate('models'),
                 enableFiltering: false,
                 width: 95
             },
@@ -99,8 +96,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'IGFS',
                 field: 'igfsCount',
                 cellClass: 'ui-grid-number-cell',
-                url: (row) => `base.configuration.tabs.advanced.igfs({clusterID: '${row.entity._id}'})`,
-                cellTemplate,
+                cellTemplate: cellTemplate('igfs'),
                 enableFiltering: false,
                 width: 80
             }
