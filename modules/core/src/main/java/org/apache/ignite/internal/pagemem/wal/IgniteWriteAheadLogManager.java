@@ -113,4 +113,9 @@ public interface IgniteWriteAheadLogManager extends GridCacheSharedManager, Igni
      * @return True if given pointer is located in reserved segment.
      */
     public boolean reserved(WALPointer ptr);
+
+    /**
+     *
+     */
+    public void compact(WALPointer ptr);
 }

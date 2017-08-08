@@ -2171,6 +2171,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     // No page updates for this checkpoint are allowed from now on.
                     cpPtr = cctx.wal().log(cpRec);
 
+                    cctx.wal().compact(cpPtr);
+
                     if (cpPtr == null)
                         cpPtr = CheckpointStatus.NULL_PTR;
                 }

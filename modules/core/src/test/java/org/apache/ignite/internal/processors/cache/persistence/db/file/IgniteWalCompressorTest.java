@@ -3,6 +3,8 @@ package org.apache.ignite.internal.processors.cache.persistence.db.file;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.configuration.MemoryConfiguration;
+import org.apache.ignite.configuration.MemoryPolicyConfiguration;
 import org.apache.ignite.configuration.PersistentStoreConfiguration;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWriteAheadLogManager;
@@ -22,6 +24,8 @@ public class IgniteWalCompressorTest extends GridCommonAbstractTest {
 
     private static final String CACHE_NAME = "cache";
 
+    private static final String MEMORY_POLICY_NAME = "memPolicy";
+
     @Override protected IgniteConfiguration getConfiguration(String name) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(name);
 
@@ -30,10 +34,18 @@ public class IgniteWalCompressorTest extends GridCommonAbstractTest {
         cfg.setPersistentStoreConfiguration(
             new PersistentStoreConfiguration()
                 .setWalSegments(3)
-                .setWalSegmentSize(1024 * 1024 * 20)
         );
 
-        CacheConfiguration ccfg = new CacheConfiguration(CACHE_NAME);
+        cfg.setMemoryConfiguration(
+            new MemoryConfiguration()
+                .setMemoryPolicies(
+                    new MemoryPolicyConfiguration()
+                        .setName(MEMORY_POLICY_NAME)
+                        .setMaxSize(100 * 1024 * 1024))
+        );
+
+        CacheConfiguration ccfg = new CacheConfiguration(CACHE_NAME)
+            .setMemoryPolicyName(MEMORY_POLICY_NAME);
 
         cfg.setCacheConfiguration(ccfg);
 
@@ -53,11 +65,13 @@ public class IgniteWalCompressorTest extends GridCommonAbstractTest {
 
         loadWalRecords(ig, new IgniteCallable<Boolean>() {
             @Override public Boolean call() throws Exception {
-                return walMgr.walArchiveSegments() > 0;
+                return walMgr.walArchiveSegments() > 20;
             }
         });
 
         int segInArchive = walMgr.walArchiveSegments();
+
+        System.out.println("Segments in archive " + segInArchive);
 
         Thread.sleep(60_000 * 5);
     }
@@ -77,8 +91,6 @@ public class IgniteWalCompressorTest extends GridCommonAbstractTest {
                 cache.put(cnt, new byte[1024 * 1024]);
 
                 cache.remove(cnt);
-
-                System.out.println("Put/Remove entries:" + cnt);
 
                 cnt++;
             }
