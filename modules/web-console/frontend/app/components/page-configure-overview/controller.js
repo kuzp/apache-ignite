@@ -31,11 +31,11 @@ import uniq from 'lodash/fp/uniq';
 
 const allNames = (items) => items.map((i) => i.name).join(', ');
 
-const cellTemplate = (section) => `
+const cellTemplate = (state) => `
     <div class="ui-grid-cell-contents">
         <a
             class="link-success"
-            ui-sref="base.configuration.tabs.advanced.${section}({clusterID: row.entity._id})"
+            ui-sref="${state}({clusterID: row.entity._id})"
             title='Click to edit'
         >{{ row.entity[col.field] }}</a>
     </div>
@@ -63,7 +63,7 @@ export default class PageConfigureOverviewController {
                 filter: {
                     placeholder: 'Filter by name…'
                 },
-                cellTemplate: cellTemplate('cluster'),
+                cellTemplate: cellTemplate('base.configuration.tabs'),
                 minWidth: 165
             },
             {
@@ -78,7 +78,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Caches',
                 field: 'cachesCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('caches'),
+                cellTemplate: cellTemplate('base.configuration.tabs.advanced.caches'),
                 enableFiltering: false,
                 width: 95
             },
@@ -87,7 +87,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Models',
                 field: 'modelsCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('models'),
+                cellTemplate: cellTemplate('base.configuration.tabs.advanced.models'),
                 enableFiltering: false,
                 width: 95
             },
@@ -96,7 +96,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'IGFS',
                 field: 'igfsCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('igfs'),
+                cellTemplate: cellTemplate('base.configuration.tabs.advanced.igfs'),
                 enableFiltering: false,
                 width: 80
             }
