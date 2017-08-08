@@ -398,19 +398,19 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
 
-        function prepareNewItem(linkId) {
-            return {
-                space: $scope.spaces[0]._id,
-                cacheMode: 'PARTITIONED',
-                atomicityMode: 'ATOMIC',
-                readFromBackup: true,
-                copyOnRead: true,
-                clusters: linkId && _.find($scope.clusters, {value: linkId})
-                    ? [linkId] : _.map($scope.clusters, function(cluster) { return cluster.value; }),
-                domains: linkId && _.find($scope.domains, { value: linkId }) ? [linkId] : [],
-                cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
-            };
-        }
+        // function prepareNewItem(linkId) {
+        //     return {
+        //         space: $scope.spaces[0]._id,
+        //         cacheMode: 'PARTITIONED',
+        //         atomicityMode: 'ATOMIC',
+        //         readFromBackup: true,
+        //         copyOnRead: true,
+        //         clusters: linkId && _.find($scope.clusters, {value: linkId})
+        //             ? [linkId] : _.map($scope.clusters, function(cluster) { return cluster.value; }),
+        //         domains: linkId && _.find($scope.domains, { value: linkId }) ? [linkId] : [],
+        //         cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
+        //     };
+        // }
 
         // Add new cache.
         this.createItem = function(linkId) {
@@ -695,7 +695,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
         $scope.resetAll = function() {
             Confirm.confirm('Are you sure you want to undo all changes for current cache?')
                 .then(function() {
-                    $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
+                    $scope.backupItem = angular.copy($scope.selectedItem);
                     if ($scope.ui.inputForm) {
                         $scope.ui.inputForm.$error = {};
                         $scope.ui.inputForm.$setPristine();

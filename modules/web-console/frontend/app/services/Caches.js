@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import ObjectID from 'bson-objectid';
+
 export default class Caches {
     static $inject = ['$http'];
 
@@ -39,5 +41,16 @@ export default class Caches {
 
     getCache(cacheID) {
         return this.$http.get(`/api/v1/configuration/caches/${cacheID}`);
+    }
+
+    getBlankCache() {
+        return {
+            _id: ObjectID.generate(),
+            cacheMode: 'PARTITIONED',
+            atomicityMode: 'ATOMIC',
+            readFromBackup: true,
+            copyOnRead: true,
+            cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
+        };
     }
 }
