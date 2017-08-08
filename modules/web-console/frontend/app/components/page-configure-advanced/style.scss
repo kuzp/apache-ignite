@@ -23,6 +23,12 @@ page-configure-advanced {
     display: flex;
     flex-direction: column;
 
+    .pca-form-blocked {
+        opacity: 0.5;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+
     .pca-menu {
         height: $nav-height;
         box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);

@@ -221,6 +221,13 @@ page-configure {
     padding: 0;
     border: none;
 
+    .pc-page-header-sub {
+        font-size: 14px;
+        line-height: 20px;
+        color: #757575;
+        margin-left: 8px;
+    }
+
     version-picker {
         margin-left: 8px;
         vertical-align: 2px;
