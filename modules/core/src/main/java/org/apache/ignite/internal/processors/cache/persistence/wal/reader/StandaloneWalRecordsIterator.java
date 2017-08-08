@@ -89,13 +89,18 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
         @NotNull File walFilesDir,
         @NotNull IgniteLogger log,
         @NotNull GridCacheSharedContext sharedCtx,
-        @NotNull FileIOFactory ioFactory) throws IgniteCheckedException {
-        super(log,
-            sharedCtx,
+        @NotNull FileIOFactory ioFactory
+    ) throws IgniteCheckedException {
+        super(
+            sharedCtx.igniteInstanceName(),
+            null,
             new RecordV1Serializer(sharedCtx),
             ioFactory,
+            log,
             BUF_SIZE);
+
         init(walFilesDir, false, null);
+
         advance();
     }
 
@@ -114,13 +119,18 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
             @NotNull FileIOFactory ioFactory,
             boolean workDir,
             @NotNull File... walFiles) throws IgniteCheckedException {
-        super(log,
-            sharedCtx,
+        super(
+            sharedCtx.igniteInstanceName(),
+            null,
             new RecordV1Serializer(sharedCtx),
             ioFactory,
+            log,
             BUF_SIZE);
+
         this.workDir = workDir;
+
         init(null, workDir, walFiles);
+
         advance();
     }
 
@@ -168,7 +178,8 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
      * @throws IgniteCheckedException if IO error occurs
      */
     private List<FileWriteAheadLogManager.FileDescriptor> scanIndexesFromFileHeaders(
-        @Nullable final File[] allFiles) throws IgniteCheckedException {
+        @Nullable final File[] allFiles
+    ) throws IgniteCheckedException {
         if (allFiles == null || allFiles.length == 0)
             return Collections.emptyList();
 
@@ -203,13 +214,14 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
 
     /** {@inheritDoc} */
     @Override protected FileWriteAheadLogManager.ReadFileHandle advanceSegment(
-        @Nullable final FileWriteAheadLogManager.ReadFileHandle curWalSegment) throws IgniteCheckedException {
+        @Nullable final FileWriteAheadLogManager.ReadFileHandle curWalSegment
+    ) throws IgniteCheckedException {
 
         if (curWalSegment != null)
             curWalSegment.close();
 
         curWalSegmIdx++;
-        // curHandle.workDir is false
+        // CurHandle.workDir is false.
         final FileWriteAheadLogManager.FileDescriptor fd;
 
         if (walFilesDir != null) {
@@ -230,6 +242,7 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
         assert fd != null;
 
         curRec = null;
+
         try {
             return initReadHandle(fd, null);
         }

@@ -25,7 +25,6 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusMeta
  *
  */
 public class MetaPageInitRootInlineRecord extends MetaPageInitRootRecord {
-
     /** */
     private final int inlineSize;
 

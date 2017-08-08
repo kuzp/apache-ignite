@@ -46,6 +46,15 @@ public abstract class WALRecord {
         /** */
         HEADER_RECORD,
 
+        /** Memory recovering start marker */
+        MEMORY_RECOVERY,
+
+        /** Switch segment record. */
+        SWITCH_SEGMENT_RECORD,
+
+        /** Partition destroy. */
+        PARTITION_DESTROY,
+
         // Delta records.
 
         /** */
@@ -129,9 +138,6 @@ public abstract class WALRecord {
         /** */
         PARTITION_META_PAGE_UPDATE_COUNTERS,
 
-        /** Memory recovering start marker */
-        MEMORY_RECOVERY,
-
         /** */
         TRACKING_PAGE_DELTA,
 
@@ -153,18 +159,11 @@ public abstract class WALRecord {
         /** Page list meta reset count record. */
         PAGE_LIST_META_RESET_COUNT_RECORD,
 
-        /** Switch segment record. */
-        SWITCH_SEGMENT_RECORD,
-
         /** */
         DATA_PAGE_UPDATE_RECORD,
 
         /** init */
-        BTREE_META_PAGE_INIT_ROOT2,
-
-        /** Partition destroy. */
-        PARTITION_DESTROY
-        ;
+        BTREE_META_PAGE_INIT_ROOT2;
 
         /** */
         private static final RecordType[] VALS = RecordType.values();
