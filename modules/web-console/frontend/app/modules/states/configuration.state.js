@@ -77,6 +77,25 @@ export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'Ign
     });
 }];
 
+const clustersTableResolve = ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
+    ConfigureState.dispatchAction({
+        type: SHOW_CONFIG_LOADING,
+        loadingText: 'Loading clusters…'
+    });
+
+    return Clusters.getClustersOverview()
+    .then(({data}) => {
+        ConfigureState.dispatchAction({
+            type: HIDE_CONFIG_LOADING
+        });
+        ConfigureState.dispatchAction({
+            type: RECEIVE_CONFIGURE_OVERVIEW,
+            clustersTable: data
+        });
+        return data;
+    });
+}];
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
@@ -103,23 +122,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configuration'
                 },
                 resolve: {
-                    clustersTable: ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading clusters…'
-                        });
-
-                        return Clusters.getClustersOverview()
-                        .then(({data}) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_CONFIGURE_OVERVIEW,
-                                clustersTable: data
-                            });
-                        });
-                    }]
+                    clustersTable: clustersTableResolve
                 }
             })
             .state('base.configuration.tabs', {
@@ -127,6 +130,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {
+                    clustersTable: clustersTableResolve,
                     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
                         const newCluster = Promise.resolve(Clusters.getBlankCluster());
                         const {clusterID} = $transition$.params();
@@ -166,8 +170,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
-                    return $transition$.injector().getAsync('cluster').then((cluster) => {
-                        return cluster.caches.length > 5
+                    const clusters = $transition$.injector().getAsync('clustersTable');
+                    const cluster = $transition$.injector().getAsync('cluster');
+                    return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
+                        return (clusters.length > 10 || cluster.caches.length > 5)
                             ? 'base.configuration.tabs.advanced'
                             : 'base.configuration.tabs.basic';
                     });
