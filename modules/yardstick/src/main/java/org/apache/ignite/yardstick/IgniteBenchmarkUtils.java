@@ -123,12 +123,15 @@ public class IgniteBenchmarkUtils {
 
         final int range = 1_000_000;
 
+        final boolean bigEntry = true;
+
         final boolean throughputLatencyProbe = false;
 
         for (int i = 0; i < extraNodes; i++) {
             IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "base-ignite.cfg");
 
             nodeCfg.setIgniteInstanceName("node-" + i);
+            nodeCfg.setMetricsUpdateFrequency(0);
 
             Ignition.start(nodeCfg);
         }
@@ -152,6 +155,9 @@ public class IgniteBenchmarkUtils {
 
         if (clientDriverNode)
             args0.add("-cl");
+
+        if (bigEntry)
+            args0.add("-be");
 
         BenchmarkDriverStartUp.main(args0.toArray(new String[args0.size()]));
     }

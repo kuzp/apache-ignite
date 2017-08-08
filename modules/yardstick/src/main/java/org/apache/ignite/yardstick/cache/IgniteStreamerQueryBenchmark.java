@@ -30,6 +30,7 @@ import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.query.FieldsQueryCursor;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.yardstick.IgniteAbstractBenchmark;
+import org.apache.ignite.yardstick.cache.model.ZipEntity;
 import org.apache.ignite.yardstick.cache.model.ZipQueryEntity;
 import org.jetbrains.annotations.NotNull;
 import org.yardstickframework.BenchmarkConfiguration;
@@ -42,6 +43,9 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
     /** Cache name. */
     public static final String CACHE_NAME = "streamer-cache";
 
+    /** Big cache name. */
+    public static final String BIG_CACHE_NAME = "streamer-cache-2";
+
     /** {@inheritDoc} */
     @Override public void setUp(BenchmarkConfiguration cfg) throws Exception {
         super.setUp(cfg);
@@ -52,6 +56,8 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
         BenchmarkUtils.println("IgniteStreamerQueryBenchmark start test.");
 
         final int threads = args.compressThreads();
+
+        final String cacheName = args.bigEntry() ? BIG_CACHE_NAME : CACHE_NAME;
 
         ExecutorService exec =  Executors.newFixedThreadPool(threads, new ThreadFactory() {
             @Override public Thread newThread(@NotNull Runnable r) {
@@ -68,7 +74,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
 
         List<Future<?>> futs = new ArrayList<>(threads);
 
-        try (final IgniteDataStreamer<Object, Object> streamer = ignite().dataStreamer(CACHE_NAME)) {
+        try (final IgniteDataStreamer<Object, Object> streamer = ignite().dataStreamer(cacheName)) {
             final long startLoad = System.currentTimeMillis();
 
             for (int i = 0; i < threads; i++) {
@@ -78,7 +84,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
                 Future<Object> fut = exec.submit(new Callable<Object>() {
                     @Override public Object call() throws Exception {
                         for (int j = start; j < start + part; j++) {
-                            streamer.addData(String.valueOf(j), ZipQueryEntity.generateHard());
+                            streamer.addData(String.valueOf(j), createEntry(args.bigEntry()));
 
                             if (j % 100_000 == 0) {
                                 BenchmarkUtils.println("IgniteStreamerQueryBenchmark loaded entries: [entries=" + (j - start) + ", threadName="
@@ -107,7 +113,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             exec.shutdown();
         }
 
-        final String qry = "UPDATE ZIP_QUERY_ENTITY " +
+        final String qry = "UPDATE " + (args.bigEntry() ? "ZIP_ENTITY " : "ZIP_QUERY_ENTITY ") +
             "SET totalvalue=?, " +
             "sys_audit_trace = concat(" +
             " casewhen(sys_audit_trace is not null, concat(sys_audit_trace,','),'')," +
@@ -125,7 +131,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
 
             sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
 
-            IgniteCache<Object, Object> cache = ignite().cache(CACHE_NAME);
+            IgniteCache<Object, Object> cache = ignite().cache(cacheName);
 
             FieldsQueryCursor<List<?>> cur = cache.query(sqlQry);
 
@@ -137,11 +143,27 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry) + ']');
         }
 
-        IgniteCache<Object, Object> cache = ignite().cache(CACHE_NAME);
+        IgniteCache<Object, Object> cache = ignite().cache(cacheName);
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 2; i++)
             System.out.println(cache.get(String.valueOf(i)));
 
         return false;
+    }
+
+    /**
+     * @param bigEntry Big entry.
+     */
+    private Object createEntry(boolean bigEntry) {
+        if (bigEntry) {
+            ZipEntity entity = ZipEntity.generateHard(1.0, ZipEntity.RND_STRING_LEN);
+
+            entity.BUSINESSDATE = "2017-06-30";
+            entity.BOOKSOURCESYSTEMCODE = "93013109";
+
+            return entity;
+        }
+        else
+            return ZipQueryEntity.generateHard();
     }
 }

@@ -259,6 +259,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-ak", "--affinityKey"}, description = "Use affinity key per partition for datastreamer test.")
     private boolean streamerAffinityKey;
 
+    @Parameter(names = {"-be", "--bigEntry"}, description = "Use big entry for query.")
+    private boolean bigEntry;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -657,6 +660,13 @@ public class IgniteBenchmarkArguments {
      */
     public boolean streamerAffinityKey() {
         return streamerAffinityKey;
+    }
+
+    /**
+     * @return Big entry.
+     */
+    public boolean bigEntry() {
+        return bigEntry;
     }
 
     /** {@inheritDoc} */

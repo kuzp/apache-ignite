@@ -669,4 +669,58 @@ public class ZipEntity {
     public void setVARTYPE(String VARTYPE) {
         this.VARTYPE = VARTYPE;
     }
+
+    @Override public String toString() {
+        return "ZipEntity{" +
+            "ACCOUNTCODE='" + ACCOUNTCODE + '\'' +
+            ", ASSETTYPE='" + ASSETTYPE + '\'' +
+            ", ASSETUNIT='" + ASSETUNIT + '\'' +
+            ", ATLASFOLDERID='" + ATLASFOLDERID + '\'' +
+            ", ATLASINSTRUMENTSTRUCTUREPATH='" + ATLASINSTRUMENTSTRUCTUREPATH + '\'' +
+            ", BOOKSOURCESYSTEM='" + BOOKSOURCESYSTEM + '\'' +
+            ", BOOKSOURCESYSTEMCODE='" + BOOKSOURCESYSTEMCODE + '\'' +
+            ", BUSINESSDATE='" + BUSINESSDATE + '\'' +
+            ", CUSIP='" + CUSIP + '\'' +
+            ", DATASETFILTER='" + DATASETFILTER + '\'' +
+            ", DATASETLABEL='" + DATASETLABEL + '\'' +
+            ", EODTOTALVALUE=" + EODTOTALVALUE +
+            ", ESMP='" + ESMP + '\'' +
+            ", FOAGGRCODE='" + FOAGGRCODE + '\'' +
+            ", HOSTPRODID='" + HOSTPRODID + '\'' +
+            ", INSTRUMENTEXPIRYDATE='" + INSTRUMENTEXPIRYDATE + '\'' +
+            ", INSTRUMENTMATURITYDATE='" + INSTRUMENTMATURITYDATE + '\'' +
+            ", INSTRUMENTTYPE='" + INSTRUMENTTYPE + '\'' +
+            ", ISIN='" + ISIN + '\'' +
+            ", PROXYINSTRUMENTID='" + PROXYINSTRUMENTID + '\'' +
+            ", PROXYINSTRUMENTIDTYPE='" + PROXYINSTRUMENTIDTYPE + '\'' +
+            ", PROXYINSTRUMENTTYPE='" + PROXYINSTRUMENTTYPE + '\'' +
+            ", QUANTITY=" + QUANTITY +
+            ", REGION='" + REGION + '\'' +
+            ", RIC='" + RIC + '\'' +
+            ", RISKFACTORNAME='" + RISKFACTORNAME + '\'' +
+            ", RISKPARENTINSTRUMENTID='" + RISKPARENTINSTRUMENTID + '\'' +
+            ", RISKPARENTINSTRUMENTIDTYPE='" + RISKPARENTINSTRUMENTIDTYPE + '\'' +
+            ", RISKSOURCESYSTEM='" + RISKSOURCESYSTEM + '\'' +
+            ", RISKSUBJECTCHORUSBOOKID='" + RISKSUBJECTCHORUSBOOKID + '\'' +
+            ", RISKSUBJECTID='" + RISKSUBJECTID + '\'' +
+            ", RISKSUBJECTINSTRUMENTCOUNTERPARTYID='" + RISKSUBJECTINSTRUMENTCOUNTERPARTYID + '\'' +
+            ", RISKSUBJECTINSTRUMENTID='" + RISKSUBJECTINSTRUMENTID + '\'' +
+            ", RISKSUBJECTINSTRUMENTIDTYPE='" + RISKSUBJECTINSTRUMENTIDTYPE + '\'' +
+            ", RISKSUBJECTSOURCE='" + RISKSUBJECTSOURCE + '\'' +
+            ", RISKSUBJECTTYPE='" + RISKSUBJECTTYPE + '\'' +
+            ", SENSITIVITYTYPE='" + SENSITIVITYTYPE + '\'' +
+            ", SERIESDATE='" + SERIESDATE + '\'' +
+            ", SERIESDAY='" + SERIESDAY + '\'' +
+            ", SNAPVERSION='" + SNAPVERSION + '\'' +
+            ", STRIKEVALUE=" + STRIKEVALUE +
+            ", SYS_AUDIT_TRACE='" + SYS_AUDIT_TRACE + '\'' +
+            ", THEOPRICE=" + THEOPRICE +
+            ", TOTALVALUE=" + TOTALVALUE +
+            ", UNDERLYINGSECURITYID='" + UNDERLYINGSECURITYID + '\'' +
+            ", UNDERLYINGSECURITYIDTYPE='" + UNDERLYINGSECURITYIDTYPE + '\'' +
+            ", VALUATIONSOURCECONTEXTLABELNAME='" + VALUATIONSOURCECONTEXTLABELNAME + '\'' +
+            ", VALUE=" + VALUE +
+            ", VARTYPE='" + VARTYPE + '\'' +
+            '}';
+    }
 }

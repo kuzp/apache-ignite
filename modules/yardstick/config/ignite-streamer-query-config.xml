@@ -38,7 +38,7 @@
 
                     <property name="atomicityMode" value="TRANSACTIONAL"/>
 
-                    <property name="queryParallelism" value="1"/>
+                    <property name="queryParallelism" value="16"/>
 
                     <property name="queryEntities">
                         <bean class="org.apache.ignite.cache.QueryEntity">
@@ -51,6 +51,97 @@
                                     <entry key="SYS_AUDIT_TRACE" value="java.lang.String"/>
                                     <entry key="BUSINESSDATE" value="java.lang.String"/>
                                     <entry key="BOOKSOURCESYSTEMCODE" value="java.lang.String"/>
+                                </map>
+                            </property>
+                            <property name="indexes">
+                                <list>
+                                    <bean class="org.apache.ignite.cache.QueryIndex">
+                                        <constructor-arg value="BUSINESSDATE"/>
+                                        <property name="inlineSize" value="12"/>
+                                    </bean>
+                                    <bean class="org.apache.ignite.cache.QueryIndex">
+                                        <constructor-arg value="BOOKSOURCESYSTEMCODE"/>
+                                        <property name="inlineSize" value="12"/>
+                                    </bean>
+                                </list>
+                            </property>
+                        </bean>
+                    </property>
+                </bean>
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="streamer-cache-2"/>
+
+                    <property name="cacheMode" value="PARTITIONED"/>
+
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+
+                    <property name="queryParallelism" value="16"/>
+
+                    <property name="queryEntities">
+                        <bean class="org.apache.ignite.cache.QueryEntity">
+                            <property name="tableName" value="ZIP_ENTITY"/>
+                            <property name="keyType" value="java.lang.String"/>
+                            <property name="valueType" value="org.apache.ignite.yardstick.cache.model.ZipEntity"/>
+                            <property name="fields">
+                                <map>
+                                    <entry key="TOTALVALUE" value="double"/>
+                                    <entry key="SYS_AUDIT_TRACE" value="java.lang.String"/>
+                                    <entry key="BUSINESSDATE" value="java.lang.String"/>
+                                    <entry key="BOOKSOURCESYSTEMCODE" value="java.lang.String"/>
+
+                                    <entry key="ACCOUNTCODE" value="java.lang.String"/>
+                                    <entry key="ASSETTYPE" value="java.lang.String"/>
+                                    <entry key="ASSETUNIT" value="java.lang.String"/>
+                                    <entry key="ATLASFOLDERID" value="java.lang.String"/>
+                                    <entry key="ATLASINSTRUMENTSTRUCTUREPATH" value="java.lang.String"/>
+
+                                    <entry key="BOOKSOURCESYSTEM" value="java.lang.String"/>
+                                    <entry key="CUSIP" value="java.lang.String"/>
+                                    <entry key="DATASETFILTER" value="java.lang.String"/>
+                                    <entry key="DATASETLABEL" value="java.lang.String"/>
+                                    <entry key="EODTOTALVALUE" value="double"/>
+
+                                    <entry key="ESMP" value="java.lang.String"/>
+                                    <entry key="FOAGGRCODE" value="java.lang.String"/>
+                                    <entry key="HOSTPRODID" value="java.lang.String"/>
+                                    <entry key="INSTRUMENTEXPIRYDATE" value="java.lang.String"/>
+                                    <entry key="INSTRUMENTMATURITYDATE" value="java.lang.String"/>
+
+                                    <entry key="INSTRUMENTTYPE" value="java.lang.String"/>
+                                    <entry key="ISIN" value="java.lang.String"/>
+                                    <entry key="PROXYINSTRUMENTID" value="java.lang.String"/>
+                                    <entry key="PROXYINSTRUMENTIDTYPE" value="java.lang.String"/>
+                                    <entry key="PROXYINSTRUMENTTYPE" value="java.lang.String"/>
+
+                                    <entry key="QUANTITY" value="double"/>
+                                    <entry key="REGION" value="java.lang.String"/>
+                                    <entry key="RIC" value="java.lang.String"/>
+                                    <entry key="RISKFACTORNAME" value="java.lang.String"/>
+                                    <entry key="RISKPARENTINSTRUMENTID" value="java.lang.String"/>
+
+                                    <entry key="RISKPARENTINSTRUMENTIDTYPE" value="java.lang.String"/>
+                                    <entry key="RISKSOURCESYSTEM" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTCHORUSBOOKID" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTID" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTINSTRUMENTCOUNTERPARTYID" value="java.lang.String"/>
+
+                                    <entry key="RISKSUBJECTINSTRUMENTID" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTINSTRUMENTIDTYPE" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTSOURCE" value="java.lang.String"/>
+                                    <entry key="RISKSUBJECTTYPE" value="java.lang.String"/>
+                                    <entry key="SENSITIVITYTYPE" value="java.lang.String"/>
+
+                                    <entry key="SERIESDATE" value="java.lang.String"/>
+                                    <entry key="SERIESDAY" value="java.lang.String"/>
+                                    <entry key="SNAPVERSION" value="java.lang.String"/>
+                                    <entry key="STRIKEVALUE" value="double"/>
+                                    <entry key="THEOPRICE" value="double"/>
+
+                                    <entry key="UNDERLYINGSECURITYID" value="java.lang.String"/>
+                                    <entry key="UNDERLYINGSECURITYIDTYPE" value="java.lang.String"/>
+                                    <entry key="VALUATIONSOURCECONTEXTLABELNAME" value="java.lang.String"/>
+                                    <entry key="VALUE" value="double"/>
+                                    <entry key="VARTYPE" value="java.lang.String"/>
                                 </map>
                             </property>
                             <property name="indexes">
