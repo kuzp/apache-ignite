@@ -126,7 +126,8 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             "'\\\"}}')" +
             "WHERE businessdate=? AND booksourcesystemcode=?";
 
-        BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry + ']');
+        BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry + ", bigEntry=" + args.bigEntry()
+            + ", compute=" + args.compute() + ']');
 
         final long startQry = System.currentTimeMillis();
 
@@ -161,7 +162,8 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
         finally {
             final long endQry = System.currentTimeMillis();
 
-            BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry) + ']');
+            BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry)
+                + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
         }
 
         IgniteCache<Object, Object> cache = ignite().cache(cacheName);
