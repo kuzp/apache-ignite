@@ -24,11 +24,18 @@ pc-items-table(
 )
     footer-slot
         div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
-            | You have no caches. #[a.link-success(ng-click='createItem()') Create one?]                
-        a.link-success(ng-click='createItem()' ng-show='$ctrl.cachesTable.length') + Add new cache
+            | You have no caches. #[a.link-success(ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new"})') Create one?]                
+        a.link-success(
+            ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new"})'
+            ng-show='$ctrl.cachesTable.length'
+        ) + Add new cache
 
-h2.pc-page-header(ng-hide='backupItem.empty')
-    | {{ selectedItem._id ? 'Edit' : 'Create' }} cache {{ selectedItem._id ? '‘'+selectedItem.name+'’' : '' }}
+h2.pc-page-header(ng-show='!contentVisible()')
+    | {{ $ctrl.selectedItemIDs.length ? 'Multiple caches' : 'No caches' }} selected
+    span.pc-page-header-sub Select only one cache to see settings and edit it
+
+h2.pc-page-header(ng-hide='backupItem.empty' ng-if='contentVisible()')
+    | {{ $ctrl.$state.params.cacheID !== 'new' ? 'Edit' : 'Create' }} cache {{ $ctrl.$state.params.cacheID !== 'new' ? '‘'+selectedItem.name+'’' : '' }}
 
 div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
     form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
