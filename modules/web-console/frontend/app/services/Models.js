@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import ObjectID from 'bson-objectid';
+
 export default class Models {
     static $inject = ['$http'];
 
@@ -24,5 +26,14 @@ export default class Models {
 
     getModel(modelID) {
         return this.$http.get(`/api/v1/configuration/domains/${modelID}`);
+    }
+
+    getBlankModel() {
+        return {
+            _id: ObjectID.generate(),
+            generatePojo: true,
+            caches: [],
+            queryMetadata: 'Configuration'
+        };
     }
 }

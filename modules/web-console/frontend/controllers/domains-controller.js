@@ -530,7 +530,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
 
-        function prepareNewItem(cacheId) {
+        /*        function prepareNewItem(cacheId) {
             return {
                 space: $scope.spaces[0]._id,
                 generatePojo: true,
@@ -538,7 +538,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
                     (_.isEmpty($scope.caches) ? [] : [$scope.caches[0].value]),
                 queryMetadata: 'Configuration'
             };
-        }
+        }*/
 
         function isValidJavaIdentifier(s) {
             return JavaTypes.validIdentifier(s) && !JavaTypes.isKeyword(s) && JavaTypes.nonBuiltInClass(s) &&
@@ -606,7 +606,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
 
             FormUtils.confirmUnsavedChanges(dirty, function() {
                 if (dirty)
-                    $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
+                    $scope.backupItem = /* $scope.selectedItem ? */angular.copy($scope.selectedItem);
 
                 const demo = $root.IgniteDemoMode;
 
@@ -1387,16 +1387,16 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
         };
 
         // Add new domain model.
-        $scope.createItem = function(cacheId) {
-            if ($scope.tableReset(true)) {
-                $timeout(() => {
-                    FormUtils.ensureActivePanel($scope.ui, 'query');
-                    FormUtils.ensureActivePanel($scope.ui, 'general', 'keyTypeInput');
-                });
+        // $scope.createItem = function(cacheId) {
+        //     if ($scope.tableReset(true)) {
+        //         $timeout(() => {
+        //             FormUtils.ensureActivePanel($scope.ui, 'query');
+        //             FormUtils.ensureActivePanel($scope.ui, 'general', 'keyTypeInput');
+        //         });
 
-                $scope.selectItem(null, prepareNewItem(cacheId));
-            }
-        };
+        //         $scope.selectItem(null, prepareNewItem(cacheId));
+        //     }
+        // };
 
         function checkQueryConfiguration(item) {
             if (item.queryMetadata === 'Configuration' && LegacyUtils.domainForQueryConfigured(item)) {
@@ -1947,7 +1947,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
 
             Confirm.confirm('Are you sure you want to undo all changes for current domain model?')
                 .then(function() {
-                    $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
+                    $scope.backupItem = /* $scope.selectedItem ? */angular.copy($scope.selectedItem)/* : prepareNewItem()*/;
                     if ($scope.ui.inputForm) {
                         $scope.ui.inputForm.$error = {};
                         $scope.ui.inputForm.$setPristine();
