@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -332,12 +333,10 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
 
             ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-            List<Future<?>> futs = new ArrayList<>();
-
             for (int i = 0; i < parts.length; i++) {
                 final int part = parts[i];
 
-                Future<Object> fut = pool.submit(new Callable<Object>() {
+                pool.submit(new Callable<Object>() {
                     @Override public Object call() throws Exception {
                         QueryCursor<Cache.Entry<String, BinaryObject>> cur =
                             cache.query(createScanQuery().setLocal(true).setPartition(part));
@@ -347,12 +346,10 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
                         return null;
                     }
                 });
-
-                futs.add(fut);
             }
 
-            for (Future<?> fut : futs)
-                fut.get();
+            pool.shutdown();
+            pool.awaitTermination(1, TimeUnit.HOURS);
 
             return null;
         }
