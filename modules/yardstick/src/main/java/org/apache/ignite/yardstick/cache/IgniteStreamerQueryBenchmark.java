@@ -18,6 +18,7 @@
 package org.apache.ignite.yardstick.cache;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -25,12 +26,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import javax.cache.Cache;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
+import org.apache.ignite.binary.BinaryObject;
+import org.apache.ignite.binary.BinaryObjectBuilder;
 import org.apache.ignite.cache.query.FieldsQueryCursor;
+import org.apache.ignite.cache.query.QueryCursor;
+import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.cluster.ClusterGroup;
+import org.apache.ignite.lang.IgniteBiPredicate;
 import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.resources.IgniteInstanceResource;
 import org.apache.ignite.yardstick.IgniteAbstractBenchmark;
@@ -119,46 +126,88 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
 
         final QueryType qryType = QueryType.valueOf(args.queryType());
 
-        final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry());
-
-        BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry.getSql() + ", bigEntry=" + args.bigEntry()
-            + ", compute=" + args.compute() + ']');
-
-        final long startQry = System.currentTimeMillis();
-
-        try {
-            if (!args.compute())
-                executeQuery(ignite(), cacheName, qry, startQry, qryType);
-            else {
-                ClusterGroup grp = ignite().cluster().forServers();
-
-                ignite().compute(grp).broadcast(new IgniteCallable<Object>() {
-                    @IgniteInstanceResource
-                    private Ignite ignite;
-
-                    @Override public Object call() throws Exception {
-                        executeQuery(ignite, cacheName, qry.setLocal(true), startQry, qryType);
-
-                        return null;
-                    }
-
-
-                });
-            }
-        }
-        finally {
-            final long endQry = System.currentTimeMillis();
-
-            BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry)
-                + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
-        }
-
         IgniteCache<Object, Object> cache = ignite().cache(cacheName);
 
-        for (int i = 0; i < 2; i++)
-            System.out.println(cache.get(String.valueOf(i)));
+        if (qryType == QueryType.SCAN_UPDATE) {
+            final long startQry = System.currentTimeMillis();
+
+            if (args.compute()) {
+                ClusterGroup grp = ignite().cluster().forServers();
+
+                ignite().compute(grp).broadcast(new UpdateCall(cacheName));
+            }
+            else {
+                ScanQuery<String, BinaryObject> qry = createScanQuery();
+
+                IgniteCache<Object, Object> binCache = cache.withKeepBinary();
+
+                QueryCursor<Cache.Entry<String, BinaryObject>> cur = binCache.query(qry);
+
+                update(cache, cur);
+            }
+
+            final long endQry = System.currentTimeMillis();
+
+            BenchmarkUtils.println("IgniteStreamerQueryBenchmark scan query finished. [time=" + (endQry - startQry)
+                + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
+        }
+        else {
+            final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry());
+
+            BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry.getSql() + ", bigEntry=" + args.bigEntry()
+                + ", compute=" + args.compute() + ']');
+
+            final long startQry = System.currentTimeMillis();
+
+            try {
+                if (!args.compute())
+                    executeQuery(ignite(), cacheName, qry, startQry, qryType);
+                else {
+                    ClusterGroup grp = ignite().cluster().forServers();
+
+                    ignite().compute(grp).broadcast(new IgniteCallable<Object>() {
+                        @IgniteInstanceResource
+                        private Ignite ignite;
+
+                        @Override public Object call() throws Exception {
+                            executeQuery(ignite, cacheName, qry.setLocal(true), startQry, qryType);
+
+                            return null;
+                        }
+                    });
+                }
+            }
+            finally {
+                final long endQry = System.currentTimeMillis();
+
+                BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry)
+                    + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
+            }
+        }
+
+        for (int ii = 0; ii < 2; ii++)
+            System.out.println(cache.get(String.valueOf(ii)));
 
         return false;
+    }
+
+    /**
+     * @param map Map.
+     * @param cache Cache.
+     * @param i I.
+     */
+    private static int save(Map<Object, Object> map, IgniteCache<Object, Object> cache, int i, boolean last) {
+        if (map.size() > 100_000 || (last && !map.isEmpty())) {
+            cache.putAll(map);
+
+            map.clear();
+
+            i += 100_000;
+
+            System.out.println("== " + i + " records was updated");
+        }
+
+        return i;
     }
 
     /**
@@ -241,7 +290,83 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
     /**
      *
      */
+    private static ScanQuery<String, BinaryObject> createScanQuery() {
+        return new ScanQuery<>(new IgniteBiPredicate<String, BinaryObject>() {
+            @Override public boolean apply(String s, BinaryObject b) {
+                return b.field("businessdate").equals("2017-06-30")
+                    && b.field("booksourcesystemcode").equals("93013109");
+            }
+        });
+    }
+
+    /**
+     *
+     */
     private enum QueryType {
-        /** Update. */UPDATE, /** Select. */SELECT
+        /** Update. */UPDATE, /** Select. */SELECT, /** Scan update. */SCAN_UPDATE
+    }
+
+    /**
+     *
+     */
+    static class UpdateCall implements IgniteCallable<Object> {
+        /** Ignite. */
+        @IgniteInstanceResource
+        private Ignite ignite;
+
+        /** Cache name. */
+        private final String cacheName;
+
+        /**
+         * @param cacheName Cache name.
+         */
+        UpdateCall(String cacheName) {
+            this.cacheName = cacheName;
+        }
+
+        /** {@inheritDoc} */
+        @Override public Object call() throws Exception {
+            IgniteCache<Object, Object> cache = ignite.cache(cacheName).withKeepBinary();
+
+            QueryCursor<Cache.Entry<String, BinaryObject>> cur = cache.query(createScanQuery().setLocal(true));
+
+            update(cache, cur);
+
+            return null;
+        }
+    }
+
+    /**
+     * @param cache Cache.
+     * @param cur Query.
+     */
+    private static void update(IgniteCache<Object, Object> cache, QueryCursor<Cache.Entry<String, BinaryObject>> cur) {
+        int i = 0;
+
+        Map<Object, Object> map = new HashMap<>();
+
+        for (Cache.Entry<String, BinaryObject> entry : cur) {
+            BinaryObject val = entry.getValue();
+
+            BinaryObjectBuilder builder = val.toBuilder();
+
+            double newTotalVal = 0.0;
+
+            builder.setField("totalvalue", 0.0);
+
+            String sysAuditTrace = val.field("sys_audit_trace");
+
+            sysAuditTrace = sysAuditTrace.isEmpty() ? "" : sysAuditTrace + ",";
+            sysAuditTrace += "{\"aid\":\""+ "2017-06-30_20170806230013895" +"\"," +
+                "\"changes\":{\"totalvalue\":\"" + newTotalVal + "\"}}";
+
+            builder.setField("sys_audit_trace", sysAuditTrace);
+
+            map.put(entry.getKey(), builder.build());
+
+            i = save(map, cache, i, false);
+        }
+
+        save(map, cache, i, true);
     }
 }
