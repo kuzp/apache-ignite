@@ -326,11 +326,33 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
 
         /** {@inheritDoc} */
         @Override public Object call() throws Exception {
-            IgniteCache<Object, Object> cache = ignite.cache(cacheName).withKeepBinary();
+            final IgniteCache<Object, Object> cache = ignite.cache(cacheName).withKeepBinary();
 
-            QueryCursor<Cache.Entry<String, BinaryObject>> cur = cache.query(createScanQuery().setLocal(true));
+            int[] parts = ignite.affinity(cacheName).primaryPartitions(ignite.cluster().localNode());
 
-            update(cache, cur);
+            ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+            List<Future<?>> futs = new ArrayList<>();
+
+            for (int i = 0; i < parts.length; i++) {
+                final int part = parts[i];
+
+                Future<Object> fut = pool.submit(new Callable<Object>() {
+                    @Override public Object call() throws Exception {
+                        QueryCursor<Cache.Entry<String, BinaryObject>> cur =
+                            cache.query(createScanQuery().setLocal(true).setPartition(part));
+
+                        update(cache, cur);
+
+                        return null;
+                    }
+                });
+
+                futs.add(fut);
+            }
+
+            for (Future<?> fut : futs)
+                fut.get();
 
             return null;
         }
