@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import isNumber from 'lodash/fp/isNumber';
+
 export default ['igniteUnique', ['$parse', ($parse) => {
     const link = (scope, el, attrs, [ngModel]) => {
         if (_.isUndefined(attrs.igniteUnique) || !attrs.igniteUnique)
@@ -36,8 +38,11 @@ export default ['igniteUnique', ['$parse', ($parse) => {
             if (isNew)
                 return idx < 0;
 
+            // Case for new component list editable.
+            const $index = isNumber(scope.$index) ? scope.$index : scope.$parent.$index;
+
             // Check for $index in case of editing in-place.
-            return (_.isNumber(scope.$index) && (idx < 0 || scope.$index === idx));
+            return (_.isNumber($index) && (idx < 0 || $index === idx));
         };
     };
 
