@@ -52,13 +52,13 @@ export default class PageConfigureBasicController {
     }
 
     getObservable(state$, version$) {
-        return state$.pluck('clusterConfiguration')
-        .combineLatest(version$, (clusterConfiguration, version) => ({
-            clusterConfiguration,
-            caches: clusterConfiguration.originalCaches,
-            allClusterCaches: this.getAllClusterCaches(clusterConfiguration),
-            cachesMenu: this.getCachesMenu(this.getAllClusterCaches(clusterConfiguration)),
-            defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(clusterConfiguration.originalCluster),
+        return state$/* .pluck('clusterConfiguration')*/
+        .combineLatest(version$, (state, version) => ({
+            clusterConfiguration: state.clusterConfiguration,
+            caches: state.clusterConfiguration.originalCaches,
+            allClusterCaches: this.getAllClusterCaches(state),
+            cachesMenu: this.getCachesMenu(this.getAllClusterCaches(state.clusterConfiguration)),
+            defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.clusterConfiguration.originalCluster),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
         }))
         // return state$.combineLatest(version$, (state, version) => ({
@@ -110,7 +110,7 @@ export default class PageConfigureBasicController {
     }
 
     addCache() {
-        this.pageService.addCache();
+        this.pageService.addCache(this.allClusterCaches);
     }
 
     removeCache(cache) {
@@ -131,8 +131,9 @@ export default class PageConfigureBasicController {
         return caches.map((c) => ({_id: c._id, name: c.name}));
     }
 
-    getAllClusterCaches(state = {originalCaches: [], newCaches: []}) {
-        return [...state.originalCaches || [], ...state.newCaches || []];
+    getAllClusterCaches(state) {
+        return [...get(state, 'basicCaches.changedItems', []), ...get(state, 'clusterConfiguration.originalCaches', [])];
+        // return [...state.originalCaches || [], ...state.newCaches || []];
     }
 
     getDefaultClusterMemoryPolicy(cluster, version) {

@@ -124,14 +124,11 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return {
                 ...state,
                 originalCluster: action.cluster
-                // originalCaches: action.caches,
-                // newCaches: []
             };
         case RECEIVE_CACHES_EDIT:
             return {
                 ...state,
-                originalCaches: action.caches,
-                newCaches: []
+                originalCaches: action.caches
             };
         case RECEIVE_CACHE_EDIT: {
             return {
@@ -142,8 +139,7 @@ export const editReducer = (state = {originalCluster: null}, action) => {
         case RECEIVE_IGFSS_EDIT:
             return {
                 ...state,
-                originalIGFSs: action.igfss,
-                newIGFSs: []
+                originalIGFSs: action.igfss
             };
         case RECEIVE_IGFS_EDIT: {
             return {
@@ -154,8 +150,7 @@ export const editReducer = (state = {originalCluster: null}, action) => {
         case RECEIVE_MODELS_EDIT:
             return {
                 ...state,
-                originalModels: action.models,
-                nowModels: []
+                originalModels: action.models
             };
         case RECEIVE_MODEL_EDIT: {
             return {
@@ -168,6 +163,27 @@ export const editReducer = (state = {originalCluster: null}, action) => {
     }
 };
 
+
+export const filteredReducer = (reducer, predicate) => (state, action) => predicate(action) || state === void 0
+    ? reducer(state, action)
+    : state;
+
+export const ADD_ITEM = Symbol('ADD_ITEM');
+export const REMOVE_ITEM = Symbol('REMOVE_ITEM');
+export const UPDATE_ITEM = Symbol('UPDATE_ITEM');
+
+export const itemsEditReducer = (state = {ids: [], changedItems: []}, action) => {
+    switch (action.type) {
+        case ADD_ITEM:
+            return {...state, ids: [...state.ids, action.item._id], changedItems: [...state.changedItems, action.item]};
+        case REMOVE_ITEM:
+            return {...state, ids: state.ids.filter((id) => id !== action.item._id), changedItems: state.changedItems.filter((item) => item._id !== action.item._id)};
+        case UPDATE_ITEM:
+            return {...state, changedItems: state.changedItems.map((item) => item._id === action.item._id ? action.item : item)};
+        default:
+            return state;
+    }
+};
 
 export const SHOW_CONFIG_LOADING = Symbol('SHOW_CONFIG_LOADING');
 export const HIDE_CONFIG_LOADING = Symbol('HIDE_CONFIG_LOADING');
