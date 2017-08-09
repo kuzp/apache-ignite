@@ -201,7 +201,7 @@ public abstract class AbstractWalRecordsIterator
      * @param hnd Currently opened read handle.
      * @return next advanced record.
      */
-    private IgniteBiTuple<WALPointer, WALRecord> advanceRecord(
+    protected IgniteBiTuple<WALPointer, WALRecord> advanceRecord(
         @Nullable final FileWriteAheadLogManager.ReadFileHandle hnd
     ) {
         if (hnd == null)
@@ -272,7 +272,7 @@ public abstract class AbstractWalRecordsIterator
                 if (start != null && desc.idx == start.index())
                     in.seek(start.fileOffset());
 
-                RecordSerializer ser = recordSerFactory.create(ver);
+                RecordSerializer ser = recordSerFactory.createSerializer(ver);
 
                 return new FileWriteAheadLogManager.ReadFileHandle(
                     fileIO, desc.idx, gridName, ser, in);

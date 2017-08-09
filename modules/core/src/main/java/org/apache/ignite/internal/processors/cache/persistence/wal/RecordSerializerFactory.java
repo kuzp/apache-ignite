@@ -29,5 +29,5 @@ public interface RecordSerializerFactory {
      * @param ver Serializer version.
      * @return record serializer.
      */
-    public RecordSerializer create(int ver) throws IgniteCheckedException;
+    public RecordSerializer createSerializer(int ver) throws IgniteCheckedException;
 }

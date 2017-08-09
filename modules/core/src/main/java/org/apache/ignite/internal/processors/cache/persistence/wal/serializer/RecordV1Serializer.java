@@ -143,6 +143,7 @@ public class RecordV1Serializer implements RecordSerializer {
         this.cctx = cctx;
 
         co = cctx.kernalContext().cacheObjects();
+
         pageSize = cctx.database().pageSize();
     }
 
@@ -771,7 +772,16 @@ public class RecordV1Serializer implements RecordSerializer {
                 byte state = in.readByte();
                 int allocatedIdxCandidate = in.readInt();
 
-                res = new MetaPageUpdatePartitionDataRecord(cacheId, pageId, updCntr, rmvId, partSize, countersPageId, state, allocatedIdxCandidate);
+                res = new MetaPageUpdatePartitionDataRecord(
+                    cacheId,
+                    pageId,
+                    updCntr,
+                    rmvId,
+                    partSize,
+                    countersPageId,
+                    state,
+                    allocatedIdxCandidate
+                );
 
                 break;
 
