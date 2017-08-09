@@ -95,6 +95,16 @@
                     }
                 }
 
+                & > input {
+                    &.ng-invalid:not(.ng-pristine) {
+                        border-color: $ignite-brand-primary;
+                    }
+
+                    &:focus {
+                        border-color: $ignite-brand-success;
+                    }
+                }
+
                 & > input[type='number'] {
                     text-align: right;
                 }
