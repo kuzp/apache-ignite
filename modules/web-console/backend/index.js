@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const MigrateMongoose = require('migrate-mongoose');
 
 const igniteModules = process.env.IGNITE_MODULES ?
     path.join(path.normalize(process.env.IGNITE_MODULES), 'backend') : './ignite_modules';
@@ -63,16 +64,8 @@ const _onError = (addr, error) => {
 };
 
 /**
- * Event listener for HTTP server "listening" event.
- */
-const _onListening = (addr) => {
-    const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-
-    console.log('Start listening on ' + bind);
-};
-
-/**
  * @param settings
+ * @param MigrateMongoose
  * @param {ApiServer} apiSrv
  * @param {AgentsHandler} agentsHnd
  * @param {BrowsersHandler} browsersHnd
@@ -98,7 +91,28 @@ const init = ([settings, apiSrv, agentsHnd, browsersHnd]) => {
         process.send('running');
 };
 
-Promise.all([injector('settings'), injector('api-server'), injector('agents-handler'), injector('browsers-handler')])
+Promise.all([injector('settings'), injector('mongo')])
+    .then(([{mongoUrl}]) => {
+        const migrator = new MigrateMongoose({
+            migrationsPath: './migrations', // Path to migrations directory
+            dbConnectionUri: mongoUrl // mongo url
+        });
+
+        console.log('Running migrations...');
+
+        return migrator.run('down')
+            .then(() => console.log('All migrations finished successfully.'))
+            .catch((err) => {
+                if (err instanceof Error && err.message === 'There are no migrations to run') {
+                    console.log('There are no migrations to run.');
+
+                    return;
+                }
+
+                throw err;
+            });
+    })
+    .then(() => Promise.all([injector('settings'), injector('api-server'), injector('agents-handler'), injector('browsers-handler')]))
     .then(init)
     .catch((err) => {
         console.error(err);
