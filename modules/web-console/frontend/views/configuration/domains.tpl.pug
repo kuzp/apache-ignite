@@ -27,16 +27,20 @@ pc-items-table(
             | You have no domain models. #[a.link-success(ui-sref='base.configuration.tabs.advanced.models.model({modelID: "new"})') Create one?]
         a.link-success(ui-sref='base.configuration.tabs.advanced.models.model({modelID: "new"})' ng-show='$ctrl.modelsTable.length') + Add new domain model
 
-h2.pc-page-header(ng-hide='backupItem.empty')
-    | {{ $ctrl.$state.params.modelID !== 'new' ? 'Edit' : 'Create' }} domain model {{ backupItem.valueType ? '‘'+backupItem.valueType+'’' : '' }}
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length !== 1')
+    | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} domain models selected
+    span.pc-page-header-sub Select only one domain model to see settings and edit it
 
-div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1')
+    | {{ $ctrl.$state.params.modelID !== 'new' ? 'Edit' : 'Create' }} domain model {{ backupItem.valueType ? 'for ‘'+backupItem.valueType+'’ value type' : '' }}
+
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels' ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
+    form.form-horizontal(name='ui.inputForm' novalidate )
         include /app/modules/states/configuration/domains/general
         include /app/modules/states/configuration/domains/query
         include /app/modules/states/configuration/domains/store
 
-.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
     button.btn-ignite.btn-ignite--success(
         ng-click='showImportDomainModal()'
         type='button'
