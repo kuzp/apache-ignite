@@ -267,6 +267,10 @@ public class GridLuceneIndex implements AutoCloseable {
         MultiFieldQueryParser parser = new MultiFieldQueryParser(idxdFields,
             writer.getAnalyzer());
 
+        // This become false by default from 4.x version.
+        // Set it to true for compatibility reasons.
+        parser.setAllowLeadingWildcard(true);
+
         TopDocs docs;
 
         try {
@@ -296,8 +300,7 @@ public class GridLuceneIndex implements AutoCloseable {
     /** {@inheritDoc} */
     @Override public void close() {
         U.closeQuiet(writer);
-
-        dir.close();
+        U.close(dir, ctx.log(GridLuceneIndex.class));
     }
 
     /**
