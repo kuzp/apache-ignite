@@ -128,7 +128,7 @@ export default class PageConfigureBasicController {
     }
 
     getCachesMenu(caches = []) {
-        return [...caches.values()].map((c) => ({_id: c._id, name: c.name}));
+        return caches.map((c) => ({_id: c._id, name: c.name}));
     }
 
     getAllClusterCaches(state = {originalCaches: [], newCaches: []}) {
