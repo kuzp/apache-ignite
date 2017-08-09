@@ -21,11 +21,7 @@ import indexOf from 'lodash/fp/indexOf';
 
 export default class {
     constructor(...args) {
-        this._rows = [];
-    }
-
-    $onInit() {
-        console.log();
+        this._cache = {};
     }
 
     save(data, idx) {
@@ -33,40 +29,26 @@ export default class {
     }
 
     revert(idx) {
-        this.ngModel.$viewValue[idx] = this._rows[idx].default;
+        delete this._cache[idx];
     }
 
-    remove(item) {
-        const idx = indexOf(item)(this.ngModel.$viewValue);
-
-        if (!~idx)
-            return;
-
+    remove(idx) {
         this.ngModel.$viewValue.splice(idx, 1);
     }
 
     isEditView(idx) {
-        return isEmpty(this.ngModel.$viewValue[idx]);
+        return this._cache.hasOwnProperty(idx) || isEmpty(this.ngModel.$viewValue[idx]);
     }
 
     getEditView(idx) {
-        return this._rows[idx].clone;
+        return this._cache[idx];
     }
 
     startEditView(idx) {
-        this._rows[idx] = {
-            clone: clone(this.ngModel.$viewValue[idx]),
-            default: this.ngModel.$viewValue[idx]
-        };
-
-        delete this.ngModel.$viewValue[idx];
+        this._cache[idx] = clone(this.ngModel.$viewValue[idx]);
     }
 
     stopEditView(idx) {
-        delete this._rows[idx];
-    }
-
-    log() {
-        console.log('some log');
+        delete this._cache[idx];
     }
 }

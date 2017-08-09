@@ -14,14 +14,21 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.pcle-row(ng-repeat='modelView in $ctrl.ngModel.$viewValue track by $index')
-    .pcle-row-index {{ $index+1 }}
-    .pcle-row-view(ng-click='$ctrl.startEditView($index);')
-        .pcle-row-model-view(ng-if='!$ctrl.isEditView($index)')
-            div(ng-transclude='modelView')
-        .pcle-row-edit-view(ng-if='$ctrl.isEditView($index)' ignite-on-focus-out='$ctrl.stopEditView($index); pcleForm.$valid ? $ctrl.save(editView, $index) : $ctrl.revert($index);')
-            div(ng-form name='pcleForm' ng-init='editView = $ctrl.getEditView($index);')
-                div(ng-transclude='editView')
+.pcle-row(
+    ng-repeat='item in $ctrl.ngModel.$viewValue track by $index'
+    ng-class='{ "pcle-row--editable": $ctrl.isEditView($index) }')
+    .pcle-row-index
+        span {{ $index+1 }}
+
+    .pcle-row-item
+        .pcle-row-item-view(ng-if='!$ctrl.isEditView($index)' ng-click='$ctrl.startEditView($index);')
+            div(ng-transclude='itemView')
+        div(ng-if='$ctrl.isEditView($index)' ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);')
+            .pcle-row-item-view(ng-init='item = $ctrl.getEditView($index);')
+                div(ng-transclude='itemView')
+            .pcle-row-item-edit(ng-form name='form')
+                div(ng-transclude='itemEdit')
+
     .pcle-row-cross
-        button.btn-ignite.btn-ignite--link-dashed-secondary(ng-click='$ctrl.remove(modelView)')
+        button.btn-ignite.btn-ignite--link-dashed-secondary(ng-click='$ctrl.remove($index)')
             svg(ignite-icon='cross')
