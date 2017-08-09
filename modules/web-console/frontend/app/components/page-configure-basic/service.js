@@ -18,17 +18,21 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import {
-    SET_CLUSTER,
-    ADD_NEW_CACHE,
-    REMOVE_CACHE,
-    SET_SELECTED_CACHES,
+    // SET_CLUSTER,
+    // ADD_NEW_CACHE,
+    // REMOVE_CACHE,
+    // SET_SELECTED_CACHES,
     isNewItem
 } from './reducer';
 
-const makeId = (() => {
-    let id = -1;
-    return () => id--;
-})();
+import {ADD_ITEM, REMOVE_ITEM, UPDATE_ITEM} from '../page-configure/reducer';
+
+// const makeId = (() => {
+//     let id = -1;
+//     return () => id--;
+// })();
+
+import {uniqueName} from 'app/utils/uniqueName';
 
 export default class PageConfigureBasic {
     isNewItem = isNewItem;
@@ -114,23 +118,31 @@ export default class PageConfigureBasic {
         });
     }
 
-    setCluster(_id) {
-        this.ConfigureState.dispatchAction(
-            isNewItem({_id})
-                ? {type: SET_CLUSTER, _id, cluster: this.clusters.getBlankCluster()}
-                : {type: SET_CLUSTER, _id}
-        );
+    // setCluster(_id) {
+    //     this.ConfigureState.dispatchAction(
+    //         isNewItem({_id})
+    //             ? {type: SET_CLUSTER, _id, cluster: this.clusters.getBlankCluster()}
+    //             : {type: SET_CLUSTER, _id}
+    //     );
+    // }
+
+    addCache(caches) {
+        this.ConfigureState.dispatchAction({
+            type: ADD_ITEM,
+            item: {...this.caches.getBlankCache(), name: uniqueName('New cache', caches)},
+            field: 'basicCaches'
+        });
     }
 
-    addCache() {
-        this.ConfigureState.dispatchAction({type: ADD_NEW_CACHE, _id: makeId()});
+    removeCache(item) {
+        this.ConfigureState.dispatchAction({type: REMOVE_ITEM, item, field: 'basicCaches'});
     }
 
-    removeCache(cache) {
-        this.ConfigureState.dispatchAction({type: REMOVE_CACHE, cache});
+    updateCache(item) {
+        this.ConfigureState.dispatchAction({type: UPDATE_ITEM, item, field: 'basicCaches'});
     }
 
-    setSelectedCaches(cacheIDs) {
-        this.ConfigureState.dispatchAction({type: SET_SELECTED_CACHES, cacheIDs});
-    }
+    // setSelectedCaches(cacheIDs) {
+    //     this.ConfigureState.dispatchAction({type: SET_SELECTED_CACHES, cacheIDs});
+    // }
 }
