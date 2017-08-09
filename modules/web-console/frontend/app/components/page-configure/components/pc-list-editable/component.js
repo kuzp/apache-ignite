@@ -30,7 +30,7 @@ export default {
 
     },
     transclude: {
-        editView: '?pcListEditableEditView',
-        modelView: '?pcListEditableModelView'
+        itemView: '?pcListEditableItemView',
+        itemEdit: '?pcListEditableItemEdit'
     }
 };
