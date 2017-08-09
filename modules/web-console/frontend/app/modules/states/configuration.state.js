@@ -244,6 +244,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
+                onEnter: ['ConfigureState', (ConfigureState) => {
+                    ConfigureState.dispatchAction({
+                        type: RECEIVE_CACHE_EDIT,
+                        model: null
+                    });
+                }],
                 redirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
                     const fromState = $transition$.from();
@@ -280,18 +286,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 clusters: [cluster._id]
                             }))
                             : Caches.getCache(cacheID).then(({data}) => data);
-                        // ConfigureState.dispatchAction({
-                        //     type: RECEIVE_CACHE_EDIT,
-                        //     cache: null
-                        // });
-                        // ConfigureState.dispatchAction({
-                        //     type: SHOW_CONFIG_LOADING,
-                        //     loadingText: 'Loading cache…'
-                        // });
+
                         return cache.then((cache) => {
-                            // ConfigureState.dispatchAction({
-                            //     type: HIDE_CONFIG_LOADING
-                            // });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_CACHE_EDIT,
                                 cache
@@ -328,6 +324,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
+                onEnter: ['ConfigureState', (ConfigureState) => {
+                    ConfigureState.dispatchAction({
+                        type: RECEIVE_MODEL_EDIT,
+                        model: null
+                    });
+                }],
                 redirectTo: ($transition$) => {
                     const modelStateName = 'base.configuration.tabs.advanced.models.model';
                     const fromState = $transition$.from();
@@ -359,19 +361,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? Promise.resolve(Models.getBlankModel())
                             : Models.getModel(modelID).then(({data}) => data);
 
-                        ConfigureState.dispatchAction({
-                            type: RECEIVE_MODEL_EDIT,
-                            model: null
-                        });
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading model…'
-                        });
-
                         return model.then((model) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_MODEL_EDIT,
                                 model
@@ -395,6 +385,10 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         ConfigureState.dispatchAction({
                             type: SHOW_CONFIG_LOADING,
                             loadingText: 'Loading IGFSs…'
+                        });
+                        ConfigureState.dispatchAction({
+                            type: RECEIVE_IGFS_EDIT,
+                            igfs: null
                         });
                         return clusterID === 'new'
                             ? Promise.resolve([])
@@ -444,19 +438,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const igfs = igfsID
                             ? IGFSs.getIGFS(igfsID).then(({data}) => data)
                             : Promise.resolve(null);
-                        ConfigureState.dispatchAction({
-                            type: RECEIVE_IGFS_EDIT,
-                            igfs: null
-                        });
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading IGFS…'
-                        });
 
                         return igfs.then((igfs) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
                             ConfigureState.dispatchAction({
                                 type: RECEIVE_IGFS_EDIT,
                                 igfs
