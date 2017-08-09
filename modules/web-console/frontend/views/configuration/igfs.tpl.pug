@@ -27,11 +27,15 @@ pc-items-table(
             | You have no IGFS. #[a.link-success(ng-click='createItem()') Create one?]
         a.link-success(ng-click='createItem()' ng-show='$ctrl.IGFSsTable.length') + Add new IGFS
 
-h2.pc-page-header(ng-hide='backupItem.empty')
-    | {{ backupItem._id ? 'Edit' : 'Create' }} IGFS {{ backupItem._id ? '‘'+backupItem.name+'’' : '' }}
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length !== 1')
+    | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} IGFSs selected
+    span.pc-page-header-sub Select only one IGFS to see settings and edit it
 
-div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1')
+    | {{ $ctrl.$state.params.igfsID !== 'new' ? 'Edit' : 'Create' }} IGFS {{ selectedItem.name ? '‘'+selectedItem.name+'’' : '' }}
+
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels' ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
+    form.form-horizontal(name='ui.inputForm' novalidate)
         include /app/modules/states/configuration/igfs/general
 
         include /app/modules/states/configuration/igfs/secondary
@@ -42,7 +46,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         include /app/modules/states/configuration/igfs/dual
         include /app/modules/states/configuration/igfs/misc
 
-.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
     .pc-form-actions-panel__right-after
     button.btn-ignite.btn-ignite--link-success(
         type='button'

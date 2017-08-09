@@ -30,15 +30,15 @@ pc-items-table(
             ng-show='$ctrl.cachesTable.length'
         ) + Add new cache
 
-h2.pc-page-header(ng-show='!contentVisible()')
-    | {{ $ctrl.selectedItemIDs.length ? 'Multiple caches' : 'No caches' }} selected
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length !== 1')
+    | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} caches selected
     span.pc-page-header-sub Select only one cache to see settings and edit it
 
-h2.pc-page-header(ng-hide='backupItem.empty' ng-if='contentVisible()')
-    | {{ $ctrl.$state.params.cacheID !== 'new' ? 'Edit' : 'Create' }} cache {{ $ctrl.$state.params.cacheID !== 'new' ? '‘'+selectedItem.name+'’' : '' }}
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1')
+    | {{ $ctrl.$state.params.cacheID !== 'new' ? 'Edit' : 'Create' }} cache {{ selectedItem.name ? '‘'+selectedItem.name+'’' : '' }}
 
-div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form.form-horizontal(name='ui.inputForm' novalidate ng-class='{"pca-form-blocked": !contentVisible()}')
+div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
+    form.form-horizontal(name='ui.inputForm' novalidate)
         include /app/modules/states/configuration/caches/general
         include /app/modules/states/configuration/caches/memory
         include /app/modules/states/configuration/caches/query
@@ -52,7 +52,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
         include /app/modules/states/configuration/caches/rebalance
         include /app/modules/states/configuration/caches/statistics
 
-.pc-form-actions-panel(ng-class='{"pca-form-blocked": !contentVisible()}')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
     .pc-form-actions-panel__right-after
     button.btn-ignite.btn-ignite--link-success(
         type='button'
