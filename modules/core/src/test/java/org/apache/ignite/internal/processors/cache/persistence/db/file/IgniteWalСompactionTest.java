@@ -1,5 +1,6 @@
 package org.apache.ignite.internal.processors.cache.persistence.db.file;
 
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -18,7 +19,7 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 /**
  *
  */
-public class IgniteWalCompressorTest extends GridCommonAbstractTest {
+public class IgniteWalСompactionTest extends GridCommonAbstractTest {
 
     private static final TcpDiscoveryIpFinder ipFinder = new TcpDiscoveryVmIpFinder(true);
 
@@ -88,9 +89,11 @@ public class IgniteWalCompressorTest extends GridCommonAbstractTest {
             if (stopCondition.call())
                 break;
             else {
-                cache.put(cnt, new byte[1024 * 1024]);
+                int size = ThreadLocalRandom.current().nextInt(0, 1024 * 1024);
 
-                cache.remove(cnt);
+                cache.put(cnt, new byte[size]);
+
+                //cache.remove(cnt);
 
                 cnt++;
             }
