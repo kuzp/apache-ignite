@@ -155,11 +155,11 @@ form(novalidate name=form)
             | Cancel
         .btn-ignite-group
             button.btn-ignite.btn-ignite--success(
-                ng-click='$ctrl.saveAndDownload()'
+                ng-click='::$ctrl.extraFormActions[1].click()'
                 type='button'
             )
                 svg(ignite-icon='download').icon-left
-                | Save changes and download project
+                | {{ ::$ctrl.extraFormActions[1].text }}
             button.btn-ignite.btn-ignite--success(
                 bs-dropdown='$ctrl.extraFormActions'
                 data-placement='top-right'
