@@ -2571,7 +2571,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                 GridDhtPartitionsSingleMessage res = cctx.exchange().createPartitionsSingleMessage(
                     msg.restoreExchangeId(),
                     cctx.kernalContext().clientNode(),
-                    true);
+                    true,
+                    exchActions);
 
                 if (localJoinExchange() && finishState0 == null)
                     res.cacheGroupsAffinityRequest(exchCtx.groupsAffinityRequestOnJoin());
