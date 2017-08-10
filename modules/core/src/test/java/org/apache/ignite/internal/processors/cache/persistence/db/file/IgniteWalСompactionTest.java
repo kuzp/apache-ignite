@@ -66,7 +66,7 @@ public class IgniteWalСompactionTest extends GridCommonAbstractTest {
 
         loadWalRecords(ig, new IgniteCallable<Boolean>() {
             @Override public Boolean call() throws Exception {
-                return walMgr.walArchiveSegments() > 20;
+                return walMgr.walArchiveSegments() > 50;
             }
         });
 
@@ -81,7 +81,7 @@ public class IgniteWalСompactionTest extends GridCommonAbstractTest {
         IgniteEx ig,
         IgniteCallable<Boolean> stopCondition
     ) throws Exception {
-        IgniteCache<Long, byte[]> cache = ig.cache(CACHE_NAME);
+        IgniteCache<Long, int[]> cache = ig.cache(CACHE_NAME);
 
         long cnt = 0;
 
@@ -89,9 +89,16 @@ public class IgniteWalСompactionTest extends GridCommonAbstractTest {
             if (stopCondition.call())
                 break;
             else {
-                int size = ThreadLocalRandom.current().nextInt(0, 1024 * 1024);
+                ThreadLocalRandom r = ThreadLocalRandom.current();
 
-                cache.put(cnt, new byte[size]);
+                int size = r.nextInt(0, 1024 * 1024);
+
+                int[] array = new int[size];
+
+                for (int i = 0; i < size; i++)
+                    array[i] = r.nextInt();
+
+                cache.put(cnt, array);
 
                 //cache.remove(cnt);
 

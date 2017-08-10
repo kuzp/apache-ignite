@@ -49,6 +49,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.PersistentStoreConfiguration;
 import org.apache.ignite.configuration.WALMode;
@@ -86,6 +87,8 @@ import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.lang.IgniteUuid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static org.apache.ignite.IgniteSystemProperties.IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE;
 
 /**
  * File WAL manager.
@@ -139,6 +142,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             return !file.isDirectory() && WAL_SEGMENT_TEMP_FILE_COMPACTED_PATTERN.matcher(file.getName()).matches();
         }
     };
+
+    /** */
+    private static final int BATCH_SIZE = IgniteSystemProperties.getInteger(
+        IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE, 0);
 
 
     /** */
@@ -1471,13 +1478,13 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         private long lastCompressedSegment = -1L;
 
         /** */
-        private long lastSegmentWithCheckpointMarkerInArchive = -1L;
+        private long lastSegmentWithCheckpointMarkerInArchive;
 
         /** */
         private TreeSet<Long> checkpointMarkerSegments = new TreeSet<>();
 
         /** */
-        private final CompactWriterFactory compactWriterFactory = new CompactWriteFactoryImpl();
+        private final CompactWriterFactory compactWriterFactory = new CompactWriterFactoryImpl();
 
         /**
          *
@@ -1564,12 +1571,19 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
             long last;
 
-            synchronized (this) {
-                while ((last = lastCompressedSegment) >= (endSeg = readyForCompressingSegIdx()))
-                    wait();
-            }
+            long startSeg;
 
-            long startSeg = last == -1L ? 0 : last + 1;
+            assert BATCH_SIZE >= 0;
+
+            synchronized (this) {
+                while ((last = lastCompressedSegment) + BATCH_SIZE>= (endSeg = readyForCompressingSegIdx()))
+                    wait();
+
+                startSeg = last == -1L ? 0 : last + 1;
+
+                if (BATCH_SIZE != 0 && endSeg - last > BATCH_SIZE)
+                    endSeg = last + BATCH_SIZE;
+            }
 
             return new CompactDescriptor(startSeg, endSeg, walArchiveDir.getPath());
         }
@@ -1829,8 +1843,8 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
-    private static class CompactWriteFactoryImpl implements CompactWriterFactory {
-        private static final int DEFAULT_COMPACTION_LEVEL = 0;
+    private static class CompactWriterFactoryImpl implements CompactWriterFactory {
+        private static final int DEFAULT_COMPACTION_LEVEL = 9;
 
         @Override public CompactWriter create(int type, FileCompressor.CompactDescriptor desc) {
             switch (type) {
