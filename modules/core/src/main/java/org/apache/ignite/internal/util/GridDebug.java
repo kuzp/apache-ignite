@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
@@ -41,6 +42,9 @@ import org.jetbrains.annotations.Nullable;
  * Utility class for debugging.
  */
 public class GridDebug {
+    /** */
+    public static final int MAX_EVENTS = 2000;
+
     /** */
     private static final AtomicReference<ConcurrentLinkedQueue<Item>> que =
         new AtomicReference<>(new ConcurrentLinkedQueue<Item>());
@@ -132,6 +136,9 @@ public class GridDebug {
 
         if (q != null)
             q.add(new Item(x));
+
+        while (q.size() > MAX_EVENTS)
+            q.poll();
     }
 
     /**
@@ -185,7 +192,7 @@ public class GridDebug {
      *
      * @param n Number of last elements to dump.
      */
-    public static void dumpLastAndStop(int n) {
+    public static void dumpLastAndStop(int n, IgniteLogger log) {
         ConcurrentLinkedQueue<Item> q = que.getAndSet(null);
 
         if (q == null)
@@ -196,7 +203,7 @@ public class GridDebug {
         while (size-- > n)
             q.poll();
 
-        dump(q);
+        dump(q, log);
     }
 
     /**
@@ -205,7 +212,7 @@ public class GridDebug {
      * @param que Queue.
      */
     @SuppressWarnings("TypeMayBeWeakened")
-    public static void dump(Collection<Item> que) {
+    public static void dump(Collection<Item> que, IgniteLogger log) {
         if (que == null)
             return;
 
@@ -214,8 +221,12 @@ public class GridDebug {
         int x = 0;
 
         for (Item i : que) {
-            if (x++ > start)
-                System.out.println(i);
+            if (x++ > start) {
+                if (log != null)
+                    System.out.println(i);
+                else
+                    U.debug(log, String.valueOf(i));
+            }
         }
     }
 
@@ -273,7 +284,7 @@ public class GridDebug {
             }
         }
 
-        dump(col);
+        dump(col, null);
 
         return "";
     }
