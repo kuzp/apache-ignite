@@ -116,7 +116,7 @@ module.exports.factory = (mongo, spacesService, errors) => {
                 return Promise.reject(new errors.IllegalArgumentException('Cache id can not be undefined or null'));
 
             const query = _.pick(cache, ['space', '_id']);
-            const newDoc = _.pick(cache, ['space', '_id', 'name', 'cacheMode', 'atomicityMode', 'backups']);
+            const newDoc = _.pick(cache, ['space', '_id', 'name', 'cacheMode', 'atomicityMode', 'backups', 'clusters']);
 
             return mongo.Cache.update(query, {$set: newDoc}, {upsert: true}).exec()
                 .catch((err) => {

@@ -78,6 +78,10 @@ export default class Clusters {
         return Observable.fromPromise(this.removeCluster(cluster));
     }
 
+    saveBasic(cluster, caches) {
+        return this.$http.put('/api/v1/configuration/clusters/basic', {cluster, caches});
+    }
+
     getBlankCluster() {
         return {
             _id: ObjectID.generate(),

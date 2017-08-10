@@ -118,6 +118,12 @@ export default class PageConfigureBasic {
         });
     }
 
+    transcationalSaveClusterAndCaches(cluster, caches) {
+        const clusterToSend = {...cluster, caches: caches.ids};
+        const changedCaches = [...caches.changedItems.values()].map((cache) => ({...cache, clusters: [cluster._id]}));
+        return this.clusters.saveBasic(clusterToSend, changedCaches);
+    }
+
     // setCluster(_id) {
     //     this.ConfigureState.dispatchAction(
     //         isNewItem({_id})

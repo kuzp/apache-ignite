@@ -57,7 +57,6 @@ export default class PageConfigureBasicController {
             clusterConfiguration: state.clusterConfiguration,
             caches: state.clusterConfiguration.originalCaches,
             allClusterCaches: this.getAllClusterCaches(state),
-            cachesMenu: this.getCachesMenu(this.getAllClusterCaches(state.clusterConfiguration)),
             defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.clusterConfiguration.originalCluster),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
         }))
@@ -117,8 +116,15 @@ export default class PageConfigureBasicController {
         this.pageService.removeCache(cache);
     }
 
+    updateCache(cache) {
+        this.pageService.updateCache(cache);
+    }
+
     save() {
-        return this.pageService.saveClusterAndCaches(this.state.cluster, this.allClusterCaches);
+        return this.pageService.transcationalSaveClusterAndCaches(
+            this.clusterConfiguration.originalCluster,
+            this.ConfigureState.state$.value.basicCaches
+        );
     }
 
     saveAndDownload() {
@@ -127,13 +133,12 @@ export default class PageConfigureBasicController {
         ));
     }
 
-    getCachesMenu(caches = []) {
-        return caches.map((c) => ({_id: c._id, name: c.name}));
-    }
-
     getAllClusterCaches(state) {
-        return [...get(state, 'basicCaches.changedItems', []), ...get(state, 'clusterConfiguration.originalCaches', [])];
-        // return [...state.originalCaches || [], ...state.newCaches || []];
+        const idx = (id) => (cache) => cache._id === id;
+        return [...state.basicCaches.ids.values()].map((id) => (
+            state.basicCaches.changedItems.get(id) ||
+            (state.clusterConfiguration.originalCaches || []).find(idx(id))
+        ));
     }
 
     getDefaultClusterMemoryPolicy(cluster, version) {

@@ -168,18 +168,39 @@ export const filteredReducer = (reducer, predicate) => (state, action) => predic
     ? reducer(state, action)
     : state;
 
+export const LOAD_ITEMS = Symbol('LOAD_ITEMS');
 export const ADD_ITEM = Symbol('ADD_ITEM');
 export const REMOVE_ITEM = Symbol('REMOVE_ITEM');
 export const UPDATE_ITEM = Symbol('UPDATE_ITEM');
 
-export const itemsEditReducer = (state = {ids: [], changedItems: []}, action) => {
+// eslint-disable-next-line no-sequences
+const del = (collection, index) => (collection.delete(index), collection);
+
+export const itemsEditReducer = (state = {ids: new Set(), changedItems: new Map()}, action) => {
     switch (action.type) {
+        case LOAD_ITEMS:
+            return {
+                ...state,
+                ids: new Set(action.ids),
+                changedItems: new Map()
+            };
         case ADD_ITEM:
-            return {...state, ids: [...state.ids, action.item._id], changedItems: [...state.changedItems, action.item]};
+            return {
+                ...state,
+                ids: new Set([...state.ids.values(), action.item._id]),
+                changedItems: new Map([...state.changedItems.entries(), [action.item._id, action.item]])
+            };
         case REMOVE_ITEM:
-            return {...state, ids: state.ids.filter((id) => id !== action.item._id), changedItems: state.changedItems.filter((item) => item._id !== action.item._id)};
+            return {
+                ...state,
+                ids: del(new Set(state.ids), action.item._id),
+                changedItems: del(new Map(state.changedItems), action.item._id)
+            };
         case UPDATE_ITEM:
-            return {...state, changedItems: state.changedItems.map((item) => item._id === action.item._id ? action.item : item)};
+            return {
+                ...state,
+                changedItems: new Map(state.changedItems).set(action.item._id, action.item)
+            };
         default:
             return state;
     }
