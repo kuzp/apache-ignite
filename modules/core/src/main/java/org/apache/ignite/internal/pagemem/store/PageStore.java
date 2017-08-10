@@ -17,9 +17,8 @@
 
 package org.apache.ignite.internal.pagemem.store;
 
-import org.apache.ignite.IgniteCheckedException;
-
 import java.nio.ByteBuffer;
+import org.apache.ignite.IgniteCheckedException;
 
 /**
  * Persistent store of pages.
@@ -95,4 +94,9 @@ public interface PageStore {
      * @throws IgniteCheckedException If sync failed (IO error occurred).
      */
     public void ensure() throws IgniteCheckedException;
+
+    /**
+     * @return Page store version.
+     */
+    public int version();
 }
