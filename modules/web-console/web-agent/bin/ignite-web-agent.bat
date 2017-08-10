@@ -62,7 +62,7 @@ if %ERRORLEVEL% equ 0 (
 
 set JVM_OPTS=%JVM_OPTS% -Djava.net.useSystemProxies=true
 
-"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% -cp "*" org.apache.ignite.console.agent.AgentLauncher %*
+"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% -DIGNITE_PROG_NAME="%PROG_NAME%" -cp "*" org.apache.ignite.console.agent.AgentLauncher %*
 
 set JAVA_ERRORLEVEL=%ERRORLEVEL%
 

@@ -90,4 +90,4 @@ fi
 
 JVM_OPTS="${JVM_OPTS} -Djava.net.useSystemProxies=true"
 
-"$JAVA" ${JVM_OPTS} -cp "*" org.apache.ignite.console.agent.AgentLauncher "$@"
+"$JAVA" ${JVM_OPTS} -DIGNITE_PROG_NAME="$0" -cp "*" org.apache.ignite.console.agent.AgentLauncher "$@"

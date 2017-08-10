@@ -281,30 +281,32 @@ module.exports.factory = function(_, fs, path, JSZip, socketio, settings, mongo,
                     this.io = socketio(srv, {path: '/agents'});
 
                     this.io.on('connection', (sock) => {
-                        sock.on('agent:auth', ({ver, bt, tokens, disableDemo}, cb) => {
+                        sock.on('authenticate', (msg) => {
+                            const {tokens, ver, bt} = msg;
+
                             if (_.isEmpty(tokens))
-                                return cb('Tokens not set. Please reload agent archive or check settings');
+                                return sock.emit('unauthorized');
 
                             if (ver && bt && !_.isEmpty(supportedAgents)) {
                                 const btDistr = _.get(supportedAgents, [ver, 'buildTime']);
 
                                 if (_.isEmpty(btDistr) || btDistr < bt)
-                                    return cb('You are using an older version of the agent. Please reload agent');
+                                    return sock.emit('expired');
                             }
 
                             return mongo.Account.find({token: {$in: tokens}}, '_id token').lean().exec()
                                 .then((accounts) => {
-                                    const activeTokens = _.uniq(_.map(accounts, 'token'));
+                                    msg.tokens = _.uniq(_.map(accounts, 'token'));
 
-                                    if (_.isEmpty(activeTokens))
-                                        return cb(`Failed to authenticate with token(s): ${tokens.join(',')}. Please reload agent archive or check settings`);
+                                    if (_.isEmpty(msg.tokens))
+                                        return sock.emit('unauthorized');
 
-                                    cb(null, activeTokens);
+                                    sock.emit('authenticated', msg.tokens);
 
-                                    return this.onConnect(sock, activeTokens, disableDemo);
+                                    return this.onConnect(sock, msg);
                                 })
                                 // TODO IGNITE-1379 send error to web master.
-                                .catch(() => cb(`Invalid token(s): ${tokens.join(',')}. Please reload agent archive or check settings`));
+                                .catch(() => sock.emit('unauthorized'));
                         });
                     });
                 });

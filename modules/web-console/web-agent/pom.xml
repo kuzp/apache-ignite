@@ -43,7 +43,13 @@
         <dependency>
             <groupId>io.socket</groupId>
             <artifactId>socket.io-client</artifactId>
-            <version>0.8.3</version>
+            <version>1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.json</groupId>
+                    <artifactId>json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -61,19 +67,31 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.7.0</version>
+            <version>3.8.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.ignite</groupId>
             <artifactId>ignite-indexing</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.ignite</groupId>
             <artifactId>ignite-rest-http</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>javax.servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -93,6 +111,14 @@
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-jdbc</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ignite</groupId>
+                    <artifactId>ignite-urideploy</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ignite</groupId>
+                    <artifactId>ignite-log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -106,6 +132,11 @@
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
             <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.48</version>
         </dependency>
     </dependencies>
 

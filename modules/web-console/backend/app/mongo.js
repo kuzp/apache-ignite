@@ -32,7 +32,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
     mongoose.Promise = global.Promise;
 
     // Connect to mongoDB database.
-    mongoose.connect(settings.mongoUrl, {server: {poolSize: 4}});
+    mongoose.connect(settings.mongoUrl, {useMongoClient: true, poolSize: 4});
 
     const Schema = mongoose.Schema;
     const ObjectId = mongoose.Schema.Types.ObjectId;

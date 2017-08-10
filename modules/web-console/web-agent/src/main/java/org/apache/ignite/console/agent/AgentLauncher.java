@@ -19,7 +19,6 @@ package org.apache.ignite.console.agent;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -29,12 +28,13 @@ import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.Attributes;
@@ -43,15 +43,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import org.apache.ignite.console.agent.handlers.ClusterListener;
-import org.apache.ignite.console.agent.handlers.DemoListener;
-import org.apache.ignite.console.agent.rest.RestExecutor;
+import okhttp3.OkHttpClient;
 import org.apache.ignite.console.agent.handlers.DatabaseListener;
 import org.apache.ignite.console.agent.handlers.RestListener;
+import org.apache.ignite.console.agent.rest.RestExecutor;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.X;
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +59,7 @@ import static io.socket.client.Socket.EVENT_CONNECT;
 import static io.socket.client.Socket.EVENT_CONNECT_ERROR;
 import static io.socket.client.Socket.EVENT_DISCONNECT;
 import static io.socket.client.Socket.EVENT_ERROR;
+import static org.apache.ignite.IgniteSystemProperties.IGNITE_PROG_NAME;
 import static org.apache.ignite.console.agent.AgentUtils.fromJSON;
 import static org.apache.ignite.console.agent.AgentUtils.toJSON;
 
@@ -102,10 +101,19 @@ public class AgentLauncher {
     private static final String EVENT_NODE_REST = "node:rest";
 
     /** */
-    private static final String EVENT_RESET_TOKENS = "agent:reset:token";
+    private static final String EVENT_AUTHENTICATE = "authenticate";
 
     /** */
-    private static final String EVENT_LOG_WARNING = "log:warn";
+    private static final String EVENT_AUTHENTICATED = "authenticated";
+
+    /** */
+    private static final String EVENT_UNAUTHORIZED = "unauthorized";
+
+    /** */
+    private static final String EVENT_EXPIRED = "expired";
+
+    /** */
+    private static final String EVENT_RESET_TOKEN = "resetToken";
 
     static {
         // Optionally remove existing handlers attached to j.u.l root logger.
@@ -118,24 +126,23 @@ public class AgentLauncher {
     /**
      * Create a trust manager that trusts all certificates It is not using a particular keyStore
      */
-    private static TrustManager[] getTrustManagers() {
-        return new TrustManager[] {
-            new X509TrustManager() {
-                /** {@inheritDoc} */
-                @Override public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
+    private static X509TrustManager getTrustManager() {
+        return new X509TrustManager() {
+            /** {@inheritDoc} */
+            @Override public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
 
-                /** {@inheritDoc} */
-                @Override public void checkClientTrusted(
-                    java.security.cert.X509Certificate[] certs, String authType) {
-                }
+            /** {@inheritDoc} */
+            @Override public void checkClientTrusted(
+                java.security.cert.X509Certificate[] certs, String authType) {
+            }
 
-                /** {@inheritDoc} */
-                @Override public void checkServerTrusted(
-                    java.security.cert.X509Certificate[] certs, String authType) {
-                }
-            }};
+            /** {@inheritDoc} */
+            @Override public void checkServerTrusted(
+                java.security.cert.X509Certificate[] certs, String authType) {
+            }
+        };
     }
 
     /**
@@ -207,25 +214,16 @@ public class AgentLauncher {
     /**
      * On disconnect listener.
      */
-    private static final Emitter.Listener onDisconnect = new Emitter.Listener() {
+    protected static final Emitter.Listener onDisconnect = new Emitter.Listener() {
         @Override public void call(Object... args) {
             log.error("Connection closed: {}", args);
         }
     };
 
     /**
-     * On token reset listener.
-     */
-    private static final Emitter.Listener onLogWarning = new Emitter.Listener() {
-        @Override public void call(Object... args) {
-            log.warn(String.valueOf(args[0]));
-        }
-    };
-
-    /**
      * On demo start request.
      */
-    private static final Emitter.Listener onDemoStart = new Emitter.Listener() {
+    protected static final Emitter.Listener onDemoStart = new Emitter.Listener() {
         @Override public void call(Object... args) {
             log.warn(String.valueOf(args[0]));
         }
@@ -260,16 +258,14 @@ public class AgentLauncher {
     /**
      * @param args Args.
      */
-    public static void main(String[] args) throws Exception {
-        log.info("Starting Apache Ignite Web Console Agent...");
-
+    protected AgentConfiguration loadConfiguration(String[] args) {
         final AgentConfiguration cfg = new AgentConfiguration();
 
         JCommander jCommander = new JCommander(cfg);
 
-        String osName = System.getProperty("os.name").toLowerCase();
+        String runner = System.getProperty(IGNITE_PROG_NAME, "ignite-web-agent.{sh|bat}");
 
-        jCommander.setProgramName("ignite-web-agent." + (osName.contains("win") ? "bat" : "sh"));
+        jCommander.setProgramName(runner);
 
         try {
             jCommander.parse(args);
@@ -279,7 +275,7 @@ public class AgentLauncher {
 
             jCommander.usage();
 
-            return;
+            System.exit(1);
         }
 
         String prop = cfg.configPath();
@@ -304,42 +300,34 @@ public class AgentLauncher {
         if (cfg.help()) {
             jCommander.usage();
 
-            return;
+            System.exit(0);
         }
 
-        System.out.println();
-        System.out.println("Agent configuration:");
-        System.out.println(cfg);
-        System.out.println();
+        return cfg;
+    }
 
-        if (cfg.tokens() == null) {
-            String webHost;
+    /**
+     * @param cfg Config.
+     */
+    protected void requestTokens(AgentConfiguration cfg) {
+        System.out.println("Security token is required to establish connection to the Web Console.");
+        System.out.println(String.format("It is available on the Profile page: %s/profile", cfg.serverUri()));
 
-            try {
-                webHost = new URI(cfg.serverUri()).getHost();
-            }
-            catch (URISyntaxException e) {
-                log.error("Failed to parse Ignite Web Console uri", e);
+        String tokens = String.valueOf(readPassword("Enter security tokens separated by comma: "));
 
-                return;
-            }
+        cfg.tokens(Arrays.asList(tokens.trim().split(",")));
+    }
 
-            System.out.println("Security token is required to establish connection to the web console.");
-            System.out.println(String.format("It is available on the Profile page: https://%s/profile", webHost));
-
-            String tokens = String.valueOf(readPassword("Enter security tokens separated by comma: "));
-
-            cfg.tokens(Arrays.asList(tokens.trim().split(",")));
-        }
-
-        URI uri = URI.create(cfg.serverUri());
-
+    /**
+     * @param srvUri Server uri.
+     */
+    protected void initProxy(URI srvUri) {
         // Create proxy authenticator using passed properties.
-        switch (uri.getScheme()) {
+        switch (srvUri.getScheme()) {
             case "http":
             case "https":
-                final String username = System.getProperty(uri.getScheme() + ".proxyUsername");
-                final char[] pwd = System.getProperty(uri.getScheme() + ".proxyPassword", "").toCharArray();
+                final String username = System.getProperty(srvUri.getScheme() + ".proxyUsername");
+                final char[] pwd = System.getProperty(srvUri.getScheme() + ".proxyPassword", "").toCharArray();
 
                 Authenticator.setDefault(new Authenticator() {
                     @Override protected PasswordAuthentication getPasswordAuthentication() {
@@ -352,156 +340,218 @@ public class AgentLauncher {
             default:
                 // No-op.
         }
+    }
 
+    protected Map<String, Object> loadAuthParams(AgentConfiguration cfg) {
+        HashMap<String, Object> msg = U.newHashMap(4);
+
+        msg.put("disableDemo", cfg.disableDemo());
+
+        String clsName = AgentLauncher.class.getSimpleName() + ".class";
+
+        String clsPath = AgentLauncher.class.getResource(clsName).toString();
+
+        if (clsPath.startsWith("jar")) {
+            String manifestPath = clsPath.substring(0, clsPath.lastIndexOf('!') + 1) +
+                "/META-INF/MANIFEST.MF";
+
+            try {
+                Manifest manifest = new Manifest(new URL(manifestPath).openStream());
+
+                Attributes attr = manifest.getMainAttributes();
+
+                msg.put("ver", attr.getValue("Implementation-Version"));
+                msg.put("bt", attr.getValue("Build-Time"));
+            }
+            catch (IOException e) {
+                log.error("Failed to receive build time, version from /META-INF/MANIFEST.MF", e);
+            }
+        }
+
+        return msg;
+    }
+
+    protected IO.Options loadOptions() {
         IO.Options opts = new IO.Options();
 
         opts.path = "/agents";
 
         // Workaround for use self-signed certificate
         if (Boolean.getBoolean("trust.all")) {
-            SSLContext ctx = SSLContext.getInstance("TLS");
+            try {
+                SSLContext ctx = SSLContext.getInstance("TLS");
 
-            // Create an SSLContext that uses our TrustManager
-            ctx.init(null, getTrustManagers(), null);
+                X509TrustManager trustMgr = getTrustManager();
 
-            opts.sslContext = ctx;
+                // Create an SSLContext that uses our TrustManager
+                ctx.init(null, new TrustManager[] { trustMgr }, null);
+
+                OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                    .sslSocketFactory(ctx.getSocketFactory(), trustMgr)
+                    .build();
+
+                // default settings for all sockets
+                opts.callFactory = okHttpClient;
+                opts.webSocketFactory = okHttpClient;
+            }
+            catch (Exception ignore) {
+                // No-op.
+            }
         }
 
-        final Socket client = IO.socket(uri, opts);
+        return opts;
+    }
+
+    protected CountDownLatch attachListeners(final Socket client, final AgentConfiguration cfg) {
+        final CountDownLatch latch = new CountDownLatch(1);
+
         final RestExecutor restExecutor = new RestExecutor(cfg.nodeUri());
 
-        try {
-            final ClusterListener clusterLsnr = new ClusterListener(client, restExecutor);
-            final DemoListener demoHnd = new DemoListener(client, restExecutor);
+        DatabaseListener dbHnd = new DatabaseListener(cfg);
+        RestListener restHnd = new RestListener(restExecutor);
 
-            Emitter.Listener onConnect = new Emitter.Listener() {
+        final Map<String, Object> authMsg = loadAuthParams(cfg);
+
+        client
+            .on(EVENT_CONNECT, new Emitter.Listener() {
                 @Override public void call(Object... args) {
                     log.info("Connection established.");
 
-                    JSONObject authMsg = new JSONObject();
+                    authMsg.put("tokens", toJSON(cfg.tokens()));
 
+                    client.emit(EVENT_AUTHENTICATE, new JSONObject(authMsg));
+                }})
+            .on(EVENT_CONNECT_ERROR, onError)
+            .on(EVENT_ERROR, onError)
+            .on(EVENT_DISCONNECT, onDisconnect)
+            .on(EVENT_AUTHENTICATED, new Emitter.Listener() {
+                @Override public void call(Object... args) {
                     try {
-                        authMsg.put("tokens", toJSON(cfg.tokens()));
-                        authMsg.put("disableDemo", cfg.disableDemo());
+                        List<String> activeTokens = fromJSON(args[0], List.class);
 
-                        String clsName = AgentLauncher.class.getSimpleName() + ".class";
+                        if (!F.isEmpty(activeTokens)) {
+                            Collection<String> missedTokens = cfg.tokens();
 
-                        String clsPath = AgentLauncher.class.getResource(clsName).toString();
+                            cfg.tokens(activeTokens);
 
-                        if (clsPath.startsWith("jar")) {
-                            String manifestPath = clsPath.substring(0, clsPath.lastIndexOf('!') + 1) +
-                                "/META-INF/MANIFEST.MF";
+                            missedTokens.removeAll(activeTokens);
 
-                            Manifest manifest = new Manifest(new URL(manifestPath).openStream());
+                            if (!F.isEmpty(missedTokens)) {
+                                String tokens = F.concat(missedTokens, ", ");
 
-                            Attributes attr = manifest.getMainAttributes();
-
-                            authMsg.put("ver", attr.getValue("Implementation-Version"));
-                            authMsg.put("bt", attr.getValue("Build-Time"));
-                        }
-
-                        client.emit("agent:auth", authMsg, new Ack() {
-                            @Override public void call(Object... args) {
-                                if (args != null) {
-                                    if (args[0] instanceof String) {
-                                        log.error((String)args[0]);
-
-                                        System.exit(1);
-                                    }
-
-                                    if (args[0] == null && args[1] instanceof JSONArray) {
-                                        try {
-                                            List<String> activeTokens = fromJSON(args[1], List.class);
-
-                                            if (!F.isEmpty(activeTokens)) {
-                                                Collection<String> missedTokens = cfg.tokens();
-
-                                                cfg.tokens(activeTokens);
-
-                                                missedTokens.removeAll(activeTokens);
-
-                                                if (!F.isEmpty(missedTokens)) {
-                                                    String tokens = F.concat(missedTokens, ", ");
-
-                                                    log.warn("Failed to authenticate with token(s): {}. " +
-                                                        "Please reload agent archive or check settings", tokens);
-                                                }
-
-                                                log.info("Authentication success.");
-
-                                                clusterLsnr.watch();
-
-                                                return;
-                                            }
-                                        }
-                                        catch (Exception e) {
-                                            log.error("Failed to authenticate agent. Please check agent\'s tokens", e);
-
-                                            System.exit(1);
-                                        }
-                                    }
-                                }
-
-                                log.error("Failed to authenticate agent. Please check agent\'s tokens");
-
-                                System.exit(1);
+                                log.warn("Failed to authenticate with token(s): {}. " +
+                                    "Please check agent configuration.", tokens);
                             }
-                        });
-                    }
-                    catch (JSONException | IOException e) {
-                        log.error("Failed to construct authentication message", e);
 
-                        client.close();
+                            log.info("Authentication success.");
+                        }
+                    }
+                    catch (Exception e) {
+                        log.error("Failed to authenticate agent. Please check agent\'s tokens", e);
+
+                        System.exit(1);
                     }
                 }
-            };
+            })
+            .on(EVENT_EXPIRED, new Emitter.Listener() {
+                @Override public void call(Object... args) {
+                    log.error("You are using an older version of the agent. Please reload agent.");
 
-            DatabaseListener dbHnd = new DatabaseListener(cfg);
-            RestListener restHnd = new RestListener(restExecutor);
+                    System.exit(1);
+                }
+            })
+            .on(EVENT_UNAUTHORIZED, new Emitter.Listener() {
+                @Override public void call(Object... args) {
+                    log.error("Failed to authenticate with token(s): {}. Please reload agent archive or check agent configuration.",
+                        F.concat(cfg.tokens(), ", "));
 
-            final CountDownLatch latch = new CountDownLatch(1);
+                    System.exit(1);
+                }
+            })
+            .on(EVENT_RESET_TOKEN, new Emitter.Listener() {
+                @Override public void call(Object... args) {
+                    String tok = String.valueOf(args[0]);
 
-            log.info("Connecting to: {}", cfg.serverUri());
+                    log.warn("Security token has been reset: {}", tok);
 
-            client
-                .on(EVENT_CONNECT, onConnect)
-                .on(EVENT_CONNECT_ERROR, onError)
-                .on(EVENT_ERROR, onError)
-                .on(EVENT_DISCONNECT, onDisconnect)
-                .on(EVENT_LOG_WARNING, onLogWarning)
-                .on(EVENT_CLUSTER_BROADCAST_START, clusterLsnr.start())
-                .on(EVENT_CLUSTER_BROADCAST_STOP, clusterLsnr.stop())
-                .on(EVENT_DEMO_BROADCAST_START, demoHnd.start())
-                .on(EVENT_DEMO_BROADCAST_STOP, demoHnd.stop())
-                .on(EVENT_RESET_TOKENS, new Emitter.Listener() {
-                    @Override public void call(Object... args) {
-                        String tok = String.valueOf(args[0]);
+                    cfg.tokens().remove(tok);
 
-                        log.warn("Security token has been reset: {}", tok);
+                    if (cfg.tokens().isEmpty()) {
+                        client.off();
 
-                        cfg.tokens().remove(tok);
-
-                        if (cfg.tokens().isEmpty()) {
-                            client.off();
-
-                            latch.countDown();
-                        }
+                        latch.countDown();
                     }
-                })
-                .on(EVENT_SCHEMA_IMPORT_DRIVERS, dbHnd.availableDriversListener())
-                .on(EVENT_SCHEMA_IMPORT_SCHEMAS, dbHnd.schemasListener())
-                .on(EVENT_SCHEMA_IMPORT_METADATA, dbHnd.metadataListener())
-                .on(EVENT_NODE_VISOR_TASK, restHnd)
-                .on(EVENT_NODE_REST, restHnd);
+                }
+            })
+
+//            .on(EVENT_CLUSTER_BROADCAST_START, clusterLsnr.start())
+//            .on(EVENT_CLUSTER_BROADCAST_STOP, clusterLsnr.stop())
+//
+//            .on(EVENT_DEMO_BROADCAST_START, demoHnd.start())
+//            .on(EVENT_DEMO_BROADCAST_STOP, demoHnd.stop())
+
+            .on(EVENT_SCHEMA_IMPORT_DRIVERS, dbHnd.availableDriversListener())
+            .on(EVENT_SCHEMA_IMPORT_SCHEMAS, dbHnd.schemasListener())
+            .on(EVENT_SCHEMA_IMPORT_METADATA, dbHnd.metadataListener())
+            
+            .on(EVENT_NODE_REST, restHnd)
+            .on(EVENT_NODE_VISOR_TASK, restHnd);
+
+        return latch;
+    }
+
+    /**
+     * @param args Args.
+     */
+    protected void start(String[] args) {
+        AgentConfiguration cfg = loadConfiguration(args);
+
+        System.out.println();
+        System.out.println("Agent configuration:");
+        System.out.println(cfg);
+        System.out.println();
+
+        URI srvUri;
+
+        try {
+            srvUri = URI.create(cfg.serverUri());
+        }
+        catch (Exception e) {
+            log.error("Failed to parse server URI.", e);
+
+            return;
+        }
+
+        if (cfg.tokens() == null)
+            requestTokens(cfg);
+
+        initProxy(srvUri);
+
+        log.info("Connecting to: {}", cfg.serverUri());
+
+        Socket client = IO.socket(srvUri, loadOptions());
+        
+        try {
+            CountDownLatch latch = attachListeners(client, cfg);
 
             client.connect();
 
             latch.await();
-        }
-        finally {
-            restExecutor.stop();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
 
+            log.warn("Agent has been interrupted.", e);
+        } finally {
             client.close();
         }
+    }
+
+    /**
+     * @param args Args.
+     */
+    public static void main(String[] args) throws Exception {
+        System.out.println("Starting Ignite Web Console Agent...");
+
+        new AgentLauncher().start(args);
     }
 }
