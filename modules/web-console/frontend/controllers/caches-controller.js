@@ -367,8 +367,8 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
                 $scope.selectedItem = item;
                 // $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
 
-                if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
-                    _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
+                // if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
+                //     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
 
                 if (backup)
                     $scope.backupItem = backup;
@@ -384,7 +384,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
                     $scope.ui.inputForm.$setPristine();
                 }
 
-                setOffHeapMode($scope.backupItem);
+                // setOffHeapMode($scope.backupItem);
 
                 __original_value = ModelNormalizer.normalize($scope.backupItem);
 
