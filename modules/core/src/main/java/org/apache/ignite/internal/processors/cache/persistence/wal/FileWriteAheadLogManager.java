@@ -132,7 +132,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /** */
     public static final FileFilter WAL_SEGMENT_FILE_COMPACTED_FILTER = new FileFilter() {
         @Override public boolean accept(File file) {
-            return !file.isDirectory() && WAL_SEGMENT_FILE_COMPACTED_PATTERN.matcher(file.getName()).matches();
+            return !file.isDirectory() && file.getName().endsWith(".zip");
         }
     };
 
@@ -146,7 +146,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /** */
     private static final int BATCH_SIZE = IgniteSystemProperties.getInteger(
         IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE, 0);
-
 
     /** */
     private final RecordSerializerFactory recSerFactory = new RecordSerializerFactory() {
@@ -342,7 +341,8 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     }
 
     /**
-     * @throws IgniteCheckedException if WAL store directoryPath is configured and archive directoryPath isn't (or vice versa)
+     * @throws IgniteCheckedException if WAL store directoryPath is configured and archive directoryPath isn't (or vice
+     * versa)
      */
     private void checkWalConfiguration() throws IgniteCheckedException {
         if (psCfg.getWalStorePath() == null ^ psCfg.getWalArchivePath() == null) {
@@ -1469,9 +1469,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         private Throwable exception;
 
         /** */
-        private final FileArchiver fileArchiver;
-
-        /** */
         private volatile boolean stopped;
 
         /** */
@@ -1481,7 +1478,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         private long lastSegmentWithCheckpointMarkerInArchive;
 
         /** */
-        private TreeSet<Long> checkpointMarkerSegments = new TreeSet<>();
+        private final FileArchiver fileArchiver;
+
+        /** */
+        private final TreeSet<Long> checkpointMarkerSegments = new TreeSet<>();
 
         /** */
         private final CompactWriterFactory compactWriterFactory = new CompactWriterFactoryImpl();
@@ -1498,15 +1498,37 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         }
 
         private void init() {
+            File[] toDelete = walArchiveDir.listFiles(WAL_SEGMENT_TEMP_FILE_COMPACTED_FILTER);
+
+            for (File f : toDelete) {
+                if (stopped)
+                    return;
+
+                f.delete();
+            }
+
             // Find last compressed segment.
-            FileDescriptor[] descs = scan(
-                walArchiveDir.listFiles(WAL_SEGMENT_FILE_COMPACTED_FILTER));
+            File[] compactedArchives = walArchiveDir.listFiles(WAL_SEGMENT_FILE_COMPACTED_FILTER);
 
-            if (!F.isEmpty(descs)) {
-                FileDescriptor last = descs[descs.length - 1];
+            if (!F.isEmpty(compactedArchives)) {
+                long maxArchivedSegIdx = -1L;
 
-                synchronized (this){
-                    lastCompressedSegment = last.getIdx();
+                //todo rework parse end seg idx
+                for (File f : compactedArchives) {
+                    String n = f.getName();
+
+                    String sub = n.substring(4);
+
+                    long endIdx = Long.valueOf(sub.split("-")[1]);
+
+                    if (endIdx > maxArchivedSegIdx)
+                        maxArchivedSegIdx = endIdx;
+                }
+
+                assert maxArchivedSegIdx != -1L;
+
+                synchronized (this) {
+                    lastCompressedSegment = maxArchivedSegIdx;
                 }
             }
         }
@@ -1534,10 +1556,17 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                         log
                     );
 
-                    while (iter.hasNext())
-                        iter.next();
+                    try {
+                        while (iter.hasNext()) {
+                            iter.next();
 
-                    iter.closeCurrentWalSegment();
+                            if (stopped)
+                                break;
+                        }
+                    }
+                    finally {
+                        iter.closeCurrentWalSegment();
+                    }
 
                     synchronized (this) {
                         lastCompressedSegment = compactDesc.endSeg;
@@ -1576,7 +1605,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             assert BATCH_SIZE >= 0;
 
             synchronized (this) {
-                while ((last = lastCompressedSegment) + BATCH_SIZE>= (endSeg = readyForCompressingSegIdx()))
+                while ((last = lastCompressedSegment) + BATCH_SIZE >= (endSeg = readyForCompressingSegIdx()))
                     wait();
 
                 startSeg = last == -1L ? 0 : last + 1;
@@ -1599,10 +1628,18 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          *
          */
         private class CompactDescriptor {
+
+            /** */
             private final long startSeg;
+
+            /** */
             private final long endSeg;
 
+            /** */
             private final String path;
+
+            /** */
+            private final String name;
 
             /**
              *
@@ -1611,6 +1648,21 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 this.startSeg = startSeg;
                 this.endSeg = endSeg;
                 this.path = path;
+
+                SB b1 = new SB();
+
+                String segmentStr = Long.toString(startSeg);
+
+                for (int i = segmentStr.length(); i < 16; i++)
+                    b1.a('0');
+
+                SB b2 = new SB();
+
+                long cnt = endSeg - startSeg;
+
+                String cntStr = Long.toString(cnt == 0 ? 1 : cnt);
+
+                this.name = "seg-" + b1.a(segmentStr) + "-" + cntStr;
             }
         }
 
@@ -1694,14 +1746,14 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          *
          */
         private CompactionIterator(
-             FileCompressor.CompactDescriptor desc,
-             String directoryPath,
-             String gridName,
-             RecordSerializerFactory recSerFactory,
-             RecordSerializer serializer,
-             FileIOFactory ioFactory,
-             CompactWriter compactWriter,
-             IgniteLogger log
+            FileCompressor.CompactDescriptor desc,
+            String directoryPath,
+            String gridName,
+            RecordSerializerFactory recSerFactory,
+            RecordSerializer serializer,
+            FileIOFactory ioFactory,
+            CompactWriter compactWriter,
+            IgniteLogger log
         ) throws IgniteCheckedException {
             super(
                 gridName,
@@ -1824,13 +1876,12 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      */
     private interface CompactWriter {
         /**
-         *
          * @param segIdx Segment index.
          */
         public void advanceSegment(long segIdx);
 
         /**
-         *  @param buf Wal record byte buffer.
+         * @param buf Wal record byte buffer.
          */
         public void write(ByteBuffer buf, int size);
 
@@ -1851,12 +1902,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 case 0:
                     assert desc != null;
 
-                    long startSeg = desc.startSeg;
-                    long endSeg = desc.endSeg;
-
-                    String name = startSeg == endSeg ? String.valueOf(startSeg) : startSeg + "-" + endSeg;
-
-                    return new StandardZipWriter(desc.path, "seg-" + name, DEFAULT_COMPACTION_LEVEL);
+                    return new StandardZipWriter(desc.path, desc.name, DEFAULT_COMPACTION_LEVEL);
                 default:
                     throw new UnsupportedOperationException("Unsupported compact writer type:" + type);
             }
