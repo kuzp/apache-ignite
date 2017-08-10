@@ -16,7 +16,7 @@
  */
 
 'use strict';
-import Invites from "../../frontend/app/services/Invites";
+// import Invites from "../../frontend/app/services/Invites";
 
 // Fire me up!
 

@@ -45,19 +45,23 @@ export default class AuthSrv {
 
     signup(userInfo) {
         this.$http.post('/api/v1/signup', userInfo)
-            .then(() => _afterLogin())
+            .then(() => this._afterLogin())
             .catch((err) => this._errorPopover('signup_email', err));
     }
 
     signin(userInfo) {
         this.$http.post('/api/v1/signin', userInfo)
-            .then(() => _afterLogin())
+            .then(() => this._afterLogin())
             .catch((err) => this._errorPopover('signin_email', err));
     }
 
     acceptInvite(invite) {
+        const userInfo = {
+            email: invite.email
+        };
+
         this.$http.post('/api/v1/invite/accept', userInfo)
-            .then(() => _afterLogin())
+            .then(() => this._afterLogin())
             .catch(this.Messages.showError);
     }
 
