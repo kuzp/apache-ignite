@@ -1551,6 +1551,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                         serializer,
                         ioFactory,
                         compactWriter,
+                        igCfg.getPersistentStoreConfiguration().getTlbSize(),
                         log
                     );
 
@@ -1574,13 +1575,14 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                         checkpointMarkerSegments.removeAll(new ArrayList<>(toRemove));
                     }
 
+                    releaseSegments(compactDesc);
+
                     for (long idx = compactDesc.startSeg; idx <= compactDesc.endSeg; idx++) {
                         File segFile = new File(walArchiveDir, FileDescriptor.fileName(idx));
 
                         segFile.delete();
                     }
 
-                    releaseSegments(compactDesc);
                 }
                 catch (Throwable e) {
                     exception = e;
@@ -1729,8 +1731,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      */
     private static class CompactionIterator extends AbstractWalRecordsIterator {
         /** */
-        private static final int DEFAULT_BUFFER_SIZE = 10 * 1024 * 1024;
-
         private static final boolean SKIP_DELTA_RECORD_FILTER_ENABLE =
             IgniteSystemProperties.getBoolean(IGNITE_WAL_ARCHIVE_COMPACT_SKIP_DELTA_RECORD, true);
 
@@ -1769,6 +1769,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             RecordSerializer serializer,
             FileIOFactory ioFactory,
             CompactWriter compactWriter,
+            int bufSize,
             IgniteLogger log
         ) throws IgniteCheckedException {
             super(
@@ -1777,8 +1778,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 serializer,
                 ioFactory,
                 log,
-                DEFAULT_BUFFER_SIZE
-            );
+                bufSize);
 
             assert !F.isEmpty(directoryPath);
             assert compactWriter != null;
@@ -1845,6 +1845,8 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
                 assert compactWriter != null;
 
+                // todo recalculate wal point.
+
                 int recSize = rec.size();
 
                 in.seek(startPos);
@@ -1871,7 +1873,12 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         @Nullable @Override protected ReadFileHandle closeCurrentWalSegment() throws IgniteCheckedException {
             ReadFileHandle h = super.closeCurrentWalSegment();
 
-            compactWriter.close();
+            try {
+                compactWriter.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
 
             return h;
         }
@@ -1895,7 +1902,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
-    private interface CompactWriter {
+    private interface CompactWriter extends AutoCloseable {
         /**
          * @param name Next entry name.
          */
@@ -1905,17 +1912,12 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          * @param buf Wal record byte buffer.
          */
         public void write(ByteBuffer buf, int size);
-
-        /**
-         *
-         */
-        public void close();
     }
 
     /**
      *
      */
-    private interface CompactReader {
+    private interface CompactReader extends AutoCloseable {
 
         /**
          *
@@ -1926,11 +1928,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          *
          */
         public int read(ByteBuffer buf);
-
-        /**
-         *
-         */
-        public void close();
     }
 
     /**
@@ -3123,6 +3120,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             FileDescriptor[] descs = loadFileDescriptors(walArchiveDir);
 
             if (start != null) {
+                // Todo Unzip wal for rebalance iterator
                 if (!F.isEmpty(descs)) {
                     if (descs[0].idx > start.index())
                         throw new IgniteCheckedException("WAL history is too short " +
