@@ -19,8 +19,11 @@ import clone from 'lodash/fp/clone';
 import isEmpty from 'lodash/fp/isEmpty';
 import indexOf from 'lodash/fp/indexOf';
 
-export default class {
-    constructor(...args) {
+export default class Controller {
+    static $inject = ['$animate', '$element'];
+
+    constructor($animate, $element) {
+        $animate.enabled(false, $element);
         this._cache = {};
     }
 
