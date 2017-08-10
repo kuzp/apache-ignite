@@ -15,23 +15,50 @@
  * limitations under the License.
  */
 
-export default ['$timeout', '$parse', ($timeout, $parse) => {
-    return ($scope, $element, $attrs) => {
-        const handlerCheckFocusOut = (FocusClick) => {
-            if ($element.find(FocusClick.target).length)
-                return;
-
-            $parse($attrs.igniteOnFocusOut)($scope);
-
-            $timeout();
-        };
-
-        window.addEventListener('click', handlerCheckFocusOut, true);
-        window.addEventListener('focusin', handlerCheckFocusOut, true);
-
-        $scope.$on('$destroy', () => {
-            window.removeEventListener('click', handlerCheckFocusOut, true);
-            window.removeEventListener('focusin', handlerCheckFocusOut, true);
-        });
+class Controller {
+    static $inject = ['$element', '$window'];
+    ignoredClasses = [];
+    handlerCheckFocusOut = (e) => {
+        if (this.shouldPropagate(e)) this.igniteOnFocusOut();
     };
-}];
+
+    constructor($element, $window) {
+        Object.assign(this, {$element, $window});
+    }
+    $onDestroy() {
+        this.$window.removeEventListener('click', this.handlerCheckFocusOut, true);
+        this.$window.removeEventListener('focusin', this.handlerCheckFocusOut, true);
+        this.$element = this.$window = this.handlerCheckFocusOut = null;
+    }
+    shouldPropagate(e) {
+        return !this.targetHasIgnoredClasses(e) && this.targetIsOutOfElement(e);
+    }
+    targetIsOutOfElement(e) {
+        return !this.$element.find(e.target).length;
+    }
+    targetHasIgnoredClasses(e) {
+        return this.ignoredClasses.some((c) => e.target.classList.contains(c));
+    }
+    $onChanges(changes) {
+        if (
+            'ignoredClasses' in changes &&
+            changes.ignoredClasses.currentValue !== changes.ignoredClasses.previousValue
+        )
+            this.ignoredClasses = changes.ignoredClasses.currentValue.split(' ');
+
+    }
+    $postLink() {
+        this.$window.addEventListener('click', this.handlerCheckFocusOut, true);
+        this.$window.addEventListener('focusin', this.handlerCheckFocusOut, true);
+    }
+}
+
+export default function() {
+    return {
+        controller: Controller,
+        bindToController: {
+            igniteOnFocusOut: '&',
+            ignoredClasses: '@?igniteOnFocusOutIgnoredClasses'
+        }
+    };
+}
