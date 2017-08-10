@@ -23,7 +23,11 @@
     .pcle-row-item
         .pcle-row-item-view(ng-if='!$ctrl.isEditView($index)' ng-click='$ctrl.startEditView($index);')
             div(ng-transclude='itemView')
-        div(ng-if='$ctrl.isEditView($index)' ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);')
+        div(
+            ng-if='$ctrl.isEditView($index)'
+            ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);'
+            ignite-on-focus-out-ignored-classes='bssm-click-overlay bssm-item-text bssm-item-button'
+        )
             .pcle-row-item-view(ng-init='item = $ctrl.getEditView($index);')
                 div(ng-transclude='itemView')
             .pcle-row-item-edit(ng-form name='form')
