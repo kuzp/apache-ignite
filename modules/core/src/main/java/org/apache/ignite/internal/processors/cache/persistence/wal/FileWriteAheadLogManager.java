@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.cache.persistence.wal;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -46,6 +47,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
@@ -89,6 +91,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE;
+import static org.apache.ignite.IgniteSystemProperties.IGNITE_WAL_ARCHIVE_COMPACT_SKIP_DELTA_RECORD;
 
 /**
  * File WAL manager.
@@ -1484,7 +1487,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         private final TreeSet<Long> checkpointMarkerSegments = new TreeSet<>();
 
         /** */
-        private final CompactWriterFactory compactWriterFactory = new CompactWriterFactoryImpl();
+        private final CompactFactory compactFactory = new CompactFactoryImpl();
 
         /**
          *
@@ -1513,16 +1516,11 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             if (!F.isEmpty(compactedArchives)) {
                 long maxArchivedSegIdx = -1L;
 
-                //todo rework parse end seg idx
                 for (File f : compactedArchives) {
-                    String n = f.getName();
+                    CompactDescriptor desc = CompactDescriptor.parse(f.getAbsolutePath());
 
-                    String sub = n.substring(4);
-
-                    long endIdx = Long.valueOf(sub.split("-")[1]);
-
-                    if (endIdx > maxArchivedSegIdx)
-                        maxArchivedSegIdx = endIdx;
+                    if (desc.endSeg > maxArchivedSegIdx)
+                        maxArchivedSegIdx = desc.endSeg;
                 }
 
                 assert maxArchivedSegIdx != -1L;
@@ -1543,7 +1541,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
                     reserveSegments(compactDesc);
 
-                    CompactWriter compactWriter = compactWriterFactory.create(0, compactDesc);
+                    CompactWriter compactWriter = compactFactory.createWriter(0, compactDesc);
 
                     CompactionIterator iter = new CompactionIterator(
                         compactDesc,
@@ -1590,6 +1588,9 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                     e.printStackTrace();
                 }
             }
+
+            if (log != null && log.isInfoEnabled())
+                log.info(getName() + " - stopped.");
         }
 
         /**
@@ -1622,48 +1623,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          */
         private long readyForCompressingSegIdx() {
             return lastSegmentWithCheckpointMarkerInArchive - 1;
-        }
-
-        /**
-         *
-         */
-        private class CompactDescriptor {
-
-            /** */
-            private final long startSeg;
-
-            /** */
-            private final long endSeg;
-
-            /** */
-            private final String path;
-
-            /** */
-            private final String name;
-
-            /**
-             *
-             */
-            private CompactDescriptor(long startSeg, long endSeg, String path) {
-                this.startSeg = startSeg;
-                this.endSeg = endSeg;
-                this.path = path;
-
-                SB b1 = new SB();
-
-                String segmentStr = Long.toString(startSeg);
-
-                for (int i = segmentStr.length(); i < 16; i++)
-                    b1.a('0');
-
-                SB b2 = new SB();
-
-                long cnt = endSeg - startSeg;
-
-                String cntStr = Long.toString(cnt == 0 ? 1 : cnt);
-
-                this.name = "seg-" + b1.a(segmentStr) + "-" + cntStr;
-            }
         }
 
         /**
@@ -1714,15 +1673,72 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
+    private static class CompactDescriptor {
+
+        /** */
+        private final long startSeg;
+
+        /** */
+        private final long endSeg;
+
+        /** */
+        private final String path;
+
+        /** */
+        private final String name;
+
+        /**
+         *
+         */
+        private CompactDescriptor(long startSeg, long endSeg, String path) {
+            this.startSeg = startSeg;
+            this.endSeg = endSeg;
+            this.path = path;
+
+            SB b1 = new SB();
+
+            String segmentStr = Long.toString(startSeg);
+
+            for (int i = segmentStr.length(); i < 16; i++)
+                b1.a('0');
+
+            SB b2 = new SB();
+
+            long cnt = endSeg - startSeg;
+
+            String cntStr = Long.toString(cnt == 0 ? 1 : cnt);
+
+            this.name = "seg-" + b1.a(segmentStr) + "-" + cntStr;
+        }
+
+        public static CompactDescriptor parse(String fullPath) {
+            File f = new File(fullPath);
+
+            String fileName = f.getName();
+
+            String[] parts = fileName.split("-");
+
+            Long startIdx = Long.valueOf(parts[1]);
+
+            return new CompactDescriptor(startIdx, startIdx + Long.valueOf(parts[2]), f.getPath());
+        }
+    }
+
+    /**
+     *
+     */
     private static class CompactionIterator extends AbstractWalRecordsIterator {
         /** */
         private static final int DEFAULT_BUFFER_SIZE = 10 * 1024 * 1024;
+
+        private static final boolean SKIP_DELTA_RECORD_FILTER_ENABLE =
+            IgniteSystemProperties.getBoolean(IGNITE_WAL_ARCHIVE_COMPACT_SKIP_DELTA_RECORD, true);
 
         /** */
         private final IgniteBiTuple<WALPointer, WALRecord> resFakeTuple = new IgniteBiTuple<>();
 
         /** */
-        private final IgnitePredicate<RecordType> walSkipRecordsFilter = new P1<RecordType>() {
+        private final IgnitePredicate<RecordType> walDeltaRecordsFilter = new P1<RecordType>() {
             private final Set<RecordType> skip = RecordTypes.DELTA_TYPE_SET;
 
             @Override public boolean apply(RecordType type) {
@@ -1746,7 +1762,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          *
          */
         private CompactionIterator(
-            FileCompressor.CompactDescriptor desc,
+            CompactDescriptor desc,
             String directoryPath,
             String gridName,
             RecordSerializerFactory recSerFactory,
@@ -1791,13 +1807,13 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             assert idx != -1L;
 
             try {
-                File file = new File(directoryPath, FileDescriptor.fileName(idx));
+                String fileName = FileDescriptor.fileName(idx);
 
-                FileDescriptor fileDesc = new FileDescriptor(file);
+                compactWriter.advance(fileName);
 
-                compactWriter.advanceSegment(idx);
+                File file = new File(directoryPath, fileName);
 
-                return initReadHandle(fileDesc, null);
+                return initReadHandle(new FileDescriptor(file), null);
             }
             catch (FileNotFoundException e) {
                 if (log.isInfoEnabled())
@@ -1824,7 +1840,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 // Todo do not create real rec.
                 final WALRecord rec = hnd.ser.readRecord(in, ptr);
 
-                if (walSkipRecordsFilter.apply(rec.type()))
+                if (SKIP_DELTA_RECORD_FILTER_ENABLE && walDeltaRecordsFilter.apply(rec.type()))
                     return resFakeTuple;
 
                 assert compactWriter != null;
@@ -1864,11 +1880,16 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
-    private interface CompactWriterFactory {
+    private interface CompactFactory {
         /**
          * 0 - Standard java zip {@link ZipOutputStream}.
          */
-        public CompactWriter create(int type, FileCompressor.CompactDescriptor desc);
+        public CompactWriter createWriter(int type, CompactDescriptor desc);
+
+        /**
+         * 0 - Standard java zip {@link ZipInputStream}.
+         */
+        public CompactReader createReader(int type, CompactDescriptor desc);
     }
 
     /**
@@ -1876,9 +1897,9 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      */
     private interface CompactWriter {
         /**
-         * @param segIdx Segment index.
+         * @param name Next entry name.
          */
-        public void advanceSegment(long segIdx);
+        public void advance(String name);
 
         /**
          * @param buf Wal record byte buffer.
@@ -1894,10 +1915,31 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
-    private static class CompactWriterFactoryImpl implements CompactWriterFactory {
+    private interface CompactReader {
+
+        /**
+         *
+         */
+        public String advance();
+
+        /**
+         *
+         */
+        public int read(ByteBuffer buf);
+
+        /**
+         *
+         */
+        public void close();
+    }
+
+    /**
+     *
+     */
+    private static class CompactFactoryImpl implements CompactFactory {
         private static final int DEFAULT_COMPACTION_LEVEL = 9;
 
-        @Override public CompactWriter create(int type, FileCompressor.CompactDescriptor desc) {
+        @Override public CompactWriter createWriter(int type, CompactDescriptor desc) {
             switch (type) {
                 case 0:
                     assert desc != null;
@@ -1907,23 +1949,28 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                     throw new UnsupportedOperationException("Unsupported compact writer type:" + type);
             }
         }
+
+        @Override public CompactReader createReader(int type, CompactDescriptor desc) {
+            switch (type) {
+                case 0:
+                    assert desc != null;
+
+                    return new StandardZipReader(desc.path, desc.name);
+                default:
+                    throw new UnsupportedOperationException("Unsupported compact reader type:" + type);
+            }
+        }
     }
 
     /**
      *
      */
-    private static class StandardZipWriter implements CompactWriter {
-        /** */
-        private static final String SUFFIX = "-archive.zip";
-
+    private static class StandardZipWriter extends AbstractStandardZip implements CompactWriter {
         /** */
         private static final String TMP_SUFFIX = SUFFIX + ".tmp";
 
         /** */
         private ZipOutputStream out;
-
-        /** */
-        private File archive;
 
         /** */
         private File archiveTmp;
@@ -1955,9 +2002,9 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         }
 
         /** {@inheritDoc} */
-        @Override public void advanceSegment(long segIdx) {
+        @Override public void advance(String name) {
             try {
-                out.putNextEntry(new ZipEntry(FileDescriptor.fileName(segIdx)));
+                out.putNextEntry(new ZipEntry(name));
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -1987,6 +2034,64 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 e.printStackTrace();
             }
         }
+    }
+
+    private static class StandardZipReader extends AbstractStandardZip implements CompactReader {
+
+        /** */
+        private ZipInputStream in;
+
+        private StandardZipReader(String dir, String name) {
+            try {
+                in = new ZipInputStream(new FileInputStream(new File(dir, name + SUFFIX)));
+            }
+            catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override public String advance() {
+            try {
+                ZipEntry entry = in.getNextEntry();
+
+                return entry.getName();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override public int read(ByteBuffer buf) {
+            try {
+                byte[] array = buf.array();
+
+                return in.read(array);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return 0;
+        }
+
+        @Override public void close() {
+            try {
+                in.close();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private abstract static class AbstractStandardZip {
+        /** */
+        protected static final String SUFFIX = "-archive.zip";
+
+        /** */
+        protected File archive;
+
     }
 
     /**

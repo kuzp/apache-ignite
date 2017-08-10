@@ -708,6 +708,11 @@ public final class IgniteSystemProperties {
     public static final String IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE = "IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE";
 
     /**
+     *
+     */
+    public static final String IGNITE_WAL_ARCHIVE_COMPACT_SKIP_DELTA_RECORD = "IGNITE_WAL_ARCHIVE_COMPACT_SKIP_DELTA_RECORD";
+
+    /**
      * Enforces singleton.
      */
     private IgniteSystemProperties() {
