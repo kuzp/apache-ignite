@@ -22,6 +22,7 @@ import service from './service';
 import {reducer} from './reducer';
 
 import pcbScaleNumber from './components/pcbScaleNumber';
+import pcListEditableOneWay from './components/pcListEditableOneWay';
 
 export default angular
     .module('ignite-console.page-configure-basic', [])
@@ -30,4 +31,5 @@ export default angular
     }))])
     .component('pageConfigureBasic', component)
     .directive('pcbScaleNumber', pcbScaleNumber)
+    .directive('pcListEditableOneWay', pcListEditableOneWay)
     .service('PageConfigureBasic', service);
