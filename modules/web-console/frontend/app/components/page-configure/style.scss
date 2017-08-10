@@ -128,6 +128,7 @@ page-configure {
         flex-wrap: wrap;
         align-content: flex-start;
 
+        &>.pc-form-grid-col-10,
         &>.pc-form-grid-col-20,
         &>.pc-form-grid-col-30,
         &>.pc-form-grid-col-40,
@@ -149,6 +150,10 @@ page-configure {
     }
 
     .pc-form-grid-row {
+        &>.pc-form-grid-col-10 {
+            flex-basis: calc(100% / 6);
+        }
+
         &>.pc-form-grid-col-20 {
             flex-basis: calc(100% / 3);
         }
@@ -166,6 +171,9 @@ page-configure {
         }
 
         @media(max-width: 992px) {
+            &>.pc-form-grid-col-10 {
+                flex-basis: calc(25%);
+            }
             &>.pc-form-grid-col-20 {
                 flex-basis: calc(50%);
             }
@@ -180,6 +188,10 @@ page-configure {
         }
         // IE11 does not count padding towards flex width
         @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            &>.pc-form-grid-col-10 {
+                flex-basis: calc(99.9% / 6 - 20px);
+            }
+
             &>.pc-form-grid-col-20 {
                 flex-basis: calc(99.9% / 3 - 20px);
             }
