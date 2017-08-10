@@ -703,6 +703,11 @@ public final class IgniteSystemProperties {
     public static final String IGNITE_ENABLE_FORCIBLE_NODE_KILL = "IGNITE_ENABLE_FORCIBLE_NODE_KILL";
 
     /**
+     *
+     */
+    public static final String IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE = "IGNITE_WAL_ARCHIVE_COMPACT_BATCH_SIZE";
+
+    /**
      * Enforces singleton.
      */
     private IgniteSystemProperties() {
