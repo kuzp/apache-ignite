@@ -36,6 +36,7 @@ import {
     RECEIVE_IGFSS_EDIT,
     RECEIVE_IGFS_EDIT,
     SHOW_CONFIG_LOADING,
+    LOAD_ITEMS,
     HIDE_CONFIG_LOADING
 } from 'app/components/page-configure/reducer';
 import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
@@ -214,6 +215,17 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     caches: cachesResolve
                 },
+                onEnter: ['ConfigureState', '$transition$', (ConfigureState, $transition$) => {
+                    const caches = $transition$.injector().getAsync('caches');
+                    const cluster = $transition$.injector().getAsync('cluster');
+                    Promise.all([caches, cluster]).then(([caches, cluster]) => {
+                        ConfigureState.dispatchAction({
+                            type: LOAD_ITEMS,
+                            ids: cluster.caches,
+                            field: 'basicCaches'
+                        });
+                    });
+                }],
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },

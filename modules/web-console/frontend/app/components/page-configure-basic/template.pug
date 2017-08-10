@@ -88,18 +88,42 @@ form(novalidate name=form)
                 min='{{::$ctrl.minMemorySize}}'
                 tip='“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.'
             )
-    .pcb-caches-list(
-        ng-repeat='cache in $ctrl.allClusterCaches track by cache._id'
-        ng-form='cacheForm'
+
+    .pcb-caches-list__header.pc-form-grid-row(ng-show='$ctrl.allClusterCaches.length')
+        .pc-form-grid-col-10
+            span.ignite-form-field__label Name:
+        .pc-form-grid-col-10
+            span.ignite-form-field__label Mode:
+        .pc-form-grid-col-10
+            span.ignite-form-field__label Atomicity:
+        .pc-form-grid-col-10
+            span.ignite-form-field__label Backups:
+    pc-list-editable.pcb-caches-list(
+        ng-model='$ctrl.allClusterCaches'
+        pc-list-editable-one-way
+        on-item-change='$ctrl.updateCache($event)'
+        on-item-remove='$ctrl.removeCache($event)'
     )
-        .pcb-form-grid-row.pc-form-grid-row
-            - form = 'cacheForm'
-            .pc-form-grid-col-60
-                +text('Name:', 'cache.name', '"cacheName"', 'true', 'Input name', 'Cache name')
-            .pc-form-grid-col-20
-                +cacheMode('Mode:', 'cache.cacheMode', '"cacheMode"', 'PARTITIONED')
-            .pc-form-grid-col-20
-                +dropdown('Atomicity:', 'cache.atomicityMode', '"atomicityMode"', 'true', 'ATOMIC',
+        pc-list-editable-item-view.pc-form-grid-row
+            .pc-form-grid-col-10
+                | {{ $parent.item.name }}
+            .pc-form-grid-col-10
+                | {{ $parent.item.cacheMode }}
+            .pc-form-grid-col-10
+                | {{ $parent.item.atomicityMode }}
+            .pc-form-grid-col-10
+                | {{ $parent.item.backups || '0' }}
+        pc-list-editable-item-edit.pc-form-grid-row
+            .pc-form-grid-col-10
+                +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
+                    ignite-unique='$ctrl.allClusterCaches'
+                    ignite-unique-property='name'
+                )
+                    +unique-feedback('"name"', 'Cache name should be unqiue')
+            .pc-form-grid-col-10
+                +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
+            .pc-form-grid-col-10
+                +dropdown('Atomicity:', '$parent.item.atomicityMode', '"atomicityMode"', 'true', 'ATOMIC',
                     '[\
                         {value: "ATOMIC", label: "ATOMIC"},\
                         {value: "TRANSACTIONAL", label: "TRANSACTIONAL"}\
@@ -109,38 +133,14 @@ form(novalidate name=form)
                         <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>\
                         <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>\
                     </ul>')
-            .pc-form-grid-col-20(ng-show='cache.cacheMode === "PARTITIONED"')
-                +number('Backups:', 'cache.backups', '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
-        .pcb-cache-remove
-            button.btn-ignite.btn-ignite--link-dashed-secondary(
-                type='button'
-                ng-click='$ctrl.removeCache(cache)'
-                bs-tooltip=''
-                data-title='Remove from cluster'
-            )
-                svg(ignite-icon='cross').icon
-
+            .pc-form-grid-col-10(ng-show='$parent.item.cacheMode === "PARTITIONED"')
+                +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
 
     .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding
         a.link-primary(
             ng-click='$ctrl.addCache()'
         )
             | + Add one more cache
-        a.link-primary.pcb-select-existing-cache(ng-show='$ctrl.caches.length')
-            button(
-                bs-select
-                ng-model='$ctrl.oldClusterCaches'
-                ng-model-options=`{
-                    debounce: {
-                        default: 5
-                    }
-                }`
-                bs-options='cache._id as cache.name for cache in $ctrl.cachesMenu'
-                data-multiple='true'
-                data-placement='top-left'
-                protect-from-bs-select-render
-            )
-                | + Select from existing caches
         
     .pc-form-actions-panel
         pc-project-structure-preview(
