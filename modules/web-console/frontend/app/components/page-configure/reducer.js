@@ -174,37 +174,37 @@ export const REMOVE_ITEM = Symbol('REMOVE_ITEM');
 export const UPDATE_ITEM = Symbol('UPDATE_ITEM');
 
 // eslint-disable-next-line no-sequences
-const del = (collection, index) => (collection.delete(index), collection);
+// const del = (collection, index) => (collection.delete(index), collection);
 
-export const itemsEditReducer = (state = {ids: new Set(), changedItems: new Map()}, action) => {
-    switch (action.type) {
-        case LOAD_ITEMS:
-            return {
-                ...state,
-                ids: new Set(action.ids),
-                changedItems: new Map()
-            };
-        case ADD_ITEM:
-            return {
-                ...state,
-                ids: new Set([...state.ids.values(), action.item._id]),
-                changedItems: new Map([...state.changedItems.entries(), [action.item._id, action.item]])
-            };
-        case REMOVE_ITEM:
-            return {
-                ...state,
-                ids: del(new Set(state.ids), action.item._id),
-                changedItems: del(new Map(state.changedItems), action.item._id)
-            };
-        case UPDATE_ITEM:
-            return {
-                ...state,
-                changedItems: new Map(state.changedItems).set(action.item._id, action.item)
-            };
-        default:
-            return state;
-    }
-};
+// export const itemsEditReducer = (state = {ids: new Set(), changedItems: new Map()}, action) => {
+//     switch (action.type) {
+//         case LOAD_ITEMS:
+//             return {
+//                 ...state,
+//                 ids: new Set(action.ids),
+//                 changedItems: new Map()
+//             };
+//         case ADD_ITEM:
+//             return {
+//                 ...state,
+//                 ids: new Set([...state.ids.values(), action.item._id]),
+//                 changedItems: new Map([...state.changedItems.entries(), [action.item._id, action.item]])
+//             };
+//         case REMOVE_ITEM:
+//             return {
+//                 ...state,
+//                 ids: del(new Set(state.ids), action.item._id),
+//                 changedItems: del(new Map(state.changedItems), action.item._id)
+//             };
+//         case UPDATE_ITEM:
+//             return {
+//                 ...state,
+//                 changedItems: new Map(state.changedItems).set(action.item._id, action.item)
+//             };
+//         default:
+//             return state;
+//     }
+// };
 
 export const SHOW_CONFIG_LOADING = Symbol('SHOW_CONFIG_LOADING');
 export const HIDE_CONFIG_LOADING = Symbol('HIDE_CONFIG_LOADING');
@@ -219,4 +219,58 @@ export const loadingReducer = (state = loadingDefaults, action) => {
         default:
             return state;
     }
+};
+
+const setStoreReducerFactory = (actionTypes) => (state = new Set(), action = {}) => {
+    switch (action.type) {
+        case actionTypes.UPSERT:
+            return action.items.reduce((acc, item) => {acc.add(item._id); return acc;}, new Set(state));
+        case actionTypes.REMOVE:
+            return action.items.reduce((acc, item) => {acc.delete(item); return acc;}, new Set(state));
+        default:
+            return state;
+    }
+};
+
+export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), action = {}) => {
+    switch (action.type) {
+        case actionTypes.UPSERT:
+            return action.items.reduce((acc, item) => {acc.set(item._id, item); return acc;}, new Map(state));
+        case actionTypes.REMOVE:
+            return action.ids.reduce((acc, id) => {acc.delete(id); return acc;}, new Map(state));
+        default:
+            return state;
+    }
+};
+
+export const basicCachesActionTypes = {
+    LOAD: 'LOAD_BASIC_CACHES',
+    UPSERT: 'UPSERT_BASIC_CACHES',
+    REMOVE: 'REMOVE_BASIC_CACHES'
+};
+
+export const itemsEditReducerFactory = (actionTypes) => {
+    const setStoreReducer = setStoreReducerFactory(actionTypes);
+    const mapStoreReducer = mapStoreReducerFactory(actionTypes);
+    return (state = {ids: setStoreReducer(), changedItems: mapStoreReducer()}, action) => {
+        switch (action.type) {
+            case actionTypes.LOAD:
+                return {
+                    ...state,
+                    ids: setStoreReducer(state.ids, {...action, type: actionTypes.UPSERT})
+                };
+            case actionTypes.UPSERT:
+                return {
+                    ids: setStoreReducer(state.ids, action),
+                    changedItems: mapStoreReducer(state.changedItems, action)
+                };
+            case actionTypes.REMOVE:
+                return {
+                    ids: setStoreReducer(state.ids, {type: action.type, items: action.ids}),
+                    changedItems: mapStoreReducer(state.changedItems, action)
+                };
+            default:
+                return state;
+        }
+    };
 };

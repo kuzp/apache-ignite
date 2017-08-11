@@ -25,7 +25,7 @@ import {
     isNewItem
 } from './reducer';
 
-import {ADD_ITEM, REMOVE_ITEM, UPDATE_ITEM} from '../page-configure/reducer';
+import {basicCachesActionTypes} from '../page-configure/reducer';
 
 // const makeId = (() => {
 //     let id = -1;
@@ -134,18 +134,23 @@ export default class PageConfigureBasic {
 
     addCache(caches) {
         this.ConfigureState.dispatchAction({
-            type: ADD_ITEM,
-            item: {...this.caches.getBlankCache(), name: uniqueName('New cache', caches)},
-            field: 'basicCaches'
+            type: basicCachesActionTypes.UPSERT,
+            items: [{...this.caches.getBlankCache(), name: uniqueName('New cache', caches)}]
         });
     }
 
     removeCache(item) {
-        this.ConfigureState.dispatchAction({type: REMOVE_ITEM, item, field: 'basicCaches'});
+        this.ConfigureState.dispatchAction({
+            type: basicCachesActionTypes.REMOVE,
+            ids: [item._id]
+        });
     }
 
     updateCache(item) {
-        this.ConfigureState.dispatchAction({type: UPDATE_ITEM, item, field: 'basicCaches'});
+        this.ConfigureState.dispatchAction({
+            type: basicCachesActionTypes.UPSERT,
+            items: [item]
+        });
     }
 
     // setSelectedCaches(cacheIDs) {

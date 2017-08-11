@@ -28,6 +28,7 @@ import base2 from 'views/base2.pug';
 
 import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
 import {
+    basicCachesActionTypes,
     RECEIVE_CLUSTER_EDIT,
     RECEIVE_CACHES_EDIT,
     RECEIVE_CACHE_EDIT,
@@ -220,9 +221,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     const cluster = $transition$.injector().getAsync('cluster');
                     Promise.all([caches, cluster]).then(([caches, cluster]) => {
                         ConfigureState.dispatchAction({
-                            type: LOAD_ITEMS,
-                            ids: cluster.caches,
-                            field: 'basicCaches'
+                            type: basicCachesActionTypes.LOAD,
+                            items: caches
                         });
                     });
                 }],
