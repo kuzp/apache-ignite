@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/operator/distinctUntilChanged';
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 import get from 'lodash/get';
 import angular from 'angular';
@@ -47,16 +50,21 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
         };
 
         this.getObservable = function(state$) {
-            return state$.pluck('clusterConfiguration')
-            .do((value) => this.applyValue(value));
-        };
+            const caches = state$
+                .pluck('shortCaches')
+                .distinctUntilChanged()
+                .map((i) => [...i.values()])
+                .do((caches) => this.$scope.$applyAsync(() => this.assignCaches(caches)));
 
-        this.applyValue = function(state) {
-            this.$scope.$applyAsync(() => {
-                this.assignCaches(state.originalCaches);
-                this.$scope.selectItem(state.originalCache);
-                if (state.originalCache) this.selectedItemIDs = [state.originalCache._id];
-            });
+            const cache = state$
+                .pluck('clusterConfiguration', 'originalCache')
+                .distinctUntilChanged()
+                .do((cache) => this.$scope.$applyAsync(() => {
+                    this.$scope.selectItem(cache);
+                    if (cache) this.selectedItemIDs = [cache._id];
+                }));
+
+            return Observable.merge(caches, cache);
         };
 
         this.assignCaches = function(caches) {
@@ -109,7 +117,6 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
         this.selectionHook = function(selected) {
             this.selectedItemIDs = selected.map((r) => r._id);
-            console.debug(selected);
             if (selected.length !== 1) this.$scope.selectItem(null);
             return this.selectedItemIDs.length === 1
                 ? this.$state.go('base.configuration.tabs.advanced.caches.cache', {

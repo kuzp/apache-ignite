@@ -24,8 +24,11 @@ pc-items-table(
 )
     footer-slot
         div(style='font-style: italic' ng-hide='$ctrl.IGFSsTable.length')
-            | You have no IGFS. #[a.link-success(ng-click='createItem()') Create one?]
-        a.link-success(ng-click='createItem()' ng-show='$ctrl.IGFSsTable.length') + Add new IGFS
+            | You have no IGFS. #[a.link-success(ui-sref='base.configuration.tabs.advanced.igfs.igfs({igfsID: "new"})') Create one?]
+        a.link-success(
+            ui-sref='base.configuration.tabs.advanced.igfs.igfs({igfsID: "new"})'
+            ng-show='$ctrl.IGFSsTable.length'
+        ) + Add new IGFS
 
 h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length !== 1')
     | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} IGFSs selected

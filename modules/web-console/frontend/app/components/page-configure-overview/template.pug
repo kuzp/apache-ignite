@@ -27,10 +27,10 @@ h1.pc-page-header Configuration
     pc-items-table(
         table-title='::"My Cluster Configurations"'
         column-defs='$ctrl.clustersColumnDefs'
-        items='$ctrl.clustersTable'
+        items='$ctrl.clusters'
         on-action='$ctrl.onClustersAction($event)'
         max-rows-to-show='10'
     )
-        footer-slot(ng-hide='$ctrl.clustersTable.length' style='font-style: italic')
+        footer-slot(ng-hide='$ctrl.clusters.length' style='font-style: italic')
             | You have no cluster configurations.
             a.link-success(ui-sref='base.configuration.tabs.basic({clusterID: "new"})')  Create one?

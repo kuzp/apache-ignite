@@ -20,6 +20,7 @@ import 'rxjs/add/operator/pluck';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/take';
 import 'rxjs/add/operator/switchMap';
+import 'rxjs/add/operator/distinctUntilChanged';
 import 'rxjs/add/observable/empty';
 import {Observable} from 'rxjs/Observable';
 
@@ -105,13 +106,20 @@ export default class PageConfigureOverviewController {
 
     getObservable(state$) {
         return state$
-        .pluck('configurationOverview')
-        .do((value) => this.applyValue(value));
+        .pluck('shortClusters')
+        .distinctUntilChanged()
+        .map((map) => [...map.values()])
+        .do((clusters) => this.$scope.$applyAsync(() => this.clusters = clusters));
+        // return state$
+        // .pluck('configurationOverview')
+        // .do((value) => this.applyValue(value));
     }
 
-    applyValue(value) {
-        this.$scope.$applyAsync(() => Object.assign(this, value));
-    }
+    // applyValue(value) {
+    //     this.$scope.$applyAsync(() => Object.assign(this, {
+    //         clusters: [...state.shortClusters.values()]
+    //     }));
+    // }
 
     onClustersAction(action) {
         switch (action.type) {

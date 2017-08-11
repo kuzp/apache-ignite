@@ -38,8 +38,15 @@ import {
     loadingReducer,
     itemsEditReducerFactory,
     mapStoreReducerFactory,
-    filteredReducer,
-    basicCachesActionTypes
+    basicCachesActionTypes,
+    clustersActionTypes,
+    shortClustersActionTypes,
+    cachesActionTypes,
+    shortCachesActionTypes,
+    modelsActionTypes,
+    shortModelsActionTypes,
+    igfssActionTypes,
+    shortIGFSsActionTypes
 } from './reducer';
 import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegration';
 
@@ -66,10 +73,17 @@ export default angular
             ConfigureState.addReducer(reduxDevtoolsReducer);
         }
         ConfigureState.addReducer((state, action) => Object.assign(state, {
-            // list: reducer(state.list, action),
             clusterConfiguration: editReducer(state.clusterConfiguration, action),
             configurationLoading: loadingReducer(state.configurationLoading, action),
-            basicCaches: itemsEditReducerFactory(basicCachesActionTypes)(state.basicCaches, action)
+            basicCaches: itemsEditReducerFactory(basicCachesActionTypes)(state.basicCaches, action),
+            clusters: mapStoreReducerFactory(clustersActionTypes)(state.clusters, action),
+            shortClusters: mapStoreReducerFactory(shortClustersActionTypes)(state.shortClusters, action),
+            caches: mapStoreReducerFactory(cachesActionTypes)(state.caches, action),
+            shortCaches: mapStoreReducerFactory(shortCachesActionTypes)(state.shortCaches, action),
+            models: mapStoreReducerFactory(modelsActionTypes)(state.models, action),
+            shortModels: mapStoreReducerFactory(shortModelsActionTypes)(state.shortModels, action),
+            igfss: mapStoreReducerFactory(igfssActionTypes)(state.igfss, action),
+            shortIGFSs: mapStoreReducerFactory(shortIGFSsActionTypes)(state.shortIGFSs, action)
         }));
     }])
     .component('pageConfigure', component)
