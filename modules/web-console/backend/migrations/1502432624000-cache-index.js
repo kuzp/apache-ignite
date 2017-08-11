@@ -16,13 +16,19 @@
  */
 
 exports.up = function up(done) {
-    this('Cache').update({}, { $rename: { invalidate: 'isInvalidate' } }, { multi: true })
+    const caches = this('Cache').collection;
+
+    caches.dropIndex({name: 1, space: 1})
+        .then(() => caches.createIndex({name: 1, space: 1, clusters: 1}, {unique: true}))
         .then(() => done())
         .catch(done);
 };
 
 exports.down = function down(done) {
-    this('Cache').update({}, { $rename: { isInvalidate: 'invalidate' } }, { multi: true })
+    const caches = this('Cache').collection;
+
+    caches.dropIndex({name: 1, space: 1, clusters: 1})
+        .then(() => caches.createIndex({name: 1, space: 1}, {unique: true}))
         .then(() => done())
         .catch(done);
 };

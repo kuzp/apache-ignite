@@ -94,13 +94,14 @@ const init = ([settings, apiSrv, agentsHnd, browsersHnd]) => {
 Promise.all([injector('settings'), injector('mongo')])
     .then(([{mongoUrl}]) => {
         const migrator = new MigrateMongoose({
-            migrationsPath: './migrations', // Path to migrations directory
-            dbConnectionUri: mongoUrl // mongo url
+            migrationsPath: './migrations',
+            dbConnectionUri: mongoUrl,
+            autosync: true
         });
 
         console.log('Running migrations...');
 
-        return migrator.run('down')
+        return migrator.run('up')
             .then(() => console.log('All migrations finished successfully.'))
             .catch((err) => {
                 if (err instanceof Error && err.message === 'There are no migrations to run') {

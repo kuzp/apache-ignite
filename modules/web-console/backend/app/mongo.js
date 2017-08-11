@@ -337,7 +337,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         topologyValidator: String
     });
 
-    CacheSchema.index({name: 1, space: 1}, {unique: true});
+    CacheSchema.index({name: 1, space: 1, clusters: 1}, {unique: true});
 
     // Define Cache model.
     result.Cache = mongoose.model('Cache', CacheSchema);
