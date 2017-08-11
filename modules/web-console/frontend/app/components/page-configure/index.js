@@ -32,7 +32,15 @@ import pcListEditable from './components/pc-list-editable';
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
 
-import {reducer, editReducer, loadingReducer, itemsEditReducer, filteredReducer} from './reducer';
+import {
+    reducer,
+    editReducer,
+    loadingReducer,
+    itemsEditReducerFactory,
+    mapStoreReducerFactory,
+    filteredReducer,
+    basicCachesActionTypes
+} from './reducer';
 import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegration';
 
 export default angular
@@ -61,8 +69,7 @@ export default angular
             // list: reducer(state.list, action),
             clusterConfiguration: editReducer(state.clusterConfiguration, action),
             configurationLoading: loadingReducer(state.configurationLoading, action),
-            basicCaches: filteredReducer(itemsEditReducer, (a) => a.field === 'basicCaches')(state.basicCaches, action)
-            // cachesEdit: cachesEditReducer(state.cachesEdit, action)
+            basicCaches: itemsEditReducerFactory(basicCachesActionTypes)(state.basicCaches, action)
         }));
     }])
     .component('pageConfigure', component)
