@@ -16,6 +16,9 @@
  */
 
 import get from 'lodash/get';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/operator/distinctUntilChanged';
 
 export default class PageConfigureController {
     static $inject = ['$state', 'ConfigureState', 'IgniteLoading'];
@@ -25,19 +28,26 @@ export default class PageConfigureController {
     }
 
     $onInit() {
-        this.subscription = this.ConfigureState.state$
-        .do((state) => {
-            const clusterName = get(state, 'clusterConfiguration.originalCluster.name');
-            const isNew = this.$state.params.clusterID === 'new';
-            this.title = `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${clusterName}’`}`;
-            const {loadingText, isLoading} =
-            this.loadingText = state.configurationLoading.loadingText;
-            if (state.configurationLoading.isLoading)
-                this.IgniteLoading.start('configuration');
-            else
-                this.IgniteLoading.finish('configuration');
-        })
-        .subscribe();
+        const clusterName = this.ConfigureState.state$
+            .pluck('clusterConfiguration', 'originalCluster')
+            .distinctUntilChanged()
+            .do((cluster) => {
+                const isNew = this.$state.params.clusterID === 'new';
+                this.title = `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
+            });
+
+        const loading = this.ConfigureState.state$
+            .pluck('configurationLoading')
+            .distinctUntilChanged()
+            .do(({loadingText, isLoading}) => {
+                this.loadingText = loadingText;
+                if (isLoading)
+                    this.IgniteLoading.start('configuration');
+                else
+                    this.IgniteLoading.finish('configuration');
+            });
+
+        this.subscription = Observable.merge(clusterName, loading).subscribe();
         this.tooltipsVisible = true;
     }
 

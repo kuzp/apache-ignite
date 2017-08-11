@@ -16,6 +16,9 @@
  */
 
 import get from 'lodash/get';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/operator/distinctUntilChanged';
 
 // Controller for IGFS screen.
 export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', '$q', 'IGFSs',
@@ -69,16 +72,21 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
         };
 
         this.getObservable = function(state$) {
-            return state$.pluck('clusterConfiguration')
-            .do((value) => this.applyValue(value));
-        };
+            const igfss = state$
+                .pluck('shortIGFSs')
+                .distinctUntilChanged()
+                .map((i) => [...i.values()])
+                .do((igfss) => this.$scope.$applyAsync(() => this.assignIGFSs(igfss)));
 
-        this.applyValue = function(state) {
-            this.$scope.$applyAsync(() => {
-                this.assignIGFSs(state.originalIGFSs);
-                this.$scope.selectItem(state.originalIGFS);
-                if (state.originalIGFS) this.selectedItemIDs = [state.originalIGFS._id];
-            });
+            const igfs = state$
+                .pluck('clusterConfiguration', 'originalIGFS')
+                .distinctUntilChanged()
+                .do((igfs) => this.$scope.$applyAsync(() => {
+                    this.$scope.selectItem(igfs);
+                    if (igfs) this.selectedItemIDs = [igfs._id];
+                }));
+
+            return Observable.merge(igfss, igfs);
         };
 
         this.assignIGFSs = function(igfss) {
@@ -238,12 +246,12 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
         $scope.clusters = [];
 
-        function selectFirstItem() {
-            if ($scope.igfss.length > 0)
-                $scope.selectItem($scope.igfss[0]);
-            else
-                $scope.createItem();
-        }
+        // function selectFirstItem() {
+        //     if ($scope.igfss.length > 0)
+        //         $scope.selectItem($scope.igfss[0]);
+        //     else
+        //         $scope.createItem();
+        // }
 
         // Loading.start('loadingIgfsScreen');
 
@@ -330,26 +338,26 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
         $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
 
-        function prepareNewItem(linkId) {
-            return {
-                space: $scope.spaces[0]._id,
-                ipcEndpointEnabled: true,
-                fragmentizerEnabled: true,
-                colocateMetadata: true,
-                relaxedConsistency: true,
-                clusters: linkId && _.find($scope.clusters, {value: linkId}) ? [linkId] :
-                    (_.isEmpty($scope.clusters) ? [] : [$scope.clusters[0].value])
-            };
-        }
+        // function prepareNewItem(linkId) {
+        //     return {
+        //         space: $scope.spaces[0]._id,
+        //         ipcEndpointEnabled: true,
+        //         fragmentizerEnabled: true,
+        //         colocateMetadata: true,
+        //         relaxedConsistency: true,
+        //         clusters: linkId && _.find($scope.clusters, {value: linkId}) ? [linkId] :
+        //             (_.isEmpty($scope.clusters) ? [] : [$scope.clusters[0].value])
+        //     };
+        // }
 
         // Add new IGFS.
-        $scope.createItem = function(linkId) {
-            if ($scope.tableReset(true)) {
-                $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'igfsNameInput'));
+        // $scope.createItem = function(linkId) {
+        //     if ($scope.tableReset(true)) {
+        //         $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'igfsNameInput'));
 
-                $scope.selectItem(null, prepareNewItem(linkId));
-            }
-        };
+        //         $scope.selectItem(null, prepareNewItem(linkId));
+        //     }
+        // };
 
         // Check IGFS logical consistency.
         function validate(item) {
@@ -482,7 +490,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
             Confirm.confirm('Are you sure you want to undo all changes for current IGFS?')
                 .then(function() {
-                    $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
+                    $scope.backupItem = angular.copy($scope.selectedItem);
                     if ($scope.ui.inputForm) {
                         $scope.ui.inputForm.$error = {};
                         $scope.ui.inputForm.$setPristine();

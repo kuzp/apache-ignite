@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/operator/distinctUntilChanged';
 import get from 'lodash/get';
 import templateUrl from 'views/configuration/domains-import.tpl.pug';
 
@@ -51,16 +54,27 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
         };
 
         this.getObservable = function(state$) {
-            return state$.pluck('clusterConfiguration').do((value) => this.applyValue(value));
-        };
+            const models = state$
+                .pluck('shortModels')
+                .distinctUntilChanged()
+                .map((i) => [...i.values()])
+                .do((models) => this.$scope.$applyAsync(() => this.assignModels(models)));
 
-        this.applyValue = function(state) {
-            this.$scope.$applyAsync(() => {
-                this.assignModels(state.originalModels);
-                this.$scope.selectItem(state.originalModel);
-                if (state.originalModel) this.selectedItemIDs = [state.originalModel._id];
-                this.$scope.caches = _mapCaches(state.originalCaches);
-            });
+            const caches = state$
+                .pluck('shortCaches')
+                .distinctUntilChanged()
+                .map((i) => [...i.values()])
+                .do((caches) => this.$scope.$applyAsync(() => this.$scope.caches = _mapCaches(caches)));
+
+            const model = state$
+                .pluck('clusterConfiguration', 'originalModel')
+                .distinctUntilChanged()
+                .do((model) => this.$scope.$applyAsync(() => {
+                    this.$scope.selectItem(model);
+                    if (model) this.selectedItemIDs = [model._id];
+                }));
+
+            return Observable.merge(caches, models, model);
         };
 
         this.assignModels = function(models) {

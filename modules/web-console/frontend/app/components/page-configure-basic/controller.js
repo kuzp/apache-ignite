@@ -16,6 +16,11 @@
  */
 
 import get from 'lodash/get';
+import cloneDeep from 'lodash/cloneDeep';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/observable/combineLatest';
+import 'rxjs/add/operator/distinctUntilChanged';
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/combineLatest';
 
@@ -45,35 +50,37 @@ export default class PageConfigureBasicController {
         this.discoveries = this.Clusters.discoveries;
         this.minMemorySize = this.Clusters.minMemoryPolicySize;
 
-        this.extraFormActions = [
+        this.formActionsMenu = [
             {text: 'Save changes and download project', click: () => this.saveAndDownload()},
             {text: 'Save changes', click: () => this.save()}
         ];
     }
 
     getObservable(state$, version$) {
-        return state$/* .pluck('clusterConfiguration')*/
-        .combineLatest(version$, (state, version) => ({
-            clusterConfiguration: state.clusterConfiguration,
-            caches: state.clusterConfiguration.originalCaches,
-            allClusterCaches: this.getAllClusterCaches(state),
-            defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.clusterConfiguration.originalCluster),
-            memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
-        }))
-        // return state$.combineLatest(version$, (state, version) => ({
-        //     clusters: state.list.clusters,
-        //     caches: state.list.caches,
-        //     state: state.configureBasic,
-        //     allClusterCaches: this.getAllClusterCaches(state.configureBasic),
-        //     cachesMenu: this.getCachesMenu(state.list.caches),
-        //     defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.configureBasic.cluster),
-        //     memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
-        // }))
-        .do((value) => this.applyValue(value));
-    }
+        const cluster = state$
+            .pluck('clusterConfiguration', 'originalCluster')
+            .distinctUntilChanged()
+            .map((cluster) => cloneDeep(cluster))
+            .do((clonedCluster) => this.$scope.$applyAsync(() => {
+                this.clonedCluster = clonedCluster;
+                this.defaultMemoryPolicy = this.getDefaultClusterMemoryPolicy(clonedCluster);
+            }));
 
-    applyValue(value) {
-        this.$scope.$applyAsync(() => Object.assign(this, value));
+        const allCaches = Observable.combineLatest(
+            state$.pluck('basicCaches', 'ids').distinctUntilChanged().map((ids) => [...ids.values()]),
+            state$.pluck('basicCaches', 'changedItems').distinctUntilChanged(),
+            state$.pluck('shortCaches').distinctUntilChanged(),
+            (ids, changedCaches, oldCaches) => {
+                return ids.map((id) => changedCaches.get(id) || oldCaches.get(id)).filter((v) => v);
+            }
+        )
+        .do((caches) => this.$scope.$applyAsync(() => this.allClusterCaches = caches));
+
+        const memorySizeInputVisible = version$.do((version) => {
+            this.memorySizeInputVisible = this.getMemorySizeInputVisibility(version);
+        });
+
+        return Observable.merge(cluster, allCaches, memorySizeInputVisible);
     }
 
     uiCanExit() {
@@ -85,27 +92,6 @@ export default class PageConfigureBasicController {
 
     $onDestroy() {
         this.subscription.unsubscribe();
-    }
-
-    // set clusterID(value) {
-    //     this.pageService.setCluster(value);
-    // }
-
-    // get clusterID() {
-    //     return get(this, 'state.clusterID');
-    // }
-
-    set oldClusterCaches(value) {
-        this.pageService.setSelectedCaches(value);
-    }
-
-    _oldClusterCaches = [];
-
-    get oldClusterCaches() {
-        // TODO IGNITE-5271 Keep ng-model reference the same, otherwise ng-repeat in bs-select will enter into
-        // infinite digest loop.
-        this._oldClusterCaches.splice(0, this._oldClusterCaches.length, ...get(this, 'state.oldClusterCaches', []).map((c) => c._id));
-        return this._oldClusterCaches;
     }
 
     addCache() {
@@ -122,7 +108,7 @@ export default class PageConfigureBasicController {
 
     save() {
         return this.pageService.transcationalSaveClusterAndCaches(
-            this.clusterConfiguration.originalCluster,
+            this.clonedCluster,
             this.ConfigureState.state$.value.basicCaches
         );
     }
@@ -130,14 +116,6 @@ export default class PageConfigureBasicController {
     saveAndDownload() {
         return this.save().then(([clusterID]) => (
             this.ConfigurationDownload.downloadClusterConfiguration({_id: clusterID, name: this.state.cluster.name})
-        ));
-    }
-
-    getAllClusterCaches(state) {
-        const idx = (id) => (cache) => cache._id === id;
-        return [...state.basicCaches.ids.values()].map((id) => (
-            state.basicCaches.changedItems.get(id) ||
-            (state.clusterConfiguration.originalCaches || []).find(idx(id))
         ));
     }
 

@@ -32,4 +32,13 @@ export default class IGFSs {
     getIGFS(igfsID) {
         return this.$http.get(`/api/v1/configuration/igfs/${igfsID}`);
     }
+
+    getBlankIGFS() {
+        return {
+            ipcEndpointEnabled: true,
+            fragmentizerEnabled: true,
+            colocateMetadata: true,
+            relaxedConsistency: true
+        };
+    }
 }

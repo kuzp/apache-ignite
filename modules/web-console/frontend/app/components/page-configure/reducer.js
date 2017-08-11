@@ -111,8 +111,7 @@ export const reducer = (state = defaults, action) => {
 
 
 export const RECEIVE_CLUSTER_EDIT = Symbol('RECEIVE_CLUSTER_EDIT');
-export const RECEIVE_CACHES_EDIT = Symbol('RECEIVE_CACHES_EDIT');
-export const RECEIVE_CACHE_EDIT = Symbol('RECEIVE_CACHES_EDIT');
+export const RECEIVE_CACHE_EDIT = Symbol('RECEIVE_CACHE_EDIT');
 export const RECEIVE_IGFSS_EDIT = Symbol('RECEIVE_IGFSS_EDIT');
 export const RECEIVE_IGFS_EDIT = Symbol('RECEIVE_IGFS_EDIT');
 export const RECEIVE_MODELS_EDIT = Symbol('RECEIVE_MODELS_EDIT');
@@ -124,11 +123,6 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return {
                 ...state,
                 originalCluster: action.cluster
-            };
-        case RECEIVE_CACHES_EDIT:
-            return {
-                ...state,
-                originalCaches: action.caches
             };
         case RECEIVE_CACHE_EDIT: {
             return {
@@ -162,49 +156,6 @@ export const editReducer = (state = {originalCluster: null}, action) => {
             return state;
     }
 };
-
-
-export const filteredReducer = (reducer, predicate) => (state, action) => predicate(action) || state === void 0
-    ? reducer(state, action)
-    : state;
-
-export const LOAD_ITEMS = Symbol('LOAD_ITEMS');
-export const ADD_ITEM = Symbol('ADD_ITEM');
-export const REMOVE_ITEM = Symbol('REMOVE_ITEM');
-export const UPDATE_ITEM = Symbol('UPDATE_ITEM');
-
-// eslint-disable-next-line no-sequences
-// const del = (collection, index) => (collection.delete(index), collection);
-
-// export const itemsEditReducer = (state = {ids: new Set(), changedItems: new Map()}, action) => {
-//     switch (action.type) {
-//         case LOAD_ITEMS:
-//             return {
-//                 ...state,
-//                 ids: new Set(action.ids),
-//                 changedItems: new Map()
-//             };
-//         case ADD_ITEM:
-//             return {
-//                 ...state,
-//                 ids: new Set([...state.ids.values(), action.item._id]),
-//                 changedItems: new Map([...state.changedItems.entries(), [action.item._id, action.item]])
-//             };
-//         case REMOVE_ITEM:
-//             return {
-//                 ...state,
-//                 ids: del(new Set(state.ids), action.item._id),
-//                 changedItems: del(new Map(state.changedItems), action.item._id)
-//             };
-//         case UPDATE_ITEM:
-//             return {
-//                 ...state,
-//                 changedItems: new Map(state.changedItems).set(action.item._id, action.item)
-//             };
-//         default:
-//             return state;
-//     }
-// };
 
 export const SHOW_CONFIG_LOADING = Symbol('SHOW_CONFIG_LOADING');
 export const HIDE_CONFIG_LOADING = Symbol('HIDE_CONFIG_LOADING');
@@ -248,6 +199,20 @@ export const basicCachesActionTypes = {
     UPSERT: 'UPSERT_BASIC_CACHES',
     REMOVE: 'REMOVE_BASIC_CACHES'
 };
+
+const mapStoreActionTypesFactory = (NAME) => ({
+    UPSERT: `UPSERT_${NAME}`,
+    REMOVE: `REMOVE_${NAME}`
+});
+
+export const clustersActionTypes = mapStoreActionTypesFactory('CLUSTERS');
+export const shortClustersActionTypes = mapStoreActionTypesFactory('SHORT_CLUSTERS');
+export const cachesActionTypes = mapStoreActionTypesFactory('CACHES');
+export const shortCachesActionTypes = mapStoreActionTypesFactory('SHORT_CACHES');
+export const modelsActionTypes = mapStoreActionTypesFactory('MODELS');
+export const shortModelsActionTypes = mapStoreActionTypesFactory('SHORT_MODELS');
+export const igfssActionTypes = mapStoreActionTypesFactory('IGFSS');
+export const shortIGFSsActionTypes = mapStoreActionTypesFactory('SHORT_IGFSS');
 
 export const itemsEditReducerFactory = (actionTypes) => {
     const setStoreReducer = setStoreReducerFactory(actionTypes);

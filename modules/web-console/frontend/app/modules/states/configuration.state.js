@@ -28,9 +28,16 @@ import base2 from 'views/base2.pug';
 
 import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
 import {
+    shortIGFSsActionTypes,
+    igfssActionTypes,
+    shortModelsActionTypes,
+    modelsActionTypes,
+    shortClustersActionTypes,
+    cachesActionTypes,
+    shortCachesActionTypes,
+    clustersActionTypes,
     basicCachesActionTypes,
     RECEIVE_CLUSTER_EDIT,
-    RECEIVE_CACHES_EDIT,
     RECEIVE_CACHE_EDIT,
     RECEIVE_MODELS_EDIT,
     RECEIVE_MODEL_EDIT,
@@ -46,29 +53,36 @@ import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-
 import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
 import {uniqueName} from 'app/utils/uniqueName';
+import get from 'lodash/get';
 
 const getErrorMessage = (e) => e.message || e.data || e;
 
-// TODO: move into effects or service
-export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
+const makeClusterItemsResolver = ({
+    feedbackName,
+    cachePath,
+    getItemsMethodName,
+    actionTypes
+}) => ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
     const {clusterID} = $transition$.params();
+    const cachedValue = get(ConfigureState.state$.value, cachePath);
+
+    if (clusterID === 'new') return Promise.resolve([]);
+    if (cachedValue && cachedValue.size) return Promise.resolve([...cachedValue.values()]);
+
     ConfigureState.dispatchAction({
         type: SHOW_CONFIG_LOADING,
-        loadingText: 'Loading caches…'
+        loadingText: `Loading ${feedbackName}…`
     });
-    const caches = clusterID === 'new'
-        ? Promise.resolve([])
-        : Clusters.getClusterCaches(clusterID).then(({data}) => data);
 
-    return caches.then((caches) => {
+    return Clusters[getItemsMethodName](clusterID).then(({data}) => data).then((items) => {
         ConfigureState.dispatchAction({
             type: HIDE_CONFIG_LOADING
         });
         ConfigureState.dispatchAction({
-            type: RECEIVE_CACHES_EDIT,
-            caches
+            type: actionTypes.UPSERT,
+            items
         });
-        return caches;
+        return items;
     })
     .catch((e) => {
         ConfigureState.dispatchAction({
@@ -77,12 +91,15 @@ export const cachesResolve = ['Clusters', '$transition$', 'ConfigureState', 'Ign
         $transition$.router.stateService.go('base.configuration.overview', null, {
             location: 'replace'
         });
-        IgniteMessages.showError(`Failed to load caches for cluster ${clusterID}. ${getErrorMessage(e)}`);
+        IgniteMessages.showError(`Failed to load ${feedbackName} for cluster ${clusterID}. ${getErrorMessage(e)}`);
         return Promise.reject(e);
     });
 }];
 
 const clustersTableResolve = ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
+    const cachedValue = get(ConfigureState.state$.value, 'shortClusters');
+    if (cachedValue && cachedValue.size) return Promise.resolve(cachedValue);
+
     ConfigureState.dispatchAction({
         type: SHOW_CONFIG_LOADING,
         loadingText: 'Loading clusters…'
@@ -93,33 +110,49 @@ const clustersTableResolve = ['Clusters', 'ConfigureState', (Clusters, Configure
         ConfigureState.dispatchAction({
             type: HIDE_CONFIG_LOADING
         });
+
         ConfigureState.dispatchAction({
-            type: RECEIVE_CONFIGURE_OVERVIEW,
-            clustersTable: data
+            type: shortClustersActionTypes.UPSERT,
+            items: data
         });
+
         return data;
     });
 }];
 
-const modelsResolve = ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
-    const {clusterID} = $transition$.params();
-    ConfigureState.dispatchAction({
-        type: SHOW_CONFIG_LOADING,
-        loadingText: 'Loading models…'
-    });
-    return clusterID === 'new'
-        ? Promise.resolve([])
-        : Clusters.getClusterModels(clusterID).then(({data}) => {
+export const cachesResolve = makeClusterItemsResolver({
+    feedbackName: 'caches',
+    cachePath: 'shortCaches',
+    getItemsMethodName: 'getClusterCaches',
+    actionTypes: shortCachesActionTypes
+});
+
+const modelsResolve = makeClusterItemsResolver({
+    feedbackName: 'domain models',
+    cachePath: 'shortModels',
+    getItemsMethodName: 'getClusterModels',
+    actionTypes: shortModelsActionTypes
+});
+
+const igfssResolve = makeClusterItemsResolver({
+    feedbackName: 'IGFSs',
+    cachePath: 'shortIGFSs',
+    getItemsMethodName: 'getClusterIGFSs',
+    actionTypes: shortIGFSsActionTypes
+});
+
+const resetFormItemToNull = ({actionKey, actionType}) => {
+    const fn = ['ConfigureState', '$transition$', (ConfigureState, $transition$) => {
+        if (!$transition$.params().cacheID) {
             ConfigureState.dispatchAction({
-                type: HIDE_CONFIG_LOADING
+                type: actionType,
+                [actionKey]: null
             });
-            ConfigureState.dispatchAction({
-                type: RECEIVE_MODELS_EDIT,
-                models: data
-            });
-            return data;
-        });
-}];
+        }
+        return $transition$;
+    }];
+    return {onEnter: fn, onRetain: fn};
+};
 
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
@@ -161,9 +194,19 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             .then((clusters) => ({...Clusters.getBlankCluster(), name: uniqueName('New cluster', clusters)}));
 
                         const {clusterID} = $transition$.params();
-                        const cluster = clusterID === 'new'
-                            ? newCluster()
-                            : Clusters.getCluster(clusterID).then(({data}) => data);
+                        const cachedValue = get(ConfigureState.state$.value, 'clusters', new Map()).get(clusterID);
+
+                        const cluster = cachedValue
+                            ? Promise.resolve(cachedValue)
+                            : clusterID === 'new'
+                                ? Promise.resolve(newCluster())
+                                : Clusters.getCluster(clusterID).then(({data}) => {
+                                    ConfigureState.dispatchAction({
+                                        type: clustersActionTypes.UPSERT,
+                                        items: [data]
+                                    });
+                                    return data;
+                                });
 
                         ConfigureState.dispatchAction({
                             type: RECEIVE_CLUSTER_EDIT,
@@ -258,12 +301,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
-                onEnter: ['ConfigureState', (ConfigureState) => {
-                    ConfigureState.dispatchAction({
-                        type: RECEIVE_CACHE_EDIT,
-                        model: null
-                    });
-                }],
+                ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
                 redirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
                     const fromState = $transition$.from();
@@ -294,12 +332,22 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         const cluster = $transition$.injector().getAsync('cluster');
                         const caches = $transition$.injector().getAsync('caches');
                         const {cacheID, clusterID} = $transition$.params();
-                        const cache = cacheID === 'new'
-                            ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
-                                name: uniqueName('New cache', caches),
-                                clusters: [cluster._id]
-                            }))
-                            : Caches.getCache(cacheID).then(({data}) => data);
+                        const cachedValue = get(ConfigureState.state$.value, 'caches', new Map()).get(cacheID);
+
+                        const cache = cachedValue
+                            ? Promise.resolve(cachedValue)
+                            : cacheID === 'new'
+                                ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
+                                    name: uniqueName('New cache', caches),
+                                    clusters: [cluster._id]
+                                }))
+                                : Caches.getCache(cacheID).then(({data}) => {
+                                    ConfigureState.dispatchAction({
+                                        type: cachesActionTypes.UPSERT,
+                                        items: [data]
+                                    });
+                                    return data;
+                                });
 
                         return cache.then((cache) => {
                             ConfigureState.dispatchAction({
@@ -338,12 +386,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
-                onEnter: ['ConfigureState', (ConfigureState) => {
-                    ConfigureState.dispatchAction({
-                        type: RECEIVE_MODEL_EDIT,
-                        model: null
-                    });
-                }],
+                ...resetFormItemToNull({actionType: RECEIVE_MODEL_EDIT, actionKey: 'model'}),
                 redirectTo: ($transition$) => {
                     const modelStateName = 'base.configuration.tabs.advanced.models.model';
                     const fromState = $transition$.from();
@@ -369,11 +412,23 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.tabs.advanced.models.model', {
                 url: '/{modelID:string}',
                 resolve: {
-                    model: ['Models', '$transition$', 'ConfigureState', (Models, $transition$, ConfigureState) => {
+                    model: ['IgniteMessages', 'Models', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Models, Clusters, $transition$, ConfigureState) => {
+                        const cluster = $transition$.injector().getAsync('cluster');
+                        const models = $transition$.injector().getAsync('models');
                         const {modelID, clusterID} = $transition$.params();
-                        const model = modelID === 'new'
-                            ? Promise.resolve(Models.getBlankModel())
-                            : Models.getModel(modelID).then(({data}) => data);
+                        const cachedValue = get(ConfigureState.state$.value, 'models', new Map()).get(modelID);
+
+                        const model = cachedValue
+                            ? Promise.resolve(cachedValue)
+                            : modelID === 'new'
+                                ? Promise.resolve(Models.getBlankModel())
+                                : Models.getModel(modelID).then(({data}) => {
+                                    ConfigureState.dispatchAction({
+                                        type: modelsActionTypes.UPSERT,
+                                        items: [data]
+                                    });
+                                    return data;
+                                });
 
                         return model.then((model) => {
                             ConfigureState.dispatchAction({
@@ -381,6 +436,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 model
                             });
                             return model;
+                        })
+                        .catch((e) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
+                            $transition$.router.stateService.go('base.configuration.tabs.advanced.models', null, {
+                                location: 'replace'
+                            });
+                            IgniteMessages.showError(`Failed to load domain model ${modelID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            return Promise.reject(e);
                         });
                     }]
                 },
@@ -394,29 +459,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedIGFSComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    igfss: ['Clusters', '$transition$', 'ConfigureState', (Clusters, $transition$, ConfigureState) => {
-                        const {clusterID} = $transition$.params();
-                        ConfigureState.dispatchAction({
-                            type: SHOW_CONFIG_LOADING,
-                            loadingText: 'Loading IGFSs…'
-                        });
-                        ConfigureState.dispatchAction({
-                            type: RECEIVE_IGFS_EDIT,
-                            igfs: null
-                        });
-                        return clusterID === 'new'
-                            ? Promise.resolve([])
-                            : Clusters.getClusterIGFSs(clusterID).then(({data}) => {
-                                ConfigureState.dispatchAction({
-                                    type: HIDE_CONFIG_LOADING
-                                });
-                                ConfigureState.dispatchAction({
-                                    type: RECEIVE_IGFSS_EDIT,
-                                    igfss: data
-                                });
-                                return data;
-                            });
-                    }]
+                    igfss: igfssResolve
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -447,11 +490,26 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{igfsID:string}',
                 permission: 'configuration',
                 resolve: {
-                    igfs: ['IGFSs', '$transition$', 'ConfigureState', (IGFSs, $transition$, ConfigureState) => {
+                    igfs: ['IgniteMessages', 'IGFSs', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, IGFSs, Clusters, $transition$, ConfigureState) => {
+                        const cluster = $transition$.injector().getAsync('cluster');
+                        const igfss = $transition$.injector().getAsync('igfss');
                         const {igfsID, clusterID} = $transition$.params();
-                        const igfs = igfsID
-                            ? IGFSs.getIGFS(igfsID).then(({data}) => data)
-                            : Promise.resolve(null);
+                        const cachedValue = get(ConfigureState.state$.value, 'igfss', new Map()).get(igfsID);
+
+                        const igfs = cachedValue
+                            ? Promise.resolve(cachedValue)
+                            : igfsID === 'new'
+                                ? Promise.all([cluster, igfss]).then(([cluster, igfss]) => Object.assign(IGFSs.getBlankIGFS(), {
+                                    name: uniqueName('New IGFS', igfss),
+                                    cluster: [cluster._id]
+                                }))
+                                : IGFSs.getIGFS(igfsID).then(({data}) => {
+                                    ConfigureState.dispatchAction({
+                                        type: igfssActionTypes.UPSERT,
+                                        items: [data]
+                                    });
+                                    return data;
+                                });
 
                         return igfs.then((igfs) => {
                             ConfigureState.dispatchAction({
@@ -459,6 +517,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                                 igfs
                             });
                             return igfs;
+                        })
+                        .catch((e) => {
+                            ConfigureState.dispatchAction({
+                                type: HIDE_CONFIG_LOADING
+                            });
+                            $transition$.router.stateService.go('base.configuration.tabs.advanced.igfs', null, {
+                                location: 'replace'
+                            });
+                            IgniteMessages.showError(`Failed to load IGFS ${igfsID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            return Promise.reject(e);
                         });
                     }]
                 },
