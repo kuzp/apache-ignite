@@ -104,9 +104,7 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
 
                     return _.map(clusters, (cluster) => {
                         const models = _.reduce(cluster.caches, (acc, cacheId) => {
-                            const models = _.map(_.get(cmap[cacheId], 'domains'), (modelId) => modelId.toString());
-
-                            acc.add(...models);
+                            _.forEach(_.get(cmap[cacheId], 'domains'), (modelId) => acc.add(modelId.toString()));
 
                             return acc;
                         }, new Set());
@@ -147,23 +145,32 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
 
                             throw err;
                         })
-                        .then((updated) => {
-                            if (_.isNil(updated))
-                                return mongo.Cluster.update(query, {$set: cluster}, {upsert: true}).exec();
+                        .then((output) => {
+                            let promise;
 
-                            const removedCacheIds = _.differenceBy(updated.caches, cluster.caches, _.isEqual);
+                            if (output.nModified === 0)
+                                promise = mongo.Cluster.update(query, {$set: cluster}, {upsert: true}).exec();
+                            else {
+                                const removedCacheIds = _.differenceBy(output.caches, cluster.caches, _.isEqual);
 
-                            if (_.isEmpty(removedCacheIds))
-                                return;
+                                promise = _.isEmpty(removedCacheIds) ?
+                                    Promise.resolve() : Promise.all(_.map(removedCacheIds, cachesService.remove));
+                            }
 
-                            return Promise.all(_.map(removedCacheIds, cachesService.remove));
+                            return promise.then(() => output);
                         })
-                        .then(() => Promise.all(_.map(caches, (c) => {
-                            if (_.isNil(c.space))
-                                c.space = _.head(spaceIds);
+                        .then((output) => {
+                            return Promise.all(_.map(caches, (c) => {
+                                if (_.isNil(c.space))
+                                    c.space = _.head(spaceIds);
 
-                            return cachesService.upsertBasic(c);
-                        })));
+                                if (_.isEmpty(c.clusters))
+                                    c.clusters = [cluster._id];
+
+                                return cachesService.upsertBasic(c);
+                            }))
+                                .then(() => _.pick(output, 'n'));
+                        });
                 });
         }
 

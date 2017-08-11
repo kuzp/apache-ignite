@@ -152,12 +152,18 @@ suite('ClusterServiceTestsSuite', () => {
         clusterService.shortList(testAccounts[0]._id, false)
             .then((clusters) => {
                 assert.equal(clusters.length, 2);
-                assert.isNotNull(clusters[0]._id);
-                assert.isNotNull(clusters[0].name);
+
+                assert.equal(clusters[0].name, 'cluster-caches');
                 assert.isNotNull(clusters[0].discovery);
-                assert.isNotNull(clusters[0].cachesCount);
-                assert.isNotNull(clusters[0].modelsCount);
-                assert.isNotNull(clusters[0].igfsCount);
+                assert.equal(clusters[0].cachesCount, 5);
+                assert.equal(clusters[0].modelsCount, 5);
+                assert.equal(clusters[0].igfsCount, 0);
+
+                assert.equal(clusters[1].name, 'cluster-igfs');
+                assert.isNotNull(clusters[1].discovery);
+                assert.equal(clusters[1].cachesCount, 2);
+                assert.equal(clusters[1].modelsCount, 5);
+                assert.equal(clusters[1].igfsCount, 1);
             })
             .then(done)
             .catch(done);
@@ -170,6 +176,11 @@ suite('ClusterServiceTestsSuite', () => {
         db.drop()
             .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
             .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
+            .then((output) => {
+                assert.isNotNull(output);
+
+                assert.equal(output.n, 1);
+            })
             .then(() => clusterService.get(testAccounts[0]._id, false, cluster._id))
             .then((savedCluster) => {
                 assert.isNotNull(savedCluster);

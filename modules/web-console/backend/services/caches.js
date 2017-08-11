@@ -121,11 +121,12 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                     throw err;
                 })
                 .then((updated) => {
-                    if (_.isNil(updated))
+                    if (updated.nModified === 0)
                         return mongo.Cache.update(query, {$set: cache}, {upsert: true}).exec();
 
                     return updated;
-                });
+                })
+                .then((res) => _.pick(res, 'n'));
         }
 
         /**
