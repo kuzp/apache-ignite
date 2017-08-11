@@ -3,8 +3,14 @@ export let devTools;
 const replacer = (key, value) => {
     if (value instanceof Map) {
         return {
-            data: [...value],
+            data: [...value.entries()],
             __serializedType__: 'Map'
+        };
+    }
+    if (value instanceof Set) {
+        return {
+            data: [...value.values()],
+            __serializedType__: 'Set'
         };
     }
     if (value instanceof Symbol) {
@@ -22,6 +28,8 @@ const reviver = (key, value) => {
         switch (value.__serializedType__) {
             case 'Map':
                 return new Map(value.data);
+            case 'Set':
+                return new Set(value.data);
             default:
                 return data;
         }
@@ -41,9 +49,9 @@ if (window.__REDUX_DEVTOOLS_EXTENSION__) {
 
 export const reducer = (state, action) => {
     switch (action.type) {
-        case 'DISPATCH': {
+        case 'DISPATCH':
+        case 'JUMP_TO_STATE':
             return JSON.parse(action.state, reviver);
-        }
         default:
             return state;
     }
