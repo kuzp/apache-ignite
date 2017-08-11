@@ -43,23 +43,8 @@ web-console-footer {
         margin-left: 40px;
     }
 
-    .ignite-feedback {
-        margin-left: auto;
-    }
-
     .ignite-agent {
         margin-left: auto;
-    }
-
-    .ignite-feedback + .ignite-agent {
-        margin-left: 5px;
-
-        &:before {
-            content: '|';
-            display: block;
-            float: left;
-            margin-right: 5px;
-        }
     }
 
     a {
