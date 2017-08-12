@@ -15,43 +15,17 @@
  * limitations under the License.
  */
 
-web-console-footer {
-    display: block;
-    color: #fafafa;
-    background: linear-gradient(to bottom, #5f5e5e, #393939);
-    font-family: Roboto;
-    font-size: 12px;
-    font-weight: 300;
-    padding-top: 12px;
-    padding-bottom: 12px;
+web-console-footer-links {
+    margin-left: auto;
 
-    p {
-        margin-bottom: 0;
+    a + a {
+        margin-left: 5px;
 
-        &:first-of-type {
-            margin-bottom: 5px;
-        }
-    }
-
-    .wcf-content {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-    }
-
-    ignite-powered-by-apache {
-        & > a {
-            margin-left: 40px;
-        }
-    }
-
-    a {
-        color: #ee8e89;
-
-        &:hover, &.hover,
-        &:focus, &.focus {
-            color: #ee2b27;
-            text-decoration: none;
+        &:before {
+            content: '|';
+            display: inline-block;
+            margin-right: 5px;
+            color: #fafafa;
         }
     }
 }
