@@ -132,40 +132,36 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
 
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
-                    if (_.isNil(cluster.space))
-                        cluster.space = _.head(spaceIds);
+                    cluster.space = _.head(spaceIds);
+                    cluster.caches = _.map(caches, '_id');
 
                     const query = _.pick(cluster, ['space', '_id']);
                     const newDoc = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
 
-                    return mongo.Cluster.update(query, {$set: newDoc}, {upsert: true}).exec()
+                    return mongo.Cluster.findOneAndUpdate(query, {$set: newDoc}, {projection: 'caches', upsert: true}).lean().exec()
                         .catch((err) => {
                             if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
                                 throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
 
                             throw err;
                         })
-                        .then((output) => {
-                            let promise;
+                        .then((oldCluster) => {
+                            if (oldCluster) {
+                                const removed = _.difference(_.invokeMap(oldCluster.caches, 'toString'), cluster.caches);
 
-                            if (output.nModified === 0)
-                                promise = mongo.Cluster.update(query, {$set: cluster}, {upsert: true}).exec();
-                            else {
-                                const removedCacheIds = _.differenceBy(output.caches, cluster.caches, _.isEqual);
+                                if (_.isEmpty(removed))
+                                    return {n: 1};
 
-                                promise = _.isEmpty(removedCacheIds) ?
-                                    Promise.resolve() : Promise.all(_.map(removedCacheIds, cachesService.remove));
+                                return Promise.all(_.map(removed, cachesService.remove))
+                                    .then(() => ({n: 1}));
                             }
 
-                            return promise.then(() => output);
+                            return mongo.Cluster.update(query, {$set: cluster, new: true}, {upsert: true}).exec();
                         })
                         .then((output) => {
                             return Promise.all(_.map(caches, (c) => {
-                                if (_.isNil(c.space))
-                                    c.space = _.head(spaceIds);
-
-                                if (_.isEmpty(c.clusters))
-                                    c.clusters = [cluster._id];
+                                c.space = _.head(spaceIds);
+                                c.clusters = [cluster._id];
 
                                 return cachesService.upsertBasic(c);
                             }))
@@ -207,8 +203,8 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
             if (_.isNil(clusterId))
                 return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
 
-            return mongo.Cache.update({clusters: {$in: [clusterId]}}, {$pull: {clusters: clusterId}}, {multi: true}).exec()
-                .then(() => mongo.Igfs.update({clusters: {$in: [clusterId]}}, {$pull: {clusters: clusterId}}, {multi: true}).exec())
+            return mongo.Cache.remove({clusters: [clusterId]}).exec()
+                .then(() => mongo.Igfs.remove({clusters: [clusterId]}).exec())
                 .then(() => mongo.Cluster.remove({_id: clusterId}).exec())
                 .then(convertRemoveStatus);
         }

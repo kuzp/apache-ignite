@@ -232,7 +232,7 @@ suite('ClusterServiceTestsSuite', () => {
     });
 
     test('Update cluster from basic', (done) => {
-        const cluster = _.head(testClusters);
+        const cluster = _.cloneDeep(_.head(testClusters));
 
         cluster.communication.tcpNoDelay = false;
         cluster.igfss = [];
@@ -259,14 +259,14 @@ suite('ClusterServiceTestsSuite', () => {
             .then((savedCluster) => {
                 assert.isNotNull(savedCluster);
 
-                assert.deepEqual(savedCluster.caches.map((c) => c.toString()), cluster.caches);
+                assert.deepEqual(_.invokeMap(savedCluster.caches, 'toString'), cluster.caches);
 
                 _.forEach(savedCluster.memoryConfiguration.memoryPolicies, (plc) => delete plc._id);
 
-                assert.notEqual(savedCluster.memoryConfiguration.defaultMemoryPolicySize, cluster.memoryConfiguration.defaultMemoryPolicySize);
+                assert.notExists(savedCluster.memoryConfiguration.defaultMemoryPolicySize);
                 assert.deepEqual(savedCluster.memoryConfiguration.memoryPolicies, cluster.memoryConfiguration.memoryPolicies);
 
-                assert.notDeepEqual(savedCluster.igfss.map((c) => c.toString()), cluster.igfss);
+                assert.notDeepEqual(_.invokeMap(savedCluster.igfss, 'toString'), cluster.igfss);
                 assert.notDeepEqual(savedCluster.communication, cluster.communication);
             })
             .then(() => cacheService.get(testAccounts[0]._id, false, _.head(caches)._id))
@@ -280,6 +280,30 @@ suite('ClusterServiceTestsSuite', () => {
                 assert.isNull(cb2);
             })
             .then(done)
+            .catch(done);
+    });
+
+    test('Update cluster from basic with cache removing', (done) => {
+        const cluster = _.cloneDeep(_.head(testClusters));
+
+        const removedCache = _.head(cluster.caches);
+        const upsertedCache = _.last(cluster.caches);
+
+        _.pull(cluster.caches, removedCache);
+
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches})
+            .then(() => cacheService.get(testAccounts[0]._id, false, removedCache))
+            .then((cache) => {
+                assert.isNull(cache);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, upsertedCache))
+            .then((cache) => {
+                assert.isNotNull(cache);
+
+                done();
+            })
             .catch(done);
     });
 
