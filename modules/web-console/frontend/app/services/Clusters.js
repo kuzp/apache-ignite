@@ -141,6 +141,17 @@ export default class Clusters {
         };
     }
 
+    toShortCluster(cluster) {
+        return {
+            _id: cluster._id,
+            name: cluster.name,
+            discovery: cluster.discovery.kind,
+            cachesCount: (cluster.caches || []).length,
+            modelsCount: (cluster.models || []).length,
+            igfsCount: (cluster.igfss || []).length
+        };
+    }
+
     requiresProprietaryDrivers(cluster) {
         return get(cluster, 'discovery.kind') === 'Jdbc' && ['Oracle', 'DB2', 'SQLServer'].includes(get(cluster, 'discovery.Jdbc.dialect'));
     }
