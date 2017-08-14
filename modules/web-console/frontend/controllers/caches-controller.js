@@ -96,6 +96,13 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
                 field: 'atomicityMode',
                 multiselectFilterOptions: Caches.atomicityModes,
                 width: 160
+            },
+            {
+                name: 'backups',
+                displayName: 'Backups',
+                field: 'backups',
+                width: 130,
+                enableFiltering: false
             }
         ];
 
