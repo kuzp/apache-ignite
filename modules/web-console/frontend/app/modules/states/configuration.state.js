@@ -267,6 +267,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 onEnter: ['ConfigureState', '$transition$', (ConfigureState, $transition$) => {
                     const caches = $transition$.injector().getAsync('caches');
                     const cluster = $transition$.injector().getAsync('cluster');
+                    ConfigureState.dispatchAction({
+                        type: basicCachesActionTypes.RESET
+                    });
                     Promise.all([caches, cluster]).then(([caches, cluster]) => {
                         ConfigureState.dispatchAction({
                             type: basicCachesActionTypes.LOAD,
