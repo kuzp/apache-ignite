@@ -227,7 +227,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             for (List<?> item : cur) {
                 items++;
 
-                if (items % 1000 == 0)
+                if (items % 100_000 == 0)
                     System.out.println("== Loaded " + items + " in " + (System.currentTimeMillis() - startQry));
             }
 
