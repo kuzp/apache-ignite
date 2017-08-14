@@ -150,13 +150,13 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             final long endQry = System.currentTimeMillis();
 
             BenchmarkUtils.println("IgniteStreamerQueryBenchmark scan query finished. [time=" + (endQry - startQry)
-                + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
+                + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ", pageSize=" + args.queryPageSize() + ']');
         }
         else {
             final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry(), args.lazySql(), args.queryPageSize());
 
             BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry.getSql() + ", bigEntry=" + args.bigEntry()
-                + ", compute=" + args.compute() + ", lazyQuery=" + args.lazySql() + ']');
+                + ", compute=" + args.compute() + ", lazyQuery=" + args.lazySql() + ", pageSize=" + args.queryPageSize() + ']');
 
             final long startQry = System.currentTimeMillis();
 
