@@ -32,6 +32,8 @@ import propEq from 'lodash/fp/propEq';
 import cloneDeep from 'lodash/cloneDeep';
 
 import {
+    clustersActionTypes,
+    shortClustersActionTypes,
     ADD_CLUSTER,
     ADD_CLUSTERS,
     UPDATE_CLUSTER,
@@ -55,34 +57,21 @@ export default class PageConfigure {
             .filter(propEq('type', REMOVE_CLUSTERS_LOCAL_REMOTE))
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([{clusters}, state]) => {
-                const updateServer = () => Observable.forkJoin(
-                    clusters.map(
-                        (cluster) => this.Clusters.removeCluster$(cluster)
-                            .map(() => ({success: true, cluster}))
-                            .catch((e) => Observable.of({success: false, reason: e, cluster}))
-                    )
-                );
-
+                const backup = {
+                    clusters: state.clusters,
+                    shortClusters: state.shortClusters
+                };
                 return Observable.of({
-                    type: REMOVE_CLUSTERS,
-                    clusterIDs: clusters.map(get('_id'))
-                })
-                .merge(
-                    updateServer().switchMap((results) => {
-                        return results.every(get('success'))
-                            ? Observable.empty()
-                            : Observable.from([
-                                {
-                                    type: LOAD_LIST,
-                                    list: state.list
-                                },
-                                {
-                                    type: REMOVE_CLUSTERS,
-                                    clusterIDs: results.filter(get('success')).map(get('cluster._id'))
-                                }
-                            ]);
-                    })
-                );
+                    type: shortClustersActionTypes.REMOVE,
+                    ids: clusters.map((c) => c._id)
+                }).merge(...clusters.map((cluster) => {
+                    return this.Clusters.removeCluster$(cluster)
+                    .switchMap(() => Observable.empty())
+                    .catch(() => Observable.of({
+                        type: shortClustersActionTypes.UPSERT,
+                        items: [backup.shortClusters.get(cluster._id)]
+                    }));
+                }));
             });
 
         this.cloneClusters$ = this.ConfigureState.actions$
