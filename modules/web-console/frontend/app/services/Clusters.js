@@ -79,6 +79,7 @@ export default class Clusters {
     }
 
     saveBasic(cluster, caches) {
+        if (cluster.name === 'New cluster 1') return Promise.reject();
         return this.$http.put('/api/v1/configuration/clusters/basic', {cluster, caches});
     }
 
