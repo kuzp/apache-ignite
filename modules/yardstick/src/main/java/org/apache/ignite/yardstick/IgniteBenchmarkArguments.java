@@ -280,6 +280,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-qt", "--queryType"}, description = "SELECT, UPDATE")
     private String queryType = "UPDATE";
 
+    @Parameter(names = {"-lsql", "--lazySql"}, description = "Lazy sql")
+    private boolean lazySql = false;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -720,6 +723,13 @@ public class IgniteBenchmarkArguments {
      */
     public String queryType() {
         return queryType;
+    }
+
+    /**
+     * @return Lazy sql.
+     */
+    public boolean lazySql() {
+        return lazySql;
     }
 
     /** {@inheritDoc} */

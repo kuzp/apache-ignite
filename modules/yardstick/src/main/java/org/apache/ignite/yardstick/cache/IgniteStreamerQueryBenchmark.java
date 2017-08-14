@@ -153,10 +153,10 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
                 + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
         }
         else {
-            final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry());
+            final SqlFieldsQuery qry = createQuery(qryType, args.bigEntry(), args.lazySql());
 
             BenchmarkUtils.println("IgniteStreamerQueryBenchmark start query. [query=" + qry.getSql() + ", bigEntry=" + args.bigEntry()
-                + ", compute=" + args.compute() + ']');
+                + ", compute=" + args.compute() + ", lazyQuery=" + args.lazySql() + ']');
 
             final long startQry = System.currentTimeMillis();
 
@@ -182,7 +182,8 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
                 final long endQry = System.currentTimeMillis();
 
                 BenchmarkUtils.println("IgniteStreamerQueryBenchmark query finished. [time=" + (endQry - startQry)
-                    + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute() + ']');
+                    + ", bigEntry=" + args.bigEntry() + ", compute=" + args.compute()
+                    + ", lazyQuery=" + args.lazySql() + ']');
             }
         }
 
@@ -257,7 +258,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
      * @param type Type.
      * @param bigEntry Big entry.
      */
-    private static SqlFieldsQuery createQuery(QueryType type, boolean bigEntry) {
+    private static SqlFieldsQuery createQuery(QueryType type, boolean bigEntry, boolean lazy) {
         if (type == QueryType.UPDATE) {
             final String qry = "UPDATE " + (bigEntry ? "ZIP_ENTITY " : "ZIP_QUERY_ENTITY ") +
                 "SET totalvalue=?, " +
@@ -271,6 +272,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
 
             sqlQry.setArgs(0.0, "2017-06-30_20170806230013895", "2017-06-30", "93013109");
+            sqlQry.setLazy(lazy);
 
             return sqlQry;
         }
@@ -281,6 +283,7 @@ public class IgniteStreamerQueryBenchmark extends IgniteAbstractBenchmark {
             SqlFieldsQuery sqlQry = new SqlFieldsQuery(qry);
 
             sqlQry.setArgs("2017-06-30", "93013109");
+            sqlQry.setLazy(lazy);
 
             return sqlQry;
         }
