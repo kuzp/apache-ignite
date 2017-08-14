@@ -112,12 +112,14 @@ class GridMergeIndexeIterator implements Iterator<List<?>> {
         try {
             while (true) {
                 // Get next index cursor to iterate over.
-                if (cursor == null && idxIter.hasNext())
-                    cursor = idxIter.next().findInStream(null, null);
-                else {
-                    next = null;
+                if (cursor == null) {
+                    if (idxIter.hasNext())
+                        cursor = idxIter.next().findInStream(null, null);
+                    else {
+                        next = null;
 
-                    break;
+                        break;
+                    }
                 }
 
                 assert cursor != null;
