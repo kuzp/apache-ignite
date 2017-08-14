@@ -81,7 +81,7 @@ public class AgentConfiguration {
     @Parameter(names = {"-dd", "--disable-demo"}, description = "Disable demo mode on this agent " +
         "                             " +
         "      Default value: false")
-    private Boolean disableDemo;
+    private Boolean demoEnabled;
 
     /** */
     @Parameter(names = {"-h", "--help"}, help = true, description = "Print this help message")
@@ -165,17 +165,17 @@ public class AgentConfiguration {
     }
 
     /**
-     * @return Disable demo mode.
+     * @return Demo mode enabled.
      */
-    public Boolean disableDemo() {
-        return disableDemo != null ? disableDemo : Boolean.FALSE;
+    public Boolean demoEnabled() {
+        return demoEnabled != null ? demoEnabled : Boolean.TRUE;
     }
 
     /**
-     * @param disableDemo Disable demo mode.
+     * @param demoEnabled Demo mode enabled.
      */
-    public void disableDemo(Boolean disableDemo) {
-        this.disableDemo = disableDemo;
+    public void demoEnabled(Boolean demoEnabled) {
+        this.demoEnabled = demoEnabled;
     }
 
     /**
@@ -238,8 +238,8 @@ public class AgentConfiguration {
         if (driversFolder == null)
             driversFolder(cmd.driversFolder());
 
-        if (disableDemo == null)
-            disableDemo(cmd.disableDemo());
+        if (demoEnabled == null)
+            demoEnabled(cmd.demoEnabled());
     }
 
     /** {@inheritDoc} */
@@ -283,7 +283,7 @@ public class AgentConfiguration {
         }
 
         sb.append("Path to JDBC drivers folder   : ").append(drvFld).append('\n');
-        sb.append("Demo mode                     : ").append(disableDemo() ? "disabled" : "enabled");
+        sb.append("Demo mode                     : ").append(demoEnabled() ? "disabled" : "enabled");
 
         return sb.toString();
     }

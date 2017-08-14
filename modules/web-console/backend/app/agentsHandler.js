@@ -209,7 +209,7 @@ module.exports.factory = function(_, fs, path, JSZip, socketio, settings, mongo,
          *
          * @private
          */
-        onConnect(sock, tokens, demoEnabled) {
+        onConnect(sock, {tokens, demoEnabled}) {
             const agentSocket = new AgentSocket(sock, tokens, demoEnabled);
 
             sock.on('disconnect', () => {

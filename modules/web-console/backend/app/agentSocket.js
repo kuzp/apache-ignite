@@ -89,18 +89,24 @@ module.exports.factory = function(_) {
         /**
          * @param {Socket} socket Socket for interaction.
          * @param {String} tokens Active tokens.
-         * @param {String} demoEnabled Demo enabled.
+         * @param {String} demoEnabled Demo mode enabled.
          */
         constructor(socket, tokens, demoEnabled) {
             Object.assign(this, {
                 socket,
                 tokens,
-                cluster: null,
-                demo: {
-                    enabled: demoEnabled,
-                    browserSockets: []
-                }
+                cluster: null
             });
+
+            if (demoEnabled) {
+                Object.assign(this, {
+                    demo: {
+                        cluster: null,
+                        tokens: [],
+                        browserSockets: []
+                    }
+                });
+            }
         }
 
         /**

@@ -345,7 +345,7 @@ public class AgentLauncher {
     protected Map<String, Object> loadAuthParams(AgentConfiguration cfg) {
         HashMap<String, Object> msg = U.newHashMap(4);
 
-        msg.put("disableDemo", cfg.disableDemo());
+        msg.put("demoEnabled", cfg.demoEnabled());
 
         String clsName = AgentLauncher.class.getSimpleName() + ".class";
 
