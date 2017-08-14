@@ -26,7 +26,14 @@ export default class ConfigureState {
         this.state$ = new BehaviorSubject(void 0);
         this._combinedReducer = (state, action) => state;
 
-        const reducer = (state = {}, action) => this._combinedReducer(state, action);
+        const reducer = (state = {}, action) => {
+            try {
+                return this._combinedReducer(state, action);
+            } catch (e) {
+                console.error(e);
+                return state;
+            }
+        };
         this.actions$.scan(reducer, void 0).do((v) => this.state$.next(v)).subscribe();
     }
 
