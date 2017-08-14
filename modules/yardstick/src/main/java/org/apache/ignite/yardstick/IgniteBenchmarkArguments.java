@@ -283,6 +283,9 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-lsql", "--lazySql"}, description = "Lazy sql")
     private boolean lazySql = false;
 
+    @Parameter(names = {"-qps", "--queryPageSize"}, description = "Query page size")
+    private int queryPageSize = 1024;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -730,6 +733,13 @@ public class IgniteBenchmarkArguments {
      */
     public boolean lazySql() {
         return lazySql;
+    }
+
+    /**
+     * @return Query page size.
+     */
+    public int queryPageSize() {
+        return queryPageSize;
     }
 
     /** {@inheritDoc} */
