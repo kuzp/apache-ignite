@@ -191,7 +191,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     clustersTable: clustersTableResolve,
                     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
                         const newCluster = () => $transition$.injector().getAsync('clustersTable')
-                            .then((clusters) => ({...Clusters.getBlankCluster(), name: uniqueName('New cluster', clusters)}));
+                            .then((clusters) => {
+                                return {
+                                    ...Clusters.getBlankCluster(),
+                                    name: uniqueName('New cluster', [...clusters.values()])
+                                };
+                            });
 
                         const {clusterID} = $transition$.params();
                         const cachedValue = get(ConfigureState.state$.value, 'clusters', new Map()).get(clusterID);
