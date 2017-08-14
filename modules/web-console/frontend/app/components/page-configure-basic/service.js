@@ -25,7 +25,14 @@ import {
     isNewItem
 } from './reducer';
 
-import {basicCachesActionTypes} from '../page-configure/reducer';
+import {
+    RECEIVE_CLUSTER_EDIT,
+    basicCachesActionTypes,
+    clustersActionTypes,
+    shortClustersActionTypes,
+    shortCachesActionTypes,
+    cachesActionTypes
+} from '../page-configure/reducer';
 
 // const makeId = (() => {
 //     let id = -1;
@@ -33,6 +40,8 @@ import {basicCachesActionTypes} from '../page-configure/reducer';
 // })();
 
 import {uniqueName} from 'app/utils/uniqueName';
+import get from 'lodash/get';
+import {Observable} from 'rxjs/Observable';
 
 export default class PageConfigureBasic {
     isNewItem = isNewItem;
@@ -48,6 +57,72 @@ export default class PageConfigureBasic {
 
     constructor($q, messages, clusters, caches, ConfigureState, pageConfigure) {
         Object.assign(this, {$q, messages, clusters, caches, ConfigureState, pageConfigure});
+
+        this.saveClusterAndCaches$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES')
+            .withLatestFrom(this.ConfigureState.state$)
+            .switchMap(([action, state]) => {
+                // Updates
+                const cluster = {
+                    ...action.cluster,
+                    caches: [...action.caches.ids.values()]
+                };
+                const shortCluster = clusters.toShortCluster(cluster);
+                const caches = [...action.caches.changedItems.values()]
+                    .filter((shortCache) => state.caches.has(shortCache._id))
+                    .map((shortCache) => ({...state.caches.get(shortCache._id), ...shortCache}));
+                const shortCaches = [...action.caches.changedItems.values()].map((cache) => ({
+                    ...cache, clusters: [action.cluster._id]
+                }));
+
+                // Backups
+                const clustersBak = state.clusters;
+                const shortClustersBak = state.shortClusters;
+                const cachesBak = state.caches;
+                const shortCachesBak = state.shortCaches;
+                const basicCachesBak = state.basicCaches;
+
+                return Observable.of({
+                    type: clustersActionTypes.UPSERT,
+                    items: [cluster]
+                }, {
+                    type: shortClustersActionTypes.UPSERT,
+                    items: [shortCluster]
+                }, {
+                    type: cachesActionTypes.UPSERT,
+                    items: caches
+                }, {
+                    type: shortCachesActionTypes.UPSERT,
+                    items: shortCaches
+                })
+                .merge(
+                    Observable.fromPromise(this.clusters.saveBasic(cluster, shortCaches))
+                    .switchMap((res) => {
+                        return Observable.empty();
+                    })
+                    .catch((res) => {
+                        messages.showError(`Failed to save cluster. ${res}`);
+                        return Observable.of({
+                            type: clustersActionTypes.SET,
+                            state: clustersBak
+                        }, {
+                            type: shortClustersActionTypes.SET,
+                            state: shortClustersBak
+                        }, {
+                            type: cachesActionTypes.SET,
+                            state: cachesBak
+                        }, {
+                            type: shortCachesActionTypes.SET,
+                            state: shortCachesBak
+                        }, {
+                            type: basicCachesActionTypes.SET,
+                            state: basicCachesBak
+                        });
+                    })
+                );
+            });
+
+        this.saveClusterAndCaches$.subscribe((a) => ConfigureState.dispatchAction(a));
     }
 
     saveClusterAndCaches(cluster, caches) {
@@ -121,7 +196,13 @@ export default class PageConfigureBasic {
     transcationalSaveClusterAndCaches(cluster, caches) {
         const clusterToSend = {...cluster, caches: caches.ids};
         const changedCaches = [...caches.changedItems.values()].map((cache) => ({...cache, clusters: [cluster._id]}));
-        return this.clusters.saveBasic(clusterToSend, changedCaches);
+
+        this.ConfigureState.dispatchAction({
+            type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
+            cluster,
+            caches
+        });
+        // return this.clusters.saveBasic(clusterToSend, changedCaches);
     }
 
     // setCluster(_id) {
