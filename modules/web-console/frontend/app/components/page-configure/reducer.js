@@ -172,8 +172,12 @@ export const loadingReducer = (state = loadingDefaults, action) => {
     }
 };
 
-const setStoreReducerFactory = (actionTypes) => (state = new Set(), action = {}) => {
+export const setStoreReducerFactory = (actionTypes) => (state = new Set(), action = {}) => {
     switch (action.type) {
+        case actionTypes.SET:
+            return action.state;
+        case actionTypes.RESET:
+            return new Set();
         case actionTypes.UPSERT:
             return action.items.reduce((acc, item) => {acc.add(item._id); return acc;}, new Set(state));
         case actionTypes.REMOVE:
@@ -185,6 +189,10 @@ const setStoreReducerFactory = (actionTypes) => (state = new Set(), action = {})
 
 export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), action = {}) => {
     switch (action.type) {
+        case actionTypes.SET:
+            return action.state;
+        case actionTypes.RESET:
+            return new Map();
         case actionTypes.UPSERT:
             return action.items.reduce((acc, item) => {acc.set(item._id, item); return acc;}, new Map(state));
         case actionTypes.REMOVE:
@@ -195,12 +203,16 @@ export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), actio
 };
 
 export const basicCachesActionTypes = {
+    SET: 'SET_BASIC_CACHES',
+    RESET: 'RESET_BASIC_CACHES',
     LOAD: 'LOAD_BASIC_CACHES',
     UPSERT: 'UPSERT_BASIC_CACHES',
     REMOVE: 'REMOVE_BASIC_CACHES'
 };
 
-const mapStoreActionTypesFactory = (NAME) => ({
+export const mapStoreActionTypesFactory = (NAME) => ({
+    SET: `SET_${NAME}`,
+    RESET: `RESET_${NAME}`,
     UPSERT: `UPSERT_${NAME}`,
     REMOVE: `REMOVE_${NAME}`
 });
@@ -219,11 +231,14 @@ export const itemsEditReducerFactory = (actionTypes) => {
     const mapStoreReducer = mapStoreReducerFactory(actionTypes);
     return (state = {ids: setStoreReducer(), changedItems: mapStoreReducer()}, action) => {
         switch (action.type) {
+            case actionTypes.SET:
+                return action.state;
             case actionTypes.LOAD:
                 return {
                     ...state,
                     ids: setStoreReducer(state.ids, {...action, type: actionTypes.UPSERT})
                 };
+            case actionTypes.RESET:
             case actionTypes.UPSERT:
                 return {
                     ids: setStoreReducer(state.ids, action),
