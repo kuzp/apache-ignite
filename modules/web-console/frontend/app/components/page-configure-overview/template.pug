@@ -29,6 +29,8 @@ h1.pc-page-header Configuration
         items='$ctrl.clusters'
         on-action='$ctrl.onClustersAction($event)'
         max-rows-to-show='10'
+        on-selection-change='$ctrl.onSelectionChange($event)'
+        actions-menu='$ctrl.clusterActions'
     )
         footer-slot(ng-hide='$ctrl.clusters.length' style='font-style: italic')
             | You have no cluster configurations.

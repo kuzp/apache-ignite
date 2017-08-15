@@ -42,6 +42,7 @@ export default class PageConfigureOverviewController {
         this.subscription = this.pageService.getObservable()
             .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
             .subscribe();
+
         this.clustersColumnDefs = [
             {
                 name: 'name',
@@ -92,16 +93,27 @@ export default class PageConfigureOverviewController {
         ];
     }
 
-    onClustersAction(action) {
-        switch (action.type) {
-            case 'EDIT':
-                return this.pageService.editCluster(action.items[0]);
-            case 'CLONE':
-                return this.pageService.cloneClusters(action.items);
-            case 'DELETE':
-                return this.pageService.removeClusters(action.items);
-            default:
-                return;
-        }
+    onSelectionChange(selectedClusters) {
+        return this.clusterActions = this.makeClusterActions(selectedClusters);
+    }
+
+    makeClusterActions(selectedClusters) {
+        return [
+            {
+                action: 'Edit',
+                click: () => this.pageService.editCluster(selectedClusters[0]),
+                available: selectedClusters.length === 1
+            },
+            {
+                action: 'Clone',
+                click: () => this.pageService.cloneClusters(selectedClusters),
+                available: true
+            },
+            {
+                action: 'Delete',
+                click: () => this.pageService.removeClusters(selectedClusters),
+                available: true
+            }
+        ];
     }
 }
