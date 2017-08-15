@@ -16,19 +16,22 @@
 
 .pcle-row(
     ng-repeat='item in $ctrl.ngModel.$viewValue track by $index'
-    ng-class='{ "pcle-row--editable": $ctrl.isEditView($index) }')
+    ng-class=`{
+        'pcle-row--editable': $ctrl.isEditView($index),
+        'pcle-row--has-item-view': $ctrl.hasItemView
+    }`)
     .pcle-row-index
         span {{ $index+1 }}
 
     .pcle-row-item
-        .pcle-row-item-view(ng-if='!$ctrl.isEditView($index)' ng-click='$ctrl.startEditView($index);')
+        .pcle-row-item-view(ng-if='$ctrl.hasItemView && !$ctrl.isEditView($index)' ng-click='$ctrl.startEditView($index);')
             div(ng-transclude='itemView')
         div(
             ng-if='$ctrl.isEditView($index)'
             ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);'
             ignite-on-focus-out-ignored-classes='bssm-click-overlay bssm-item-text bssm-item-button'
         )
-            .pcle-row-item-view(ng-init='item = $ctrl.getEditView($index);')
+            .pcle-row-item-view(ng-show='$ctrl.hasItemView' ng-init='item = $ctrl.getEditView($index);')
                 div(ng-transclude='itemView')
             .pcle-row-item-edit(ng-form name='form')
                 div(ng-transclude='itemEdit')
@@ -36,3 +39,5 @@
     .pcle-row-cross
         button.btn-ignite.btn-ignite--link-dashed-secondary(ng-click='$ctrl.remove($index)')
             svg(ignite-icon='cross')
+
+.pcle-row(ng-transclude='noItems' ng-if='!$ctrl.ngModel.$viewValue.length')

@@ -20,10 +20,13 @@ import isEmpty from 'lodash/fp/isEmpty';
 import indexOf from 'lodash/fp/indexOf';
 
 export default class Controller {
-    static $inject = ['$animate', '$element'];
+    static $inject = ['$animate', '$element', '$transclude'];
 
-    constructor($animate, $element) {
+    constructor($animate, $element, $transclude) {
         $animate.enabled(false, $element);
+
+        this.hasItemView = $transclude.isSlotFilled('itemView');
+
         this._cache = {};
     }
 

@@ -30,6 +30,7 @@ export default {
 
     },
     transclude: {
+        noItems: '?pcListEditableNoItems',
         itemView: '?pcListEditableItemView',
         itemEdit: '?pcListEditableItemEdit'
     }
