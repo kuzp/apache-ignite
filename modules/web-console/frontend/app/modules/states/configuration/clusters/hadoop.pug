@@ -74,43 +74,26 @@ include /app/helpers/jade/mixins
                         'Max number of local tasks that may be executed in parallel')
                 .pc-form-grid-col-20
                     +number('Max task queue size:', model + '.maxTaskQueueSize', '"maxTaskQueueSize"', 'true', '8192', '1', 'Max task queue size')
-                .settings-row
-                    +ignite-form-group(ng-form=form ng-model=`${libs}`)
-                        ignite-form-field-label
-                            | Native libraries
-                        ignite-form-group-tooltip
-                            | Library names
-                        ignite-form-group-add(ng-click='group.add = [{}]')
-                            | Add new library
-                        .group-content(ng-if=`${libs}.length`)
-                            -var model = 'obj.model';
-                            -var name = '"edit" + $index'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${libs}[$index] = ${model}`
+                .pc-form-grid-col-60
+                    .group-section
+                        .group
+                            .group-legend
+                                label
+                                    span Native libraries
 
-                            div(ng-repeat=`model in ${libs} track by $index` ng-init='obj = {}')
-                                label.col-xs-12.col-sm-12.col-md-12
-                                    .indexField
-                                        | {{ $index+1 }})
-                                    +table-remove-button(libs, 'Remove library')
-                                    span(ng-hide='field.edit')
-                                        a.labelFormField(ng-click=`field.edit = true; ${model} = model;`) {{ model }}
-                                    span(ng-if='field.edit')
-                                        +table-text-field(name, model, libs, valid, save, 'Input library name', false)
-                                            +table-save-button(valid, save, false)
-                                            +unique-feedback(name, uniqueTip)
-                        .group-content(ng-repeat='field in group.add')
-                            -var model = 'new';
-                            -var name = '"new"'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${libs}.push(${model})`
+                                ignite-form-group-tooltip
+                                    | Library names
+                                
+                            .group-content
+                                +list-text-field({
+                                    items: libs,
+                                    lbl: 'Library name',
+                                    name: 'libraryName'
+                                })
+                                    +unique-feedback('"libraryName"', `${uniqueTip}`)
 
-                            div
-                                label.col-xs-12.col-sm-12.col-md-12
-                                    +table-text-field(name, model, libs, valid, save, 'Input library name', true)
-                                        +table-save-button(valid, save, true)
-                                        +unique-feedback(name, uniqueTip)
-                        .group-content-empty(id='libs' ng-if=`!(${libs}.length) && !group.add.length`)
-                            | Not defined
+                            a.link-success(ng-click=`${libs}.push("")`)
+                                | + Add new library
+
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterHadoop')

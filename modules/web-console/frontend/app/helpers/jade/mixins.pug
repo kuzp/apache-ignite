@@ -301,6 +301,25 @@ mixin dropdown-multiple(lbl, model, name, enabled, placeholder, placeholderEmpty
         if  block
             block
 
+mixin list-text-field({ items, lbl, name })
+    pc-list-editable(ng-model=items)
+        pc-list-editable-item-view
+            | {{ $parent.item }}
+
+        pc-list-editable-item-edit
+            - form = '$parent.form'
+
+            +ignite-form-field-text(lbl, '$parent.item', `"${name}"`, false, true, `Enter ${lbl}`)(
+                data-ignite-unique=items
+                data-ignite-form-field-input-autofocus='true'
+            )
+                if  block
+                    block
+
+        pc-list-editable-no-items
+            | Not defined
+
+
 //- Mixin for table text field.
 mixin table-text-field(name, model, items, valid, save, placeholder, newItem)
     -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
@@ -323,6 +342,25 @@ mixin table-text-field(name, model, items, valid, save, placeholder, newItem)
                 ignite-on-enter=onEnter
                 ignite-on-escape=onEscape
             )
+
+mixin list-java-class-field(lbl, model, name, items)
+    +ignite-form-field-text(lbl, model, name, false, true, 'Enter fully qualified class name')(
+        data-java-identifier='true'
+        data-java-package-specified='true'
+        data-java-keywords='true'
+        data-java-built-in-class='true'
+
+        data-ignite-unique=items
+        data-ignite-form-field-input-autofocus='true'
+    )
+        +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)
+        +form-field-feedback(name, 'javaBuiltInClass', lbl + ' should not be the Java built-in class!')
+        +form-field-feedback(name, 'javaKeywords', lbl + ' could not contains reserved Java keyword!')
+        +form-field-feedback(name, 'javaPackageSpecified', lbl + ' does not have package specified!')
+        +form-field-feedback(name, 'javaIdentifier', lbl + ' is invalid Java identifier!')
+
+        if block
+            block
 
 //- Mixin for table java class field.
 mixin table-java-class-field(lbl, name, model, items, valid, save, newItem)
@@ -361,6 +399,20 @@ mixin table-java-class-field(lbl, name, model, items, valid, save, newItem)
             if block
                 block
 
+mixin list-java-package-field(lbl, model, name, items)
+    +ignite-form-field-text(lbl, model, name, false, true, 'Enter package name')(
+        data-java-keywords='true'
+        data-java-package-name='package-only'
+
+        data-ignite-unique=items
+        data-ignite-form-field-input-autofocus='true'
+    )
+        +form-field-feedback(name, 'javaKeywords', 'Package name could not contains reserved Java keyword!')
+        +form-field-feedback(name, 'javaPackageName', 'Package name is invalid!')
+
+        if block
+            block
+
 //- Mixin for table java package field.
 mixin table-java-package-field(name, model, items, valid, save, newItem)
     -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
@@ -392,6 +444,18 @@ mixin table-java-package-field(name, model, items, valid, save, newItem)
 
             if block
                 block
+
+mixin list-url-field(lbl, model, name, items)
+    +ignite-form-field-text(lbl, model, name, false, true, 'Enter URL')(
+        type='url'
+
+        data-ignite-unique=items
+        data-ignite-form-field-input-autofocus='true'
+    )
+        +form-field-feedback(name, 'url', 'URL should be valid!')
+
+        if block
+            block
 
 //- Mixin for table url field.
 mixin table-url-field(name, model, items, valid, save, newItem)
@@ -604,6 +668,26 @@ mixin btn-remove(click, tip)
 //- LEGACY mixin for LEGACY tables.
 mixin btn-remove-cond(cond, click, tip)
     i.tipField.fa.fa-remove(ng-show=cond ng-click=click bs-tooltip=tip data-trigger='hover')
+
+mixin list-pair-edit({ items, keyLbl, valLbl })
+    pc-list-editable(ng-model=items)
+        pc-list-editable-item-view
+            | {{ $parent.item.name }} = {{ $parent.item.value }}
+
+        pc-list-editable-item-edit
+            - form = '$parent.form'
+            .pc-form-grid-row
+                .pc-form-grid-col-30(divider='=')
+                    +ignite-form-field-text(keyLbl, '$parent.item.name', '"name"', false, true, keyLbl)(
+                        data-ignite-unique=items
+                        data-ignite-unique-property='name'
+                    )
+                        +unique-feedback('"name"', 'Property with such name already exists!')
+                .pc-form-grid-col-30
+                    +ignite-form-field-text(valLbl, '$parent.item.value', '"value"', false, true, valLbl)
+
+        pc-list-editable-no-items
+            | Not defined
 
 //- LEGACY mixin for LEGACY pair values tables.
 mixin table-pair-edit(tbl, prefix, keyPlaceholder, valPlaceholder, valueJavaBuiltInClasses, focusId, index, divider)

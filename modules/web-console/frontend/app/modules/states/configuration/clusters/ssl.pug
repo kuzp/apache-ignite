@@ -51,57 +51,34 @@ include /app/helpers/jade/mixins
                     .pc-form-grid-col-60
                         -var form = 'trustManagers'
 
-                        +ignite-form-group(ng-form=form ng-model=trust)
-                            -var uniqueTip = 'Such trust manager already exists!'
+                        .group-section
+                            .group
+                                .group-legend
+                                    label
+                                        span Trust managers
 
-                            ignite-form-field-label
-                                | Trust managers
-                            ignite-form-group-tooltip
-                                | Pre-configured trust managers
-                            ignite-form-group-add(ng-show=`${enabled}` ng-click='(group.add = [{}])')
-                                | Add new trust manager
+                                    ignite-form-group-tooltip
+                                        | Pre-configured trust managers
+                                    
+                                .group-content
+                                    -var uniqueTip = 'Such trust manager already exists!'
 
-                            .group-content(ng-if=`${trust}.length`)
-                                -var model = 'obj.model';
-                                -var name = '"edit" + $index'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${trust}[$index] = ${model}`
-                    
-                                div(ng-show=enabled)
-                                    div(ng-repeat=`model in ${trust} track by $index` ng-init='obj = {}')
-                                        label.col-xs-12.col-sm-12.col-md-12
-                                            .indexField
-                                                | {{ $index+1 }})
-                                            +table-remove-conditional-button(trust, enabled, 'Remove trust manager', 'model')
-                                            span(ng-hide='field.edit')
-                                                a.labelFormField(ng-click=`${enabled} && (field.edit = true) && (${model} = model)`) {{ model }}
-                                            span(ng-if='field.edit')
-                                                +table-java-class-field('Trust manager', name, model, trust, valid, save, false)
-                                                    +table-save-button(valid, save, false)
-                                                    +unique-feedback(name, uniqueTip)
-                                div(ng-hide=enabled)
-                                    div(ng-repeat=`model in ${trust} track by $index`)
-                                        label.col-xs-12.col-sm-12.col-md-12
-                                            .labelFormField.labelField
-                                                | {{ $index+1 }})
-                                            span.labelFormField
-                                                | {{ model }}
+                                    pc-list-editable(ng-model=`${trust}`)
+                                        pc-list-editable-item-view
+                                            | {{ $parent.item }}
 
-                            .group-content(ng-repeat='field in group.add')
-                                -var model = 'new';
-                                -var name = '"new"'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${trust}.push(${model})`
-     
-                                div
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        +table-java-class-field('Trust manager', name, model, trust, valid, save, true)
-                                            +table-save-button(valid, save, true)
-                                            +unique-feedback(name, uniqueTip)
+                                        pc-list-editable-item-edit
+                                            - form = '$parent.form'
+                                            +list-java-class-field('Trust manager', '$parent.item', '"trustManager"', trust)
+                                                +unique-feedback('"trustManager"', uniqueTip)
 
-                            .group-content-empty(ng-if=`!(${trust}.length) && !group.add.length`)
-                                | Not defined
+                                        pc-list-editable-no-items
+                                            | Not defined
 
+                                a.link-success(ng-click=`${trust}.push("")`)
+                                    | + Add new trust manager
+
+                    - form = 'sslConfiguration'
                     .pc-form-grid-col-30(ng-show-start=`!${trust}.length`)
                         +text-enabled('Trust store file:', `${model}.trustStoreFilePath`, '"trustStoreFilePath"', enabled, 'false', 'Path to the trust store file', 'Path to the trust store file')
                     .pc-form-grid-col-30(ng-show-end)

@@ -59,53 +59,35 @@ include /app/helpers/jade/mixins
                     +number('History size:', `${model}.queryDetailMetricsSize`, '"queryDetailMetricsSize"', 'true', '0', '0',
                         'Size of queries detail metrics that will be stored in memory for monitoring purposes')
                 .pc-form-grid-col-60
-                    -var form = 'querySqlFunctionClasses';
-                    -var sqlFunctionClasses = `${model}.sqlFunctionClasses`;
+                    .group-section
+                        .group
+                            .group-legend
+                                label
+                                    span SQL functions
 
-                    +ignite-form-group(ng-form=form ng-model=`${sqlFunctionClasses}`)
-                        ignite-form-field-label
-                            | SQL functions
-                        ignite-form-group-tooltip
-                            | Collections of classes with user-defined functions for SQL queries
-                        ignite-form-group-add(ng-click='group.add = [{}]')
-                            | Add new user-defined functions for SQL queries
+                                ignite-form-group-tooltip
+                                    | Collections of classes with user-defined functions for SQL queries
+                                
+                            .group-content
+                                -var items = `${model}.sqlFunctionClasses`;
+                                -var uniqueTip = 'SQL function with such class name already exists!'
 
-                        -var uniqueTip = 'SQL function with such class name already exists!'
+                                pc-list-editable(ng-model=`${items}`)
+                                    pc-list-editable-item-view
+                                        | {{ $parent.item }}
 
-                        .group-content(ng-if=`${sqlFunctionClasses}.length`)
-                            -var model = 'obj.model';
-                            -var name = '"edit" + $index'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${sqlFunctionClasses}[$index] = ${model}`
+                                    pc-list-editable-item-edit
+                                        - form = '$parent.form'
+                                        +list-java-class-field('SQL function', '$parent.item', '"sqlFunction"', items)
+                                            +unique-feedback('"sqlFunction"', uniqueTip)
 
-                            div(ng-repeat=`model in ${sqlFunctionClasses} track by $index` ng-init='obj = {}')
-                                label.col-xs-12.col-sm-12.col-md-12
-                                    .indexField
-                                        | {{ $index+1 }})
-                                    +table-remove-button(sqlFunctionClasses, 'Remove user-defined function')
+                                    pc-list-editable-no-items
+                                        | Not defined
 
-                                    span(ng-hide='field.edit')
-                                        a.labelFormField(ng-click=`field.edit = true; ${model} = model;`) {{ model }}
-                                    span(ng-if='field.edit')
-                                        +table-java-class-field('SQL function', name, model, sqlFunctionClasses, valid, save, false)
-                                            +table-save-button(valid, save, false)
-                                            +unique-feedback(name, uniqueTip)
+                            a.link-success(ng-click=`${items}.push("")`)
+                                | + Add New user-defined functions for SQL queries
 
-                        .group-content(ng-repeat='field in group.add')
-                            -var model = 'new';
-                            -var name = '"new"'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${sqlFunctionClasses}.push(${model})`
-
-                            div
-                                label.col-xs-12.col-sm-12.col-md-12
-                                    +table-java-class-field('SQL function', name, model, sqlFunctionClasses, valid, save, true)
-                                        +table-save-button(valid, save, true)
-                                        +unique-feedback(name, uniqueTip)
-
-                        .group-content-empty(ng-if=`!(${sqlFunctionClasses}.length) && !group.add.length`)
-                            | Not defined
-
+                - form = 'query'
                 //- Removed in ignite 2.0
                 .pc-form-grid-col-60(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
                     +checkbox('Snapshotable index', `${model}.snapshotableIndex`, '"snapshotableIndex"',

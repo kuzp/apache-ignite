@@ -20,7 +20,7 @@ mixin discovery-multicast(modelAt = 'backupItem')
     -const model = `${modelAt}.discovery.Multicast`
     -const addresses = `${model}.addresses`
 
-    div.pc-form-grid-row&attributes(attributes=attributes)
+    .pc-form-grid-row&attributes(attributes=attributes)
         .pc-form-grid-col-30
             +text-ip-address('IP address:', `${model}.multicastGroup`, '"multicastGroup"', 'true', '228.1.2.4', 'IP address of multicast group')
         .pc-form-grid-col-30
@@ -38,7 +38,6 @@ mixin discovery-multicast(modelAt = 'backupItem')
                 If provided address is non - loopback then multicast socket is bound to this interface<br/>\
                 If local address is not set or is any local address then IP finder creates multicast sockets for all found non - loopback addresses')
         .details-row.pc-form-grid-col-60
-
             .group-section
                 .group
                     .group-legend
@@ -76,6 +75,8 @@ mixin discovery-multicast(modelAt = 'backupItem')
                                     +ipaddress-port-feedback('"address"')
                                     +ipaddress-port-range-feedback('"address"')
                                     +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
+                            pc-list-editable-no-items
+                                | Not defined
 
                     a.link-success(ng-click=`${addresses}.push("")`)
                         | + Add New Address
