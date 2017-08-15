@@ -90,6 +90,10 @@
                     &:focus {
                         border-color: $ignite-brand-success;
                     }
+
+                    &:disabled {
+                        opacity: .5;
+                    }
                 }
 
                 & > input[type='number'] {
