@@ -19,24 +19,27 @@ package org.apache.ignite.internal.processors.platform.utils;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.ServiceLoader;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.binary.BinaryBasicNameMapper;
+import org.apache.ignite.internal.binary.BinaryArrayIdentityResolver;
+import org.apache.ignite.internal.binary.BinaryIdentityResolver;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryRawWriter;
+import org.apache.ignite.binary.BinaryTypeConfiguration;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.CacheRebalanceMode;
@@ -46,6 +49,7 @@ import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.QueryIndex;
 import org.apache.ignite.cache.QueryIndexType;
 import org.apache.ignite.cache.affinity.AffinityFunction;
+import org.apache.ignite.cache.affinity.fair.FairAffinityFunction;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.cache.eviction.EvictionPolicy;
 import org.apache.ignite.cache.eviction.fifo.FifoEvictionPolicy;
@@ -66,12 +70,12 @@ import org.apache.ignite.internal.binary.BinaryRawReaderEx;
 import org.apache.ignite.internal.binary.BinaryRawWriterEx;
 import org.apache.ignite.internal.processors.platform.cache.affinity.PlatformAffinityFunction;
 import org.apache.ignite.internal.processors.platform.cache.expiry.PlatformExpiryPolicyFactory;
-import org.apache.ignite.internal.processors.platform.plugin.cache.PlatformCachePluginConfiguration;
 import org.apache.ignite.platform.dotnet.PlatformDotNetAffinityFunction;
 import org.apache.ignite.platform.dotnet.PlatformDotNetBinaryConfiguration;
 import org.apache.ignite.platform.dotnet.PlatformDotNetBinaryTypeConfiguration;
 import org.apache.ignite.platform.dotnet.PlatformDotNetCacheStoreFactoryNative;
 import org.apache.ignite.platform.dotnet.PlatformDotNetConfiguration;
+import org.apache.ignite.internal.processors.platform.plugin.cache.PlatformCachePluginConfiguration;
 import org.apache.ignite.plugin.CachePluginConfiguration;
 import org.apache.ignite.plugin.platform.PlatformCachePluginConfigurationClosure;
 import org.apache.ignite.plugin.platform.PlatformCachePluginConfigurationClosureFactory;
@@ -337,7 +341,11 @@ public class PlatformConfigurationUtils {
 
         switch (plcTyp) {
             case 1: {
-                throw new IllegalStateException("FairAffinityFunction");
+                FairAffinityFunction f = new FairAffinityFunction();
+                f.setPartitions(partitions);
+                f.setExcludeNeighbors(exclNeighbours);
+                baseFunc = f;
+                break;
             }
             case 2: {
                 RendezvousAffinityFunction f = new RendezvousAffinityFunction();
@@ -377,7 +385,15 @@ public class PlatformConfigurationUtils {
         if (f instanceof PlatformDotNetAffinityFunction)
             f = ((PlatformDotNetAffinityFunction)f).getFunc();
 
-        if (f instanceof RendezvousAffinityFunction) {
+        if (f instanceof FairAffinityFunction) {
+            out.writeByte((byte) 1);
+
+            FairAffinityFunction f0 = (FairAffinityFunction) f;
+            out.writeInt(f0.getPartitions());
+            out.writeBoolean(f0.isExcludeNeighbors());
+            out.writeByte((byte) 0);  // override flags
+            out.writeObject(null);  // user func
+        } else if (f instanceof RendezvousAffinityFunction) {
             out.writeByte((byte) 2);
 
             RendezvousAffinityFunction f0 = (RendezvousAffinityFunction) f;
@@ -389,7 +405,13 @@ public class PlatformConfigurationUtils {
             PlatformAffinityFunction f0 = (PlatformAffinityFunction) f;
             AffinityFunction baseFunc = f0.getBaseFunc();
 
-            if (baseFunc instanceof RendezvousAffinityFunction) {
+            if (baseFunc instanceof FairAffinityFunction) {
+                out.writeByte((byte) 1);
+                out.writeInt(f0.partitions());
+                out.writeBoolean(((FairAffinityFunction) baseFunc).isExcludeNeighbors());
+                out.writeByte(f0.getOverrideFlags());
+                out.writeObject(f0.getUserFunc());
+            } else if (baseFunc instanceof RendezvousAffinityFunction) {
                 out.writeByte((byte) 2);
                 out.writeInt(f0.partitions());
                 out.writeBoolean(((RendezvousAffinityFunction) baseFunc).isExcludeNeighbors());

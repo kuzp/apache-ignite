@@ -29,6 +29,7 @@ import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheServerNotFoundException;
 import org.apache.ignite.cache.affinity.Affinity;
+import org.apache.ignite.cache.affinity.fair.FairAffinityFunction;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -68,6 +69,9 @@ public class IgniteCacheClientNodePartitionsExchangeTest extends GridCommonAbstr
     /** */
     private boolean client;
 
+    /** */
+    private boolean fairAffinity;
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
@@ -77,6 +81,9 @@ public class IgniteCacheClientNodePartitionsExchangeTest extends GridCommonAbstr
         cfg.setClientMode(client);
 
         CacheConfiguration ccfg = new CacheConfiguration(DEFAULT_CACHE_NAME);
+
+        if (fairAffinity)
+            ccfg.setAffinity(new FairAffinityFunction());
 
         cfg.setCacheConfiguration(ccfg);
 
@@ -203,6 +210,15 @@ public class IgniteCacheClientNodePartitionsExchangeTest extends GridCommonAbstr
     /**
      * @throws Exception If failed.
      */
+    public void testPartitionsExchangeFairAffinity() throws Exception {
+        fairAffinity = true;
+
+        partitionsExchange();
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
     private void partitionsExchange() throws Exception {
         Ignite ignite0 = startGrid(0);
 
@@ -311,7 +327,7 @@ public class IgniteCacheClientNodePartitionsExchangeTest extends GridCommonAbstr
 
         if (lateAff) {
             // With FairAffinityFunction affinity calculation is different, this causes one more topology change.
-            boolean exchangeAfterRebalance = false;
+            boolean exchangeAfterRebalance = fairAffinity;
 
             waitForTopologyUpdate(4,
                 exchangeAfterRebalance ? new AffinityTopologyVersion(6, 1) : new AffinityTopologyVersion(6, 0));
