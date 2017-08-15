@@ -118,6 +118,7 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
                 filter: {
                     placeholder: 'Filter by value type…'
                 },
+                sort: {direction: 'asc', priority: 0},
                 minWidth: 165
             }
         ];

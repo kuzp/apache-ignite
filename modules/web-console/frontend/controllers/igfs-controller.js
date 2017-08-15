@@ -226,6 +226,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
                 filter: {
                     placeholder: 'Filter by name…'
                 },
+                sort: {direction: 'asc', priority: 0},
                 minWidth: 165
             },
             {
