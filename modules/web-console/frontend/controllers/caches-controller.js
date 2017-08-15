@@ -109,21 +109,25 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
 
         this.buildCachesTable = (caches = []) => caches;
 
-        this.onCacheAction = (action) => {
-            const realItems = action.items.map((item) => $scope.caches.find(({_id}) => _id === item._id));
-            switch (action.type) {
-                case 'CLONE':
-                    return this.cloneItems(realItems);
-                case 'DELETE':
-                    return realItems.length === this.cachesTable.length
+        this.makeTableActions = function(selectedItems) {
+            return [
+                {
+                    action: 'Clone',
+                    click: () => this.cloneItems(selectedItems),
+                    available: true
+                },
+                {
+                    action: 'Delete',
+                    click: () => selectedItems.length === this.cachesTable.length
                         ? $scope.removeAllItems()
-                        : $scope.removeItem(realItems[0]);
-                default:
-                    return;
-            }
+                        : $scope.removeItem(selectedItems[0]),
+                    available: true
+                }
+            ];
         };
 
         this.selectionHook = function(selected) {
+            this.tableActions = this.makeTableActions(selected);
             this.selectedItemIDs = selected.map((r) => r._id);
             if (selected.length !== 1) this.$scope.selectItem(null);
             return this.selectedItemIDs.length === 1
