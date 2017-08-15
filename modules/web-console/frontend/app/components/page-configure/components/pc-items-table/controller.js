@@ -16,6 +16,7 @@
  */
 
 import debounce from 'lodash/debounce';
+import flow from 'lodash/flow';
 
 export default class ItemsTableController {
     static $inject = ['$scope', 'gridUtil', '$timeout', 'uiGridSelectionService'];
@@ -57,40 +58,21 @@ export default class ItemsTableController {
                 });
             }
         };
-        this.onAction = debounce(this.onAction);
         this.onRowsSelectionChange = debounce(this.onRowsSelectionChange);
+        this.actionsMenu = [];
     }
 
     onRowsSelectionChange(rows, e = {}) {
-        this.actionsMenu = this.makeActionsMenu();
         if (e.ignore) return;
         const selected = this.gridAPI.selection.getSelectedRows();
         if (this.onSelectionChange) this.onSelectionChange({$event: selected});
     }
 
-    makeActionsMenu() {
-        return [
-            {
-                action: 'Edit',
-                click: () => this.dispatchAction('EDIT'),
-                available: this.gridAPI.selection.getSelectedCount() === 1 && !this.immediateEdit
-            },
-            {
-                action: 'Delete',
-                click: () => this.dispatchAction('DELETE'),
-                available: true
-            },
-            {
-                action: 'Clone',
-                click: () => this.dispatchAction('CLONE'),
-                available: true
-            }
-        ];
-    }
-
-    dispatchAction(type) {
-        this.onAction({$event: {type, items: this.gridAPI.selection.getSelectedRows()}});
-        this.gridAPI.selection.clearSelectedRows();
+    makeActionsMenu(incomingActionsMenu = []) {
+        const resetSelection = () => this.gridAPI.selection.clearSelectedRows();
+        return incomingActionsMenu.map((action) => ({...action,
+            click: flow(action.click, resetSelection)
+        }));
     }
 
     $onChanges(changes) {
@@ -102,6 +84,8 @@ export default class ItemsTableController {
         }
         if (hasChanged('selectedRowId') && this.grid && this.grid.data)
             this.applyIncomingSelection(changes.selectedRowId.currentValue);
+        if (hasChanged('incomingActionsMenu'))
+            this.actionsMenu = this.makeActionsMenu(changes.incomingActionsMenu.currentValue);
     }
 
     applyIncomingSelection(selected = []) {
