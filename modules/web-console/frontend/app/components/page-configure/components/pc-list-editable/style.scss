@@ -16,6 +16,18 @@
  */
 
 pc-list-editable {
+    &-item-view,
+    &-item-edit,
+    &-no-items {
+        flex: 1;
+        display: block;
+    }
+
+    &-no-items {
+        color: #999;
+        text-align: center;
+    }
+
     .pcle-row {
         display: flex;
         align-items: center;
@@ -34,10 +46,13 @@ pc-list-editable {
             background-color: #f9f9f9;
         }
 
-        &-index {
+        &-index,
+        &-cross {
             display: flex;
             height: 36px;
+        }
 
+        &-index {
             padding-left: 20px;
             padding-right: 20px;
 
@@ -45,9 +60,6 @@ pc-list-editable {
         }
 
         &-cross {
-            display: flex;
-            height: 36px;
-
             [ignite-icon] {
                 width: 12px;
                 height: 12px;
@@ -73,19 +85,31 @@ pc-list-editable {
             z-index: 1;
 
             align-items: flex-start;
-
-            // margin-top: -18px;
-            // padding-top: 22px;
-
-            // box-shadow: 0 -6px 5px -5px #999, 0 5px 5px -5px #333;
-
-            .ignite-form-field {
-                // margin-top: -18px;
-            }
-
-            .ignite-form-field + .ignite-form-field {
-
-            }
         }
+
+        &:not(.pcle-row--has-item-view) {
+            & > .pcle-row-index,
+            & > .pcle-row-cross {
+                margin-top: 18px;
+            }
+
+            align-items: flex-start;
+        }
+    }
+
+    [divider]:after {
+        content: attr(divider);
+
+        display: inline-flex;
+        justify-content: center;
+        align-self: flex-start;
+
+        width: 20px;
+        height: 36px;
+
+        margin-top: 18px;
+        margin-right: -20px;
+        
+        line-height: 36px;
     }
 }
