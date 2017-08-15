@@ -78,6 +78,7 @@ export default ['$transitions', 'ConfigureState', '$scope', '$http', '$state', '
                 displayName: 'Name',
                 field: 'name',
                 enableHiding: false,
+                sort: {direction: 'asc', priority: 0},
                 filter: {
                     placeholder: 'Filter by key type…'
                 },

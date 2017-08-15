@@ -53,6 +53,7 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
                 field: 'name',
                 enableHiding: false,
                 minWidth: 165,
+                sort: {direction: 'asc', priority: 0},
                 filter: {
                     placeholder: 'Filter by name…'
                 }

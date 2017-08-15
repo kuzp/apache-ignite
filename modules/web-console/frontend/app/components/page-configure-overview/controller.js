@@ -64,6 +64,7 @@ export default class PageConfigureOverviewController {
                 filter: {
                     placeholder: 'Filter by name…'
                 },
+                sort: {direction: 'asc', priority: 0},
                 cellTemplate: cellTemplate('base.configuration.tabs'),
                 minWidth: 165
             },
