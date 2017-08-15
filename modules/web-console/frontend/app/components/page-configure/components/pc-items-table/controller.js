@@ -28,7 +28,7 @@ export default class ItemsTableController {
     $onInit() {
         this.grid = {
             data: [],
-            columnDefs: this.getColumnDefs(),
+            columnDefs: this.columnDefs,
             rowHeight: 46,
             enableColumnMenus: false,
             enableFullRowSelection: true,
@@ -78,7 +78,7 @@ export default class ItemsTableController {
     $onChanges(changes) {
         const hasChanged = (binding) => binding in changes && changes[binding].currentValue !== changes[binding].previousValue;
         if (hasChanged('items') && this.grid) {
-            this.grid.data = this.prepareData(changes.items.currentValue);
+            this.grid.data = changes.items.currentValue;
             this.gridAPI.grid.modifyRows(this.grid.data);
             this.adjustHeight(this.gridAPI, this.grid.data.length);
         }
@@ -109,13 +109,5 @@ export default class ItemsTableController {
         const height = Math.min(rows, maxRowsToShow) * this.grid.rowHeight + header + optionalScroll;
         api.grid.element.css('height', height + 'px');
         api.core.handleWindowResize();
-    }
-
-    getColumnDefs() {
-        return this.columnDefs;
-    }
-
-    prepareData(data = []) {
-        return data;
     }
 }
