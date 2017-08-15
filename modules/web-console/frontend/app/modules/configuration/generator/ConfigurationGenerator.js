@@ -1695,7 +1695,7 @@ export default class IgniteConfigurationGenerator {
                     fields.push({name: valFieldName, className: javaTypes.fullClassName(domain.valueType)});
             }
 
-            cfg.collectionProperty('keyFields', 'keyFields', domain.queryKeyFields, 'java.lang.String', 'java.util.Set')
+            cfg.collectionProperty('keyFields', 'keyFields', domain.queryKeyFields, 'java.lang.String', 'java.util.HashSet')
                 .mapProperty('fields', fields, 'fields', true)
                 .mapProperty('aliases', 'aliases');
 
