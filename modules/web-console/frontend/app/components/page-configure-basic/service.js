@@ -18,26 +18,16 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import {
-    // SET_CLUSTER,
-    // ADD_NEW_CACHE,
-    // REMOVE_CACHE,
-    // SET_SELECTED_CACHES,
     isNewItem
 } from './reducer';
 
 import {
-    RECEIVE_CLUSTER_EDIT,
     basicCachesActionTypes,
     clustersActionTypes,
     shortClustersActionTypes,
     shortCachesActionTypes,
     cachesActionTypes
 } from '../page-configure/reducer';
-
-// const makeId = (() => {
-//     let id = -1;
-//     return () => id--;
-// })();
 
 import {uniqueName} from 'app/utils/uniqueName';
 import get from 'lodash/get';
@@ -202,16 +192,7 @@ export default class PageConfigureBasic {
             cluster,
             caches
         });
-        // return this.clusters.saveBasic(clusterToSend, changedCaches);
     }
-
-    // setCluster(_id) {
-    //     this.ConfigureState.dispatchAction(
-    //         isNewItem({_id})
-    //             ? {type: SET_CLUSTER, _id, cluster: this.clusters.getBlankCluster()}
-    //             : {type: SET_CLUSTER, _id}
-    //     );
-    // }
 
     addCache(caches) {
         this.ConfigureState.dispatchAction({
@@ -233,8 +214,4 @@ export default class PageConfigureBasic {
             items: [item]
         });
     }
-
-    // setSelectedCaches(cacheIDs) {
-    //     this.ConfigureState.dispatchAction({type: SET_SELECTED_CACHES, cacheIDs});
-    // }
 }
