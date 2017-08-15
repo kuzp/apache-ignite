@@ -62,59 +62,35 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60
                     +number('Pool size:', `${model}.peerClassLoadingThreadPoolSize`, '"peerClassLoadingThreadPoolSize"', enabled, '2', '1', 'Thread pool size to use for peer class loading')
                 .pc-form-grid-col-60
-                    +ignite-form-group
-                        -var uniqueTip = 'Such package already exists'
+                    .group-section
+                        .group
+                            .group-legend
+                                label
+                                    span Local class path exclude
 
-                        ignite-form-field-label
-                            | Local class path exclude
-                        ignite-form-group-tooltip
-                            | List of packages from the system classpath that need to be peer-to-peer loaded from task originating node<br/>
-                            | '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause
-                        ignite-form-group-add(ng-show=`${enabled}` ng-click='(group.add = [{}])')
-                            | Add package name.
+                                ignite-form-group-tooltip
+                                    | List of packages from the system classpath that need to be peer-to-peer loaded from task originating node<br/>
+                                    | '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause
+                                
+                            .group-content
+                                -var uniqueTip = 'Such package already exists!'
 
-                        .group-content(ng-if=`${exclude}.length`)
-                            -var model = 'obj.model';
-                            -var name = '"edit" + $index'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${exclude}[$index] = ${model}`
+                                pc-list-editable(ng-model=`${exclude}`)
+                                    pc-list-editable-item-view
+                                        | {{ $parent.item }}
 
-                            div(ng-show=enabled)
-                                div(ng-repeat=`model in ${exclude} track by $index` ng-init='obj = {}')
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        .indexField
-                                            | {{ $index+1 }})
-                                        +table-remove-button(exclude, 'Remove package name')
-                                        span(ng-hide='field.edit')
-                                            a.labelFormField(ng-click=`(field.edit = true) && (${model} = model)`) {{ model }}
-                                        span(ng-if='field.edit')
-                                            +table-java-package-field(name, model, exclude, valid, save, false)
-                                                +table-save-button(valid, save, false)
-                                                +unique-feedback(name, uniqueTip)
+                                    pc-list-editable-item-edit
+                                        - form = '$parent.form'
+                                        +list-java-package-field('Package name', '$parent.item', '"packageName"', exclude)
+                                            +unique-feedback('"packageName"', uniqueTip)
 
-                            div(ng-hide=enabled)
-                                div(ng-repeat=`model in ${exclude} track by $index`)
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        .labelFormField.labelField
-                                            | {{ $index+1 }})
-                                        span.labelFormField
-                                            | {{ model }}
+                                    pc-list-editable-no-items
+                                        | Not defined
 
-                        .group-content(ng-repeat='field in group.add')
-                            -var model = 'new';
-                            -var name = '"new"'
-                            -var valid = `${form}[${name}].$valid`
-                            -var save = `${exclude}.push(${model})`
+                            a.link-success(ng-show=`${enabled}` ng-click=`${exclude}.push("")`)
+                                | + Add package name
 
-                            div(type='internal' name='Package name')
-                                label.col-xs-12.col-sm-12.col-md-12
-                                    +table-java-package-field(name, model, exclude, valid, save, true)
-                                        +table-save-button(valid, save, true)
-                                        +unique-feedback(name, uniqueTip)
-
-                        .group-content-empty(ng-if=`!(${exclude}.length) && !group.add.length`)
-                            | Not defined
-
+                - form = 'deployment'
                 //- Since ignite 2.0
                 .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
                     +java-class('Class loader:', model + '.classLoader', '"classLoader"', 'true', 'false',
@@ -137,95 +113,66 @@ include /app/helpers/jade/mixins
                         </ul>')
                 .pc-form-group(ng-show=uriDeployment).pc-form-grid-row
                     .pc-form-grid-col-60
-                        +ignite-form-group()
-                            -var uniqueTip = 'Such URI already configured'
+                        .group-section
+                            .group
+                                .group-legend
+                                    label
+                                        span URI list
 
-                            ignite-form-field-label
-                                | URI list
-                            ignite-form-group-tooltip
-                                | List of URI which point to GAR file and which should be scanned by SPI for the new tasks
-                            ignite-form-group-add(ng-click='(group.add = [{}])')
-                                | Add URI.
+                                    ignite-form-group-tooltip
+                                        | List of URI which point to GAR file and which should be scanned by SPI for the new tasks
+                                    
+                                .group-content
+                                    -var uniqueTip = 'Such URI already configured!'
 
-                            .group-content(ng-if=uriListModel + '.length')
-                                -var model = 'obj.model';
-                                -var name = '"edit" + $index'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${uriListModel}[$index] = ${model}`
+                                    pc-list-editable(ng-model=`${uriListModel}`)
+                                        pc-list-editable-item-view
+                                            | {{ $parent.item }}
 
-                                div(ng-repeat=`model in ${uriListModel} track by $index` ng-init='obj = {}')
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        .indexField
-                                            | {{ $index+1 }})
-                                        +table-remove-button(uriListModel, 'Remove URI')
-                                        span(ng-hide='field.edit')
-                                            a.labelFormField(ng-click=`(field.edit = true) && (${model} = model)`) {{ model }}
-                                        span(ng-if='field.edit')
-                                            +table-url-field(name, model, uriListModel, valid, save, false)
-                                                +table-save-button(valid, save, false)
-                                                +unique-feedback(name, uniqueTip)
+                                        pc-list-editable-item-edit
+                                            - form = '$parent.form'
+                                            +list-url-field('URL', '$parent.item', '"url"', uriListModel)
+                                                +unique-feedback('"url"', uniqueTip)
 
-                            .group-content(ng-repeat='field in group.add')
-                                -var model = 'new';
-                                -var name = '"new"'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${uriListModel}.push(${model})`
+                                        pc-list-editable-no-items
+                                            | Not defined
 
-                                div(type='internal' name='URI')
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        +table-url-field(name, model, uriListModel, valid, save, true)
-                                            +table-save-button(valid, save, true)
-                                            +unique-feedback(name, uniqueTip)
+                                a.link-success(ng-click=`${uriListModel}.push("")`)
+                                    | + Add URI
 
-                            .group-content-empty(ng-if=`!(${uriListModel}.length) && !group.add.length`)
-                                | Not defined
+                    - form = 'deployment'
                     .pc-form-grid-col-60
                         +text('Temporary directory path:', modelDeployment + '.URI.temporaryDirectoryPath', '"DeploymentURITemporaryDirectoryPath"', 'false', 'Temporary directory path',
                         'Absolute path to temporary directory which will be used by deployment SPI to keep all deployed classes in')
                     .pc-form-grid-col-60
-                        +ignite-form-group()
-                            -var uniqueTip = 'Such scanner already configured'
+                        .group-section
+                            .group
+                                .group-legend
+                                    label
+                                        span Scanner list
 
-                            ignite-form-field-label
-                                | Scanner list
-                            ignite-form-group-tooltip
-                                | List of URI deployment scanners
-                            ignite-form-group-add(ng-click='(group.add = [{}])')
-                                | Add scanner
+                                    ignite-form-group-tooltip
+                                        | List of URI deployment scanners
+                                    
+                                .group-content
+                                    -var uniqueTip = 'Such scanner already configured!'
 
-                            .group-content(ng-if=scannerModel + '.length')
-                                -var model = 'obj.model';
-                                -var name = '"edit" + $index'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${scannerModel}[$index] = ${model}`
+                                    pc-list-editable(ng-model=`${scannerModel}`)
+                                        pc-list-editable-item-view
+                                            | {{ $parent.item }}
 
-                                div(ng-repeat=`model in ${scannerModel} track by $index` ng-init='obj = {}')
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        .indexField
-                                            | {{ $index+1 }})
-                                        +table-remove-button(scannerModel, 'Remove scanner')
-                                        span(ng-hide='field.edit')
-                                            a.labelFormField(ng-click=`(field.edit = true) && (${model} = model)`) {{ model }}
-                                        span(ng-if='field.edit')
-                                            +table-java-class-field('Scanner:', name, model, scannerModel, valid, save, false)
-                                                +table-save-button(valid, save, false)
-                                                +unique-feedback(name, uniqueTip)
+                                        pc-list-editable-item-edit
+                                            - form = '$parent.form'
+                                            +list-java-class-field('Scanner', '$parent.item', '"scanner"', scannerModel)
+                                                +unique-feedback('"scanner"', uniqueTip)
 
-                            .group-content(ng-repeat='field in group.add')
-                                -var model = 'new';
-                                -var name = '"new"'
-                                -var valid = `${form}[${name}].$valid`
-                                -var save = `${scannerModel}.push(${model})`
+                                        pc-list-editable-no-items
+                                            | Not defined
 
-                                div(type='internal' name='Scanner')
-                                    label.col-xs-12.col-sm-12.col-md-12
-                                        //- (lbl, name, model, items, valid, save, newItem)
-                                        +table-java-class-field('Scanner:', name, model, scannerModel, valid, save, true)
-                                            +table-save-button(valid, save, true)
-                                            +unique-feedback(name, uniqueTip)
+                                a.link-success(ng-click=`${scannerModel}.push("")`)
+                                    | + Add scanner
 
-                            .group-content-empty(ng-if=`!(${scannerModel}.length) && !group.add.length`)
-                                | Not defined
+                    - form = 'deployment'
                     .pc-form-grid-col-60
                         +java-class('Listener:', `${modelDeployment}.URI.listener`, '"DeploymentURIListener"', 'true', 'false', 'Deployment event listener', uriDeployment)
                     .pc-form-grid-col-60

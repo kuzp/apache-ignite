@@ -37,26 +37,22 @@ include /app/helpers/jade/mixins
 .pc-form-grid-col-60
     +java-class('External listener:', `${model}.externalCollisionListener`, '"jsExternalCollisionListener"', 'true', 'false',
         'Listener to be set for notification of external collision events', 'backupItem.collision.kind === "JobStealing"')
-.details-row.pc-form-grid-col-60
-    +ignite-form-group
-        ignite-form-field-label
-            | Stealing attributes
-        ignite-form-group-tooltip
-            | Configuration parameter to enable stealing to/from only nodes that have these attributes set
-        ignite-form-group-add(ng-click='tableNewItem(stealingAttributesTbl)')
-            | Add stealing attribute
-        .group-content-empty(ng-if=`!((${stealingAttributes} && ${stealingAttributes}.length > 0) || tableNewItemActive(stealingAttributesTbl))`)
-            | Not defined
-        .group-content(ng-show=`(${stealingAttributes} && ${stealingAttributes}.length > 0) || tableNewItemActive(stealingAttributesTbl)`)
-            table.links-edit(id='attributes' st-table=stealingAttributes)
-                tbody
-                    tr(ng-repeat=`item in ${stealingAttributes} track by $index`)
-                        td.col-sm-12(ng-show='!tableEditing(stealingAttributesTbl, $index)')
-                            a.labelFormField(ng-click='tableStartEdit(backupItem, stealingAttributesTbl, $index)') {{item.name}} = {{item.value}}
-                            +btn-remove('tableRemove(backupItem, stealingAttributesTbl, $index)', '"Remove attribute"')
-                        td.col-sm-12(ng-show='tableEditing(stealingAttributesTbl, $index)')
-                            +table-pair-edit('stealingAttributesTbl', 'cur', 'Attribute name', 'Attribute value', false, '{{::stealingAttributesTbl.focusId + $index}}', '$index', '=')
-                tfoot(ng-show='tableNewItemActive(stealingAttributesTbl)')
-                    tr
-                        td.col-sm-12
-                            +table-pair-edit('stealingAttributesTbl', 'new', 'Attribute name', 'Attribute value', false, '{{::stealingAttributesTbl.focusId + $index}}', '-1', '=')
+.pc-form-grid-col-60
+    .group-section
+        .group
+            .group-legend
+                label
+                    span Stealing attributes
+
+                ignite-form-group-tooltip
+                    | Configuration parameter to enable stealing to/from only nodes that have these attributes set
+                
+            .group-content
+                +list-pair-edit({
+                    items: stealingAttributes,
+                    keyLbl: 'Attribute name', 
+                    valLbl: 'Attribute value'
+                })
+
+            a.link-success(ng-click=`(${stealingAttributes} = ${stealingAttributes} || []).push({})`)
+                | + Add stealing attribute

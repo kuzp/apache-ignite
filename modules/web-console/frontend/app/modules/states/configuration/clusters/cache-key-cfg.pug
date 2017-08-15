@@ -29,21 +29,30 @@ include /app/helpers/jade/mixins
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
                 .settings-row
-                    +ignite-form-group()
-                        ignite-form-field-label
-                            | Cache key configuration
-                        ignite-form-group-tooltip
-                            | Cache key configuration
-                        ignite-form-group-add(ng-click=`${model}.push({})`)
-                            | Add new cache key configuration
-                        .group-content-empty(ng-if=`!${model}.length`)
-                            | Not defined
-                        .group-content(ng-repeat=`model in ${model} track by $index`)
-                            hr(ng-if='$index !== 0')
-                            .settings-row
-                                +java-class-autofocus('Type name:', 'model.typeName', '"cacheKeyTypeName" + $index', 'true', 'true', 'true', 'Type name')
-                                    +table-remove-button(model, 'Remove cache key configuration')
-                            .settings-row
-                                +text('Affinity key field name:', 'model.affinityKeyFieldName', '"affinityKeyFieldName" + $index', true, 'Enter field name', 'Affinity key field name')
+                    .group-section
+                        .group
+                            .group-legend
+                                label
+                                    span Cache key configuration
+
+                                ignite-form-group-tooltip
+                                    | Cache key configuration
+                                
+                            .group-content
+                                pc-list-editable(ng-model=model)
+                                    pc-list-editable-item-edit
+                                        - form = '$parent.form'
+                                        .settings-row
+                                            +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
+                                        .settings-row
+                                            +text('Affinity key field name:', '$parent.item.affinityKeyFieldName', '"affinityKeyFieldName"', true, 'Enter field name', 'Affinity key field name')
+
+                                    pc-list-editable-no-items
+                                        | Not defined
+
+                            a.link-success(ng-click=`${model}.push({})`)
+                                | + Add new cache key configuration
+
+            - form = 'cacheKeyCfg'
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterCacheKeyConfiguration')

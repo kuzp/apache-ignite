@@ -56,60 +56,67 @@ include /app/helpers/jade/mixins
                         'true', '0.8 * totalMemoryAvailable', '10485760',
                         'Specify desired size of default memory policy without having to use more verbose syntax of MemoryPolicyConfiguration elements')
                     .pc-form-grid-col-60(ng-init='memoryPoliciesTbl={type: "memoryPolicies", model: "memoryPolicies", focusId: "name", ui: "memory-policies-table"}')
-                        +ignite-form-group()
-                            ignite-form-field-label
-                                | Configured policies
-                            ignite-form-group-tooltip
-                                | List of configured policies
-                            ignite-form-group-add(ng-click='tableNewItem(memoryPoliciesTbl)')
-                                | Add Memory policy configuration
-                            .group-content-empty(ng-if=`!(${memoryPolicies} && ${memoryPolicies}.length > 0)`)
-                                | Not defined
-                            .group-content(ng-show=`${memoryPolicies} && ${memoryPolicies}.length > 0` ng-repeat=`model in ${memoryPolicies} track by $index`)
-                                hr(ng-if='$index != 0')
-                                .settings-row
-                                    +text-enabled-autofocus('Name:', 'model.name', '"MemoryPolicyName" + $index', 'true', 'false', 'default', 'Memory policy name')
-                                        +table-remove-button(memoryPolicies, 'Remove memory configuration')
-                                .settings-row
-                                    +number('Initial size:', 'model.initialSize', '"MemoryPolicyInitialSize" + $index',
-                                    'true', '268435456', '10485760', 'Initial memory region size defined by this memory policy')
-                                .settings-row
-                                    +number('Maximum size:', 'model.maxSize', '"MemoryPolicyMaxSize" + $index',
-                                    'true', '0.8 * totalMemoryAvailable', '10485760', 'Maximum memory region size defined by this memory policy')
-                                .settings-row
-                                    +text('Swap file path:', 'model.swapFilePath', '"MemoryPolicySwapFilePath" + $index', 'false',
-                                    'Input swap file path', 'An optional path to a memory mapped file for this memory policy')
-                                .settings-row
-                                    +dropdown('Eviction mode:', 'model.pageEvictionMode', '"MemoryPolicyPageEvictionMode"', 'true', 'DISABLED',
-                                    '[\
-                                        {value: "DISABLED", label: "DISABLED"},\
-                                        {value: "RANDOM_LRU", label: "RANDOM_LRU"},\
-                                        {value: "RANDOM_2_LRU", label: "RANDOM_2_LRU"}\
-                                    ]',
-                                    'An algorithm for memory pages eviction\
-                                    <ul>\
-                                        <li>DISABLED - Eviction is disabled</li>\
-                                        <li>RANDOM_LRU - Once a memory region defined by a memory policy is configured, an off - heap array is allocated to track last usage timestamp for every individual data page</li>\
-                                        <li>RANDOM_2_LRU - Differs from Random - LRU only in a way that two latest access timestamps are stored for every data page</li>\
-                                    </ul>')
-                                .settings-row
-                                    +number-min-max-step('Eviction threshold:', 'model.evictionThreshold', '"MemoryPolicyEvictionThreshold" + $index',
-                                    'true', '0.9', '0.5', '0.999', '0.05', 'A threshold for memory pages eviction initiation')
-                                .settings-row
-                                    +number('Empty pages pool size:', 'model.emptyPagesPoolSize', '"MemoryPolicyEmptyPagesPoolSize" + $index',
-                                    'true', '100', '11', 'The minimal number of empty pages to be present in reuse lists for this memory policy')
+                        .group-section
+                            .group
+                                .group-legend
+                                    label
+                                        span Configured policies
 
-                                //- Since ignite 2.1
-                                .settings-row(ng-if-start='$ctrl.available("2.1.0")')
-                                    +number('Sub intervals:', 'model.subIntervals', '"MemoryPolicySubIntervals" + $index',
-                                        'true', '5', '1', 'A number of sub-intervals the whole rate time interval will be split into to calculate allocation and eviction rates')
-                                .settings-row(ng-if-end)
-                                    +number('Rate time interval:', 'model.rateTimeInterval', '"MemoryPolicyRateTimeInterval" + $index',
-                                        'true', '60000', '1000', 'Time interval for allocation rate and eviction rate monitoring purposes')
-                                        
-                                .settings-row
-                                    +checkbox('Metrics enabled', 'model.metricsEnabled', '"MemoryPolicyMetricsEnabled" + $index',
-                                    'Whether memory metrics are enabled by default on node startup')
+                                    ignite-form-group-tooltip
+                                        | List of configured policies
+                                    
+                                .group-content
+                                    pc-list-editable(ng-model=`${memoryPolicies}`)
+                                        pc-list-editable-item-edit
+                                            - form = '$parent.form'
+                                            .settings-row
+                                                +text-enabled-autofocus('Name:', '$parent.item.name', '"MemoryPolicyName"', 'true', 'false', 'default', 'Memory policy name')
+                                            .settings-row
+                                                +number('Initial size:', '$parent.item.initialSize', '"MemoryPolicyInitialSize"',
+                                                'true', '268435456', '10485760', 'Initial memory region size defined by this memory policy')
+                                            .settings-row
+                                                +number('Maximum size:', '$parent.item.maxSize', '"MemoryPolicyMaxSize"',
+                                                'true', '0.8 * totalMemoryAvailable', '10485760', 'Maximum memory region size defined by this memory policy')
+                                            .settings-row
+                                                +text('Swap file path:', '$parent.item.swapFilePath', '"MemoryPolicySwapFilePath"', 'false',
+                                                'Input swap file path', 'An optional path to a memory mapped file for this memory policy')
+                                            .settings-row
+                                                +dropdown('Eviction mode:', '$parent.item.pageEvictionMode', '"MemoryPolicyPageEvictionMode"', 'true', 'DISABLED',
+                                                '[\
+                                                    {value: "DISABLED", label: "DISABLED"},\
+                                                    {value: "RANDOM_LRU", label: "RANDOM_LRU"},\
+                                                    {value: "RANDOM_2_LRU", label: "RANDOM_2_LRU"}\
+                                                ]',
+                                                'An algorithm for memory pages eviction\
+                                                <ul>\
+                                                    <li>DISABLED - Eviction is disabled</li>\
+                                                    <li>RANDOM_LRU - Once a memory region defined by a memory policy is configured, an off - heap array is allocated to track last usage timestamp for every individual data page</li>\
+                                                    <li>RANDOM_2_LRU - Differs from Random - LRU only in a way that two latest access timestamps are stored for every data page</li>\
+                                                </ul>')
+                                            .settings-row
+                                                +number-min-max-step('Eviction threshold:', '$parent.item.evictionThreshold', '"MemoryPolicyEvictionThreshold"',
+                                                'true', '0.9', '0.5', '0.999', '0.05', 'A threshold for memory pages eviction initiation')
+                                            .settings-row
+                                                +number('Empty pages pool size:', '$parent.item.emptyPagesPoolSize', '"MemoryPolicyEmptyPagesPoolSize"',
+                                                'true', '100', '11', 'The minimal number of empty pages to be present in reuse lists for this memory policy')
+
+                                            //- Since ignite 2.1
+                                            .settings-row(ng-if-start='$ctrl.available("2.1.0")')
+                                                +number('Sub intervals:', '$parent.item.subIntervals', '"MemoryPolicySubIntervals"',
+                                                    'true', '5', '1', 'A number of sub-intervals the whole rate time interval will be split into to calculate allocation and eviction rates')
+                                            .settings-row(ng-if-end)
+                                                +number('Rate time interval:', '$parent.item.rateTimeInterval', '"MemoryPolicyRateTimeInterval"',
+                                                    'true', '60000', '1000', 'Time interval for allocation rate and eviction rate monitoring purposes')
+                                                    
+                                            .settings-row
+                                                +checkbox('Metrics enabled', '$parent.item.metricsEnabled', '"MemoryPolicyMetricsEnabled"',
+                                                'Whether memory metrics are enabled by default on node startup')
+
+                                        pc-list-editable-no-items
+                                            | Not defined
+
+                                a.link-success(ng-click=`${memoryPolicies}.push({})`)
+                                    | + Add Memory policy configuration
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterMemory')
