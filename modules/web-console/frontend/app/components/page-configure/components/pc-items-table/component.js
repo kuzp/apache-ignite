@@ -27,12 +27,12 @@ export default {
     },
     bindings: {
         items: '<',
-        onAction: '&',
         onFilterChanged: '&?',
         columnDefs: '<',
         tableTitle: '<',
         selectedRowId: '<?',
         maxRowsToShow: '@?',
-        onSelectionChange: '&?'
+        onSelectionChange: '&?',
+        incomingActionsMenu: '<?actionsMenu'
     }
 };
