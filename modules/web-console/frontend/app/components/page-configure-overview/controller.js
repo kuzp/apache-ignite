@@ -16,21 +16,6 @@
  */
 
 import 'rxjs/add/operator/do';
-import 'rxjs/add/operator/pluck';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/take';
-import 'rxjs/add/operator/switchMap';
-import 'rxjs/add/operator/distinctUntilChanged';
-import 'rxjs/add/observable/empty';
-import {Observable} from 'rxjs/Observable';
-
-import map from 'lodash/fp/map';
-import flatMap from 'lodash/fp/flatMap';
-import flow from 'lodash/fp/flow';
-import get from 'lodash/fp/get';
-import uniq from 'lodash/fp/uniq';
-
-const allNames = (items) => items.map((i) => i.name).join(', ');
 
 const cellTemplate = (state) => `
     <div class="ui-grid-cell-contents">
@@ -43,10 +28,10 @@ const cellTemplate = (state) => `
 `;
 
 export default class PageConfigureOverviewController {
-    static $inject = ['ConfigureState', '$scope', '$state', 'PageConfigure', 'IgniteConfirm', 'Clusters'];
+    static $inject = ['PageConfigureOverviewService', '$scope'];
 
-    constructor(ConfigureState, $scope, $state, PageConfigure, IgniteConfirm, Clusters) {
-        Object.assign(this, {ConfigureState, $scope, $state, PageConfigure, IgniteConfirm, Clusters});
+    constructor(pageService, $scope) {
+        Object.assign(this, {pageService, $scope});
     }
 
     $onDestroy() {
@@ -54,7 +39,9 @@ export default class PageConfigureOverviewController {
     }
 
     $onInit() {
-        this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+        this.subscription = this.pageService.getObservable()
+            .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+            .subscribe();
         this.clustersColumnDefs = [
             {
                 name: 'name',
@@ -72,7 +59,7 @@ export default class PageConfigureOverviewController {
                 name: 'discovery',
                 displayName: 'Discovery',
                 field: 'discovery',
-                multiselectFilterOptions: this.Clusters.discoveries,
+                multiselectFilterOptions: this.pageService.clusterDiscoveries,
                 width: 150
             },
             {
@@ -105,40 +92,16 @@ export default class PageConfigureOverviewController {
         ];
     }
 
-    getObservable(state$) {
-        return state$
-        .pluck('shortClusters')
-        .distinctUntilChanged()
-        .map((map) => [...map.values()])
-        .do((clusters) => this.$scope.$applyAsync(() => this.clusters = clusters));
-        // return state$
-        // .pluck('configurationOverview')
-        // .do((value) => this.applyValue(value));
-    }
-
-    // applyValue(value) {
-    //     this.$scope.$applyAsync(() => Object.assign(this, {
-    //         clusters: [...state.shortClusters.values()]
-    //     }));
-    // }
-
     onClustersAction(action) {
         switch (action.type) {
             case 'EDIT':
-                return this.$state.go('^.tabs', {clusterID: action.items[0]._id});
-                // return this.PageConfigure.editCluster(action.items[0]._id);
+                return this.pageService.editCluster(action.items[0]);
             case 'CLONE':
-                return this.PageConfigure.cloneClusters(action.items);
+                return this.pageService.cloneClusters(action.items);
             case 'DELETE':
-                return this.IgniteConfirm
-                    .confirm(`Are you sure want to remove cluster(s): ${allNames(action.items)}?`)
-                    .then(() => this.PageConfigure.removeClustersLocalRemote(action.items));
+                return this.pageService.removeClusters(action.items);
             default:
                 return;
         }
-    }
-
-    createCluster() {
-        this.PageConfigure.editCluster();
     }
 }
