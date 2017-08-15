@@ -94,23 +94,14 @@ export default class ItemsTableController {
     }
 
     $onChanges(changes) {
-        if (
-            'items' in changes &&
-            changes.items.currentValue !== changes.items.previousValue &&
-            this.grid
-        ) {
+        const hasChanged = (binding) => binding in changes && changes[binding].currentValue !== changes[binding].previousValue;
+        if (hasChanged('items') && this.grid) {
             this.grid.data = this.prepareData(changes.items.currentValue);
             this.gridAPI.grid.modifyRows(this.grid.data);
             this.adjustHeight(this.gridAPI, this.grid.data.length);
         }
-        if (
-            'selectedRowId' in changes &&
-            changes.selectedRowId.currentValue !== changes.selectedRowId.previousValue &&
-            this.grid && this.grid.data
-        )
+        if (hasChanged('selectedRowId') && this.grid && this.grid.data)
             this.applyIncomingSelection(changes.selectedRowId.currentValue);
-
-
     }
 
     applyIncomingSelection(selected = []) {
