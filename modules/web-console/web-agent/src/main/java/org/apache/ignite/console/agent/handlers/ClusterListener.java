@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.ignite.console.agent.AgentConfiguration;
 import org.apache.ignite.console.agent.rest.RestExecutor;
 import org.apache.ignite.console.agent.rest.RestResult;
 import org.apache.ignite.internal.processors.rest.client.message.GridClientNodeBean;
@@ -112,11 +113,11 @@ public class ClusterListener {
 
     /**
      * @param client Client.
-     * @param restExecutor Client.
+     * @param cfg Config.
      */
-    public ClusterListener(Socket client, RestExecutor restExecutor) {
+    public ClusterListener(Socket client, AgentConfiguration cfg) {
         this.client = client;
-        this.restExecutor = restExecutor;
+        this.restExecutor = new RestExecutor(cfg.nodeUri());
     }
 
     /**
@@ -155,10 +156,14 @@ public class ClusterListener {
     /**
      * Start watch cluster.
      */
-    public void watch() {
-        safeStopRefresh();
+    public Emitter.Listener watch() {
+        return new Emitter.Listener() {
+            @Override public void call(Object... args) {
+                safeStopRefresh();
 
-        refreshTask = pool.scheduleWithFixedDelay(watchTask, 0L, DFLT_TIMEOUT, TimeUnit.MILLISECONDS);
+                refreshTask = pool.scheduleWithFixedDelay(watchTask, 0L, DFLT_TIMEOUT, TimeUnit.MILLISECONDS);
+            }
+        };
     }
 
     /**

@@ -44,6 +44,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import okhttp3.OkHttpClient;
+import org.apache.ignite.console.agent.handlers.ClusterListener;
 import org.apache.ignite.console.agent.handlers.DatabaseListener;
 import org.apache.ignite.console.agent.handlers.RestListener;
 import org.apache.ignite.console.agent.rest.RestExecutor;
@@ -405,10 +406,10 @@ public class AgentLauncher {
     protected CountDownLatch attachListeners(final Socket client, final AgentConfiguration cfg) {
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final RestExecutor restExecutor = new RestExecutor(cfg.nodeUri());
+        final DatabaseListener dbHnd = new DatabaseListener(cfg);
+        final ClusterListener clusterLsnr = new ClusterListener(client, cfg);
 
-        DatabaseListener dbHnd = new DatabaseListener(cfg);
-        RestListener restHnd = new RestListener(restExecutor);
+//        RestListener restHnd = new RestListener(restExecutor);
 
         final Map<String, Object> authMsg = loadAuthParams(cfg);
 
@@ -483,7 +484,7 @@ public class AgentLauncher {
                     }
                 }
             })
-
+            .on(EVENT_AUTHENTICATED, clusterLsnr.watch())
 //            .on(EVENT_CLUSTER_BROADCAST_START, clusterLsnr.start())
 //            .on(EVENT_CLUSTER_BROADCAST_STOP, clusterLsnr.stop())
 //
@@ -492,10 +493,10 @@ public class AgentLauncher {
 
             .on(EVENT_SCHEMA_IMPORT_DRIVERS, dbHnd.availableDriversListener())
             .on(EVENT_SCHEMA_IMPORT_SCHEMAS, dbHnd.schemasListener())
-            .on(EVENT_SCHEMA_IMPORT_METADATA, dbHnd.metadataListener())
+            .on(EVENT_SCHEMA_IMPORT_METADATA, dbHnd.metadataListener());
             
-            .on(EVENT_NODE_REST, restHnd)
-            .on(EVENT_NODE_VISOR_TASK, restHnd);
+//            .on(EVENT_NODE_REST, restHnd)
+//            .on(EVENT_NODE_VISOR_TASK, restHnd);
 
         return latch;
     }
