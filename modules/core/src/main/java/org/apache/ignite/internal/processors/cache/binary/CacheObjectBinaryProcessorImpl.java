@@ -18,7 +18,6 @@
 package org.apache.ignite.internal.processors.cache.binary;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
