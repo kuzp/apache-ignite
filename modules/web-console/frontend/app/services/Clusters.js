@@ -164,4 +164,8 @@ export default class Clusters {
             SQLServer: 'https://www.microsoft.com/en-us/download/details.aspx?id=11774'
         })[get(cluster, 'discovery.Jdbc.dialect')];
     }
+
+    getDefaultClusterMemoryPolicy(cluster) {
+        return get(cluster, 'memoryConfiguration.memoryPolicies', []).find((p) => p.name === 'default');
+    }
 }
