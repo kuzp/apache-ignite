@@ -74,6 +74,9 @@ public class IgniteStreamerSinglePartQueryBenchmark extends IgniteAbstractBenchm
             new TestConfig(10_000),
             new TestConfig(50_000),
             new TestConfig(100_000),
+            new TestConfig(200_000),
+            new TestConfig(300_000),
+            new TestConfig(400_000),
             new TestConfig(500_000),
             new TestConfig(1_000_000),
             new TestConfig(10_000_000),
@@ -162,7 +165,7 @@ public class IgniteStreamerSinglePartQueryBenchmark extends IgniteAbstractBenchm
 
             final long endLoad = System.currentTimeMillis();
 
-            BenchmarkUtils.println("IgniteStreamerSinglePartQueryBenchmark finished loading entries. [entries=" + args.range()
+            BenchmarkUtils.println("IgniteStreamerSinglePartQueryBenchmark finished loading entries. [entries=" + range
                 + ", threads=" + threads + ", time=" + (endLoad - startLoad) + ']');
         }
         finally {
@@ -222,7 +225,23 @@ public class IgniteStreamerSinglePartQueryBenchmark extends IgniteAbstractBenchm
                 keys.add(entry.getKey());
 
             try (Transaction tx = ignite.transactions().txStart(PESSIMISTIC, REPEATABLE_READ)) {
-                cache.invokeAll(keys, new Updater());
+                Set<BinaryObject> batch = new HashSet<>();
+
+                for (BinaryObject key : keys) {
+                    batch.add(key);
+
+                    if (batch.size() >= 1000) {
+                        cache.invokeAll(batch, new Updater());
+
+                        batch.clear();
+                    }
+                }
+
+                if (!batch.isEmpty()) {
+                    cache.invokeAll(batch, new Updater());
+
+                    batch.clear();
+                }
 
                 tx.commit();
             }
