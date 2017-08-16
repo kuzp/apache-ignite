@@ -170,6 +170,47 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                 });
         }
 
+        static upsert(userId, demo, {cluster, caches}) {
+            if (_.isNil(cluster._id))
+                return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
+
+            return spacesService.spaceIds(userId, demo)
+                .then((spaceIds) => {
+                    cluster.space = _.head(spaceIds);
+                    cluster.caches = _.map(caches, '_id');
+
+                    const query = _.pick(cluster, ['space', '_id']);
+
+                    return mongo.Cluster.findOneAndUpdate(query, {$set: cluster}, {projection: 'caches', upsert: true}).lean().exec()
+                        .catch((err) => {
+                            if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                                throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
+
+                            throw err;
+                        })
+                        .then((oldCluster) => {
+                            if (_.isNil(oldCluster))
+                                return;
+
+                            const removed = _.difference(_.invokeMap(oldCluster.caches, 'toString'), cluster.caches);
+
+                            if (_.isEmpty(removed))
+                                return;
+
+                            return Promise.all(_.map(removed, cachesService.remove));
+                        })
+                        .then(() => {
+                            return Promise.all(_.map(caches, (c) => {
+                                c.space = _.head(spaceIds);
+                                c.clusters = [cluster._id];
+
+                                return cachesService.upsert(c);
+                            }))
+                                .then(() => ({n: 1}));
+                        });
+                });
+        }
+
         /**
          * Create or update cluster.
          *

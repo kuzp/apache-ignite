@@ -64,6 +64,12 @@ module.exports.factory = function(_, express, mongo, clustersService, cachesServ
                 .catch(res.api.error);
         });
 
+        router.put('/', (req, res) => {
+            clustersService.upsert(req.currentUserId(), req.demo(), req.body)
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
         /**
          * Save cluster.
          */

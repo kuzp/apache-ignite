@@ -307,6 +307,56 @@ suite('ClusterServiceTestsSuite', () => {
             .catch(done);
     });
 
+    test('Update cluster from advanced with cache removing', (done) => {
+        const cluster = _.cloneDeep(_.head(testClusters));
+
+        cluster.communication.tcpNoDelay = false;
+        cluster.igfss = [];
+
+        cluster.memoryConfiguration = {
+            defaultMemoryPolicySize: 10,
+            memoryPolicies: [
+                {
+                    name: 'default',
+                    maxSize: 100
+                }
+            ]
+        };
+
+        const removedCache = _.head(cluster.caches);
+        const upsertedCache = _.last(cluster.caches);
+
+        _.pull(cluster.caches, removedCache);
+
+        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+
+        clusterService.upsert(testAccounts[0]._id, false, {cluster, caches})
+            .then(() => clusterService.get(testAccounts[0]._id, false, cluster._id))
+            .then((savedCluster) => {
+                assert.isNotNull(savedCluster);
+
+                assert.deepEqual(_.invokeMap(savedCluster.caches, 'toString'), cluster.caches);
+
+                _.forEach(savedCluster.memoryConfiguration.memoryPolicies, (plc) => delete plc._id);
+
+                assert.deepEqual(savedCluster.memoryConfiguration, cluster.memoryConfiguration);
+
+                assert.deepEqual(_.invokeMap(savedCluster.igfss, 'toString'), cluster.igfss);
+                assert.deepEqual(savedCluster.communication, cluster.communication);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, removedCache))
+            .then((cache) => {
+                assert.isNull(cache);
+            })
+            .then(() => cacheService.get(testAccounts[0]._id, false, upsertedCache))
+            .then((cache) => {
+                assert.isNotNull(cache);
+
+                done();
+            })
+            .catch(done);
+    });
+
     test('Update linked entities on update cluster', (done) => {
         // TODO IGNITE-3262 Add test.
         done();

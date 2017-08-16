@@ -129,6 +129,22 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                 .then((res) => _.pick(res, 'n'));
         }
 
+        static upsert(cache) {
+            if (_.isNil(cache._id))
+                return Promise.reject(new errors.IllegalArgumentException('Cache id can not be undefined or null'));
+
+            const query = _.pick(cache, ['space', '_id']);
+
+            return mongo.Cache.update(query, {$set: cache}, {upsert: true}).exec()
+                .catch((err) => {
+                    if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                        throw new errors.DuplicateKeyException(`Cache with name: "${cache.name}" already exist.`);
+
+                    throw err;
+                })
+                .then((res) => _.pick(res, 'n'));
+        }
+
         /**
          * Create or update cache.
          *
