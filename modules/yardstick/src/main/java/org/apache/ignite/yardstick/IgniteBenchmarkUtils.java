@@ -35,7 +35,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
-import org.apache.ignite.yardstick.cache.IgniteStreamerQueryBenchmark;
+import org.apache.ignite.yardstick.cache.IgniteStreamerSinglePartQueryBenchmark;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
@@ -108,15 +108,15 @@ public class IgniteBenchmarkUtils {
      * @throws Exception If failed.
      */
     public static void main(String[] args) throws Exception {
-        final String cfg = "modules/yardstick/config/ignite-streamer-query-config.xml";
+        final String cfg = "modules/yardstick/config/ignite-streamer-scan-query-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgniteStreamerQueryBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgniteStreamerSinglePartQueryBenchmark.class;
 
         final int threads = 1;
 
         final boolean clientDriverNode = true;
 
-        final int extraNodes = 2;
+        final int extraNodes = 1;
 
         final int warmUp = 0;
         final int duration = 120;
