@@ -15,30 +15,21 @@
  * limitations under the License.
  */
 
-import get from 'lodash/get';
-import cloneDeep from 'lodash/cloneDeep';
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/merge';
-import 'rxjs/add/observable/combineLatest';
-import 'rxjs/add/operator/distinctUntilChanged';
 import 'rxjs/add/operator/do';
-import 'rxjs/add/operator/combineLatest';
 
 export default class PageConfigureBasicController {
     static $inject = [
         'IgniteConfirm',
         '$scope',
         'PageConfigureBasic',
-        'Clusters',
-        'ConfigureState',
         'ConfigurationDownload',
         'IgniteVersion',
         '$state',
         '$element'
     ];
 
-    constructor(IgniteConfirm, $scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element) {
-        Object.assign(this, {IgniteConfirm, $scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, $state, $element});
+    constructor(IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element) {
+        Object.assign(this, {IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element});
     }
 
     $postLink() {
@@ -46,9 +37,17 @@ export default class PageConfigureBasicController {
     }
 
     $onInit() {
-        this.subscription = this.getObservable(this.ConfigureState.state$, this.Version.currentSbj).subscribe();
-        this.discoveries = this.Clusters.discoveries;
-        this.minMemorySize = this.Clusters.minMemoryPolicySize;
+        this.subscription = this.pageService.getObservable()
+            .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+            .subscribe();
+
+        // this.removeChangesGuard = this.ConfigurationChangesGuard.install({
+        //     fromState: 'base.configuration.tabs.basic',
+        //     getItems: () => ([this.original])
+        // })
+
+        this.discoveries = this.pageService.clusterDiscoveries;
+        this.minMemorySize = this.pageService.minMemoryPolicySize;
 
         this.formActionsMenu = [
             {text: 'Save changes and download project', click: () => this.saveAndDownload()},
@@ -56,42 +55,9 @@ export default class PageConfigureBasicController {
         ];
     }
 
-    getObservable(state$, version$) {
-        const cluster = state$
-            .pluck('clusterConfiguration', 'originalCluster')
-            .distinctUntilChanged()
-            .map((cluster) => cloneDeep(cluster))
-            .do((clonedCluster) => this.$scope.$applyAsync(() => {
-                this.clonedCluster = clonedCluster;
-                this.defaultMemoryPolicy = this.getDefaultClusterMemoryPolicy(clonedCluster);
-            }));
-
-        const allCaches = Observable.combineLatest(
-            state$.pluck('basicCaches', 'ids').distinctUntilChanged().map((ids) => [...ids.values()]),
-            state$.pluck('basicCaches', 'changedItems').distinctUntilChanged(),
-            state$.pluck('shortCaches').distinctUntilChanged(),
-            (ids, changedCaches, oldCaches) => {
-                return ids.map((id) => changedCaches.get(id) || oldCaches.get(id)).filter((v) => v);
-            }
-        )
-        .do((caches) => this.$scope.$applyAsync(() => this.allClusterCaches = caches));
-
-        const memorySizeInputVisible = version$.do((version) => {
-            this.memorySizeInputVisible = this.getMemorySizeInputVisibility(version);
-        });
-
-        return Observable.merge(cluster, allCaches, memorySizeInputVisible);
-    }
-
-    uiCanExit() {
-        // TODO Refactor this
-        return !this.form.$dirty || this.IgniteConfirm.confirm(`
-            You have unsaved changes. Are you sure want to discard them?
-        `);
-    }
-
     $onDestroy() {
         this.subscription.unsubscribe();
+        // this.removeChangesGuard();
     }
 
     addCache() {
@@ -107,27 +73,10 @@ export default class PageConfigureBasicController {
     }
 
     save() {
-        return this.pageService.transcationalSaveClusterAndCaches(
-            this.clonedCluster,
-            this.ConfigureState.state$.value.basicCaches
-        );
+        this.pageService.save(this.clonedCluster);
     }
 
     saveAndDownload() {
-        return this.save().then(([clusterID]) => (
-            this.ConfigurationDownload.downloadClusterConfiguration({_id: clusterID, name: this.state.cluster.name})
-        ));
-    }
-
-    getDefaultClusterMemoryPolicy(cluster, version) {
-        if (this.Version.since(version.ignite, ['2.1.0', '2.3.0']))
-            return get(cluster, 'memoryConfiguration.memoryPolicies', []).find((p) => p.name === 'default');
-
-        return get(cluster, 'dataStorageConfiguration.defaultDataRegionConfiguration') ||
-            get(cluster, 'dataStorageConfiguration.dataRegionConfigurations', []).find((p) => p.name === 'default');
-    }
-
-    getMemorySizeInputVisibility(version) {
-        return this.Version.since(version.ignite, '2.0.0');
+        this.pageService.saveAndDownload(this.clonedCluster);
     }
 }

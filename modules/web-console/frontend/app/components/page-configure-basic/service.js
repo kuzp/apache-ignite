@@ -32,6 +32,11 @@ import {
 import {uniqueName} from 'app/utils/uniqueName';
 import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/takeUntil';
+import 'rxjs/add/observable/combineLatest';
+
+const ofType = (type) => (action) => action.type === type;
 
 export default class PageConfigureBasic {
     isNewItem = isNewItem;
@@ -42,14 +47,16 @@ export default class PageConfigureBasic {
         'Clusters',
         'Caches',
         'ConfigureState',
-        'PageConfigure'
+        'PageConfigure',
+        'IgniteVersion',
+        'ConfigurationDownload'
     ];
 
-    constructor($q, messages, clusters, caches, ConfigureState, pageConfigure) {
-        Object.assign(this, {$q, messages, clusters, caches, ConfigureState, pageConfigure});
+    constructor($q, messages, clusters, caches, ConfigureState, pageConfigure, IgniteVersion, ConfigurationDownload) {
+        Object.assign(this, {$q, messages, clusters, caches, ConfigureState, pageConfigure, IgniteVersion, ConfigurationDownload});
 
         this.saveClusterAndCaches$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES')
+            .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES'))
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([action, state]) => {
                 // Updates
@@ -88,11 +95,17 @@ export default class PageConfigureBasic {
                 .merge(
                     Observable.fromPromise(this.clusters.saveBasic(cluster, shortCaches))
                     .switchMap((res) => {
-                        return Observable.empty();
+                        return Observable.of({
+                            type: 'BASIC_SAVE_CLUSTER_AND_CACHES_OK',
+                            cluster: {name: cluster.name, _id: cluster._id}
+                        });
                     })
                     .catch((res) => {
-                        messages.showError(`Failed to save cluster. ${res}`);
                         return Observable.of({
+                            type: 'BASIC_SAVE_CLUSTER_AND_CACHES_ERR',
+                            cluster: {name: cluster.name, _id: cluster._id},
+                            error: res
+                        }, {
                             type: clustersActionTypes.SET,
                             state: clustersBak
                         }, {
@@ -112,7 +125,19 @@ export default class PageConfigureBasic {
                 );
             });
 
-        this.saveClusterAndCaches$.subscribe((a) => ConfigureState.dispatchAction(a));
+        this.basicSaveOKMessages$ = this.ConfigureState.actions$
+            .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
+            .do((action) => this.messages.showInfo(`Cluster ${action.cluster.name} saved.`));
+
+        this.basicSaveErrMessages$ = this.ConfigureState.actions$
+            .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_ERR'))
+            .do((action) => this.messages.showError(`Failed to save cluster ${action.cluster.name}.`));
+
+        Observable.merge(this.basicSaveOKMessages$, this.basicSaveErrMessages$).subscribe();
+        Observable.merge(this.saveClusterAndCaches$).subscribe((a) => ConfigureState.dispatchAction(a));
+
+        this.clusterDiscoveries = clusters.discoveries;
+        this.minMemoryPolicySize = clusters.minMemoryPolicySize;
     }
 
     saveClusterAndCaches(cluster, caches) {
@@ -183,7 +208,8 @@ export default class PageConfigureBasic {
         });
     }
 
-    transcationalSaveClusterAndCaches(cluster, caches) {
+    save(cluster) {
+        const caches = this.ConfigureState.state$.value.basicCaches;
         const clusterToSend = {...cluster, caches: caches.ids};
         const changedCaches = [...caches.changedItems.values()].map((cache) => ({...cache, clusters: [cluster._id]}));
 
@@ -192,6 +218,18 @@ export default class PageConfigureBasic {
             cluster,
             caches
         });
+    }
+
+    saveAndDownload(cluster) {
+        const actions = this.ConfigureState.actions$;
+        const oks = actions.filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'));
+        const errs = actions.filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_ERR'));
+
+        this.save(cluster);
+
+        oks.take(1).takeUntil(errs.take(1))
+        .do(() => this.ConfigurationDownload.downloadClusterConfiguration(cluster))
+        .subscribe();
     }
 
     addCache(caches) {
@@ -213,5 +251,36 @@ export default class PageConfigureBasic {
             type: basicCachesActionTypes.UPSERT,
             items: [item]
         });
+    }
+
+    getObservable() {
+        const {state$} = this.ConfigureState;
+
+        const cluster = state$
+            .pluck('clusterConfiguration', 'originalCluster')
+            .distinctUntilChanged()
+            .map((cluster) => {
+                const clonedCluster = cloneDeep(cluster);
+                return {
+                    originalCluster: cluster,
+                    clonedCluster,
+                    defaultMemoryPolicy: this.clusters.getDefaultClusterMemoryPolicy(clonedCluster)
+                };
+            });
+
+        const caches = Observable.combineLatest(
+            state$.pluck('basicCaches', 'ids').distinctUntilChanged().map((ids) => [...ids.values()]),
+            state$.pluck('basicCaches', 'changedItems').distinctUntilChanged(),
+            state$.pluck('shortCaches').distinctUntilChanged(),
+            (ids, changedCaches, oldCaches) => ({
+                allClusterCaches: ids.map((id) => changedCaches.get(id) || oldCaches.get(id)).filter((v) => v)
+            })
+        );
+
+        const memorySizeInput = this.IgniteVersion.currentSbj.map((version) => ({
+            memorySizeInputVisible: this.IgniteVersion.since(version.ignite, '2.0.0')
+        }));
+
+        return Observable.combineLatest(cluster, caches, memorySizeInput, (...values) => Object.assign({}, ...values));
     }
 }
