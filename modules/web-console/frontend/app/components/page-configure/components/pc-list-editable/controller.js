@@ -31,7 +31,7 @@ export default class Controller {
     }
 
     save(data, idx) {
-        this.ngModel.$viewValue.splice(idx, 1, data);
+        this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? data : v));
     }
 
     revert(idx) {
@@ -39,7 +39,7 @@ export default class Controller {
     }
 
     remove(idx) {
-        this.ngModel.$viewValue.splice(idx, 1);
+        this.ngModel.$setViewValue(this.ngModel.$viewValue.filter((v, i) => i !== idx));
     }
 
     isEditView(idx) {
