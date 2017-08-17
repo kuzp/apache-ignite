@@ -103,7 +103,7 @@ mixin table-index-item-edit(prefix, index, sortAvailable, idAddition)
                     .settings-row
                         +ignite-form-field-dropdown('Key fields:', queryKeyFields, '"queryKeyFields"', false, false, true,
                             'Select key fields', 'Configure available fields', 'fields(\'cur\', ' + queryKeyFields + ')',
-                            'Query fields for this query pair that belongs to the key.<br/>\
+                            'Query fields that belongs to the key.<br/>\
                              Used to build / modify keys and values during SQL DML operations when no key - value classes are present on cluster nodes.'
                         )
                     .settings-row
