@@ -27,7 +27,7 @@
         .pcle-row-item-view(ng-if='$ctrl.hasItemView && !$ctrl.isEditView($index)' ng-click='$ctrl.startEditView($index);')
             div(ng-transclude='itemView')
         div(
-            ng-if='$ctrl.isEditView($index)'
+            ng-if='!$ctrl.hasItemView || $ctrl.isEditView($index)'
             ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);'
             ignite-on-focus-out-ignored-classes='bssm-click-overlay bssm-item-text bssm-item-button'
         )
