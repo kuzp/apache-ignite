@@ -138,7 +138,8 @@ export default class Clusters {
             failoverSpi: [],
             logger: {Log4j: { mode: 'Default'}},
             caches: [],
-            igfss: []
+            igfss: [],
+            checkpointSpi: []
         };
     }
 
