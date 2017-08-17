@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.file.FileSystem;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
@@ -58,12 +61,13 @@ public class IgniteSqlTester {
             e.printStackTrace();//TODO
         }
 
-        String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpFile") :
-            props.getProperty("workDir") + File.separator + "sqltestlog" + System.currentTimeMillis() + ".log";
+        final DateFormat format = new SimpleDateFormat("YYYY-MM-dd-HH-mm-ss");
+        final String dateTime = format.format(new Date(System.currentTimeMillis()));
 
-        writer = new PrintWriter(new FileOutputStream(
-            new File(dumpFile),
-            true));
+        String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpFile") :
+            props.getProperty("workDir") + File.separator + "sqltestlog" + dateTime + ".log";
+
+        writer = new PrintWriter(new FileOutputStream(new File(dumpFile)));
 
         // Initialize Spring factory.
         FileSystemXmlApplicationContext ctx = new FileSystemXmlApplicationContext(props.getProperty("cfgPath"));
@@ -146,18 +150,12 @@ public class IgniteSqlTester {
             }
         }
 
-        writer = new PrintWriter(new FileOutputStream(
-            new File(props.getProperty("workDir") + File.separator + "sqltestlog" + System.currentTimeMillis() + ".log"),
-            true));
-
         for (HashMap<String, Object> entry : sqlStatements) {
 
             Long startTime = System.currentTimeMillis();
 
             for (RunContext runCtx : runners) {
                 Statement stmt = runCtx.conn.createStatement();
-
-                String ex = null;
 
                 if (entry.get(runCtx.runner.getType()) == null)
                     continue;
@@ -168,16 +166,10 @@ public class IgniteSqlTester {
                     stmt.execute(st);
                 }
                 catch (Exception e) {
-                    ex = e.getMessage();
+                    e.printStackTrace();
                 }
 
                 runCtx.res = stmt.getResultSet();
-
-                if (props.getProperty("onlyIgnite").equals("true")) {
-                    if (runCtx.res != null)
-                        igniteResult.put((int)entry.get("id"), null);
-
-                }
             }
 
             try {
