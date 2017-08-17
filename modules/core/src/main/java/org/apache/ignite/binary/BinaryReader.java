@@ -59,6 +59,7 @@ public interface BinaryReader {
      */
     public int readInt(String fieldName) throws BinaryObjectException;
 
+
     /**
      * @param fieldName Field name.
      * @return Long value.

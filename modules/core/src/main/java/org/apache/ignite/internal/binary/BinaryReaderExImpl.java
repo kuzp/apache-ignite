@@ -743,6 +743,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Bina
         return in.readInt();
     }
 
+    @Override public int readPackedInt() throws BinaryObjectException {
+        return in.readPackedInt();
+    }
+
     /** {@inheritDoc} */
     @Nullable @Override public int[] readIntArray(String fieldName) throws BinaryObjectException {
         try {

@@ -59,6 +59,7 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.binary.builder.BinaryBuilderEnum;
 import org.apache.ignite.internal.binary.builder.BinaryObjectBuilderImpl;
 import org.apache.ignite.internal.binary.mutabletest.GridBinaryMarshalerAwareTestClass;
+import org.apache.ignite.internal.binary.mutabletest.GridBinaryMarshalerAwareTestClass2;
 import org.apache.ignite.internal.binary.mutabletest.GridBinaryTestClasses;
 import org.apache.ignite.internal.binary.test.GridBinaryTestClass2;
 import org.apache.ignite.internal.processors.cache.binary.CacheObjectBinaryProcessorImpl;
@@ -886,6 +887,27 @@ public class BinaryObjectBuilderAdditionalSelfTest extends GridCommonAbstractTes
         GridBinaryMarshalerAwareTestClass res = mutableObj.build().deserialize();
         assertEquals("z", res.s);
         assertEquals("aa", res.sRaw);
+    }
+
+    /**
+     *
+     */
+    public void testEditObjectWithPackedInt() {
+        GridBinaryMarshalerAwareTestClass2 obj = new GridBinaryMarshalerAwareTestClass2();
+
+        obj.i1 = 1;
+        obj.s1 = "qq";
+        obj.i2 = Integer.MAX_VALUE;
+        obj.s2 = "qqqqq";
+        obj.i3 = Integer.MAX_VALUE;
+
+        BinaryObjectBuilderImpl mutableObj = wrap(obj);
+
+        mutableObj.setField("i1", obj.i1);
+        mutableObj.setField("s1", obj.s1);
+
+        GridBinaryMarshalerAwareTestClass2 res = mutableObj.build().deserialize();
+        assertTrue(obj.equals(res));
     }
 
     /**
