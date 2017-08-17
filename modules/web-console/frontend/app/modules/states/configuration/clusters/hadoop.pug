@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'hadoop'
--var model = 'backupItem.hadoopConfiguration'
+-var model = '$ctrl.clonedCluster.hadoopConfiguration'
 -var plannerModel = model + '.mapReducePlanner'
 -var weightedModel = plannerModel + '.Weighted'
 -var weightedPlanner = plannerModel + '.kind === "Weighted"'

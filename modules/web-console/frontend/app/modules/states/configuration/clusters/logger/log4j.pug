@@ -17,8 +17,8 @@
 include /app/helpers/jade/mixins
 
 -var form = 'logger'
--var model = 'backupItem.logger.Log4j'
--var pathRequired = model + '.mode === "Path" && backupItem.logger.kind === "Log4j"'
+-var model = '$ctrl.clonedCluster.logger.Log4j'
+-var pathRequired = model + '.mode === "Path" && $ctrl.clonedCluster.logger.kind === "Log4j"'
 
 .pc-form-grid-col-30
     +dropdown('Level:', `${model}.level`, '"log4jLevel"', 'true', 'Default',

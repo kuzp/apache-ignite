@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'odbcConfiguration'
--var model = 'backupItem.odbc'
+-var model = '$ctrl.clonedCluster.odbc'
 -var enabled = model + '.odbcEnabled'
 
 .pca-panel.pca-panel-default(ng-show='$ctrl.available(["1.0.0", "2.1.0"])' ng-form=form novalidate)

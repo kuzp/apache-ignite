@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'atomics'
--var model = 'backupItem.atomicConfiguration'
+-var model = '$ctrl.clonedCluster.atomicConfiguration'
 -var affModel = model + '.affinity'
 -var rendezvousAff = affModel + '.kind === "Rendezvous"'
 -var customAff = affModel + '.kind === "Custom"'

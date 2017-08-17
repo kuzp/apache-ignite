@@ -17,8 +17,8 @@
 include /app/helpers/jade/mixins
 
 -var form = 'sslConfiguration'
--var cluster = 'backupItem'
--var enabled = 'backupItem.sslEnabled'
+-var cluster = '$ctrl.clonedCluster'
+-var enabled = '$ctrl.clonedCluster.sslEnabled'
 -var model = cluster + '.sslContextFactory'
 -var trust = model + '.trustManagers'
 

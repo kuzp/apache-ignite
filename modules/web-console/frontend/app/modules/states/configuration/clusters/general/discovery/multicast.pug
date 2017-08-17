@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-multicast(modelAt = 'backupItem')
+mixin discovery-multicast(modelAt = '$ctrl.clonedCluster')
     -const model = `${modelAt}.discovery.Multicast`
     -const addresses = `${model}.addresses`
 
@@ -58,7 +58,7 @@ mixin discovery-multicast(modelAt = 'backupItem')
                                     li Both port1 and port2 should be greater than 0
 
                     .group-content
-                        pc-list-editable(ng-model=`${addresses}`)
+                        pc-list-editable(ng-model=`${addresses}` name='multicastAddresses')
                             pc-list-editable-item-view
                                 | {{ $parent.item }}
                             pc-list-editable-item-edit

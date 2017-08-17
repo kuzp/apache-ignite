@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-zookeeper(modelAt = 'backupItem')
+mixin discovery-zookeeper(modelAt = '$ctrl.clonedCluster')
 
     -var discoveryKind = 'ZooKeeper'
     -var required = `${modelAt}.discovery.kind == '${discoveryKind}'`

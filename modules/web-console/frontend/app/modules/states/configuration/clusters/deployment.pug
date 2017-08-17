@@ -17,10 +17,10 @@
 include /app/helpers/jade/mixins
 
 -var form = 'deployment'
--var model = 'backupItem'
--var modelDeployment = 'backupItem.deploymentSpi'
+-var model = '$ctrl.clonedCluster'
+-var modelDeployment = '$ctrl.clonedCluster.deploymentSpi'
 -var exclude = model + '.peerClassLoadingLocalClassPathExclude'
--var enabled = 'backupItem.peerClassLoadingEnabled'
+-var enabled = '$ctrl.clonedCluster.peerClassLoadingEnabled'
 -var uriListModel = modelDeployment + '.URI.uriList'
 -var scannerModel = modelDeployment + '.URI.scanners'
 -var uriDeployment = modelDeployment + '.kind === "URI"'

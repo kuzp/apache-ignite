@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
--var model = 'backupItem.collision.FifoQueue'
+-var model = '$ctrl.clonedCluster.collision.FifoQueue'
 
 .pc-form-grid-col-30
     +number('Parallel jobs number:', `${model}.parallelJobsNumber`, '"fifoParallelJobsNumber"', 'true', 'availableProcessors * 2', '1',

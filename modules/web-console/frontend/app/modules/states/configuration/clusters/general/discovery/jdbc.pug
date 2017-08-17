@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-jdbc(modelAt = 'backupItem')
+mixin discovery-jdbc(modelAt = '$ctrl.clonedCluster')
     -const model = `${modelAt}.discovery.Jdbc`
     -const required = `${modelAt}.discovery.kind === "Jdbc"`
 

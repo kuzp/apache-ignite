@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-google(modelAt = 'backupItem')
+mixin discovery-google(modelAt = '$ctrl.clonedCluster')
     -const discoveryKind = 'GoogleStorage'
     -const required = `${modelAt}.discovery.kind == '${discoveryKind}'`
     -const model = `${modelAt}.discovery.GoogleStorage`

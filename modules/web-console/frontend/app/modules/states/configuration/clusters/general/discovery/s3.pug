@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-s3(modelAt = 'backupItem')
+mixin discovery-s3(modelAt = '$ctrl.clonedCluster')
 
     -var discoveryKind = 'S3'
     -var required = `${modelAt}.discovery.kind == '${discoveryKind}'`

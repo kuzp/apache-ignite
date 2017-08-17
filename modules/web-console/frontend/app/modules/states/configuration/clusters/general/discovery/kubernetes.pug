@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-kubernetes(modelAt = 'backupItem')
+mixin discovery-kubernetes(modelAt = '$ctrl.clonedCluster')
     -const discoveryKind = 'Kubernetes'
     -const model = `${modelAt}.discovery.Kubernetes`
 

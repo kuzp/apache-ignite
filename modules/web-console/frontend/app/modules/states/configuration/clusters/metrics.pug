@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'metrics'
--var model = 'backupItem'
+-var model = '$ctrl.clonedCluster'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)

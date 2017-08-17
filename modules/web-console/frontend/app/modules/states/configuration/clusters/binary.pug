@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'binary'
--var model = 'backupItem.binaryConfiguration'
+-var model = '$ctrl.clonedCluster.binaryConfiguration'
 -var types = model + '.typeConfigurations'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
@@ -49,11 +49,15 @@ include /app/helpers/jade/mixins
                                     | Configuration properties for binary types
                                 
                             .group-content
-                                pc-list-editable(ng-model=types)
+                                pc-list-editable(ng-model=types name='types')
                                     pc-list-editable-item-edit
                                         - form = '$parent.form'
                                         .settings-row
-                                            +java-class-autofocus('Type name:', '$parent.item.typeName', '"typeName"', 'true', 'true', 'true', 'Type name')
+                                            +java-class-autofocus('Type name:', '$parent.item.typeName', '"typeName"', 'true', 'true', 'true', 'Type name')(
+                                                ignite-unique=types
+                                                ignite-unique-property='typeName'
+                                            )
+                                                +unique-feedback(`$parent.item.typeName`, 'Type name should be unique.')
                                         .settings-row
                                             +java-class('ID mapper:', '$parent.item.idMapper', '"idMapper"', 'true', 'false',
                                                 'Maps given from BinaryNameMapper type and filed name to ID that will be used by Ignite in internals<br/>\

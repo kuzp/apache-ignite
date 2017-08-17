@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'cacheKeyCfg'
--var model = 'backupItem.cacheKeyConfiguration'
+-var model = '$ctrl.clonedCluster.cacheKeyConfiguration'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
@@ -45,7 +45,18 @@ include /app/helpers/jade/mixins
                                         .settings-row
                                             +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
                                         .settings-row
-                                            +text('Affinity key field name:', '$parent.item.affinityKeyFieldName', '"affinityKeyFieldName"', true, 'Enter field name', 'Affinity key field name')
+                                            +sane-ignite-form-field-text({
+                                                label: 'Affinity key field name:',
+                                                model: '$parent.item.affinityKeyFieldName',
+                                                name: '"affinityKeyFieldName"',
+                                                disabled: 'false',
+                                                placeholder: 'Enter field name',
+                                                tip: 'Affinity key field name'
+                                            })(
+                                                ignite-unique=model
+                                                ignite-unique-property='affinityKeyFieldName'
+                                            )
+                                                +unique-feedback(`${model}.name`, 'Affinity key field name should be unique.')
 
                                     pc-list-editable-no-items
                                         | Not defined

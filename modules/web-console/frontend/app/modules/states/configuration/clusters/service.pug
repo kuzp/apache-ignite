@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'serviceConfiguration'
--var model = 'backupItem.serviceConfigurations'
+-var model = '$ctrl.clonedCluster.serviceConfigurations'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
@@ -94,4 +94,4 @@ include /app/helpers/jade/mixins
                                 | + Add service configuration
 
             .pca-form-column-6
-                +preview-xml-java('backupItem', 'clusterServiceConfiguration', 'caches')
+                +preview-xml-java('$ctrl.clonedCluster', 'clusterServiceConfiguration', 'caches')
