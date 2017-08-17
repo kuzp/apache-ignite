@@ -40,7 +40,7 @@ mixin ignite-form-field-text(lbl, model, name, disabled, required, placeholder, 
                 +ignite-form-field-input(name, model, disabled, required, placeholder)(attributes=attributes)
         .ignite-form-field__errors(
             ng-messages=`${form}[${name}].$error`
-            ng-show=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
+            ng-show=`(${form}[${name}].$dirty || ${form}[${name}].$touched || ${form}[${name}].$submitted) && ${form}[${name}].$invalid`
         )
             if block
                 block
