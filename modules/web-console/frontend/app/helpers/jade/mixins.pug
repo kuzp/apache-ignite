@@ -149,7 +149,7 @@ mixin java-class-autofocus-placholder(lbl, model, name, enabled, required, autof
         data-java-built-in-class='true'
         data-ignite-form-field-input-autofocus=autofocus
         data-validation-active=validationActive ? `{{ ${validationActive} }}` : `'always'`
-    )
+    )&attributes(attributes)
         if  block
             block
 
@@ -160,7 +160,7 @@ mixin java-class-autofocus-placholder(lbl, model, name, enabled, required, autof
 
 //- Mixin for Java class name field with auto focus condition.
 mixin java-class-autofocus(lbl, model, name, enabled, required, autofocus, tip, validationActive)
-    +java-class-autofocus-placholder(lbl, model, name, enabled, required, autofocus, 'Enter fully qualified class name', tip, validationActive)
+    +java-class-autofocus-placholder(lbl, model, name, enabled, required, autofocus, 'Enter fully qualified class name', tip, validationActive)&attributes(attributes)
         if  block
             block
 
