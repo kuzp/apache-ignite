@@ -4,8 +4,5 @@ import controller from 'Controllers/clusters-controller';
 export default {
     name: 'pageConfigureAdvancedCluster',
     templateUrl,
-    controller,
-    bindings: {
-        currentCluster: '<'
-    }
+    controller
 };
