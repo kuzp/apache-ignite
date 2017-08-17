@@ -382,11 +382,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (val == null)
             out.writeByte(GridBinaryMarshaller.NULL);
         else {
-            out.unsafeEnsure(1 + 4 + 4);
+            int scale = val.scale();
+
+            out.unsafeEnsure(1 + packedIntLength(scale));
 
             out.unsafeWriteByte(GridBinaryMarshaller.DECIMAL);
 
-            out.unsafeWriteInt(val.scale());
+            out.unsafeWritePackedInt(scale);
 
             BigInteger intVal = val.unscaledValue();
 
@@ -400,7 +402,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (negative)
                 vals[0] |= -0x80;
 
-            out.unsafeWriteInt(vals.length);
+            out.unsafeEnsure(packedIntLength(vals.length));
+
+            out.unsafeWritePackedInt(vals.length);
             out.writeByteArray(vals);
         }
     }

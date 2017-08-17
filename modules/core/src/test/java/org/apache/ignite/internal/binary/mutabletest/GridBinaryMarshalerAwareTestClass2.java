@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.binary.mutabletest;
 
+import java.math.BigDecimal;
 import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryRawWriter;
@@ -45,6 +46,9 @@ public class GridBinaryMarshalerAwareTestClass2 implements Binarylizable {
     /** */
     public int i3;
 
+    /** */
+    public BigDecimal num;
+
     /** {@inheritDoc} */
     @Override public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
         writer.writeInt("i1", i1);
@@ -55,6 +59,7 @@ public class GridBinaryMarshalerAwareTestClass2 implements Binarylizable {
         raw.writePackedInt(i2);
         raw.writeString(s2);
         raw.writePackedInt(i3);
+        raw.writeDecimal(num);
     }
 
     /** {@inheritDoc} */
@@ -67,6 +72,7 @@ public class GridBinaryMarshalerAwareTestClass2 implements Binarylizable {
         i2 = raw.readPackedInt();
         s2 = raw.readString();
         i3 = raw.readPackedInt();
+        num = raw.readDecimal();
     }
 
     /** {@inheritDoc} */

@@ -1170,6 +1170,12 @@ public class BinaryUtils {
         return in.readByteArray(len);
     }
 
+    public static byte[] doReadByteArray2(BinaryInputStream in) {
+        int len = in.readPackedInt();
+
+        return in.readByteArray(len);
+    }
+
     /**
      * @return Value.
      */
@@ -1237,8 +1243,9 @@ public class BinaryUtils {
      * @return Value.
      */
     public static BigDecimal doReadDecimal(BinaryInputStream in) {
-        int scale = in.readInt();
-        byte[] mag = doReadByteArray(in);
+        int scale = in.readPackedInt();
+
+        byte[] mag = doReadByteArray2(in);
 
         boolean negative = mag[0] < 0;
 

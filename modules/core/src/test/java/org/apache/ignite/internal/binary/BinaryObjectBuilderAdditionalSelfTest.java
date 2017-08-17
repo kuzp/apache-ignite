@@ -900,6 +900,7 @@ public class BinaryObjectBuilderAdditionalSelfTest extends GridCommonAbstractTes
         obj.i2 = Integer.MAX_VALUE;
         obj.s2 = "qqqqq";
         obj.i3 = Integer.MAX_VALUE;
+        obj.num = BigDecimal.valueOf(Long.MAX_VALUE);
 
         BinaryObjectBuilderImpl mutableObj = wrap(obj);
 
