@@ -47,3 +47,8 @@ mixin ignite-form-field-text(lbl, model, name, disabled, required, placeholder, 
 
             if required
                 +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)
+
+mixin sane-ignite-form-field-text({label, model, name, disabled, required, placeholder, tip})
+    +ignite-form-field-text(label, model, name, disabled, required, placeholder, tip)&attributes(attributes)
+        if block
+            block
