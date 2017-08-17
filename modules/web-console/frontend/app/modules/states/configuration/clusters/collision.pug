@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'collision'
--var model = 'backupItem.collision'
+-var model = '$ctrl.clonedCluster.collision'
 -var modelCollisionKind = model + '.kind';
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
@@ -57,5 +57,5 @@ include /app/helpers/jade/mixins
                     .pc-form-grid-row(ng-show=`${modelCollisionKind} === 'Custom'`)
                         include ./collision/custom
             .pca-form-column-6
-                -var model = 'backupItem.collision'
+                -var model = '$ctrl.clonedCluster.collision'
                 +preview-xml-java(model, 'clusterCollision')

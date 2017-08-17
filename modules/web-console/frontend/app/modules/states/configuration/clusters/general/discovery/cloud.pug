@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
-mixin discovery-cloud(modelAt='backupItem')
+mixin discovery-cloud(modelAt='$ctrl.clonedCluster')
 
     -const model = `${modelAt}.discovery.Cloud`
     -const discoveryKind = 'Cloud'

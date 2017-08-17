@@ -16,7 +16,7 @@
 
 include /app/helpers/jade/mixins
 
--var model = 'backupItem.collision.PriorityQueue'
+-var model = '$ctrl.clonedCluster.collision.PriorityQueue'
 
 .pc-form-grid-col-30
     +number('Parallel jobs number:', `${model}.parallelJobsNumber`, '"priorityParallelJobsNumber"', 'true', 'availableProcessors * 2', '1',

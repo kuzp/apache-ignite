@@ -18,12 +18,14 @@
 import get from 'lodash/get';
 
 // Controller for Clusters screen.
-export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
-    function(ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        Object.assign(this, {ConfigureState, Clusters, $scope, Confirm});
+export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
+    function(pageService, ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
+        Object.assign(this, {pageService, ConfigureState, Clusters, $scope, Confirm});
 
         this.$onInit = function() {
-            this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
+            this.subscription = this.pageService.getObservable()
+                .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+                .subscribe();
         };
 
         this.$onDestroy = function() {
@@ -35,15 +37,6 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
                 You have unsaved changes. Are you sure want to discard them?
             `);
-        };
-
-        this.getObservable = function(state$) {
-            return state$.pluck('clusterConfiguration')
-            .do((value) => this.applyValue(value));
-        };
-
-        this.applyValue = function(state) {
-            this.$scope.selectItem(state.originalCluster);
         };
 
         this.clustersColumnDefs = [
@@ -67,11 +60,6 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             }
         ];
 
-        this.buildClustersTable = (clusters = []) => clusters.map((i) => ({
-            _id: i._id,
-            name: i.name,
-            discovery: i.discovery.kind
-        }));
 
         this.onClusterAction = (action) => {
             const realItems = action.items.map((item) => $scope.clusters.find(({_id}) => _id === item._id));
@@ -82,10 +70,6 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
                 }
                 case 'CLONE':
                     return this.cloneItems(realItems);
-                case 'DELETE':
-                    return realItems.length === this.clustersTable.length
-                        ? $scope.removeAllItems()
-                        : $scope.removeItem(realItems[0]);
                 default:
                     return;
             }
@@ -155,124 +139,122 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             'collision.JobStealing.stealingAttributes': {id: 'CAttribute', idPrefix: 'Key', searchCol: 'name', valueCol: 'key', dupObjName: 'name', group: 'collision'}
         };
 
-        $scope.tablePairValid = function(item, field, index, stopEdit) {
-            const pairField = pairFields[field.model];
+        // $scope.tablePairValid = function(item, field, index, stopEdit) {
+        //     const pairField = pairFields[field.model];
 
-            const pairValue = LegacyTable.tablePairValue(field, index);
+        //     const pairValue = LegacyTable.tablePairValue(field, index);
 
-            if (pairField) {
-                const model = _.get(item, field.model);
+        //     if (pairField) {
+        //         const model = _.get(item, field.model);
 
-                if (LegacyUtils.isDefined(model)) {
-                    const idx = _.findIndex(model, (pair) => {
-                        return pair[pairField.searchCol] === pairValue[pairField.valueCol];
-                    });
+        //         if (LegacyUtils.isDefined(model)) {
+        //             const idx = _.findIndex(model, (pair) => {
+        //                 return pair[pairField.searchCol] === pairValue[pairField.valueCol];
+        //             });
 
-                    // Found duplicate by key.
-                    if (idx >= 0 && idx !== index) {
-                        if (stopEdit)
-                            return false;
+        //             // Found duplicate by key.
+        //             if (idx >= 0 && idx !== index) {
+        //                 if (stopEdit)
+        //                     return false;
 
-                        return ErrorPopover.show(LegacyTable.tableFieldId(index, pairField.idPrefix + pairField.id), 'Attribute with such ' + pairField.dupObjName + ' already exists!', $scope.ui, pairField.group);
-                    }
-                }
-            }
+        //                 return ErrorPopover.show(LegacyTable.tableFieldId(index, pairField.idPrefix + pairField.id), 'Attribute with such ' + pairField.dupObjName + ' already exists!', $scope.ui, pairField.group);
+        //             }
+        //         }
+        //     }
 
-            return true;
-        };
+        //     return true;
+        // };
 
-        $scope.tableSave = function(field, index, stopEdit) {
-            if (LegacyTable.tablePairSaveVisible(field, index))
-                return LegacyTable.tablePairSave($scope.tablePairValid, $scope.backupItem, field, index, stopEdit);
+        // $scope.tableSave = function(field, index, stopEdit) {
+        //     if (LegacyTable.tablePairSaveVisible(field, index))
+        //         return LegacyTable.tablePairSave($scope.tablePairValid, $scope.backupItem, field, index, stopEdit);
 
-            return true;
-        };
+        //     return true;
+        // };
 
-        $scope.tableReset = (trySave) => {
-            const field = LegacyTable.tableField();
+        // $scope.tableReset = (trySave) => {
+        //     const field = LegacyTable.tableField();
 
-            if (trySave && LegacyUtils.isDefined(field) && !$scope.tableSave(field, LegacyTable.tableEditedRowIndex(), true))
-                return false;
+        //     if (trySave && LegacyUtils.isDefined(field) && !$scope.tableSave(field, LegacyTable.tableEditedRowIndex(), true))
+        //         return false;
 
-            LegacyTable.tableReset();
+        //     LegacyTable.tableReset();
 
-            return true;
-        };
+        //     return true;
+        // };
 
-        $scope.tableNewItem = function(field) {
-            if ($scope.tableReset(true)) {
-                if (field.type === 'failoverSpi') {
-                    if (LegacyUtils.isDefined($scope.backupItem.failoverSpi))
-                        $scope.backupItem.failoverSpi.push({});
-                    else
-                        $scope.backupItem.failoverSpi = {};
-                }
-                else if (field.type === 'loadBalancingSpi') {
-                    const newLoadBalancing = {Adaptive: {
-                        loadProbe: {
-                            Job: {useAverage: true},
-                            CPU: {
-                                useAverage: true,
-                                useProcessors: true
-                            },
-                            ProcessingTime: {useAverage: true}
-                        }
-                    }};
+        // $scope.tableNewItem = function(field) {
+        //     if ($scope.tableReset(true)) {
+        //         if (field.type === 'failoverSpi') {
+        //             if (LegacyUtils.isDefined($scope.backupItem.failoverSpi))
+        //                 $scope.backupItem.failoverSpi.push({});
+        //             else
+        //                 $scope.backupItem.failoverSpi = {};
+        //         }
+        //         else if (field.type === 'loadBalancingSpi') {
+        //             const newLoadBalancing = {Adaptive: {
+        //                 loadProbe: {
+        //                     Job: {useAverage: true},
+        //                     CPU: {
+        //                         useAverage: true,
+        //                         useProcessors: true
+        //                     },
+        //                     ProcessingTime: {useAverage: true}
+        //                 }
+        //             }};
 
-                    if (LegacyUtils.isDefined($scope.backupItem.loadBalancingSpi))
-                        $scope.backupItem.loadBalancingSpi.push(newLoadBalancing);
-                    else
-                        $scope.backupItem.loadBalancingSpi = [newLoadBalancing];
-                }
-                else if (field.type === 'checkpointSpi') {
-                    const newCheckpointCfg = {
-                        FS: {
-                            directoryPaths: []
-                        },
-                        S3: {
-                            awsCredentials: {
-                                kind: 'Basic'
-                            },
-                            clientConfiguration: {
-                                retryPolicy: {
-                                    kind: 'Default'
-                                },
-                                useReaper: true
-                            }
-                        }
-                    };
+        //             if (LegacyUtils.isDefined($scope.backupItem.loadBalancingSpi))
+        //                 $scope.backupItem.loadBalancingSpi.push(newLoadBalancing);
+        //             else
+        //                 $scope.backupItem.loadBalancingSpi = [newLoadBalancing];
+        //         }
+        //         else if (field.type === 'checkpointSpi') {
+        //             const newCheckpointCfg = {
+        //                 FS: {
+        //                     directoryPaths: []
+        //                 },
+        //                 S3: {
+        //                     awsCredentials: {
+        //                         kind: 'Basic'
+        //                     },
+        //                     clientConfiguration: {
+        //                         retryPolicy: {
+        //                             kind: 'Default'
+        //                         },
+        //                         useReaper: true
+        //                     }
+        //                 }
+        //             };
 
-                    if (LegacyUtils.isDefined($scope.backupItem.checkpointSpi))
-                        $scope.backupItem.checkpointSpi.push(newCheckpointCfg);
-                    else
-                        $scope.backupItem.checkpointSpi = [newCheckpointCfg];
-                }
-                else if (field.type === 'memoryPolicies')
-                    $scope.backupItem.memoryConfiguration.memoryPolicies.push({});
-                else if (field.type === 'dataRegions')
-                    $scope.backupItem.dataStorageConfiguration.dataRegionConfigurations.push({});
-                else if (field.type === 'serviceConfigurations')
-                    $scope.backupItem.serviceConfigurations.push({});
-                else if (field.type === 'executorConfigurations')
-                    $scope.backupItem.executorConfiguration.push({});
-                else
-                    LegacyTable.tableNewItem(field);
-            }
-        };
+        //             if (LegacyUtils.isDefined($scope.backupItem.checkpointSpi))
+        //                 $scope.backupItem.checkpointSpi.push(newCheckpointCfg);
+        //             else
+        //                 $scope.backupItem.checkpointSpi = [newCheckpointCfg];
+        //         }
+        //         else if (field.type === 'memoryPolicies')
+        //             $scope.backupItem.memoryConfiguration.memoryPolicies.push({});
+        //         else if (field.type === 'serviceConfigurations')
+        //             $scope.backupItem.serviceConfigurations.push({});
+        //         else if (field.type === 'executorConfigurations')
+        //             $scope.backupItem.executorConfiguration.push({});
+        //         else
+        //             LegacyTable.tableNewItem(field);
+        //     }
+        // };
 
         $scope.tableNewItemActive = LegacyTable.tableNewItemActive;
 
-        $scope.tableStartEdit = function(item, field, index) {
-            if ($scope.tableReset(true))
-                LegacyTable.tableStartEdit(item, field, index, $scope.tableSave);
-        };
+        // $scope.tableStartEdit = function(item, field, index) {
+        //     if ($scope.tableReset(true))
+        //         LegacyTable.tableStartEdit(item, field, index, $scope.tableSave);
+        // };
 
-        $scope.tableEditing = LegacyTable.tableEditing;
+        // $scope.tableEditing = LegacyTable.tableEditing;
 
-        $scope.tableRemove = function(item, field, index) {
-            if ($scope.tableReset(true))
-                LegacyTable.tableRemove(item, field, index);
-        };
+        // $scope.tableRemove = function(item, field, index) {
+        //     if ($scope.tableReset(true))
+        //         LegacyTable.tableRemove(item, field, index);
+        // };
 
         $scope.tablePairSave = LegacyTable.tablePairSave;
         $scope.tablePairSaveVisible = LegacyTable.tablePairSaveVisible;
@@ -297,14 +279,14 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             save: $scope.tableSave
         };
 
-        $scope.removeFailoverConfiguration = function(idx) {
-            $scope.backupItem.failoverSpi.splice(idx, 1);
-        };
+        // $scope.removeFailoverConfiguration = function(idx) {
+        //     $scope.backupItem.failoverSpi.splice(idx, 1);
+        // };
 
         $scope.supportedJdbcTypes = LegacyUtils.mkOptions(LegacyUtils.SUPPORTED_JDBC_TYPES);
 
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
-        $scope.backupItem = emptyCluster;
+        // $scope.backupItem = emptyCluster;
 
         $scope.ui = FormUtils.formUI();
         $scope.ui.activePanels = [0];
@@ -313,15 +295,15 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         // $scope.saveBtnTipText = FormUtils.saveBtnTipText;
         // $scope.widthIsSufficient = FormUtils.widthIsSufficient;
 
-        $scope.contentVisible = function() {
-            return !$scope.backupItem.empty;
-        };
+        // $scope.contentVisible = function() {
+        //     return !$scope.backupItem.empty;
+        // };
 
-        $scope.toggleExpanded = function() {
-            $scope.ui.expanded = !$scope.ui.expanded;
+        // $scope.toggleExpanded = function() {
+        //     $scope.ui.expanded = !$scope.ui.expanded;
 
-            ErrorPopover.hide();
-        };
+        //     ErrorPopover.hide();
+        // };
 
         $scope.discoveries = [
             {value: 'Vm', label: 'Static IPs'},
@@ -347,23 +329,23 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         ];
 
         $scope.clusters = [];
-        this.clustersTable = this.buildClustersTable($scope.clusters);
+        // this.clustersTable = this.buildClustersTable($scope.clusters);
         this.onFilterChanged = (visibleRows) => {
             // console.debug(visibleRows);
         };
 
-        function _clusterLbl(cluster) {
-            return cluster.name + ', ' + _.find($scope.discoveries, {value: cluster.discovery.kind}).label;
-        }
+        // function _clusterLbl(cluster) {
+        //     return cluster.name + ', ' + _.find($scope.discoveries, {value: cluster.discovery.kind}).label;
+        // }
 
-        function selectCurrentItem() {
-            const item = $scope.clusters.find((cluster) => cluster._id === $state.params.clusterID);
-            if (item)
-                $scope.selectItem(item);
-            else
-                $scope.createItem();
+        // function selectCurrentItem() {
+        //     const item = $scope.clusters.find((cluster) => cluster._id === $state.params.clusterID);
+        //     if (item)
+        //         $scope.selectItem(item);
+        //     else
+        //         $scope.createItem();
 
-        }
+        // }
 
         // Loading.start('loadingClustersScreen');
 
@@ -473,68 +455,68 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         $scope.clusterCaches = [];
         $scope.clusterCachesEmpty = [];
 
-        $scope.selectItem = function(item, backup) {
-            function selectItem() {
-                // $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
-                $scope.selectedItem = item;
+        // $scope.selectItem = function(item, backup) {
+        //     function selectItem() {
+        //         // $state.go('.', {clusterID: item ? item._id : null}, {notify: false});
+        //         $scope.selectedItem = item;
 
-                if (backup)
-                    $scope.backupItem = backup;
-                else if (item)
-                    $scope.backupItem = angular.copy(item);
-                else
-                    $scope.backupItem = emptyCluster;
+        //         if (backup)
+        //             $scope.backupItem = backup;
+        //         else if (item)
+        //             $scope.backupItem = angular.copy(item);
+        //         else
+        //             $scope.backupItem = emptyCluster;
 
-                $scope.backupItem = _.merge({}, blank, $scope.backupItem);
+        //         $scope.backupItem = _.merge({}, blank, $scope.backupItem);
 
-                if ($scope.ui.inputForm) {
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
-                }
+        //         if ($scope.ui.inputForm) {
+        //             $scope.ui.inputForm.$error = {};
+        //             $scope.ui.inputForm.$setPristine();
+        //         }
 
-                __original_value = ModelNormalizer.normalize($scope.backupItem);
+        //         __original_value = ModelNormalizer.normalize($scope.backupItem);
 
-                filterModel();
+        //         filterModel();
 
-                if (LegacyUtils.getQueryVariable('new'))
-                    $state.go('base.configuration.tabs.advanced.clusters');
-            }
-            selectItem();
-            // FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
-        };
+        //         if (LegacyUtils.getQueryVariable('new'))
+        //             $state.go('base.configuration.tabs.advanced.clusters');
+        //     }
+        //     selectItem();
+        //     FormUtils.confirmUnsavedChanges($scope.backupItem && $scope.ui.inputForm && $scope.ui.inputForm.$dirty, selectItem);
+        // };
 
-        $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
+        // $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
 
-        function prepareNewItem(linkId) {
-            return _.merge({}, blank, {
-                space: $scope.spaces[0]._id,
-                discovery: {
-                    kind: 'Multicast',
-                    Vm: {addresses: ['127.0.0.1:47500..47510']},
-                    Multicast: {addresses: ['127.0.0.1:47500..47510']},
-                    Jdbc: {initSchema: true}
-                },
-                binaryConfiguration: {typeConfigurations: [], compactFooter: true},
-                communication: {tcpNoDelay: true},
-                connector: {noDelay: true},
-                collision: {kind: 'Noop', JobStealing: {stealingEnabled: true}, PriorityQueue: {starvationPreventionEnabled: true}},
-                failoverSpi: [],
-                logger: {Log4j: { mode: 'Default'}},
-                caches: linkId && _.find($scope.caches, {value: linkId}) ? [linkId] : [],
-                igfss: linkId && _.find($scope.igfss, {value: linkId}) ? [linkId] : []
-            });
-        }
+        // function prepareNewItem(linkId) {
+        //     return _.merge({}, blank, {
+        //         space: $scope.spaces[0]._id,
+        //         discovery: {
+        //             kind: 'Multicast',
+        //             Vm: {addresses: ['127.0.0.1:47500..47510']},
+        //             Multicast: {addresses: ['127.0.0.1:47500..47510']},
+        //             Jdbc: {initSchema: true}
+        //         },
+        //         binaryConfiguration: {typeConfigurations: [], compactFooter: true},
+        //         communication: {tcpNoDelay: true},
+        //         connector: {noDelay: true},
+        //         collision: {kind: 'Noop', JobStealing: {stealingEnabled: true}, PriorityQueue: {starvationPreventionEnabled: true}},
+        //         failoverSpi: [],
+        //         logger: {Log4j: { mode: 'Default'}},
+        //         caches: linkId && _.find($scope.caches, {value: linkId}) ? [linkId] : [],
+        //         igfss: linkId && _.find($scope.igfss, {value: linkId}) ? [linkId] : []
+        //     });
+        // }
 
         // Add new cluster.
-        $scope.createItem = function(linkId) {
-            $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'clusterNameInput'));
+        // $scope.createItem = function(linkId) {
+        //     $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'clusterNameInput'));
 
-            $scope.selectItem(null, prepareNewItem(linkId));
-        };
+        //     $scope.selectItem(null, prepareNewItem(linkId));
+        // };
 
-        $scope.indexOfCache = function(cacheId) {
-            return _.findIndex($scope.caches, (cache) => cache.value === cacheId);
-        };
+        // $scope.indexOfCache = function(cacheId) {
+        //     return _.findIndex($scope.caches, (cache) => cache.value === cacheId);
+        // };
 
         function clusterCaches(item) {
             return _.filter(_.map($scope.caches, (scopeCache) => scopeCache.cache),
@@ -550,94 +532,94 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             return `${prefix} ${type} "${name}"`;
         };
 
-        function checkCacheDatasources(item) {
-            const caches = clusterCaches(item);
+        // function checkCacheDatasources(item) {
+        //     const caches = clusterCaches(item);
 
-            const checkRes = LegacyUtils.checkDataSources(item, caches);
+        //     const checkRes = LegacyUtils.checkDataSources(item, caches);
 
-            if (!checkRes.checked) {
-                let ids;
+        //     if (!checkRes.checked) {
+        //         let ids;
 
-                if (checkRes.secondType === 'cluster')
-                    ids = { section: 'general', fieldId: 'dialectInput' };
-                else if (checkRes.secondType === 'cache')
-                    ids = { section: 'general', fieldId: 'cachesInput' };
-                else if (checkRes.secondType === 'checkpoint')
-                    ids = { section: 'checkpoint', fieldId: `checkpointJdbcDialect${checkRes.index}Input` };
-                else
-                    return true;
+        //         if (checkRes.secondType === 'cluster')
+        //             ids = { section: 'general', fieldId: 'dialectInput' };
+        //         else if (checkRes.secondType === 'cache')
+        //             ids = { section: 'general', fieldId: 'cachesInput' };
+        //         else if (checkRes.secondType === 'checkpoint')
+        //             ids = { section: 'checkpoint', fieldId: `checkpointJdbcDialect${checkRes.index}Input` };
+        //         else
+        //             return true;
 
-                if (checkRes.firstType === checkRes.secondType && checkRes.firstType === 'cache') {
-                    return ErrorPopover.show(ids.fieldId, 'Found caches "' + checkRes.firstObj.name + '" and "' + checkRes.secondObj.name + '" with the same data source bean name "' +
-                        checkRes.firstDs.dataSourceBean + '" and different database: "' +
-                        LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.secondDs.dialect) + '" in ' + _objToString(checkRes.secondType, checkRes.secondObj.name) + ' and "' +
-                        LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.firstDs.dialect) + '" in ' + _objToString(checkRes.firstType, checkRes.firstObj.name),
-                        $scope.ui, ids.section, 10000);
-                }
+        //         if (checkRes.firstType === checkRes.secondType && checkRes.firstType === 'cache') {
+        //             return ErrorPopover.show(ids.fieldId, 'Found caches "' + checkRes.firstObj.name + '" and "' + checkRes.secondObj.name + '" with the same data source bean name "' +
+        //                 checkRes.firstDs.dataSourceBean + '" and different database: "' +
+        //                 LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.secondDs.dialect) + '" in ' + _objToString(checkRes.secondType, checkRes.secondObj.name) + ' and "' +
+        //                 LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.firstDs.dialect) + '" in ' + _objToString(checkRes.firstType, checkRes.firstObj.name),
+        //                 $scope.ui, ids.section, 10000);
+        //         }
 
-                return ErrorPopover.show(ids.fieldId, 'Found ' + _objToString(checkRes.firstType, checkRes.firstObj.name) + ' with the same data source bean name "' +
-                    checkRes.firstDs.dataSourceBean + '" and different database: "' +
-                    LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.secondDs.dialect) + '" in ' + _objToString(checkRes.secondType, checkRes.secondObj.name, 'current') + ' and "' +
-                    LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.firstDs.dialect) + '" in ' + _objToString(checkRes.firstType, checkRes.firstObj.name),
-                    $scope.ui, ids.section, 10000);
-            }
+        //         return ErrorPopover.show(ids.fieldId, 'Found ' + _objToString(checkRes.firstType, checkRes.firstObj.name) + ' with the same data source bean name "' +
+        //             checkRes.firstDs.dataSourceBean + '" and different database: "' +
+        //             LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.secondDs.dialect) + '" in ' + _objToString(checkRes.secondType, checkRes.secondObj.name, 'current') + ' and "' +
+        //             LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.firstDs.dialect) + '" in ' + _objToString(checkRes.firstType, checkRes.firstObj.name),
+        //             $scope.ui, ids.section, 10000);
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
-        function checkCacheSQLSchemas(item) {
-            const caches = clusterCaches(item);
+        // function checkCacheSQLSchemas(item) {
+        //     const caches = clusterCaches(item);
 
-            const checkRes = LegacyUtils.checkCacheSQLSchemas(caches);
+        //     const checkRes = LegacyUtils.checkCacheSQLSchemas(caches);
 
-            if (!checkRes.checked) {
-                return ErrorPopover.show('cachesInput',
-                    'Found caches "' + checkRes.firstCache.name + '" and "' + checkRes.secondCache.name + '" ' +
-                    'with the same SQL schema name "' + checkRes.firstCache.sqlSchema + '"',
-                    $scope.ui, 'general', 10000);
-            }
+        //     if (!checkRes.checked) {
+        //         return ErrorPopover.show('cachesInput',
+        //             'Found caches "' + checkRes.firstCache.name + '" and "' + checkRes.secondCache.name + '" ' +
+        //             'with the same SQL schema name "' + checkRes.firstCache.sqlSchema + '"',
+        //             $scope.ui, 'general', 10000);
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
-        function checkBinaryConfiguration(item) {
-            const b = item.binaryConfiguration;
+        // function checkBinaryConfiguration(item) {
+        //     const b = item.binaryConfiguration;
 
-            if (LegacyUtils.isDefined(b)) {
-                if (!_.isEmpty(b.typeConfigurations)) {
-                    for (let typeIx = 0; typeIx < b.typeConfigurations.length; typeIx++) {
-                        const type = b.typeConfigurations[typeIx];
+        //     if (LegacyUtils.isDefined(b)) {
+        //         if (!_.isEmpty(b.typeConfigurations)) {
+        //             for (let typeIx = 0; typeIx < b.typeConfigurations.length; typeIx++) {
+        //                 const type = b.typeConfigurations[typeIx];
 
-                        if (LegacyUtils.isEmptyString(type.typeName))
-                            return ErrorPopover.show('typeName' + typeIx + 'Input', 'Type name should be specified!', $scope.ui, 'binary');
+        //                 if (LegacyUtils.isEmptyString(type.typeName))
+        //                     return ErrorPopover.show('typeName' + typeIx + 'Input', 'Type name should be specified!', $scope.ui, 'binary');
 
-                        if (_.find(b.typeConfigurations, (t, ix) => ix < typeIx && t.typeName === type.typeName))
-                            return ErrorPopover.show('typeName' + typeIx + 'Input', 'Type with such name is already specified!', $scope.ui, 'binary');
-                    }
-                }
-            }
+        //                 if (_.find(b.typeConfigurations, (t, ix) => ix < typeIx && t.typeName === type.typeName))
+        //                     return ErrorPopover.show('typeName' + typeIx + 'Input', 'Type with such name is already specified!', $scope.ui, 'binary');
+        //             }
+        //         }
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
-        function checkCacheKeyConfiguration(item) {
-            const cfgs = item.cacheKeyConfiguration;
+        // function checkCacheKeyConfiguration(item) {
+        //     const cfgs = item.cacheKeyConfiguration;
 
-            if (_.isEmpty(cfgs))
-                return true;
+        //     if (_.isEmpty(cfgs))
+        //         return true;
 
-            for (let typeIx = 0; typeIx < cfgs.length; typeIx++) {
-                const type = cfgs[typeIx];
+        //     for (let typeIx = 0; typeIx < cfgs.length; typeIx++) {
+        //         const type = cfgs[typeIx];
 
-                if (LegacyUtils.isEmptyString(type.typeName))
-                    return ErrorPopover.show('cacheKeyTypeName' + typeIx + 'Input', 'Cache type configuration name should be specified!', $scope.ui, 'cacheKeyCfg');
+        //         if (LegacyUtils.isEmptyString(type.typeName))
+        //             return ErrorPopover.show('cacheKeyTypeName' + typeIx + 'Input', 'Cache type configuration name should be specified!', $scope.ui, 'cacheKeyCfg');
 
-                if (_.find(cfgs, (t, ix) => ix < typeIx && t.typeName === type.typeName))
-                    return ErrorPopover.show('cacheKeyTypeName' + typeIx + 'Input', 'Cache type configuration with such name is already specified!', $scope.ui, 'cacheKeyCfg');
-            }
+        //         if (_.find(cfgs, (t, ix) => ix < typeIx && t.typeName === type.typeName))
+        //             return ErrorPopover.show('cacheKeyTypeName' + typeIx + 'Input', 'Cache type configuration with such name is already specified!', $scope.ui, 'cacheKeyCfg');
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
         function checkCheckpointSpis(item) {
             const cfgs = item.checkpointSpi;
@@ -690,19 +672,19 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             return true;
         }
 
-        function checkDiscoveryConfiguration(item) {
-            const d = item.discovery;
+        // function checkDiscoveryConfiguration(item) {
+        //     const d = item.discovery;
 
-            if (d) {
-                if ((_.isNil(d.maxAckTimeout) ? 600000 : d.maxAckTimeout) < (d.ackTimeout || 5000))
-                    return ErrorPopover.show('ackTimeoutInput', 'Acknowledgement timeout should be less than max acknowledgement timeout!', $scope.ui, 'discovery');
+        //     if (d) {
+        //         if ((_.isNil(d.maxAckTimeout) ? 600000 : d.maxAckTimeout) < (d.ackTimeout || 5000))
+        //             return ErrorPopover.show('ackTimeoutInput', 'Acknowledgement timeout should be less than max acknowledgement timeout!', $scope.ui, 'discovery');
 
-                if (d.kind === 'Vm' && d.Vm && d.Vm.addresses.length === 0)
-                    return ErrorPopover.show('addresses', 'Addresses are not specified!', $scope.ui, 'general');
-            }
+        //         if (d.kind === 'Vm' && d.Vm && d.Vm.addresses.length === 0)
+        //             return ErrorPopover.show('addresses', 'Addresses are not specified!', $scope.ui, 'general');
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
         function checkLoadBalancingConfiguration(item) {
             const balancingSpis = item.loadBalancingSpi;
@@ -894,23 +876,23 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         this.validate = (item) => {
             ErrorPopover.hide();
 
-            if (LegacyUtils.isEmptyString(item.name))
-                return ErrorPopover.show('clusterNameInput', 'Cluster name should not be empty!', $scope.ui, 'general');
+            // if (LegacyUtils.isEmptyString(item.name))
+            //     return ErrorPopover.show('clusterNameInput', 'Cluster name should not be empty!', $scope.ui, 'general');
 
             if (!LegacyUtils.checkFieldValidators($scope.ui))
                 return false;
 
-            if (!checkCacheSQLSchemas(item))
-                return false;
+            // if (!checkCacheSQLSchemas(item))
+            //     return false;
 
-            if (!checkCacheDatasources(item))
-                return false;
+            // if (!checkCacheDatasources(item))
+            //     return false;
 
-            if (!checkBinaryConfiguration(item))
-                return false;
+            // if (!checkBinaryConfiguration(item))
+            //     return false;
 
-            if (!checkCacheKeyConfiguration(item))
-                return false;
+            // if (!checkCacheKeyConfiguration(item))
+            //     return false;
 
             if (!checkCheckpointSpis(item))
                 return false;
@@ -921,8 +903,6 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
             if (!this.available('2.3.0') && !checkDataStorageConfiguration(item))
                 return false;
 
-            if (!checkDiscoveryConfiguration(item))
-                return false;
 
             if (!checkLoadBalancingConfiguration(item))
                 return false;
@@ -949,140 +929,154 @@ export default ['ConfigureState', '$rootScope', '$scope', '$http', '$state', '$t
         };
 
         // Save cluster in database.
-        const save = (item) => {
-            $http.post('/api/v1/configuration/clusters/save', item)
-                .then(({data}) => {
-                    const _id = data;
+        // const save = (item) => {
+        //     $http.post('/api/v1/configuration/clusters/save', item)
+        //         .then(({data}) => {
+        //             const _id = data;
 
-                    item.label = _clusterLbl(item);
+        //             item.label = _clusterLbl(item);
 
-                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
+        //             $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                    const idx = _.findIndex($scope.clusters, {_id});
+        //             const idx = _.findIndex($scope.clusters, {_id});
 
-                    if (idx >= 0)
-                        _.assign($scope.clusters[idx], item);
-                    else {
-                        item._id = _id;
+        //             if (idx >= 0)
+        //                 _.assign($scope.clusters[idx], item);
+        //             else {
+        //                 item._id = _id;
 
-                        $scope.clusters.push(item);
-                    }
+        //                 $scope.clusters.push(item);
+        //             }
 
-                    _.forEach($scope.caches, (cache) => {
-                        if (_.includes(item.caches, cache.value))
-                            cache.cache.clusters = _.union(cache.cache.clusters, [_id]);
-                        else
-                            _.pull(cache.cache.clusters, _id);
-                    });
+        //             _.forEach($scope.caches, (cache) => {
+        //                 if (_.includes(item.caches, cache.value))
+        //                     cache.cache.clusters = _.union(cache.cache.clusters, [_id]);
+        //                 else
+        //                     _.pull(cache.cache.clusters, _id);
+        //             });
 
-                    _.forEach($scope.igfss, (igfs) => {
-                        if (_.includes(item.igfss, igfs.value))
-                            igfs.igfs.clusters = _.union(igfs.igfs.clusters, [_id]);
-                        else
-                            _.pull(igfs.igfs.clusters, _id);
-                    });
+        //             _.forEach($scope.igfss, (igfs) => {
+        //                 if (_.includes(item.igfss, igfs.value))
+        //                     igfs.igfs.clusters = _.union(igfs.igfs.clusters, [_id]);
+        //                 else
+        //                     _.pull(igfs.igfs.clusters, _id);
+        //             });
 
-                    $scope.selectItem(item);
+        //             $scope.selectItem(item);
 
-                    Messages.showInfo(`Cluster "${item.name}" saved.`);
-                    this.clustersTable = this.buildClustersTable($scope.clusters);
-                })
-                .catch(Messages.showError);
-        };
+        //             Messages.showInfo(`Cluster "${item.name}" saved.`);
+        //             this.clustersTable = this.buildClustersTable($scope.clusters);
+        //         })
+        //         .catch(Messages.showError);
+        // };
 
         // Save cluster.
-        this.saveItem = function(item) {
-            const swapConfigured = item.swapSpaceSpi && item.swapSpaceSpi.kind;
+        // this.saveItem = function(item) {
+        //     const swapConfigured = item.swapSpaceSpi && item.swapSpaceSpi.kind;
 
-            if (!swapConfigured && _.find(clusterCaches(item), (cache) => cache.swapEnabled))
-                _.merge(item, {swapSpaceSpi: {kind: 'FileSwapSpaceSpi'}});
+        //     if (!swapConfigured && _.find(clusterCaches(item), (cache) => cache.swapEnabled))
+        //         _.merge(item, {swapSpaceSpi: {kind: 'FileSwapSpaceSpi'}});
 
-            if (validate(item))
-                save(item);
-        };
+        //     if (validate(item))
+        //         save(item);
+        // };
 
         function _clusterNames() {
             return _.map($scope.clusters, (cluster) => cluster.name);
         }
 
         // Clone cluster with new name.
-        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
-            return Input.clone(item.name, _clusterNames()).then((newName) => {
-                const clonedItem = angular.copy(item);
-                delete clonedItem._id;
-                clonedItem.name = newName;
-                return save(clonedItem);
-            });
-        }), $q.resolve());
+        // this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
+        //     return Input.clone(item.name, _clusterNames()).then((newName) => {
+        //         const clonedItem = angular.copy(item);
+        //         delete clonedItem._id;
+        //         clonedItem.name = newName;
+        //         return save(clonedItem);
+        //     });
+        // }), $q.resolve());
 
         // Remove cluster from db.
-        $scope.removeItem = (selectedItem) => {
-            Confirm.confirm('Are you sure you want to remove cluster: "' + selectedItem.name + '"?')
-                .then(() => {
-                    const _id = selectedItem._id;
+        // $scope.removeItem = (selectedItem) => {
+        //     Confirm.confirm('Are you sure you want to remove cluster: "' + selectedItem.name + '"?')
+        //         .then(() => {
+        //             const _id = selectedItem._id;
 
-                    $http.post('/api/v1/configuration/clusters/remove', {_id})
-                        .then(() => {
-                            Messages.showInfo('Cluster has been removed: ' + selectedItem.name);
+        //             $http.post('/api/v1/configuration/clusters/remove', {_id})
+        //                 .then(() => {
+        //                     Messages.showInfo('Cluster has been removed: ' + selectedItem.name);
 
-                            const clusters = $scope.clusters;
+        //                     const clusters = $scope.clusters;
 
-                            const idx = _.findIndex(clusters, (cluster) => cluster._id === _id);
+        //                     const idx = _.findIndex(clusters, (cluster) => cluster._id === _id);
 
-                            if (idx >= 0) {
-                                clusters.splice(idx, 1);
+        //                     if (idx >= 0) {
+        //                         clusters.splice(idx, 1);
 
-                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
+        //                         $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                                if (clusters.length > 0)
-                                    $scope.selectItem(clusters[0]);
-                                else
-                                    $scope.backupItem = emptyCluster;
+        //                         if (clusters.length > 0)
+        //                             $scope.selectItem(clusters[0]);
+        //                         else
+        //                             $scope.backupItem = emptyCluster;
 
-                                _.forEach($scope.caches, (cache) => _.remove(cache.cache.clusters, (id) => id === _id));
-                                _.forEach($scope.igfss, (igfs) => _.remove(igfs.igfs.clusters, (id) => id === _id));
-                            }
-                            this.clustersTable = this.buildClustersTable($scope.clusters);
-                        })
-                        .catch(Messages.showError);
-                });
-        };
+        //                         _.forEach($scope.caches, (cache) => _.remove(cache.cache.clusters, (id) => id === _id));
+        //                         _.forEach($scope.igfss, (igfs) => _.remove(igfs.igfs.clusters, (id) => id === _id));
+        //                     }
+        //                     this.clustersTable = this.buildClustersTable($scope.clusters);
+        //                 })
+        //                 .catch(Messages.showError);
+        //         });
+        // };
 
         // Remove all clusters from db.
-        $scope.removeAllItems = () => {
-            Confirm.confirm('Are you sure you want to remove all clusters?')
-                .then(() => {
-                    $http.post('/api/v1/configuration/clusters/remove/all')
-                        .then(() => {
-                            Messages.showInfo('All clusters have been removed');
+        // $scope.removeAllItems = () => {
+        //     Confirm.confirm('Are you sure you want to remove all clusters?')
+        //         .then(() => {
+        //             $http.post('/api/v1/configuration/clusters/remove/all')
+        //                 .then(() => {
+        //                     Messages.showInfo('All clusters have been removed');
 
-                            $scope.clusters = [];
-                            this.clustersTable = this.buildClustersTable($scope.clusters);
+        //                     $scope.clusters = [];
+        //                     this.clustersTable = this.buildClustersTable($scope.clusters);
 
-                            _.forEach($scope.caches, (cache) => cache.cache.clusters = []);
-                            _.forEach($scope.igfss, (igfs) => igfs.igfs.clusters = []);
+        //                     _.forEach($scope.caches, (cache) => cache.cache.clusters = []);
+        //                     _.forEach($scope.igfss, (igfs) => igfs.igfs.clusters = []);
 
-                            $scope.backupItem = emptyCluster;
-                            if ($scope.ui.inputForm) {
-                                $scope.ui.inputForm.$error = {};
-                                $scope.ui.inputForm.$setPristine();
-                            }
-                        })
-                        .catch(Messages.showError);
-                });
-        };
+        //                     $scope.backupItem = emptyCluster;
+        //                     if ($scope.ui.inputForm) {
+        //                         $scope.ui.inputForm.$error = {};
+        //                         $scope.ui.inputForm.$setPristine();
+        //                     }
+        //                 })
+        //                 .catch(Messages.showError);
+        //         });
+        // };
 
-        $scope.resetAll = function() {
-            Confirm.confirm('Are you sure you want to undo all changes for current cluster?')
-                .then(function() {
-                    $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
-                    if ($scope.ui.inputForm) {
-                        $scope.ui.inputForm.$error = {};
-                        $scope.ui.inputForm.$setPristine();
-                    }
-                });
-        };
+        // $scope.resetAll = function() {
+        //     Confirm.confirm('Are you sure you want to undo all changes for current cluster?')
+        //         .then(function() {
+        //             $scope.backupItem = $scope.selectedItem ? angular.copy($scope.selectedItem) : prepareNewItem();
+        //             if ($scope.ui.inputForm) {
+        //                 $scope.ui.inputForm.$error = {};
+        //                 $scope.ui.inputForm.$setPristine();
+        //             }
+        //         });
+        // };
 
         this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
+        const propagateSubmitted = (form) => {
+            Object.keys(form).filter((key) => !key.startsWith('$')).forEach((key) => {
+                if (form.$submitted !== form[key].$submitted) {
+                    form[key].$submitted = form.$submitted;
+                    propagateSubmitted(form[key]);
+                }
+            });
+        };
+        this.save = function(cluster = this.clonedCluster) {
+            const isValid = validate(cluster);
+            // propagateSubmitted(this.$scope.ui.inputForm);
+            // console.log(isValid);
+            if (isValid) this.pageService.save(this.clonedCluster);
+        };
     }
 ];

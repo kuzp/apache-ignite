@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form.form-horizontal(name='ui.inputForm' novalidate ng-if='contentVisible()')
+    form(id='cluster' name='ui.inputForm' novalidate ng-submit='$ctrl.save($ctrl.clonedCluster)')
         .panel-group
             include /app/modules/states/configuration/clusters/general
 
@@ -65,11 +65,11 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
             include /app/modules/states/configuration/clusters/transactions
             include /app/modules/states/configuration/clusters/attributes
 
-.pc-form-actions-panel(ng-show='$ctrl.$scope.selectedItem')
-    pc-project-structure-preview(cluster='backupItem' ng-if='backupItem._id')
+.pc-form-actions-panel(n_g-show='$ctrl.$scope.selectedItem')
+    pc-project-structure-preview(cluster='$ctrl.clonedCluster' n_g-if='backupItem._id')
     button.btn-ignite.btn-ignite--success(
         type='button'
-        ng-if='backupItem._id'
+        n_g-if='backupItem._id'
         ng-click='$ctrl.downloadConfiguration(backupItem)'
     )
         svg(ignite-icon='download').icon-left
@@ -79,11 +79,13 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
 
     button.btn-ignite.btn-ignite--link-success(
         type='button'
-        ng-disabled='!ui.inputForm.$dirty'
+        n_g-disabled='!ui.inputForm.$dirty'
         ng-click='ui.inputForm.$dirty && resetAll()'
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
-        ng-disabled='!ui.inputForm.$dirty'
-        ng-click='ui.inputForm.$dirty && $ctrl.saveItem(backupItem)'
+        n_g-disabled='!ui.inputForm.$dirty'
+        n_g-click='$ctrl.save(backupItem)'
+        form='cluster'
+        type='submit'
     ) Save

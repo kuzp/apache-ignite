@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'checkpoint'
--var model = 'backupItem.checkpointSpi'
+-var model = '$ctrl.clonedCluster.checkpointSpi'
 -var CustomCheckpoint = '$parent.item.kind === "Custom"'
 -var CacheCheckpoint = '$parent.item.kind === "Cache"'
 
@@ -91,4 +91,4 @@ include /app/helpers/jade/mixins
             
             - form = 'checkpoint'
             .pca-form-column-6
-                +preview-xml-java('backupItem', 'clusterCheckpoint', 'caches')
+                +preview-xml-java('$ctrl.clonedCluster', 'clusterCheckpoint', 'caches')
