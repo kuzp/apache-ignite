@@ -16,6 +16,8 @@
 
 mixin ignite-form-field-dropdown(label, model, name, disabled, required, multiple, placeholder, placeholderEmpty, options, tip)
     mixin form-field-input()
+        -var errLbl = label.substring(0, label.length - 1)
+
         button.select-toggle.form-control(
             id=`{{ ${name} }}Input`
             name=`{{ ${name} }}`
@@ -40,9 +42,14 @@ mixin ignite-form-field-dropdown(label, model, name, disabled, required, multipl
         +ignite-form-field__label(label, name, required)
             +tooltip(tip, tipOpts)
         .ignite-form-field__control
-
+            .input-tip
+                +form-field-input(attributes=attributes)
+        .ignite-form-field__errors(
+            ng-messages=`${form}[${name}].$error`
+            ng-show=`(${form}[${name}].$dirty || ${form}[${name}].$touched || ${form}[${name}].$submitted) && ${form}[${name}].$invalid`
+        )
             if block
                 block
 
-            .input-tip
-                +form-field-input(attributes=attributes)
+            if required
+                +form-field-feedback(name, 'required', multiple ? 'At least one option should be selected' : 'An option should be selected')
