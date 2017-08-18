@@ -28,6 +28,8 @@ import itemsTable from './components/pc-items-table';
 import pcUiGridFilters from './components/pc-ui-grid-filters';
 import pcFormFieldSize from './components/pc-form-field-size';
 import pcListEditable from './components/pc-list-editable';
+import isInCollection from './components/pcIsInCollection';
+import pcValidation from './components/pcValidation';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -56,7 +58,8 @@ export default angular
         pcUiGridFilters.name,
         pcListEditable.name,
         projectStructurePreview.name,
-        itemsTable.name
+        itemsTable.name,
+        pcValidation.name
     ])
     .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
         // $uiRouter.plugin(Visualizer);
@@ -87,6 +90,7 @@ export default angular
         }));
     }])
     .component('pageConfigure', component)
+    .directive(isInCollection.name, isInCollection)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)
     .service('ConfigurationDownload', ConfigurationDownload);
