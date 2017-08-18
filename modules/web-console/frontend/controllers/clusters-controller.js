@@ -289,6 +289,7 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         // $scope.backupItem = emptyCluster;
 
         $scope.ui = FormUtils.formUI();
+        $scope.ui.loadedPanels = ['checkpoint', 'serviceConfiguration'];
         $scope.ui.activePanels = [0];
         $scope.ui.topPanels = [0];
 
@@ -873,14 +874,28 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         }
 
         // Check cluster logical consistency.
-        this.validate = (item) => {
+        const validate = (item) => {
+            const fe = (m) => Object.keys(m.$error)[0];
+            const em = (e) => (m) => {
+                if (!e) return;
+                const walk = (m) => {
+                    if (!m.$error[e]) return;
+                    if (m.$error[e] === true) return m;
+                    return walk(m.$error[e][0]);
+                };
+                return walk(m);
+            };
+
+            this.$scope.$broadcast('$showValidationError', em(fe(this.$scope.ui.inputForm))(this.$scope.ui.inputForm));
+
+
             ErrorPopover.hide();
 
             // if (LegacyUtils.isEmptyString(item.name))
             //     return ErrorPopover.show('clusterNameInput', 'Cluster name should not be empty!', $scope.ui, 'general');
 
-            if (!LegacyUtils.checkFieldValidators($scope.ui))
-                return false;
+            // if (!LegacyUtils.checkFieldValidators($scope.ui))
+            //     return false;
 
             // if (!checkCacheSQLSchemas(item))
             //     return false;
@@ -894,20 +909,19 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             // if (!checkCacheKeyConfiguration(item))
             //     return false;
 
-            if (!checkCheckpointSpis(item))
-                return false;
+            // if (!checkCheckpointSpis(item))
+            //     return false;
 
             if (!checkCommunicationConfiguration(item))
                 return false;
 
-            if (!this.available('2.3.0') && !checkDataStorageConfiguration(item))
-                return false;
-
+            // if (!checkDiscoveryConfiguration(item))
+            //     return false;
 
             if (!checkLoadBalancingConfiguration(item))
                 return false;
 
-            if (this.available(['2.0.0', '2.3.0']) && !checkMemoryConfiguration(item))
+            if (!checkMemoryConfiguration(item))
                 return false;
 
             if (!checkODBC(item))
