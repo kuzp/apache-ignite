@@ -2,10 +2,10 @@ import cloneDeep from 'lodash/cloneDeep';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 
 export default class PageConfigureAdvancedClusterService {
-    static $inject = ['ConfigureState', 'PageConfigureBasic', 'PageConfigureAdvanced', 'Clusters'];
+    static $inject = ['ConfigureState', 'PageConfigureBasic', 'PageConfigureAdvanced', 'Clusters', '$state'];
 
-    constructor(ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters) {
-        Object.assign(this, {ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters});
+    constructor(ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state) {
+        Object.assign(this, {ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state});
     }
 
     save(cluster) {
@@ -21,7 +21,9 @@ export default class PageConfigureAdvancedClusterService {
         const {state$} = this.ConfigureState;
 
         const cluster = state$
-            .pluck('clusterConfiguration', 'originalCluster')
+            .pluck('clusters')
+            .map((clusters) => clusters.get(this.$state.params.clusterID))
+            // .pluck('clusterConfiguration', 'originalCluster')
             .distinctUntilChanged()
             .map((cluster) => {
                 return {
@@ -30,13 +32,27 @@ export default class PageConfigureAdvancedClusterService {
                 };
             });
 
-        const shortClusters = state$
-            .pluck('shortClusters')
+        const shortItems = (type) => state$
+            .pluck(type)
             .distinctUntilChanged()
-            .map((clusters) => ({
-                shortClusters: [...clusters.values()]
+            .map((items) => ({
+                [type]: [...items.values()]
             }));
 
-        return combineLatest(cluster, shortClusters, (...values) => Object.assign({}, ...values));
+        const shortClusters = shortItems('shortClusters');
+        const shortCaches = shortItems('shortCaches');
+        const cachesMenu = shortCaches.map(({shortCaches}) => {
+            const cachesMenu = shortCaches.map((cache) => ({label: cache.name, value: cache._id}));
+            const emptyCachesMenu = cachesMenu.concat({label: 'Not set'});
+            return {cachesMenu, emptyCachesMenu};
+        });
+
+        return combineLatest(
+            cluster,
+            shortClusters,
+            shortCaches,
+            cachesMenu,
+            (...values) => Object.assign({}, ...values)
+        );
     }
 }
