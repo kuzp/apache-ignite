@@ -31,7 +31,7 @@
             ignite-on-focus-out='$ctrl.stopEditView($index); form.$valid ? $ctrl.save(item, $index) : $ctrl.revert($index);'
             ignite-on-focus-out-ignored-classes='bssm-click-overlay bssm-item-text bssm-item-button'
         )
-            .pcle-row-item-view(ng-show='$ctrl.hasItemView' ng-init='item = $ctrl.getEditView($index);')
+            .pcle-row-item-view(ng-show='$ctrl.hasItemView' ng-init='!$ctrl.hasItemView && $ctrl.startEditView($index);item = $ctrl.getEditView($index);')
                 div(ng-transclude='itemView')
             .pcle-row-item-edit(ng-form name='form')
                 div(ng-transclude='itemEdit')
