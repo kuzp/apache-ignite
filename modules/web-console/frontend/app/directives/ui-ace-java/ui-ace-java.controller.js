@@ -33,23 +33,6 @@ export default ['IgniteVersion', 'JavaTransformer', function(Version, java) {
                 ctrl.generate = (cluster) => java.cluster(cluster, Version.currentSbj.getValue(), 'config', clsName, client);
 
                 break;
-            case 'clusterCaches':
-                ctrl.generate = (cluster, caches) => {
-                    const clusterCaches = _.reduce(caches, (acc, cache) => {
-                        if (_.includes(cluster.caches, cache.value))
-                            acc.push(cache.cache);
-
-                        return acc;
-                    }, []);
-
-                    const cfg = java.generator.clusterGeneral(cluster, available);
-
-                    java.generator.clusterCaches(cluster, clusterCaches, null, available, false, cfg);
-
-                    return java.toSection(cfg);
-                };
-
-                break;
             case 'cacheStore':
             case 'cacheQuery':
                 ctrl.generate = (cache, domains) => {
