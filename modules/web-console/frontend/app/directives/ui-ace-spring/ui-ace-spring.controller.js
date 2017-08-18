@@ -28,23 +28,6 @@ export default ['IgniteVersion', 'SpringTransformer', function(Version, spring) 
             ctrl.generate = (cluster) => spring.cluster(cluster, Version.currentSbj.getValue(), ctrl.client === 'true');
 
             break;
-        case 'clusterCaches':
-            ctrl.generate = (cluster, caches) => {
-                const clusterCaches = _.reduce(caches, (acc, cache) => {
-                    if (_.includes(cluster.caches, cache.value))
-                        acc.push(cache.cache);
-
-                    return acc;
-                }, []);
-
-                const cfg = spring.generator.clusterGeneral(cluster, available);
-
-                spring.generator.clusterCaches(cluster, clusterCaches, null, available, false, cfg);
-
-                return spring.toSection(cfg);
-            };
-
-            break;
         case 'cacheStore':
         case 'cacheQuery':
             ctrl.generate = (cache, domains) => {
