@@ -182,9 +182,19 @@ public enum TransformType {
             public Object getValue(String value) {
                     try {
 //                        Date dt = convertToDate(value);
-                        SimpleDateFormat formatTime1 = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss",Locale.ROOT);
+
 //                        formatTime1.setTimeZone(TimeZone.getTimeZone("Europe/Moscow"));
-                        Date dt = (value.equals("") || value == null) ? null : formatTime1.parse(value);
+
+                        if (value.equals("") || value == null)
+                            return null;
+
+                        SimpleDateFormat formatTime1 = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss",Locale.ROOT);
+
+                        Date dt = formatTime1.parse(value);
+
+                        if (dt.getYear() + 1900 < 1970) // filter illegal dates
+                            return null;
+
                         return	dt;
 
                     } catch (Exception e) {

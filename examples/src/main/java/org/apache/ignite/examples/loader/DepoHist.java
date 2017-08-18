@@ -64,8 +64,8 @@ public class DepoHist {
 
     @OraName(value = "C_AUTHKIND")
     @InitOrder(value = "7")
-    @DataType(value = TransformType.LONG)
-    public Long cardhistAuthkind;
+    @DataType(value = TransformType.INTEGER)
+    public Integer cardhistAuthkind;
 
     @OraName(value = "C_CARDNO")
     @InitOrder(value = "8")
@@ -84,13 +84,13 @@ public class DepoHist {
 
     @OraName(value = "C_TXCURRENCY")
     @InitOrder(value = "11")
-    @DataType(value = TransformType.LONG)
-    public Long cardhistTxcurrency;
+    @DataType(value = TransformType.INTEGER)
+    public Integer cardhistTxcurrency;
 
     @OraName(value = "C_TXID")
     @InitOrder(value = "12")
-    @DataType(value = TransformType.LONG)
-    public Long cardhistTxid;
+    @DataType(value = TransformType.INTEGER)
+    public Integer cardhistTxid;
 
     @OraName(value = "C_TXTIME")
     @InitOrder(value = "13")
@@ -124,8 +124,8 @@ public class DepoHist {
 
     @OraName(value = "D_BRANCHNO")
     @InitOrder(value = "19")
-    @DataType(value = TransformType.LONG)
-    public Long depohist_branchno;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohist_branchno;
 
     @OraName(value = "D_CARDRPTDAY")
     @InitOrder(value = "20")
@@ -134,23 +134,23 @@ public class DepoHist {
 
     @OraName(value = "D_CASHSOURCE")
     @InitOrder(value = "21")
-    @DataType(value = TransformType.LONG)
-    public Long depohistCashsource;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistCashsource;
 
     @OraName(value = "D_CHEQUECNT")
     @InitOrder(value = "22")
-    @DataType(value = TransformType.LONG)
-    public Long depohistChequecnt;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistChequecnt;
 
     @OraName(value = "D_CLERK")
     @InitOrder(value = "23")
-    @DataType(value = TransformType.LONG)
-    public Long depohistClerk;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistClerk;
 
     @OraName(value = "D_CONVER_CURRENCY")
     @InitOrder(value = "24")
-    @DataType(value = TransformType.LONG)
-    public Long depohistConverCurrency;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistConverCurrency;
 
     @OraName(value = "D_CONVER_OPCASH")
     @InitOrder(value = "25")
@@ -194,28 +194,28 @@ public class DepoHist {
 
     @OraName(value = "D_EXTERNALKIND")
     @InitOrder(value = "33")
-    @DataType(value = TransformType.LONG)
-    public Long depohistExternalkind;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistExternalkind;
 
     @OraName(value = "D_FLAG_CASH")
     @InitOrder(value = "34")
-    @DataType(value = TransformType.LONG)
-    public Long depohistFlagCash;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistFlagCash;
 
     @OraName(value = "D_GRANT_OPER")
     @InitOrder(value = "35")
-    @DataType(value = TransformType.LONG)
-    public Long depohistGrantOper;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistGrantOper;
 
     @OraName(value = "D_HEIRNO")
     @InitOrder(value = "36")
-    @DataType(value = TransformType.LONG)
-    public Long depohistHeirno;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistHeirno;
 
     @OraName(value = "D_ID_MEGA")
     @InitOrder(value = "37")
-    @DataType(value = TransformType.LONG)
-    public Long depohist_tb;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohist_tb;
 
     @OraName(value = "D_INSERTTIME")
     @InitOrder(value = "38")
@@ -234,28 +234,28 @@ public class DepoHist {
 
     @OraName(value = "D_ISCASHDISPENSER")
     @InitOrder(value = "41")
-    @DataType(value = TransformType.LONG)
-    public Long depohistIscashdispenser;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistIscashdispenser;
 
     @OraName(value = "D_ISMANUAL")
     @InitOrder(value = "42")
-    @DataType(value = TransformType.LONG)
-    public Long depohistIsmanual;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistIsmanual;
 
     @OraName(value = "D_ISMOFFICE")
     @InitOrder(value = "43")
-    @DataType(value = TransformType.LONG)
-    public Long depohistIsmoffice;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistIsmoffice;
 
     @OraName(value = "D_JRNNO")
     @InitOrder(value = "44")
-    @DataType(value = TransformType.LONG)
-    public Long depohistJrnno;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistJrnno;
 
     @OraName(value = "D_MAXAMOUNT")
     @InitOrder(value = "45")
-    @DataType(value = TransformType.LONG)
-    public Long depohistMaxamount;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistMaxamount;
 
     @OraName(value = "D_MAXAMOUNTRATE")
     @InitOrder(value = "46")
@@ -264,8 +264,8 @@ public class DepoHist {
 
     @OraName(value = "D_N_DPRICE")
     @InitOrder(value = "47")
-    @DataType(value = TransformType.LONG)
-    public Long depohistNDprice;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistNDprice;
 
     @OraName(value = "D_OFFCASHBALANCE")
     @InitOrder(value = "48")
@@ -279,8 +279,8 @@ public class DepoHist {
 
     @OraName(value = "D_OFFICE")
     @InitOrder(value = "50")
-    @DataType(value = TransformType.LONG)
-    public Long depohistOffice;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistOffice;
 
     @OraName(value = "D_OFFICETRANSDAY")
     @InitOrder(value = "51")
@@ -299,8 +299,8 @@ public class DepoHist {
 
     @OraName(value = "D_OPCODE")
     @InitOrder(value = "54")
-    @DataType(value = TransformType.LONG)
-    public Long depohistOpcode;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistOpcode;
 
     @OraName(value = "D_OPDAY")
     @InitOrder(value = "55")
@@ -314,13 +314,13 @@ public class DepoHist {
 
     @OraName(value = "D_OPKIND")
     @InitOrder(value = "57")
-    @DataType(value = TransformType.LONG)
-    public Long depohistOpkind;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistOpkind;
 
     @OraName(value = "D_OPNO")
     @InitOrder(value = "58")
-    @DataType(value = TransformType.LONG)
-    public Long depohistOpno;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistOpno;
 
     @OraName(value = "D_OPTRANSDAY")
     @InitOrder(value = "59")
@@ -379,8 +379,8 @@ public class DepoHist {
 
     @OraName(value = "D_PINACCEPTFLAG")
     @InitOrder(value = "70")
-    @DataType(value = TransformType.LONG)
-    public Long depohistPinacceptflag;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistPinacceptflag;
 
     @OraName(value = "D_PROLONGDAY")
     @InitOrder(value = "71")
@@ -389,13 +389,13 @@ public class DepoHist {
 
     @OraName(value = "D_RATESOURCE")
     @InitOrder(value = "72")
-    @DataType(value = TransformType.LONG)
-    public Long depohistRatesource;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistRatesource;
 
     @OraName(value = "D_REASON")
     @InitOrder(value = "73")
-    @DataType(value = TransformType.LONG)
-    public Long depohistReason;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistReason;
 
     @OraName(value = "D_SBOOKENDDAY")
     @InitOrder(value = "74")
@@ -419,13 +419,13 @@ public class DepoHist {
 
     @OraName(value = "D_STATE")
     @InitOrder(value = "78")
-    @DataType(value = TransformType.LONG)
-    public Long depohistState;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistState;
 
     @OraName(value = "D_SUBSYS")
     @InitOrder(value = "79")
-    @DataType(value = TransformType.LONG)
-    public Long depohistSubsys;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistSubsys;
 
     @OraName(value = "D_SUMOBNALOPERATION")
     @InitOrder(value = "80")
@@ -444,13 +444,13 @@ public class DepoHist {
 
     @OraName(value = "D_TERMSOK")
     @InitOrder(value = "83")
-    @DataType(value = TransformType.LONG)
-    public Long depohistTermsok;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistTermsok;
 
     @OraName(value = "D_TURNCODE")
     @InitOrder(value = "84")
-    @DataType(value = TransformType.LONG)
-    public Long depohistTurncode;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistTurncode;
 
     @OraName(value = "D_USEDTAXEXEMPTIONS")
     @InitOrder(value = "85")
@@ -459,13 +459,13 @@ public class DepoHist {
 
     @OraName(value = "D_V_HZAP2")
     @InitOrder(value = "86")
-    @DataType(value = TransformType.LONG)
-    public Long depohistVHzap2;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistVHzap2;
 
     @OraName(value = "D_WARRANTKIND")
     @InitOrder(value = "87")
-    @DataType(value = TransformType.LONG)
-    public Long depohistWarrantkind;
+    @DataType(value = TransformType.INTEGER)
+    public Integer depohistWarrantkind;
 
     @OraName(value = "D_WARRANTNO")
     @InitOrder(value = "88")
@@ -484,8 +484,8 @@ public class DepoHist {
 
     @OraName(value = "O_OPNO")
     @InitOrder(value = "91")
-    @DataType(value = TransformType.LONG)
-    public Long offcashcompOpno;
+    @DataType(value = TransformType.INTEGER)
+    public Integer offcashcompOpno;
 
     @OraName(value = "O_ORDNO")
     @InitOrder(value = "92")
@@ -504,7 +504,7 @@ public class DepoHist {
 
     @OraName(value = "O_V_DNUM1")
     @InitOrder(value = "95")
-    @DataType(value = TransformType.LONG)
+    @DataType(value = TransformType.INTEGER)
     public Long offcashcompVDnum1;
 
     @OraName(value = "O_V_DSUM1")
