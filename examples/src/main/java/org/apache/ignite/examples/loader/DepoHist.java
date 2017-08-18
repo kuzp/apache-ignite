@@ -505,7 +505,7 @@ public class DepoHist {
     @OraName(value = "O_V_DNUM1")
     @InitOrder(value = "95")
     @DataType(value = TransformType.INTEGER)
-    public Long offcashcompVDnum1;
+    public Integer offcashcompVDnum1;
 
     @OraName(value = "O_V_DSUM1")
     @InitOrder(value = "96")

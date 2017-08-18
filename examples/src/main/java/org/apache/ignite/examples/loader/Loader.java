@@ -24,7 +24,6 @@ public class Loader {
         IgniteCache<AffinityParticleKey, BinaryObject> depohist = ignite.cache("depohist").withKeepBinary();
 
         try(InputStream stream = new FileInputStream("C:\\work\\log25\\zstan_2send\\zstan_2send.txt")) {
-
             BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 
             String str;
@@ -44,7 +43,7 @@ public class Loader {
 
                 BinaryObjectImpl val = ignite.binary().toBinary((DepoHist)obj[1]);
 
-                //depohist.put((AffinityParticleKey)obj[0], val);
+                depohist.put((AffinityParticleKey)obj[0], val);
 
                 int tmp = val.array().length;
 
@@ -65,7 +64,7 @@ public class Loader {
             }
 
             ignite.log().info("Stats [size=" + depohist.size() + ", sum=" + sum/1024/1024 +
-                ", min=" + min + ", max=" + max + ", avg: " + sz/(float) total);
+                ", min=" + min + ", max=" + max + ", avg: " + sz/(float) total + ']');
 
             for (MemoryMetrics metrics : ignite.memoryMetrics())
                 ignite.log().info(metrics.getName() + " [Fill factor: " + metrics.getPagesFillFactor()

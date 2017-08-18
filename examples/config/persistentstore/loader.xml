@@ -24,18 +24,18 @@
     <bean id="ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
 
         <!-- Enabling Apache Ignite Persistent Store. -->
-        <!--<property name="persistentStoreConfiguration">-->
-            <!--<bean class="org.apache.ignite.configuration.PersistentStoreConfiguration">-->
-                <!--<property name="checkpointingFrequency" value="10000"/>-->
-                <!--<property name="walMode" value="LOG_ONLY"/>-->
-                <!--<property name="tlbSize" value="#{10 * 1024 * 1024L}"/>-->
-                <!--<property name="walHistorySize" value="2"/>-->
-                <!--<property name="persistentStorePath" value="C:/data/mag/db"/>-->
-                <!--<property name="walStorePath" value="C:/data/mag/wal"/>-->
-                <!--<property name="walArchivePath" value="C:/data/mag/archive"/>-->
-                <!--<property name="metricsEnabled" value="true"/>-->
-            <!--</bean>-->
-        <!--</property>-->
+        <property name="persistentStoreConfiguration">
+            <bean class="org.apache.ignite.configuration.PersistentStoreConfiguration">
+                <property name="checkpointingFrequency" value="10000"/>
+                <property name="walMode" value="LOG_ONLY"/>
+                <property name="tlbSize" value="#{10 * 1024 * 1024L}"/>
+                <property name="walHistorySize" value="2"/>
+                <property name="persistentStorePath" value="C:/data/mag/db"/>
+                <property name="walStorePath" value="C:/data/mag/wal"/>
+                <property name="walArchivePath" value="C:/data/mag/archive"/>
+                <property name="metricsEnabled" value="true"/>
+            </bean>
+        </property>
 
         <property name="memoryConfiguration">
             <bean class="org.apache.ignite.configuration.MemoryConfiguration">
@@ -65,6 +65,12 @@
 
                     <property name="writeSynchronizationMode" value="FULL_SYNC"/>
 
+                    <property name="affinity">
+                        <bean class="org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction">
+                            <constructor-arg value="false"/>
+                            <constructor-arg value="1"/>
+                        </bean>
+                    </property>
                     <!--<property name="indexedTypes">-->
                         <!--<list>-->
                             <!--<value>java.lang.Long</value>-->
