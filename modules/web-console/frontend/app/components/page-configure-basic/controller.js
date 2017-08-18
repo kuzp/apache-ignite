@@ -50,8 +50,16 @@ export default class PageConfigureBasicController {
         this.minMemorySize = this.pageService.minMemoryPolicySize;
 
         this.formActionsMenu = [
-            {text: 'Save changes and download project', click: () => this.saveAndDownload()},
-            {text: 'Save changes', click: () => this.save()}
+            {
+                text: 'Save changes and download project',
+                click: () => this.saveAndDownload(),
+                icon: 'download'
+            },
+            {
+                text: 'Save changes',
+                click: () => this.save(),
+                icon: 'checkmark'
+            }
         ];
     }
 

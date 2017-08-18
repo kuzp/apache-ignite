@@ -158,7 +158,7 @@ form(novalidate name=form)
                 ng-click='::$ctrl.formActionsMenu[1].click()'
                 type='button'
             )
-                svg(ignite-icon='download').icon-left
+                svg(ignite-icon='{{ ::$ctrl.formActionsMenu[1].icon }}').icon-left
                 | {{ ::$ctrl.formActionsMenu[1].text }}
             button.btn-ignite.btn-ignite--success(
                 bs-dropdown='$ctrl.formActionsMenu'
