@@ -71,6 +71,8 @@ public class Loader {
                     ignite.log().info("Done: " + i + " of " + total);
 
                 i++;
+
+                break;
             }
 
             ignite.log().info("Stats [size=" + depohist.size() + ", sum=" + sum/1024/1024 +

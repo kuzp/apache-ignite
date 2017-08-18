@@ -1,14 +1,11 @@
-package org.apache.ignite.examples.loader;
-
-/**
- * Created by admin on 8/17/2017.
- */
 /*-
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
+
+package org.apache.ignite.examples.loader;
 
 /**
  * UTF operations with more flexibility than is provided by DataInput and
