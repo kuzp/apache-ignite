@@ -74,27 +74,13 @@ export default ['IgniteVersion', 'SpringTransformer', function(Version, spring) 
                 break;
             case 'clusterServiceConfiguration':
                 ctrl.generate = (cluster, caches) => {
-                    const clusterCaches = _.reduce(caches, (acc, cache) => {
-                        if (_.includes(cluster.caches, cache.value))
-                            acc.push(cache.cache);
-
-                        return acc;
-                    }, []);
-
-                    return spring.clusterServiceConfiguration(cluster.serviceConfigurations, clusterCaches);
+                    return spring.clusterServiceConfiguration(cluster.serviceConfigurations, caches);
                 };
 
                 break;
             case 'clusterCheckpoint':
                 ctrl.generate = (cluster, caches) => {
-                    const clusterCaches = _.reduce(caches, (acc, cache) => {
-                        if (_.includes(cluster.caches, cache.value))
-                            acc.push(cache.cache);
-
-                        return acc;
-                    }, []);
-
-                    return spring.clusterCheckpoint(cluster, clusterCaches);
+                    return spring.clusterCheckpoint(cluster, available, caches);
                 };
 
                 break;

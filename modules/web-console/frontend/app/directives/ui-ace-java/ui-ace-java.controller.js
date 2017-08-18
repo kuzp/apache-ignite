@@ -78,14 +78,7 @@ export default ['IgniteVersion', 'JavaTransformer', function(Version, java) {
                 break;
             case 'clusterServiceConfiguration':
                 ctrl.generate = (cluster, caches) => {
-                    const clusterCaches = _.reduce(caches, (acc, cache) => {
-                        if (_.includes(cluster.caches, cache.value))
-                            acc.push(cache.cache);
-
-                        return acc;
-                    }, []);
-
-                    return java.clusterServiceConfiguration(cluster.serviceConfigurations, clusterCaches);
+                    return java.clusterServiceConfiguration(cluster.serviceConfigurations, caches);
                 };
 
                 break;
