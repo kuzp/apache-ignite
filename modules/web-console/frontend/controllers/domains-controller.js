@@ -63,7 +63,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
 
         $scope.ui.generatePojo = true;
         $scope.ui.builtinKeys = true;
-        $scope.ui.includeKeyInQuery = true;
+        $scope.ui.generateKeyFields = true;
         $scope.ui.usePrimitives = true;
         $scope.ui.generateTypeAliases = true;
         $scope.ui.generateFieldAliases = true;
@@ -953,7 +953,7 @@ export default ['$rootScope', '$scope', '$http', '$state', '$filter', '$timeout'
                         newDomain.keyType = keyField.javaType;
                         newDomain.keyFieldName = keyField.javaFieldName;
 
-                        if (!$scope.ui.includeKeyInQuery) {
+                        if (!$scope.ui.generateKeyFields) {
                             // Exclude key column from query fields.
                             newDomain.fields = _.filter(newDomain.fields, (field) => field.name !== keyField.javaFieldName);
 
