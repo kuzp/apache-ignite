@@ -65,7 +65,7 @@ public class IgniteSqlTester {
         final String dateTime = format.format(new Date(System.currentTimeMillis()));
 
         String dumpFile = props.getProperty("dumpFile") != null ? props.getProperty("dumpFile") :
-            props.getProperty("workDir") + File.separator + "sqltestlog" + dateTime + ".log";
+            props.getProperty("workDir") + File.separator + "sqltestlog-" + dateTime + ".log";
 
         writer = new PrintWriter(new FileOutputStream(new File(dumpFile)));
 
