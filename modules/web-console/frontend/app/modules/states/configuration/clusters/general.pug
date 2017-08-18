@@ -47,6 +47,7 @@ include ./general/discovery/kubernetes
                         name: '"clusterName"',
                         disabled: 'false',
                         placeholder: 'Input name',
+                        required: true,
                         tip: 'Instance name allows to indicate to what grid this particular grid instance belongs to'
                     })(
                         ignite-unique='$ctrl.shortClusters'

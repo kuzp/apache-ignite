@@ -29,7 +29,7 @@ include /app/helpers/jade/mixins
             | Checkpointing provides an ability to save an intermediate job state. 
             | #[a.link-success(href="http://apacheignite.readme.io/docs/checkpointing" target="_blank") More info.]
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
-        .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
+        .pca-panel-body(ng-i_f=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
                 .settings-row(ng-init='checkpointSpiTbl={type: "checkpointSpi", model: "checkpointSpi", focusId: "kind", ui: "checkpoint-table"}')
                     .group-section
@@ -46,7 +46,7 @@ include /app/helpers/jade/mixins
                                     pc-list-editable-item-edit
                                         - form = '$parent.form'
                                         .settings-row
-                                            +dropdown-required-autofocus('Checkpoint SPI:', '$parent.item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
+                                            +dropdown-required('Checkpoint SPI:', '$parent.item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
                                                     {value: "FS", label: "File System"},\
                                                     {value: "Cache", label: "Cache"},\
                                                     {value: "S3", label: "Amazon S3"},\
@@ -68,7 +68,10 @@ include /app/helpers/jade/mixins
                                         div(ng-show=CacheCheckpoint)
                                             .settings-row
                                                 +dropdown-required-empty('Cache:', '$parent.item.Cache.cache', '"checkpointCacheCache"', 'true', CacheCheckpoint,
-                                                    'Choose cache', 'No caches configured for current cluster', 'clusterCaches', 'Cache to use for storing checkpoints')
+                                                    'Choose cache', 'No caches configured for current cluster', '$ctrl.cachesMenu', 'Cache to use for storing checkpoints')(
+                                                    pc-is-in-collection='$ctrl.clonedCluster.caches'
+                                                )
+                                                    +form-field-feedback(form, 'isInCollection', `Cluster doesn't have such a cache`)
                                             .settings-row
                                                 +java-class('Listener:', '$parent.item.Cache.checkpointListener', '"checkpointCacheListener"', 'true', 'false',
                                                     'Checkpoint listener implementation class name', CacheCheckpoint)
@@ -86,9 +89,9 @@ include /app/helpers/jade/mixins
                                     pc-list-editable-no-items
                                         | Not defined
 
-                            a.link-success(ng-click=`${model}.push({})`)
+                            a.link-success(ng-click='$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)')
                                 | + Add checkpoint SPI
             
             - form = 'checkpoint'
             .pca-form-column-6
-                +preview-xml-java('$ctrl.clonedCluster', 'clusterCheckpoint', 'caches')
+                +preview-xml-java('$ctrl.clonedCluster', 'clusterCheckpoint', '$ctrl.shortCaches')
