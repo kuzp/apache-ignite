@@ -83,7 +83,7 @@ public class DiscoCache {
     private final Set<UUID> alives = new GridConcurrentHashSet<>();
 
     /** */
-    private IgniteProductVersion minRmtProdVer;
+    private IgniteProductVersion minProdVer;
 
     /**
      * @param state Current cluster state.
@@ -99,7 +99,7 @@ public class DiscoCache {
      * @param cacheGrpAffNodes Affinity nodes by cache group ID.
      * @param nodeMap Node map.
      * @param alives Alive nodes.
-     * @param minRmtProdVer Minimal product version seen for remote nodes.
+     * @param minProdVer Minimal product version seen in the topology.
      */
     DiscoCache(
         DiscoveryDataClusterState state,
@@ -115,7 +115,7 @@ public class DiscoCache {
         Map<Integer, List<ClusterNode>> cacheGrpAffNodes,
         Map<UUID, ClusterNode> nodeMap,
         Set<UUID> alives,
-        IgniteProductVersion minRmtProdVer
+        IgniteProductVersion minProdVer
     ) {
         this.state = state;
         this.loc = loc;
@@ -130,7 +130,7 @@ public class DiscoCache {
         this.cacheGrpAffNodes = cacheGrpAffNodes;
         this.nodeMap = nodeMap;
         this.alives.addAll(alives);
-        this.minRmtProdVer = minRmtProdVer;
+        this.minProdVer = minProdVer;
     }
 
     /**
@@ -290,8 +290,8 @@ public class DiscoCache {
     /**
      * @return Minumim seen remote nodes version.
      */
-    public IgniteProductVersion minimumRemoteNodesVersion() {
-        return minRmtProdVer;
+    public IgniteProductVersion minimumNodesVersion() {
+        return minProdVer;
     }
 
     /**

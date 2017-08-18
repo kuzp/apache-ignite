@@ -1189,7 +1189,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      * @throws IgniteCheckedException If failed.
      */
     private void sendAllPartitions(Collection<ClusterNode> nodes) throws IgniteCheckedException {
-        IgniteProductVersion minVer = cctx.discovery().discoCache(topologyVersion()).minimumRemoteNodesVersion();
+        IgniteProductVersion minVer = cctx.discovery().discoCache(topologyVersion()).minimumNodesVersion();
 
         GridDhtPartitionsFullMessage m = createPartitionsMessage(true, minVer.compareTo(PRIMITIVE_UPD_CNTRS_SINCE) < 0);
 
@@ -1513,7 +1513,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
             Map<Integer, Map<Integer, List<UUID>>> assignmentChange = fut.get();
 
-            IgniteProductVersion minVer = cctx.discovery().discoCache(topologyVersion()).minimumRemoteNodesVersion();
+            IgniteProductVersion minVer = cctx.discovery().discoCache(topologyVersion()).minimumNodesVersion();
 
             GridDhtPartitionsFullMessage m = createPartitionsMessage(false,
                 minVer.compareTo(PRIMITIVE_UPD_CNTRS_SINCE) < 0);
@@ -1570,7 +1570,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     maxCntrs.put(p, new CounterWithNodes(cntr, uuid));
                 else if (cntr == maxCntr.cnt)
                     maxCntr.nodes.add(uuid);
-
             }
         }
 

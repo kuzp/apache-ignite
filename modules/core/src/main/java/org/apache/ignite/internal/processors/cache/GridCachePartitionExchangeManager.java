@@ -935,7 +935,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
         Collection<ClusterNode> nodes,
         AffinityTopologyVersion msgTopVer
     ) {
-        IgniteProductVersion minVer = cctx.discovery().discoCache(msgTopVer).minimumRemoteNodesVersion();
+        IgniteProductVersion minVer = cctx.discovery().discoCache(msgTopVer).minimumNodesVersion();
 
         GridDhtPartitionsFullMessage m = createPartitionsFullMessage(
             true,
