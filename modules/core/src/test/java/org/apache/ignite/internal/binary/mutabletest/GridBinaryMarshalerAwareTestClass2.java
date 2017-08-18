@@ -56,9 +56,9 @@ public class GridBinaryMarshalerAwareTestClass2 implements Binarylizable {
 
         BinaryRawWriter raw = writer.rawWriter();
 
-        raw.writePackedInt(i2);
+        raw.writeInt(i2);
         raw.writeString(s2);
-        raw.writePackedInt(i3);
+        raw.writeInt(i3);
         raw.writeDecimal(num);
     }
 
@@ -69,9 +69,9 @@ public class GridBinaryMarshalerAwareTestClass2 implements Binarylizable {
 
         BinaryRawReader raw = reader.rawReader();
 
-        i2 = raw.readPackedInt();
+        i2 = raw.readInt();
         s2 = raw.readString();
-        i3 = raw.readPackedInt();
+        i3 = raw.readInt();
         num = raw.readDecimal();
     }
 

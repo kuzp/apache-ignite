@@ -10,7 +10,7 @@ import org.apache.ignite.binary.Binarylizable;
 /**
  * Created by admin on 8/17/2017.
  */
-public class DepoHist {
+public class DepoHist implements Binarylizable {
     @OraName(value = "id")
     @InitOrder(value = "1")
     @DataType(value = TransformType.LONG)
@@ -64,8 +64,8 @@ public class DepoHist {
 
     @OraName(value = "C_AUTHKIND")
     @InitOrder(value = "7")
-    @DataType(value = TransformType.INTEGER)
-    public Integer cardhistAuthkind;
+    @DataType(value = TransformType.LONG)
+    public Long cardhistAuthkind;
 
     @OraName(value = "C_CARDNO")
     @InitOrder(value = "8")
@@ -84,13 +84,13 @@ public class DepoHist {
 
     @OraName(value = "C_TXCURRENCY")
     @InitOrder(value = "11")
-    @DataType(value = TransformType.INTEGER)
-    public Integer cardhistTxcurrency;
+    @DataType(value = TransformType.LONG)
+    public Long cardhistTxcurrency;
 
     @OraName(value = "C_TXID")
     @InitOrder(value = "12")
-    @DataType(value = TransformType.INTEGER)
-    public Integer cardhistTxid;
+    @DataType(value = TransformType.LONG)
+    public Long cardhistTxid;
 
     @OraName(value = "C_TXTIME")
     @InitOrder(value = "13")
@@ -124,8 +124,8 @@ public class DepoHist {
 
     @OraName(value = "D_BRANCHNO")
     @InitOrder(value = "19")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohist_branchno;
+    @DataType(value = TransformType.LONG)
+    public Long depohist_branchno;
 
     @OraName(value = "D_CARDRPTDAY")
     @InitOrder(value = "20")
@@ -134,23 +134,23 @@ public class DepoHist {
 
     @OraName(value = "D_CASHSOURCE")
     @InitOrder(value = "21")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistCashsource;
+    @DataType(value = TransformType.LONG)
+    public Long depohistCashsource;
 
     @OraName(value = "D_CHEQUECNT")
     @InitOrder(value = "22")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistChequecnt;
+    @DataType(value = TransformType.LONG)
+    public Long depohistChequecnt;
 
     @OraName(value = "D_CLERK")
     @InitOrder(value = "23")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistClerk;
+    @DataType(value = TransformType.LONG)
+    public Long depohistClerk;
 
     @OraName(value = "D_CONVER_CURRENCY")
     @InitOrder(value = "24")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistConverCurrency;
+    @DataType(value = TransformType.LONG)
+    public Long depohistConverCurrency;
 
     @OraName(value = "D_CONVER_OPCASH")
     @InitOrder(value = "25")
@@ -194,28 +194,28 @@ public class DepoHist {
 
     @OraName(value = "D_EXTERNALKIND")
     @InitOrder(value = "33")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistExternalkind;
+    @DataType(value = TransformType.LONG)
+    public Long depohistExternalkind;
 
     @OraName(value = "D_FLAG_CASH")
     @InitOrder(value = "34")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistFlagCash;
+    @DataType(value = TransformType.LONG)
+    public Long depohistFlagCash;
 
     @OraName(value = "D_GRANT_OPER")
     @InitOrder(value = "35")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistGrantOper;
+    @DataType(value = TransformType.LONG)
+    public Long depohistGrantOper;
 
     @OraName(value = "D_HEIRNO")
     @InitOrder(value = "36")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistHeirno;
+    @DataType(value = TransformType.LONG)
+    public Long depohistHeirno;
 
     @OraName(value = "D_ID_MEGA")
     @InitOrder(value = "37")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohist_tb;
+    @DataType(value = TransformType.LONG)
+    public Long depohist_tb;
 
     @OraName(value = "D_INSERTTIME")
     @InitOrder(value = "38")
@@ -234,28 +234,28 @@ public class DepoHist {
 
     @OraName(value = "D_ISCASHDISPENSER")
     @InitOrder(value = "41")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistIscashdispenser;
+    @DataType(value = TransformType.LONG)
+    public Long depohistIscashdispenser;
 
     @OraName(value = "D_ISMANUAL")
     @InitOrder(value = "42")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistIsmanual;
+    @DataType(value = TransformType.LONG)
+    public Long depohistIsmanual;
 
     @OraName(value = "D_ISMOFFICE")
     @InitOrder(value = "43")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistIsmoffice;
+    @DataType(value = TransformType.LONG)
+    public Long depohistIsmoffice;
 
     @OraName(value = "D_JRNNO")
     @InitOrder(value = "44")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistJrnno;
+    @DataType(value = TransformType.LONG)
+    public Long depohistJrnno;
 
     @OraName(value = "D_MAXAMOUNT")
     @InitOrder(value = "45")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistMaxamount;
+    @DataType(value = TransformType.LONG)
+    public Long depohistMaxamount;
 
     @OraName(value = "D_MAXAMOUNTRATE")
     @InitOrder(value = "46")
@@ -264,8 +264,8 @@ public class DepoHist {
 
     @OraName(value = "D_N_DPRICE")
     @InitOrder(value = "47")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistNDprice;
+    @DataType(value = TransformType.LONG)
+    public Long depohistNDprice;
 
     @OraName(value = "D_OFFCASHBALANCE")
     @InitOrder(value = "48")
@@ -279,8 +279,8 @@ public class DepoHist {
 
     @OraName(value = "D_OFFICE")
     @InitOrder(value = "50")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistOffice;
+    @DataType(value = TransformType.LONG)
+    public Long depohistOffice;
 
     @OraName(value = "D_OFFICETRANSDAY")
     @InitOrder(value = "51")
@@ -299,8 +299,8 @@ public class DepoHist {
 
     @OraName(value = "D_OPCODE")
     @InitOrder(value = "54")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistOpcode;
+    @DataType(value = TransformType.LONG)
+    public Long depohistOpcode;
 
     @OraName(value = "D_OPDAY")
     @InitOrder(value = "55")
@@ -314,13 +314,13 @@ public class DepoHist {
 
     @OraName(value = "D_OPKIND")
     @InitOrder(value = "57")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistOpkind;
+    @DataType(value = TransformType.LONG)
+    public Long depohistOpkind;
 
     @OraName(value = "D_OPNO")
     @InitOrder(value = "58")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistOpno;
+    @DataType(value = TransformType.LONG)
+    public Long depohistOpno;
 
     @OraName(value = "D_OPTRANSDAY")
     @InitOrder(value = "59")
@@ -379,8 +379,8 @@ public class DepoHist {
 
     @OraName(value = "D_PINACCEPTFLAG")
     @InitOrder(value = "70")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistPinacceptflag;
+    @DataType(value = TransformType.LONG)
+    public Long depohistPinacceptflag;
 
     @OraName(value = "D_PROLONGDAY")
     @InitOrder(value = "71")
@@ -389,13 +389,13 @@ public class DepoHist {
 
     @OraName(value = "D_RATESOURCE")
     @InitOrder(value = "72")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistRatesource;
+    @DataType(value = TransformType.LONG)
+    public Long depohistRatesource;
 
     @OraName(value = "D_REASON")
     @InitOrder(value = "73")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistReason;
+    @DataType(value = TransformType.LONG)
+    public Long depohistReason;
 
     @OraName(value = "D_SBOOKENDDAY")
     @InitOrder(value = "74")
@@ -419,13 +419,13 @@ public class DepoHist {
 
     @OraName(value = "D_STATE")
     @InitOrder(value = "78")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistState;
+    @DataType(value = TransformType.LONG)
+    public Long depohistState;
 
     @OraName(value = "D_SUBSYS")
     @InitOrder(value = "79")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistSubsys;
+    @DataType(value = TransformType.LONG)
+    public Long depohistSubsys;
 
     @OraName(value = "D_SUMOBNALOPERATION")
     @InitOrder(value = "80")
@@ -444,13 +444,13 @@ public class DepoHist {
 
     @OraName(value = "D_TERMSOK")
     @InitOrder(value = "83")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistTermsok;
+    @DataType(value = TransformType.LONG)
+    public Long depohistTermsok;
 
     @OraName(value = "D_TURNCODE")
     @InitOrder(value = "84")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistTurncode;
+    @DataType(value = TransformType.LONG)
+    public Long depohistTurncode;
 
     @OraName(value = "D_USEDTAXEXEMPTIONS")
     @InitOrder(value = "85")
@@ -459,13 +459,13 @@ public class DepoHist {
 
     @OraName(value = "D_V_HZAP2")
     @InitOrder(value = "86")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistVHzap2;
+    @DataType(value = TransformType.LONG)
+    public Long depohistVHzap2;
 
     @OraName(value = "D_WARRANTKIND")
     @InitOrder(value = "87")
-    @DataType(value = TransformType.INTEGER)
-    public Integer depohistWarrantkind;
+    @DataType(value = TransformType.LONG)
+    public Long depohistWarrantkind;
 
     @OraName(value = "D_WARRANTNO")
     @InitOrder(value = "88")
@@ -484,8 +484,8 @@ public class DepoHist {
 
     @OraName(value = "O_OPNO")
     @InitOrder(value = "91")
-    @DataType(value = TransformType.INTEGER)
-    public Integer offcashcompOpno;
+    @DataType(value = TransformType.LONG)
+    public Long offcashcompOpno;
 
     @OraName(value = "O_ORDNO")
     @InitOrder(value = "92")
@@ -504,8 +504,8 @@ public class DepoHist {
 
     @OraName(value = "O_V_DNUM1")
     @InitOrder(value = "95")
-    @DataType(value = TransformType.INTEGER)
-    public Integer offcashcompVDnum1;
+    @DataType(value = TransformType.LONG)
+    public Long offcashcompVDnum1;
 
     @OraName(value = "O_V_DSUM1")
     @InitOrder(value = "96")
@@ -813,7 +813,6 @@ public class DepoHist {
         if (templObjId != null ? !templObjId.equals(hist.templObjId) : hist.templObjId != null)
             return false;
         return !(parentObjId != null ? !parentObjId.equals(hist.parentObjId) : hist.parentObjId != null);
-
     }
 
     @Override public int hashCode() {
@@ -933,5 +932,524 @@ public class DepoHist {
         result = 31 * result + (int)(objectId ^ (objectId >>> 32));
         result = 31 * result + (isDeleted ? 1 : 0);
         return result;
+    }
+
+    @Override public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
+        TupleOutput to = new TupleOutput();
+
+        // long id;
+        to.writeLong(id);
+        // long partitionъid;
+        to.writeLong(partitionъid);
+        //long rootParticleъid;
+        to.writeLong(rootParticleъid);
+        //long affinityParentъid;
+        to.writeLong(affinityParentъid);
+        // long operationRunъid;
+        to.writeLong(operationRunъid);
+        // long operationRunъpartId;
+        to.writeLong(operationRunъpartId);
+        // long operationRunъrootId;
+        to.writeLong(operationRunъrootId);
+        // String cardhistAtmid;
+        to.writeString(cardhistAtmid);
+        // String cardhistAuthcode;
+        to.writeString(cardhistAuthcode);
+        // Integer cardhistAuthkind;
+        writeNullableLong(to, cardhistAuthkind);
+        // String cardhistCardno;
+        to.writeString(cardhistCardno);
+        // String cardhistMerchantno;
+        to.writeString(cardhistMerchantno);
+        // BigDecimal cardhistTxcash;
+        writeNullableDecimal(to, cardhistTxcash);
+        // Integer cardhistTxcurrency;
+        writeNullableLong(to, cardhistTxcurrency);
+        // Integer cardhistTxid;
+        writeNullableLong(to, cardhistTxid);
+        // Date cardhistTxtime;
+        writeDate(to, cardhistTxtime);
+        // Date depohistAssignday;
+        writeDate(to, depohistAssignday);
+        // BigDecimal depohistAssminbalance;
+        writeNullableDecimal(to, depohistAssminbalance);
+        // BigDecimal depohistBalance;
+        writeNullableDecimal(to, depohistBalance);
+        // BigDecimal depohistBalanceOwn;
+        writeNullableDecimal(to, depohistBalanceOwn);
+        // BigDecimal depohistSubsidy;
+        writeNullableDecimal(to, depohistSubsidy);
+        // Integer depohist_branchno;
+        writeNullableLong(to, depohist_branchno);
+        // Date depohistCardrptday;
+        writeDate(to, depohistCardrptday);
+        // Integer depohistCashsource;
+        writeNullableLong(to, depohistCashsource);
+        // Integer depohistChequecnt;
+        writeNullableLong(to, depohistChequecnt);
+        // Integer depohistClerk;
+        writeNullableLong(to, depohistClerk);
+        // Integer depohistConverCurrency;
+        writeNullableLong(to, depohistConverCurrency);
+        // BigDecimal depohistConverOpcash;
+        writeNullableDecimal(to, depohistConverOpcash);
+        // String depohistCreditaccount;
+        to.writeString(depohistCreditaccount);
+        // String depohistDebitaccount;
+        to.writeString(depohistDebitaccount);
+        // BigDecimal depohistDepositrate;
+        writeNullableDecimal(to, depohistDepositrate);
+        // Date depohistExpirationday;
+        writeDate(to, depohistExpirationday);
+        // BigDecimal depohistExpminbalance;
+        writeNullableDecimal(to, depohistExpminbalance);
+        // BigDecimal depohistExproverdraft;
+        writeNullableDecimal(to, depohistExproverdraft);
+        // BigDecimal depohistExproverdraftint;
+        writeNullableDecimal(to, depohistExproverdraftint);
+        // Integer depohistExternalkind;
+        writeNullableLong(to, depohistExternalkind);
+        // Integer depohistFlagCash;
+        writeNullableLong(to, depohistFlagCash);
+        // Integer depohistGrantOper;
+        writeNullableLong(to, depohistGrantOper);
+        // Integer depohistHeirno;
+        writeNullableLong(to, depohistHeirno);
+        // Integer depohist_tb;
+        writeNullableLong(to, depohist_tb);
+        // Date depohistInserttime;
+        writeDate(to, depohistInserttime);
+        // BigDecimal depohistInterest;
+        writeNullableDecimal(to, depohistInterest);
+        // BigDecimal depohistInterestf;
+        writeNullableDecimal(to, depohistInterestf);
+        // Integer depohistIscashdispenser;
+        writeNullableLong(to, depohistIscashdispenser);
+        // Integer depohistIsmanual;
+        writeNullableLong(to, depohistIsmanual);
+        // Integer depohistIsmoffice;
+        writeNullableLong(to, depohistIsmoffice);
+        // Integer depohistJrnno;
+        writeNullableLong(to, depohistJrnno);
+        // Integer depohistMaxamount;
+        writeNullableLong(to, depohistMaxamount);
+        // BigDecimal depohistMaxamountrate;
+        writeNullableDecimal(to, depohistMaxamountrate);
+        // Integer depohistNDprice;
+        writeNullableLong(to, depohistNDprice);
+        // BigDecimal depohistOffcashbalance;
+        writeNullableDecimal(to, depohistOffcashbalance);
+        // BigDecimal depohistOffcashbalanceb;
+        writeNullableDecimal(to, depohistOffcashbalanceb);
+        // Integer depohistOffice;
+        writeNullableLong(to, depohistOffice);
+        // Date depohistOfficetransday;
+        writeDate(to, depohistOfficetransday);
+        // BigDecimal depohistOpcash;
+        writeNullableDecimal(to, depohistOpcash);
+        // BigDecimal depohistOpcashcost;
+        writeNullableDecimal(to, depohistOpcashcost);
+        // Integer depohistOpcode;
+        writeNullableLong(to, depohistOpcode);
+        // Date depohistOpday;
+        writeDate(to, depohistOpday);
+        // BigDecimal depohistOpencash;
+        writeNullableDecimal(to, depohistOpencash);
+        // Integer depohistOpkind;
+        writeNullableLong(to, depohistOpkind);
+        // Integer depohistOpno;
+        writeNullableLong(to, depohistOpno);
+        // Date depohistOptransday;
+        writeDate(to, depohistOptransday);
+        // String depohistOrderno;
+        to.writeString(depohistOrderno);
+        //BigDecimal depohistMinBalanceMonth;
+        writeNullableDecimal(to, depohistMinBalanceMonth);
+        // BigDecimal depohistBalanceOwnProlong;
+        writeNullableDecimal(to, depohistBalanceOwnProlong);
+        // BigDecimal depohistOverdraft;
+        writeNullableDecimal(to, depohistOverdraft);
+        // BigDecimal depohistOverdraftint;
+        writeNullableDecimal(to, depohistOverdraftint);
+        // String depohistPairAccount;
+        to.writeString(depohistPairAccount);
+        // BigDecimal depohistPartrate;
+        writeNullableDecimal(to, depohistPartrate);
+        // Date depositPayrollday;
+        writeDate(to, depositPayrollday);
+        // Date depositPayAddFirst;
+        writeDate(to, depositPayAddFirst);
+        // BigDecimal depohistPercentsrate;
+        writeNullableDecimal(to, depohistPercentsrate);
+        // Integer depohistPinacceptflag;
+        writeNullableLong(to, depohistPinacceptflag);
+        // Date depohistProlongday;
+        writeDate(to, depohistProlongday);
+        // Integer depohistRatesource;
+        writeNullableLong(to, depohistRatesource);
+        // Integer depohistReason;
+        writeNullableLong(to, depohistReason);
+        // Date depohistSbookendday;
+        writeDate(to, depohistSbookendday);
+        // Date depohistSourcedocday;
+        writeDate(to, depohistSourcedocday);
+        // String depohistSourcedocno;
+        to.writeString(depohistSourcedocno);
+        // String depohistSourcedocoriginator;
+        to.writeString(depohistSourcedocoriginator);
+        // Integer depohistState;
+        writeNullableLong(to, depohistState);
+        // Integer depohistSubsys;
+        writeNullableLong(to, depohistSubsys);
+        // BigDecimal depohistSumobnaloperation;
+        writeNullableDecimal(to, depohistSumobnaloperation);
+        // BigDecimal depohistTaxableprofit;
+        writeNullableDecimal(to, depohistTaxableprofit);
+        // BigDecimal depohistTaxableprofitcost;
+        writeNullableDecimal(to, depohistTaxableprofitcost);
+        // Integer depohistTermsok;
+        writeNullableLong(to, depohistTermsok);
+        // Integer depohistTurncode;
+        writeNullableLong(to, depohistTurncode);
+        // BigDecimal depohistUsedtaxexemptions;
+        writeNullableDecimal(to, depohistUsedtaxexemptions);
+        // Integer depohistVHzap2;
+        writeNullableLong(to, depohistVHzap2);
+        // Integer depohistWarrantkind;
+        writeNullableLong(to, depohistWarrantkind);
+        // String depohistWarrantno;
+        to.writeString(depohistWarrantno);
+        // String offcashcompInfo;
+        to.writeString(offcashcompInfo);
+        // Date offcashcompOpday;
+        writeDate(to, offcashcompOpday);
+        // Integer offcashcompOpno;
+        writeNullableLong(to, offcashcompOpno);
+        // String offcashcompOrdno;
+        to.writeString(offcashcompOrdno);
+        // String offcashcompSsagency;
+        to.writeString(offcashcompSsagency);
+        // String offcashcompSsn;
+        to.writeString(offcashcompSsn);
+        // Long offcashcompVDnum1;
+        writeNullableLong(to, offcashcompVDnum1);
+        // BigDecimal offcashcompVDsum1;
+        writeNullableDecimal(to, offcashcompVDsum1);
+        // BigDecimal offcashcompVDsum2;
+        writeNullableDecimal(to, offcashcompVDsum2);
+        // BigDecimal offcashcompVDsum3;
+        writeNullableDecimal(to, offcashcompVDsum3);
+        // BigDecimal offcashcompVDsum4;
+        writeNullableDecimal(to, offcashcompVDsum4);
+        // BigDecimal offcashcompVDsum5;
+        writeNullableDecimal(to, offcashcompVDsum5);
+        // BigDecimal offcashcompVDsum6;
+        writeNullableDecimal(to, offcashcompVDsum6);
+        // BigDecimal offcashcompVDsum7;
+        writeNullableDecimal(to, offcashcompVDsum7);
+        // String category;
+        to.writeString(category);
+        // Long depohistTerm;
+        writeNullableLong(to, depohistTerm);
+        // String code;
+        to.writeString(code);
+        // String name;
+        to.writeString(name);
+        // String sourceId;
+        to.writeString(sourceId);
+        // String sourceSystemId;
+        to.writeString(sourceSystemId);
+        // Long templObjId;
+        writeNullableLong(to, templObjId);
+        // Long parentObjId;
+        writeNullableLong(to, parentObjId);
+        // long objectId;
+        to.writeLong(objectId);
+        // boolean isDeleted=false;
+        to.writeBoolean(isDeleted);
+
+        writer.rawWriter().writeByteArray(to.toByteArray());
+    }
+
+    private void writeDate(TupleOutput to, Date date) {
+        to.writeByte(date == null ? 0 : 1);
+        if (date != null)
+            to.writeLong(date.getTime());
+    }
+
+    private void writeNullableLong(TupleOutput to, Long num) {
+        to.writeByte(num == null ? 0 : 1);
+        if (num != null)
+            to.writePackedLong(num);
+    }
+
+    private void writeNullableDecimal(TupleOutput to, BigDecimal num) {
+        to.writeByte(num == null ? 0 : 1);
+        if (num != null)
+            to.writeBigDecimal(num);
+    }
+
+    @Override public void readBinary(BinaryReader reader) throws BinaryObjectException {
+        byte[] bytes = reader.rawReader().readByteArray();
+
+        TupleInput to = new TupleInput(bytes);
+
+        // long id;
+        id = to.readLong();
+        // long partitionъid;
+        partitionъid = to.readLong();
+        //long rootParticleъid;
+        rootParticleъid = to.readLong();
+        //long affinityParentъid;
+        affinityParentъid = to.readLong();
+        // long operationRunъid;
+        operationRunъid = to.readLong();
+        // long operationRunъpartId;
+        operationRunъpartId = to.readLong();
+        // long operationRunъrootId;
+        operationRunъrootId = to.readLong();
+        // String cardhistAtmid;
+        cardhistAtmid = to.readString();
+        // String cardhistAuthcode;
+        cardhistAuthcode = to.readString();
+        // Integer cardhistAuthkind;
+        cardhistAuthkind = readNullableLong(to);
+        // String cardhistCardno;
+        cardhistCardno = to.readString();
+        // String cardhistMerchantno;
+        cardhistMerchantno = to.readString();
+        // BigDecimal cardhistTxcash;
+        cardhistTxcash = readNullableDecimal(to);
+        // Integer cardhistTxcurrency;
+        cardhistTxcurrency = readNullableLong(to);
+        // Integer cardhistTxid;
+        cardhistTxid = readNullableLong(to);
+        // Date cardhistTxtime;
+        cardhistTxtime = readDate(to);
+        // Date depohistAssignday;
+        depohistAssignday = readDate(to);
+        // BigDecimal depohistAssminbalance;
+        depohistAssminbalance = readNullableDecimal(to);
+        // BigDecimal depohistBalance;
+        depohistBalance = readNullableDecimal(to);
+        // BigDecimal depohistBalanceOwn;
+        depohistBalanceOwn = readNullableDecimal(to);
+        // BigDecimal depohistSubsidy;
+        depohistSubsidy = readNullableDecimal(to);
+        // Integer depohist_branchno;
+        depohist_branchno = readNullableLong(to);
+        // Date depohistCardrptday;
+        depohistCardrptday = readDate(to);
+        // Integer depohistCashsource;
+        depohistCashsource = readNullableLong(to);
+        // Integer depohistChequecnt;
+        depohistChequecnt = readNullableLong(to);
+        // Integer depohistClerk;
+        depohistClerk = readNullableLong(to);
+        // Integer depohistConverCurrency;
+        depohistConverCurrency = readNullableLong(to);
+        // BigDecimal depohistConverOpcash;
+        depohistConverOpcash = readNullableDecimal(to);
+        // String depohistCreditaccount;
+        depohistCreditaccount = to.readString();
+        // String depohistDebitaccount;
+        depohistDebitaccount = to.readString();
+        // BigDecimal depohistDepositrate;
+        depohistDepositrate = readNullableDecimal(to);
+        // Date depohistExpirationday;
+        depohistExpirationday = readDate(to);
+        // BigDecimal depohistExpminbalance;
+        depohistExpminbalance = readNullableDecimal(to);
+        // BigDecimal depohistExproverdraft;
+        depohistExproverdraft = readNullableDecimal(to);
+        // BigDecimal depohistExproverdraftint;
+        depohistExproverdraftint = readNullableDecimal(to);
+        // Integer depohistExternalkind;
+        depohistExternalkind = readNullableLong(to);
+        // Integer depohistFlagCash;
+        depohistFlagCash = readNullableLong(to);
+        // Integer depohistGrantOper;
+        depohistGrantOper = readNullableLong(to);
+        // Integer depohistHeirno;
+        depohistHeirno = readNullableLong(to);
+        // Integer depohist_tb;
+        depohist_tb = readNullableLong(to);
+        // Date depohistInserttime;
+        depohistInserttime = readDate(to);
+        // BigDecimal depohistInterest;
+        depohistInterest = readNullableDecimal(to);
+        // BigDecimal depohistInterestf;
+        depohistInterestf = readNullableDecimal(to);
+        // Integer depohistIscashdispenser;
+        depohistIscashdispenser = readNullableLong(to);
+        // Integer depohistIsmanual;
+        depohistIsmanual = readNullableLong(to);
+        // Integer depohistIsmoffice;
+        depohistIsmoffice = readNullableLong(to);
+        // Integer depohistJrnno;
+        depohistJrnno = readNullableLong(to);
+        // Integer depohistMaxamount;
+        depohistMaxamount = readNullableLong(to);
+        // BigDecimal depohistMaxamountrate;
+        depohistMaxamountrate = readNullableDecimal(to);
+        // Integer depohistNDprice;
+        depohistNDprice = readNullableLong(to);
+        // BigDecimal depohistOffcashbalance;
+        depohistOffcashbalance = readNullableDecimal(to);
+        // BigDecimal depohistOffcashbalanceb;
+        depohistOffcashbalanceb = readNullableDecimal(to);
+        // Integer depohistOffice;
+        depohistOffice = readNullableLong(to);
+        // Date depohistOfficetransday;
+        depohistOfficetransday = readDate(to);
+        // BigDecimal depohistOpcash;
+        depohistOpcash = readNullableDecimal(to);
+        // BigDecimal depohistOpcashcost;
+        depohistOpcashcost = readNullableDecimal(to);
+        // Integer depohistOpcode;
+        depohistOpcode = readNullableLong(to);
+        // Date depohistOpday;
+        depohistOpday = readDate(to);
+        // BigDecimal depohistOpencash;
+        depohistOpencash = readNullableDecimal(to);
+        // Integer depohistOpkind;
+        depohistOpkind = readNullableLong(to);
+        // Integer depohistOpno;
+        depohistOpno = readNullableLong(to);
+        // Date depohistOptransday;
+        depohistOptransday = readDate(to);
+        // String depohistOrderno;
+        depohistOrderno = to.readString();
+        //BigDecimal depohistMinBalanceMonth;
+        depohistMinBalanceMonth = readNullableDecimal(to);
+        // BigDecimal depohistBalanceOwnProlong;
+        depohistBalanceOwnProlong = readNullableDecimal(to);
+        // BigDecimal depohistOverdraft;
+        depohistOverdraft = readNullableDecimal(to);
+        // BigDecimal depohistOverdraftint;
+        depohistOverdraftint = readNullableDecimal(to);
+        // String depohistPairAccount;
+        depohistPairAccount = to.readString();
+        // BigDecimal depohistPartrate;
+        depohistPartrate = readNullableDecimal(to);
+        // Date depositPayrollday;
+        depositPayrollday = readDate(to);
+        // Date depositPayAddFirst;
+        depositPayAddFirst = readDate(to);
+        // BigDecimal depohistPercentsrate;
+        depohistPercentsrate = readNullableDecimal(to);
+        // Integer depohistPinacceptflag;
+        depohistPinacceptflag =readNullableLong(to);
+        // Date depohistProlongday;
+        depohistProlongday = readDate(to);
+        // Integer depohistRatesource;
+        depohistRatesource = readNullableLong(to);
+        // Integer depohistReason;
+        depohistReason = readNullableLong(to);
+        // Date depohistSbookendday;
+        depohistSbookendday = readDate(to);
+        // Date depohistSourcedocday;
+        depohistSourcedocday = readDate(to);
+        // String depohistSourcedocno;
+        depohistSourcedocno = to.readString();
+        // String depohistSourcedocoriginator;
+        depohistSourcedocoriginator = to.readString();
+        // Integer depohistState;
+        depohistState = readNullableLong(to);
+        // Integer depohistSubsys;
+        depohistSubsys = readNullableLong(to);
+        // BigDecimal depohistSumobnaloperation;
+        depohistSumobnaloperation = readNullableDecimal(to);
+        // BigDecimal depohistTaxableprofit;
+        depohistTaxableprofit = readNullableDecimal(to);
+        // BigDecimal depohistTaxableprofitcost;
+        depohistTaxableprofitcost = readNullableDecimal(to);
+        // Integer depohistTermsok;
+        depohistTermsok = readNullableLong(to);
+        // Integer depohistTurncode;
+        depohistTurncode = readNullableLong(to);
+        // BigDecimal depohistUsedtaxexemptions;
+        depohistUsedtaxexemptions = readNullableDecimal(to);
+        // Integer depohistVHzap2;
+        depohistVHzap2 = readNullableLong(to);
+        // Integer depohistWarrantkind;
+        depohistWarrantkind = readNullableLong(to);
+        // String depohistWarrantno;
+        depohistWarrantno = to.readString();
+        // String offcashcompInfo;
+        offcashcompInfo = to.readString();
+        // Date offcashcompOpday;
+        offcashcompOpday = readDate(to);
+        // Integer offcashcompOpno;
+        offcashcompOpno = readNullableLong(to);
+        // String offcashcompOrdno;
+        offcashcompOrdno = to.readString();
+        // String offcashcompSsagency;
+        offcashcompSsagency = to.readString();
+        // String offcashcompSsn;
+        offcashcompSsn = to.readString();
+        // Long offcashcompVDnum1;
+        offcashcompVDnum1 = readNullableLong(to);
+        // BigDecimal offcashcompVDsum1;
+        offcashcompVDsum1 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum2;
+        offcashcompVDsum2 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum3;
+        offcashcompVDsum3 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum4;
+        offcashcompVDsum4 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum5;
+        offcashcompVDsum5 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum6;
+        offcashcompVDsum6 = readNullableDecimal(to);
+        // BigDecimal offcashcompVDsum7;
+        offcashcompVDsum7 = readNullableDecimal(to);
+        // String category;
+        category = to.readString();
+        // Long depohistTerm;
+        depohistTerm = readNullableLong(to);
+        // String code;
+        code = to.readString();
+        // String name;
+        name = to.readString();
+        // String sourceId;
+        sourceId = to.readString();
+        // String sourceSystemId;
+        sourceSystemId = to.readString();
+        // Long templObjId;
+        templObjId = readNullableLong(to);
+        // Long parentObjId;
+        parentObjId = readNullableLong(to);
+        // long objectId;
+        objectId = to.readLong();
+        // boolean isDeleted=false;
+        isDeleted = to.readBoolean();
+    }
+
+    private Date readDate(TupleInput to) {
+        byte b = to.readByte();
+
+        if (b == 0)
+            return null;
+
+        return new Date(to.readLong());
+    }
+
+    private BigDecimal readNullableDecimal(TupleInput to) {
+        byte b = to.readByte();
+
+        if (b == 0)
+            return null;
+
+        return to.readBigDecimal();
+    }
+
+    private Long readNullableLong(TupleInput to) {
+        byte b = to.readByte();
+
+        if (b == 0)
+            return null;
+
+        return to.readPackedLong();
     }
 }

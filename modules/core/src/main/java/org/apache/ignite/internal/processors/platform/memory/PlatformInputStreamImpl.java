@@ -136,10 +136,6 @@ public class PlatformInputStreamImpl implements PlatformInputStream {
         return res;
     }
 
-    @Override public int readPackedInt() {
-        return 0;
-    }
-
     /** {@inheritDoc} */
     @Override public byte readBytePositioned(int pos) {
         int delta = pos + 1 - this.pos;

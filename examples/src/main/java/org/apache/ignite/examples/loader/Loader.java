@@ -41,11 +41,21 @@ public class Loader {
             while ((str = in.readLine()) != null) {
                 Object[] obj = t.getObj(str, DepoHist.class, AffinityParticleKey.class);
 
-                BinaryObjectImpl val = ignite.binary().toBinary((DepoHist)obj[1]);
+                DepoHist val = (DepoHist)obj[1];
 
-                depohist.put((AffinityParticleKey)obj[0], val);
+                BinaryObjectImpl binVal = ignite.binary().toBinary(val);
 
-                int tmp = val.array().length;
+                AffinityParticleKey key = (AffinityParticleKey)obj[0];
+
+                depohist.put(key, binVal);
+
+//                BinaryObject binVal2 = depohist.get(key);
+//
+//                Object val2 = binVal2.deserialize();
+//
+//                assert val.equals(val2);
+
+                int tmp = binVal.array().length;
 
                 sz += tmp;
 

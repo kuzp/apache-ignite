@@ -51,7 +51,7 @@
                     </list>
                 </property>
 
-                <property name="pageSize" value="2048"/>
+                <property name="pageSize" value="4096"/>
             </bean>
         </property>
         <!-- Setting up caches. -->
@@ -68,7 +68,7 @@
                     <property name="affinity">
                         <bean class="org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction">
                             <constructor-arg value="false"/>
-                            <constructor-arg value="1"/>
+                            <constructor-arg value="32"/>
                         </bean>
                     </property>
                     <!--<property name="indexedTypes">-->

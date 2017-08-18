@@ -93,7 +93,7 @@ public enum TransformType {
 			try {
 				return s.length()>0?Integer.valueOf(s):null;
 			} catch (Exception e) {
-				throw new IllegalArgumentException("Строка "+s+" не распознана как число(int)");
+				throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ "+s+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ(int)");
 			}
 		}
 
@@ -125,14 +125,14 @@ public enum TransformType {
                                 BigDecimal bd = new BigDecimal(s);
                                 l = bd.longValue();
                                 if (l%1 != 0) {
-                                    throw new IllegalArgumentException("Строка "+s+" не распознана как число(long)");
+                                    throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ "+s+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ(long)");
                                 }
                             } else l=Long.valueOf(s);
                         }
 //                            System.out.print(name+" "+l+"\n");
                         return l;
                     } catch (Exception e) {
-                            throw new IllegalArgumentException("Строка "+s+" не распознана как число(long)");
+                            throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ "+s+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ(long)");
                     }
             }
 
@@ -158,8 +158,8 @@ public enum TransformType {
 //			try {
 //				doo.setField(name,convertToDate(s));
 //			} catch (Exception e) {
-//				throw new IllegalArgumentException("Строка " + s
-//						+ " не распознана как дата :"
+//				throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ " + s
+//						+ " пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ :"
 //						+ e.getMessage());
 //			}
 //		}
@@ -171,8 +171,8 @@ public enum TransformType {
 //			try {
 //				doo.setField(name,convertToDate(s,default_01011900));
 //			} catch (Exception e) {
-//				throw new IllegalArgumentException("Строка " + s
-//						+ " не распознана как дата :"
+//				throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ " + s
+//						+ " пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ :"
 //						+ e.getMessage());
 //			}
 //		}
@@ -198,8 +198,8 @@ public enum TransformType {
                         return	dt;
 
                     } catch (Exception e) {
-                            throw new IllegalArgumentException("Строка " + value
-                                            + " не распознана как дата и время:"
+                            throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ " + value
+                                            + " пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ:"
                                             + e.getMessage());
                     }
             }
@@ -227,7 +227,7 @@ public enum TransformType {
 				d = (value.length()>0)?Double.valueOf(value):null;
                                 return d;
 			} catch (Exception e) {
-				throw new IllegalArgumentException("Строка "+value+" не распознана как дробное число");
+				throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ "+value+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ");
 			}
 		}
 
@@ -291,7 +291,7 @@ public enum TransformType {
 //				id = id.trim();
 //			}
 //			if(!id.contains("=")||!id.endsWith("]")||!id.contains("["))
-//				throw new IllegalStateException("ID не распознан:"+id);
+//				throw new IllegalStateException("ID пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:"+id);
 //			name = id.substring(0,id.lastIndexOf("="));
 //			id = id.substring(id.lastIndexOf("=")+2,id.length()-1);
 //			id = id.replaceAll("\\.", "-");
@@ -328,7 +328,7 @@ public enum TransformType {
 //					if(sc.hasNextLong()){
 //						idsCol.add(sc.nextLong());
 //					}else{
-//						throw new IllegalArgumentException("Ошибка преобразования  "+id+" в список из Long");
+//						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+id+" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Long");
 //					}
 //				}
 //				doo.setField(name, idsCol);
@@ -347,7 +347,7 @@ public enum TransformType {
 					if(sc.hasNextLong()){
 						idsCol.add(sc.nextLong());
 					}else{
-						throw new IllegalArgumentException("Ошибка преобразования  "+id+" в список из Long");
+						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+id+" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Long");
 					}
 				}
                                 StringBuilder sb = new StringBuilder();
@@ -386,7 +386,7 @@ public enum TransformType {
 					if(sc.hasNextLong()){
 						idsCol.add(sc.nextLong());
 					}else{
-						throw new IllegalArgumentException("Ошибка преобразования  "+id+" в список из Long");
+						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+id+" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Long");
 					}
 				}
                                 StringBuilder sb = new StringBuilder();
@@ -428,7 +428,7 @@ public enum TransformType {
 					if(sc.hasNextLong()){
 						idsCol.add(sc.nextLong());
 					}else{
-						throw new IllegalArgumentException("Ошибка преобразования  "+id+" в список из Long");
+						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+id+" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Long");
 					}
 				}
                                 StringBuilder sb = new StringBuilder();
@@ -504,7 +504,7 @@ public enum TransformType {
                                                                 return value;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Integer:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Integer:"+e.getMessage());
 							}
 						case "d":
 						case "D":
@@ -512,7 +512,7 @@ public enum TransformType {
                                                             return convertDateToString(value);
 //								doo.setField(name,convertToDate(value).toGMTString());
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Date:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Date:"+e.getMessage());
 							}
 						case "f":
 						case "F":
@@ -522,7 +522,7 @@ public enum TransformType {
                                                             return value;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Double:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Double:"+e.getMessage());
 							}
 
 						case "s":
@@ -531,7 +531,7 @@ public enum TransformType {
                                                             return value;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип String:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ String:"+e.getMessage());
 							}
 
 						case "i":
@@ -544,22 +544,22 @@ public enum TransformType {
                                                             return value;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Long:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Long:"+e.getMessage());
 							}
 //							break;
 
 						default:
-							throw new IllegalArgumentException("Значение "+value+" содержит неизвестный тип:"+valType);
+							throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "+value+" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ:"+valType);
 						}
 
 
 //					}else{
-//						throw new IllegalArgumentException("Значение не содержит тип, после разделителя \"|\"");
+//						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ \"|\"");
 //					}
 //				}else{
 //					doo.setField(name, null);
 //                                        scanner.next();
-////                                        throw new IllegalArgumentException("Значение пустое");
+////                                        throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ");
 //				}
 //			}
 		}
@@ -598,7 +598,7 @@ public enum TransformType {
 //                                                                return value;
 ////								doo.setField(name, value);
 //							} catch (Exception e) {
-//								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Integer:"+e.getMessage());
+//								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Integer:"+e.getMessage());
 //							}
 //						case "d":
 //						case "D":
@@ -606,7 +606,7 @@ public enum TransformType {
 //                                                            return convertToDate(value).toGMTString();
 ////								doo.setField(name,convertToDate(value).toGMTString());
 //							} catch (Exception e) {
-//								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Date:"+e.getMessage());
+//								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Date:"+e.getMessage());
 //							}
 						case "f":
 						case "F":
@@ -616,7 +616,7 @@ public enum TransformType {
                                                             return bd;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Double:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Double:"+e.getMessage());
 							}
 
 //						case "s":
@@ -625,7 +625,7 @@ public enum TransformType {
 //                                                            return value;
 ////								doo.setField(name, value);
 //							} catch (Exception e) {
-//								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип String:"+e.getMessage());
+//								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ String:"+e.getMessage());
 //							}
 
 						case "i":
@@ -638,22 +638,22 @@ public enum TransformType {
                                                             return bd;
 //								doo.setField(name, value);
 							} catch (Exception e) {
-								throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Long:"+e.getMessage());
+								throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Long:"+e.getMessage());
 							}
 //							break;
 
 						default:
-							throw new IllegalArgumentException("Значение "+value+" содержит неизвестный тип:"+valType);
+							throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "+value+" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ:"+valType);
 						}
 
 
 					}else{
-						throw new IllegalArgumentException("Значение не содержит тип, после разделителя \"|\"");
+						throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ \"|\"");
 					}
 //				}else{
 //					doo.setField(name, null);
 //                                        scanner.next();
-////                                        throw new IllegalArgumentException("Значение пустое");
+////                                        throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ");
 //				}
 //			}
 		}
@@ -686,7 +686,7 @@ public enum TransformType {
                         return bd;
 //								doo.setField(name, value);
                     } catch (Exception e) {
-                            throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип BigDecimal:"+e.getMessage());
+                            throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ BigDecimal:"+e.getMessage());
                     }
                 } else return null;
             }
@@ -749,10 +749,10 @@ public enum TransformType {
                                 bln= true;
                                 return bln;
                             default:
-                                    throw new IllegalArgumentException("Значение "+value+" не соответствует допустимым значениям для BOOLEAN");
+                                    throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "+value+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ BOOLEAN");
                         }
                     } catch (Exception e) {
-                            throw new IllegalArgumentException("Ошибка преобразования  "+value+" в тип Boolean:"+e.getMessage());
+                            throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ  "+value+" пїЅ пїЅпїЅпїЅ Boolean:"+e.getMessage());
                     }
                 } else return null;
             }
@@ -779,14 +779,14 @@ public enum TransformType {
 //			try {
 //                            doo.setField(name, new BigDecimal(s));
 //			} catch (Exception e) {
-//				throw new IllegalArgumentException("Строка "+s+" не распознана как число(long)");
+//				throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ "+s+" пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ(long)");
 //			}
 //		}
 //        }
 	;
 //	public void receiveNextValue(Scanner scanner,String name,DataObject doo) {
-//		if(doo==null)throw new IllegalArgumentException("Объект для инициализации не передан");
-//		if(scanner==null)throw new IllegalArgumentException("Источник для инициализации не передан");
+//		if(doo==null)throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+//		if(scanner==null)throw new IllegalArgumentException("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
 //		setupElement(scanner,name,doo);
 //	}
         

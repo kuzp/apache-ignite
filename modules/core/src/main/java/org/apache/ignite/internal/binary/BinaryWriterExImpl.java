@@ -382,13 +382,11 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (val == null)
             out.writeByte(GridBinaryMarshaller.NULL);
         else {
-            int scale = val.scale();
-
-            out.unsafeEnsure(1 + packedIntLength(scale));
+            out.unsafeEnsure(1 + 4 + 4);
 
             out.unsafeWriteByte(GridBinaryMarshaller.DECIMAL);
 
-            out.unsafeWritePackedInt(scale);
+            out.unsafeWriteInt(val.scale());
 
             BigInteger intVal = val.unscaledValue();
 
@@ -402,9 +400,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (negative)
                 vals[0] |= -0x80;
 
-            out.unsafeEnsure(packedIntLength(vals.length));
-
-            out.unsafeWritePackedInt(vals.length);
+            out.unsafeWriteInt(vals.length);
             out.writeByteArray(vals);
         }
     }
@@ -423,9 +419,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             else
                 strArr = val.getBytes(UTF_8);
 
-            out.unsafeEnsure(1 + packedIntLength(strArr.length));
+            out.unsafeEnsure(1 + 4);
             out.unsafeWriteByte(GridBinaryMarshaller.STRING);
-            out.unsafeWritePackedInt(strArr.length);
+            out.unsafeWriteInt(strArr.length);
 
             out.writeByteArray(strArr);
         }
@@ -1342,13 +1338,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /** {@inheritDoc} */
-    @Override public void writePackedInt(int val) throws BinaryObjectException {
-        out.unsafeEnsure(packedIntLength(val));
-
-        out.unsafeWritePackedInt(val);
-    }
-
-    /** {@inheritDoc} */
     @Override public void writeLong(String fieldName, long val) throws BinaryObjectException {
         writeFieldId(fieldName);
         writeLongField(val);
@@ -1920,32 +1909,5 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public BinaryContext context() {
         return ctx;
-    }
-
-
-    /**
-     * Returns the number of bytes that would be written by {@link #writeInt}.
-     *
-     * @param val the integer to be written.
-     * @return the number of bytes that would be used to write the given integer.
-     */
-    private static int packedIntLength(int val) {
-        if (val < -119)
-            val = -val - 119;
-        else if (val > 119)
-            val = val - 119;
-        else
-            return 1;
-
-        if ((val & 0xFFFFFF00) == 0)
-            return 2;
-
-        if ((val & 0xFFFF0000) == 0)
-            return 3;
-
-        if ((val & 0xFF000000) == 0)
-            return 4;
-
-        return 5;
     }
 }

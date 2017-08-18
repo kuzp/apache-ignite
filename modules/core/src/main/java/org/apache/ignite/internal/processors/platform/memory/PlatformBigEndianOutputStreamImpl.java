@@ -184,10 +184,6 @@ public class PlatformBigEndianOutputStreamImpl extends PlatformOutputStreamImpl 
         super.unsafeWriteInt(Integer.reverseBytes(val));
     }
 
-    @Override public void unsafeWritePackedInt(int val) {
-        // No-op.
-    }
-
     /** {@inheritDoc} */
     @Override public void unsafeWriteInt(int pos, int val) {
         super.unsafeWriteInt(pos, Integer.reverseBytes(val));
