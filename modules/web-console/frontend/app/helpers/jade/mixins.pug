@@ -263,7 +263,7 @@ mixin number(lbl, model, name, enabled, placeholder, min, tip)
 
 //- Mixin for required dropdown field.
 mixin dropdown-required-empty(lbl, model, name, enabled, required, placeholder, placeholderEmpty, options, tip)
-    +ignite-form-field-dropdown(lbl, model, name, enabledToDisabled(enabled), required, false, placeholder, placeholderEmpty, options, tip)
+    +ignite-form-field-dropdown(lbl, model, name, enabledToDisabled(enabled), required, false, placeholder, placeholderEmpty, options, tip)&attributes(attributes)
         if  block
             block
 
@@ -277,7 +277,7 @@ mixin dropdown-required-empty-autofocus(lbl, model, name, enabled, required, pla
 
 //- Mixin for required dropdown field.
 mixin dropdown-required(lbl, model, name, enabled, required, placeholder, options, tip)
-    +ignite-form-field-dropdown(lbl, model, name, enabledToDisabled(enabled), required, false, placeholder, '', options, tip)
+    +ignite-form-field-dropdown(lbl, model, name, enabledToDisabled(enabled), required, false, placeholder, '', options, tip)&attributes(attributes)
         if  block
             block
 
