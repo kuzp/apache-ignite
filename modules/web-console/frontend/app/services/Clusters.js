@@ -173,4 +173,27 @@ export default class Clusters {
     getDefaultClusterMemoryPolicy(cluster) {
         return get(cluster, 'memoryConfiguration.memoryPolicies', []).find((p) => p.name === 'default');
     }
+
+    makeBlankCheckpointSPI() {
+        return {
+            FS: {
+                directoryPaths: []
+            },
+            S3: {
+                awsCredentials: {
+                    kind: 'Basic'
+                },
+                clientConfiguration: {
+                    retryPolicy: {
+                        kind: 'Default'
+                    },
+                    useReaper: true
+                }
+            }
+        };
+    }
+
+    addCheckpointSPI(cluster) {
+        return cluster.checkpointSpi.push(this.makeBlankCheckpointSPI());
+    }
 }
