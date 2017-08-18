@@ -423,9 +423,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             else
                 strArr = val.getBytes(UTF_8);
 
-            out.unsafeEnsure(1 + 4);
+            out.unsafeEnsure(1 + packedIntLength(strArr.length));
             out.unsafeWriteByte(GridBinaryMarshaller.STRING);
-            out.unsafeWriteInt(strArr.length);
+            out.unsafeWritePackedInt(strArr.length);
 
             out.writeByteArray(strArr);
         }

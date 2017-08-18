@@ -1273,7 +1273,7 @@ public class BinaryUtils {
                 return new String(arr, UTF_8);
         }
 
-        int strLen = in.readInt();
+        int strLen = in.readPackedInt();
 
         int pos = in.position();
 
