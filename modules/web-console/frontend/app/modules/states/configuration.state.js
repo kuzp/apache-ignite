@@ -294,6 +294,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/cluster',
                 component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
+                resolve: {
+                    caches: cachesResolve
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
+                },
                 tfMetaTags: {
                     title: 'Configure Cluster'
                 }
