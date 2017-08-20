@@ -35,7 +35,9 @@ export default class SigninCtrl {
 
         self.invite.token = _.get($uiRouterGlobals.params, 'invite');
 
-        if (_.nonEmpty(self.invite.token)) {
+        self.invited = _.nonEmpty(self.invite.token);
+
+        if (self.invited) {
             Invites.find(self.invite.token)
                 .then((res) => {
                     self.invite.found = res.data.found;
