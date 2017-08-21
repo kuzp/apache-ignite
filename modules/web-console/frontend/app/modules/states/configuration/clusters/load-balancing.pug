@@ -101,9 +101,9 @@ include /app/helpers/jade/mixins
 
                                 pc-list-editable-no-items
                                     | You have no load balancing configurations.&nbsp;
-                                    a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                    a.link-success(ng-click=`$ctrl.Clusters.addLoadBalancingSpi(${model})`) Create one?
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addLoadBalancingSpi(${model})`)
                                 | + Add new load balancing configuration
                 +clusters-load-balancing-spi
 
