@@ -16,6 +16,11 @@
  */
 
 pc-list-editable {
+    $min-height: 47px;
+
+    display: block;
+    flex: 1;
+
     &-item-view,
     &-item-edit,
     &-no-items {
@@ -24,16 +29,24 @@ pc-list-editable {
     }
 
     &-no-items {
-        color: #999;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        min-height: $min-height;
+        padding: 5px 10px;
+
+        font-style: italic;
+    }
+
+    .pcle-body {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
     }
 
     .pcle-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        min-height: 45px;
-        padding: 4px 0px;
+        min-height: $min-height;
+        padding: 5px 0px;
 
         cursor: pointer;
         border-top: 1px solid #ddd;
@@ -95,6 +108,11 @@ pc-list-editable {
 
             align-items: flex-start;
         }
+
+        // Fix grid margin top in list.
+        .pc-form-grid-row {
+            margin-top: -10px;
+        }
     }
 
     [divider]:after {
@@ -112,4 +130,8 @@ pc-list-editable {
         
         line-height: 36px;
     }
+}
+
+.ignite-form-field__control pc-list-editable {
+    margin: 5px 0;
 }
