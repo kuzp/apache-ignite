@@ -26,11 +26,12 @@ import org.apache.ignite.internal.util.tostring.GridToStringBuilder;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
+import org.apache.ignite.yardstick.cache.IgniteDataStreamerBenchmarkV2;
+import org.apache.ignite.yardstick.cache.IgniteStreamerBenchmark;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.ignite.yardstick.cache.IgniteStreamerBenchmark;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Input arguments for Ignite benchmarks.
@@ -251,6 +252,14 @@ public class IgniteBenchmarkArguments {
     /** */
     @Parameter(names = {"-stbs", "--streamerBufSize"}, description = "Data streamer buffer size")
     private int streamerBufSize = IgniteDataStreamer.DFLT_PER_NODE_BUFFER_SIZE;
+
+    /** */
+    @Parameter(names = {"-stpo", "--streamerParallelOps"}, description = "Data streamer parallel ops")
+    private int streamerParOps;
+
+    /** */
+    @Parameter(names = {"-stes", "--streamerEntrySize"}, description = "Data streamer entry size in bytes ")
+    private int streamerEntrySize = 8;
 
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
@@ -629,6 +638,20 @@ public class IgniteBenchmarkArguments {
      */
     public int streamerBufferSize() {
         return streamerBufSize;
+    }
+
+    /**
+     * @return Streamer parallel ops {@link IgniteDataStreamerBenchmarkV2} (see {@link IgniteDataStreamer#perNodeParallelOperations()}.
+     */
+    public int streamerParOps() {
+        return streamerParOps;
+    }
+
+    /**
+     * @return Streamer entry size in bytes {@link IgniteDataStreamerBenchmarkV2}.
+     */
+    public int streamerEntrySize() {
+        return streamerEntrySize;
     }
 
     /** {@inheritDoc} */
