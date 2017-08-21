@@ -17,36 +17,20 @@
 include /app/helpers/jade/mixins
 
 -var form = '$parent.form'
--var dirPaths = `$parent.item.FS.directoryPaths`
 
-.details-row
-    .group-section
-        .group
-            .group-legend
-                label
-                    span Cache key configuration
+div
+    .ignite-form-field
+        +ignite-form-field__label('Paths:', '"paths"')
+            +tooltip(`Paths to a shared directory where checkpoints will be stored`)
+        .ignite-form-field__control(ng-init='item = $parent.item')
+            +list-text-field({
+                items: `item.FS.directoryPaths`,
+                lbl: 'Directory path',
+                name: 'directoryPath',
+                itemName: 'path',
+                itemsName: 'paths'
+            })
+                +unique-feedback('"directoryPath"', 'Such path already exists!')
 
-                ignite-form-group-tooltip
-                    | Cache key configuration
-
-            .group-content
-                pc-list-editable(ng-model=`${dirPaths}`)
-                    pc-list-editable-item-view
-                        | {{ $parent.item }}
-                    pc-list-editable-item-edit
-                        - form = '$parent.form'
-                        +ignite-form-field-text('Directory path', '$parent.item', '"directoryPath"', false, true, 'Input directory path')(
-                            data-ignite-unique=`$parent.$parent.$parent.$parent.${dirPaths}`
-                            data-ignite-form-field-input-autofocus='true'
-                        )
-                            +unique-feedback('"directoryPath"', 'Such path already exists!')
-
-                    pc-list-editable-no-items
-                        | Not defined
-
-            a.link-success(ng-click=`(${dirPaths} = ${dirPaths} || []).push("")`)
-                | + Add new path
-
-- form = '$parent.form'
 .settings-row
     +java-class('Listener:', '$parent.item.FS.checkpointListener', '"checkpointFsListener" + $index', 'true', 'false', 'Checkpoint listener implementation class name', '$parent.item.kind === "FS"')

@@ -40,17 +40,14 @@ include /app/helpers/jade/mixins
                         '30000', '1', 'Failure detection timeout is used to determine how long the communication or discovery SPIs should wait before considering a remote connection failed')
 
                 .pc-form-grid-col-60(ng-init='failoverSpiTbl={type: "failoverSpi", model: "failoverSpi", focusId: "kind", ui: "failover-table"}')
-                    .group-section
-                        .group
-                            .group-legend
-                                label
-                                    span Failover SPI configurations
+                    mixin clusters-failover-spi
+                        .ignite-form-field
+                            +ignite-form-field__label('Failover SPI configurations:', '"failoverSpi"')
+                                +tooltip(`Failover SPI configurations`)
+                            .ignite-form-field__control
+                                -let items = failoverSpi
 
-                                ignite-form-group-tooltip
-                                    | Failover SPI configurations
-                                
-                            .group-content
-                                pc-list-editable(ng-model=`${failoverSpi}`)
+                                pc-list-editable(ng-model=items name='failoverSpi')
                                     pc-list-editable-item-edit
                                         - form = '$parent.form'
                                         .settings-row
@@ -79,10 +76,12 @@ include /app/helpers/jade/mixins
                                                 'Custom FailoverSpi implementation class name.', failoverCustom)
 
                                     pc-list-editable-no-items
-                                        | Not defined
+                                        | You have no failover SPI.&nbsp;
+                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
-                            a.link-success(ng-click=`${failoverSpi}.push("")`)
-                                | + Add failover SPI
+                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                    | + Add new failover SPI
+                    +clusters-failover-spi
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterFailover')

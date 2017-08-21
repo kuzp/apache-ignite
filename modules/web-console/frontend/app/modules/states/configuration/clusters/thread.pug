@@ -71,17 +71,14 @@ include /app/helpers/jade/mixins
                     ng-if-end
                     ng-init='executorConfigurationsTbl={type: "executorConfigurations", model: "executorConfigurations", focusId: "kind", ui: "failover-table"}'
                 )
-                    .group-section
-                        .group
-                            .group-legend
-                                label
-                                    span Executor configurations
+                    mixin clusters-thread-executor-configurations
+                        .ignite-form-field
+                            +ignite-form-field__label('Executor configurations:', '"executorConfigurations"')
+                                +tooltip(`Custom thread pool configurations for compute tasks`)
+                            .ignite-form-field__control
+                                -let items = executors
 
-                                ignite-form-group-tooltip
-                                    | Custom thread pool configurations for compute tasks
-                                
-                            .group-content
-                                pc-list-editable(ng-model=`${executors}`)
+                                pc-list-editable(ng-model=items name='executorConfigurations')
                                     pc-list-editable-item-view
                                         | {{ $parent.item.name }} {{ $parent.item.size }}
 
@@ -94,10 +91,12 @@ include /app/helpers/jade/mixins
                                                 +number('Pool size:', '$parent.item.size', '"ExecutorPoolSize"', 'true', 'max(8, availableProcessors)', '1', 'Thread pool size')
 
                                     pc-list-editable-no-items
-                                        | Not defined
+                                        | You have no executor configurations.&nbsp;
+                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
-                            a.link-success(ng-click=`${executors}.push({})`)
-                                | + Add executor configuration
+                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                    | + Add new executor configuration
+                    +clusters-thread-executor-configurations
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterPools')

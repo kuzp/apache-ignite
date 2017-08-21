@@ -165,28 +165,21 @@ mixin hibernateField(name, model, items, valid, save, newItem)
 
                     .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheHibernateBlobStoreFactory'`)
                         -var hibernateStoreFactory = `${storeFactory}.CacheHibernateBlobStoreFactory`
-                        -var hibernateProperties = `${hibernateStoreFactory}.hibernateProperties`
 
-                        .details-row.pc-form-grid-col-60
-                            .group-section
-                                .group
-                                    .group-legend
-                                        label
-                                            span Hibernate properties
+                        .pc-form-grid-col-60
+                            .ignite-form-field
+                                +ignite-form-field__label('Hibernate properties:', '"hibernateProperties"')
+                                    +tooltip(`List of Hibernate properties<bt />
+                                        For example: connection.url=jdbc:h2:mem:exampleDb`)
+                                .ignite-form-field__control
+                                    +list-pair-edit({
+                                        items: `${hibernateStoreFactory}.hibernateProperties`,
+                                        keyLbl: 'Property name', 
+                                        valLbl: 'Property value',
+                                        itemName: 'property',
+                                        itemsName: 'properties'
+                                    })
 
-                                        ignite-form-group-tooltip
-                                            | List of Hibernate properties#[br]
-                                            | For example: connection.url=jdbc:h2:mem:exampleDb
-
-                                    .group-content
-                                        +list-pair-edit({
-                                            items: hibernateProperties,
-                                            keyLbl: 'Property name', 
-                                            valLbl: 'Property value'
-                                        })
-
-                                    a.link-success(ng-click=`${hibernateProperties}.push({})`)
-                                        | + Add New Hibernate property
                 - form = 'store'
                 .pc-form-grid-col-60
                     +checkbox('Keep binary in store', `${model}.storeKeepBinary`, '"storeKeepBinary"',

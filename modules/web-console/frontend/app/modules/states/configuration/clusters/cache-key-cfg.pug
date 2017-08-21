@@ -28,42 +28,38 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
-                .settings-row
-                    .group-section
-                        .group
-                            .group-legend
-                                label
-                                    span Cache key configuration
+                mixin clusters-cache-key-cfg
+                    .ignite-form-field
+                        +ignite-form-field__label('Cache key configuration:', '"cacheKeyConfiguration"')
+                            +tooltip(`Cache key configuration`)
+                        .ignite-form-field__control
+                            -let items = model
+                            pc-list-editable(ng-model=items name='cacheKeyConfiguration')
+                                pc-list-editable-item-edit
+                                    - form = '$parent.form'
+                                    .settings-row
+                                        +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
+                                    .settings-row
+                                        +sane-ignite-form-field-text({
+                                            label: 'Affinity key field name:',
+                                            model: '$parent.item.affinityKeyFieldName',
+                                            name: '"affinityKeyFieldName"',
+                                            disabled: 'false',
+                                            placeholder: 'Enter field name',
+                                            tip: 'Affinity key field name'
+                                        })(
+                                            ignite-unique=items
+                                            ignite-unique-property='affinityKeyFieldName'
+                                        )
+                                            +unique-feedback(`affinityKeyFieldName`, 'Affinity key field name should be unique.')
 
-                                ignite-form-group-tooltip
-                                    | Cache key configuration
-                                
-                            .group-content
-                                pc-list-editable(ng-model=model)
-                                    pc-list-editable-item-edit
-                                        - form = '$parent.form'
-                                        .settings-row
-                                            +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
-                                        .settings-row
-                                            +sane-ignite-form-field-text({
-                                                label: 'Affinity key field name:',
-                                                model: '$parent.item.affinityKeyFieldName',
-                                                name: '"affinityKeyFieldName"',
-                                                disabled: 'false',
-                                                placeholder: 'Enter field name',
-                                                tip: 'Affinity key field name'
-                                            })(
-                                                ignite-unique=model
-                                                ignite-unique-property='affinityKeyFieldName'
-                                            )
-                                                +unique-feedback(`${model}.name`, 'Affinity key field name should be unique.')
+                                pc-list-editable-no-items
+                                    | You have no cache key configurations.&nbsp;
+                                    a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
-                                    pc-list-editable-no-items
-                                        | Not defined
-
-                            a.link-success(ng-click=`${model}.push({})`)
+                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
                                 | + Add new cache key configuration
+                +clusters-cache-key-cfg
 
-            - form = 'cacheKeyCfg'
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterCacheKeyConfiguration')

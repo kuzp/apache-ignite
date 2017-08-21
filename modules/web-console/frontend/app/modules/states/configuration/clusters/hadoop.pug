@@ -75,25 +75,18 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-20
                     +number('Max task queue size:', model + '.maxTaskQueueSize', '"maxTaskQueueSize"', 'true', '8192', '1', 'Max task queue size')
                 .pc-form-grid-col-60
-                    .group-section
-                        .group
-                            .group-legend
-                                label
-                                    span Native libraries
-
-                                ignite-form-group-tooltip
-                                    | Library names
-                                
-                            .group-content
-                                +list-text-field({
-                                    items: libs,
-                                    lbl: 'Library name',
-                                    name: 'libraryName'
-                                })
-                                    +unique-feedback('"libraryName"', `${uniqueTip}`)
-
-                            a.link-success(ng-click=`${libs}.push("")`)
-                                | + Add new library
+                    .ignite-form-field
+                        +ignite-form-field__label('Native libraries:', '"nativeLibraries"')
+                            +tooltip(`Library names`)
+                        .ignite-form-field__control
+                            +list-text-field({
+                                items: libs,
+                                lbl: 'Library name',
+                                name: 'libraryName',
+                                itemName: 'library name',
+                                itemsName: 'library names'
+                            })
+                                +unique-feedback('"libraryName"', `${uniqueTip}`)
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterHadoop')
