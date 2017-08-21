@@ -50,6 +50,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -1817,7 +1818,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             }
             catch (FileNotFoundException e) {
                 if (log.isInfoEnabled())
-                    log.info("Missing " + idx + " WAL segment in the archive: " + e.getMessage());
+                    log.info("Missing " + idx + " WAL segment: " + e.getMessage());
 
                 return null;
             }
@@ -1877,7 +1878,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 compactWriter.close();
             }
             catch (Exception e) {
-                e.printStackTrace();
+                throw new IgniteException(e);
             }
 
             return h;
@@ -1994,7 +1995,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 out.setLevel(zipLevel);
             }
             catch (IOException e) {
-                e.printStackTrace();
+                throw new IgniteException(e);
             }
         }
 
@@ -2004,7 +2005,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 out.putNextEntry(new ZipEntry(name));
             }
             catch (IOException e) {
-                e.printStackTrace();
+                throw new IgniteException(e);
             }
         }
 
@@ -2016,7 +2017,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 out.write(toWrite, 0, size);
             }
             catch (IOException e) {
-                e.printStackTrace();
+                throw new IgniteException(e);
             }
         }
 
@@ -2028,7 +2029,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 Files.move(archiveTmp.toPath(), archive.toPath());
             }
             catch (IOException e) {
-                e.printStackTrace();
+                throw new IgniteException(e);
             }
         }
     }

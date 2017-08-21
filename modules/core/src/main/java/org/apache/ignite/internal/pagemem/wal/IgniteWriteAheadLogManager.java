@@ -115,7 +115,9 @@ public interface IgniteWriteAheadLogManager extends GridCacheSharedManager, Igni
     public boolean reserved(WALPointer ptr);
 
     /**
+     * Compact all wal segment to some wal point.
      *
+     * @param ptr Pointer to compact.
      */
     public void compact(WALPointer ptr);
 }
