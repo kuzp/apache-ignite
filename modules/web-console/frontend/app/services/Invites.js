@@ -23,10 +23,12 @@ export default class Invites {
     }
 
     /**
+     * Find invite for specified token.
+     *
      * @param token Invite token.
      * @returns {*} Invite data.
      */
     find(token) {
-        return this.$http.post('/api/v1/invite/info', {token});
+        return this.$http.post('/api/v1/invite/find', {token});
     }
 }

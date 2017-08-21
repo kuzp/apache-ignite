@@ -21,7 +21,7 @@
 
 module.exports = {
     implements: 'routes/organizations',
-    inject: ['require(lodash)', 'require(express)', 'mongo', 'errors', 'settings', 'services/mails', 'services/utils']
+    inject: ['require(lodash)', 'require(express)', 'mongo']
 };
 
 /**
@@ -29,13 +29,9 @@ module.exports = {
  * @param _ Lodash module
  * @param express Express module
  * @param mongo
- * @param errors
- * @param settings
- * @param {MailsService} mailsService
- * @param {UtilsService} utilsService
  * @returns {Promise}
  */
-module.exports.factory = function (_, express, mongo, errors, settings, mailsService, utilsService) {
+module.exports.factory = function (_, express, mongo) {
     return new Promise((resolveFactory) => {
         const router = new express.Router();
 
@@ -62,62 +58,6 @@ module.exports.factory = function (_, express, mongo, errors, settings, mailsSer
                 .then((organization) => res.api.ok(organization._id))
                 .catch(res.api.error);
         });
-
-        const _createInvite = (host, user, data) => {
-            if (_.isEmpty(data.email))
-                throw new Error('User e-mail was not specified!');
-
-            return mongo.Account.findOne({email: data.email})
-                .then((foundAccount) => {
-                        const invite = {
-                            token: utilsService.randomString(settings.tokenLength),
-                            organization: data.organization,
-                            email: data.email
-                        };
-
-                        if (foundAccount)
-                            invite.account = foundAccount._id;
-
-                        return mongo.Invite.create(invite)
-                            .then((savedInvite) => {
-                                return mailsService.emailInvite(host, user, savedInvite);
-                            })
-                            .catch((err) => {
-                                console.log(err);
-                            });
-                    }
-                );
-        };
-
-        // Invite user to join organization.
-        router.post('/invite', (req, res) => {
-            _createInvite(req.origin(), {name: 'Test'},  req.body)
-                .then(res.api.ok)
-                .catch(res.api.error);
-        });
-
-        // Find invite and return data.
-        router.post('/info', (req, res) => {
-            mongo.Invite.findOne({token: '12345'})
-                .then(res.api.ok({
-                    organization: {name: 'Test'},
-                    email: 'test@test.com',
-                    existingUser: false,
-                    found: true
-                }))
-                .catch(res.api.error);
-        });
-
-
-        // // Add user to organization.
-        // router.post('/add', (req, res) => {
-        //     const data = res.body;
-        //
-        //     return mongo.Invite.findOne({token: data.token}).exec();
-        //
-        //     return mongo.Account.findOne({_id: data.account})
-        //         .then((foundUser) => mailsService.emailInvite(foundUser));
-        // });
 
         resolveFactory(router);
     });

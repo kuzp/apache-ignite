@@ -22,7 +22,7 @@ export default class AuthSrv {
         Object.assign(this, {$http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User});
     }
 
-    _errorPopover(err, id) {
+    _errorPopover(id, err) {
         return this.ErrorPopover.show(id, this.Messages.errorMessage(null, err));
     }
 
@@ -56,11 +56,7 @@ export default class AuthSrv {
     }
 
     acceptInvite(invite) {
-        const userInfo = {
-            email: invite.email
-        };
-
-        this.$http.post('/api/v1/invite/accept', userInfo)
+        this.$http.post('/api/v1/invite/accept', invite)
             .then(() => this._afterLogin())
             .catch(this.Messages.showError);
     }

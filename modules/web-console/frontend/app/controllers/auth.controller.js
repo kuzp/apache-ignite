@@ -17,20 +17,18 @@
 
 // Sign in controller.
 export default class SigninCtrl {
-    static $inject = ['$scope', '$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites'];
+    static $inject = ['$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites'];
 
-    constructor($scope, $uiRouterGlobals, Focus, Countries, Auth, Invites) {
+    constructor($uiRouterGlobals, Focus, Countries, Auth, Invites) {
         const self = this;
 
-        self.signup = Auth.signup;
-        self.signin = Auth.signin;
-        self.acceptInvite = Auth.acceptInvite;
-        self.forgotPassword = Auth.forgotPassword;
+        self.Auth = Auth;
         self.countries = Countries.getAll();
         self.action = 'signin';
         self.showSignIn = false;
-        self.ui = {};
+        self.ui_signin = {};
         self.ui_signup = {};
+        self.ui_exclude = {};
         self.invite = {};
 
         self.invite.token = _.get($uiRouterGlobals.params, 'invite');
@@ -46,10 +44,31 @@ export default class SigninCtrl {
                         self.invite.organization = res.data.organization.name;
                         self.invite.existingUser = res.data.existingUser;
                         self.invite.email = res.data.email;
+
+                        Focus.move(self.invite.existingUser ? 'signin_user_password' : 'signup_user_password');
                     }
 
                     self.showSignIn = true;
                 });
         }
+    }
+
+
+    signup() {
+        this.Auth.signup(this.ui_signup);
+    }
+
+    signin() {
+        this.Auth.signin(this.ui_signin);
+    }
+
+    acceptInvite() {
+        console.log(this.invite);
+
+        // Auth.acceptInvite
+    }
+
+    forgotPassword() {
+        this.Auth.forgotPassword(this.ui_signin);
     }
 }

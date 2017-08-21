@@ -95,8 +95,10 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
         router.post('/invite/accept', (req, res, next) => {
             const data = req.body;
 
-            mongo.Invite.findOne({token: data.token});
+            mongo.Invite.findOne({token: data.token})
+                .then((invite) => {
 
+                });
 
             if (data.existingUser)
                 return _signin(req, res, next);

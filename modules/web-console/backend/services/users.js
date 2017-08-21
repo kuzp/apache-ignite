@@ -51,7 +51,7 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
                     user.registered = new Date();
                     user.token = utilsService.randomString(settings.tokenLength);
 
-                    return mongo.Account.create(user);
+                    return new mongo.Account(user);
                 })
                 .then((created) => {
                     return new Promise((resolve, reject) => {
