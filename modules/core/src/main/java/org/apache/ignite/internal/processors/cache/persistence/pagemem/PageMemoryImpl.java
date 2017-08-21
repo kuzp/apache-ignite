@@ -1962,6 +1962,10 @@ public class PageMemoryImpl implements PageMemoryEx {
                     iter.remove();
             }
         }
+
+        private void dumpPages() {
+
+        }
     }
 
     /**

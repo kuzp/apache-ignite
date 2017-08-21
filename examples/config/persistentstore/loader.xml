@@ -68,7 +68,7 @@
                     <property name="affinity">
                         <bean class="org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction">
                             <constructor-arg value="false"/>
-                            <constructor-arg value="32"/>
+                            <constructor-arg value="1024"/>
                         </bean>
                     </property>
                     <!--<property name="indexedTypes">-->

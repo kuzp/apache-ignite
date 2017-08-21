@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -29,10 +32,13 @@ import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.configuration.MemoryConfiguration;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
+import org.apache.ignite.internal.pagemem.PageUtils;
 import org.apache.ignite.internal.pagemem.store.PageStore;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
+import org.apache.ignite.internal.processors.cache.persistence.tree.util.PageHandler;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.IgniteDataIntegrityViolationException;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
+import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.typedef.internal.U;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_PDS_SKIP_CRC;
@@ -536,5 +542,40 @@ public class FilePageStore implements PageStore {
             return 0;
 
         return (int)(allocated.get() - headerSize()) / pageSize;
+    }
+
+    public Map<String, Long> getDistribution() throws IgniteCheckedException {
+        init();
+
+        long ptr = headerSize() + dbCfg.getPageSize();
+
+        ByteBuffer pageBuf = ByteBuffer.allocateDirect(pageSize);
+
+        long bufPtr = GridUnsafe.bufferAddress(pageBuf);
+
+        Map<String, Long> distribution = new TreeMap<>();
+
+        while (ptr < allocated.get()) {
+            try {
+                fileIO.read(pageBuf, ptr);
+
+                PageIO io = PageIO.getPageIO(bufPtr);
+
+                Long cnt = distribution.get(io.getClass().toString());
+
+                if (cnt == null) cnt = 0L;
+
+                distribution.put(io.getClass().toString(), cnt + 1);
+
+                pageBuf.clear();
+            }
+            catch (IOException e) {
+                throw new IgniteException("Read page failed.", e);
+            }
+
+            ptr += pageSize;
+        }
+
+        return distribution;
     }
 }

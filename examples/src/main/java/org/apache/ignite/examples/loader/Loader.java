@@ -4,13 +4,21 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import javax.cache.Cache;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.MemoryMetrics;
 import org.apache.ignite.binary.BinaryObject;
+import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.binary.BinaryObjectImpl;
+import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
+import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
+import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreManager;
+import org.apache.ignite.internal.util.typedef.internal.CU;
+import org.apache.ignite.internal.util.typedef.internal.U;
 
 /**
  * Created by admin on 8/17/2017.
@@ -71,8 +79,6 @@ public class Loader {
                     ignite.log().info("Done: " + i + " of " + total);
 
                 i++;
-
-                break;
             }
 
             ignite.log().info("Stats [size=" + depohist.size() + ", sum=" + sum/1024/1024 +
@@ -83,5 +89,38 @@ public class Loader {
                     + " Eviction rate: " + metrics.getEvictionRate()
                     + ']');
         }
+
+        IgniteEx ig = (IgniteEx)ignite;
+
+        GridCacheSharedContext ctx = U.field(ig.context().cache(), "sharedCtx");
+
+        ctx.database().waitForCheckpoint("test");
+
+        ctx.database().waitForCheckpoint("test");
+
+        ignite.log().info("Pring distribution");
+
+        FilePageStoreManager mgr = U.field(ctx.database(), "storeMgr");
+
+        Map<String, Long> distribution = new TreeMap<>();
+
+        int parts = 1024;
+
+        for (int i = 0; i < parts; i++) {
+            FilePageStore pageStore = (FilePageStore)mgr.getStore(CU.cacheId("depohist"), i);
+
+            Map<String, Long> d = pageStore.getDistribution();
+
+            for (Map.Entry<String, Long> entry : d.entrySet()) {
+                Long cnt = distribution.get(entry.getKey());
+
+                if (cnt == null)
+                    cnt = 0L;
+
+                distribution.put(entry.getKey(), cnt + entry.getValue());
+            }
+        }
+
+        System.out.println(distribution);
     }
 }
