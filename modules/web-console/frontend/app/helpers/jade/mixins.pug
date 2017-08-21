@@ -301,7 +301,7 @@ mixin dropdown-multiple(lbl, model, name, enabled, placeholder, placeholderEmpty
         if  block
             block
 
-mixin list-text-field({ items, lbl, name })
+mixin list-text-field({ items, lbl, name, itemName, itemsName })
     pc-list-editable(ng-model=items)
         pc-list-editable-item-view
             | {{ $parent.item }}
@@ -309,7 +309,7 @@ mixin list-text-field({ items, lbl, name })
         pc-list-editable-item-edit
             - form = '$parent.form'
 
-            +ignite-form-field-text(lbl, '$parent.item', `"${name}"`, false, true, `Enter ${lbl}`)(
+            +ignite-form-field-text(lbl, '$parent.item', `"${name}"`, false, true, `Enter ${lbl.toLowerCase()}`)(
                 data-ignite-unique=items
                 data-ignite-form-field-input-autofocus='true'
             )
@@ -317,31 +317,11 @@ mixin list-text-field({ items, lbl, name })
                     block
 
         pc-list-editable-no-items
-            | Not defined
+            | You have no #{itemsName}.&nbsp;
+            a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
 
-
-//- Mixin for table text field.
-mixin table-text-field(name, model, items, valid, save, placeholder, newItem)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        if block
-            block
-
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', placeholder)(
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
-            )
+    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push('')`)
+        | + Add new #{itemName}
 
 mixin list-java-class-field(lbl, model, name, items)
     +ignite-form-field-text(lbl, model, name, false, true, 'Enter fully qualified class name')(
@@ -353,7 +333,6 @@ mixin list-java-class-field(lbl, model, name, items)
         data-ignite-unique=items
         data-ignite-form-field-input-autofocus='true'
     )
-        +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)
         +form-field-feedback(name, 'javaBuiltInClass', lbl + ' should not be the Java built-in class!')
         +form-field-feedback(name, 'javaKeywords', lbl + ' could not contains reserved Java keyword!')
         +form-field-feedback(name, 'javaPackageSpecified', lbl + ' does not have package specified!')
@@ -361,43 +340,6 @@ mixin list-java-class-field(lbl, model, name, items)
 
         if block
             block
-
-//- Mixin for table java class field.
-mixin table-java-class-field(lbl, name, model, items, valid, save, newItem)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', 'Enter fully qualified class name')(
-                data-java-identifier='true'
-                data-java-package-specified='true'
-                data-java-keywords='true'
-                data-java-built-in-class='true'
-
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
-            )
-        .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
-        )
-            +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)
-            +form-field-feedback(name, 'javaBuiltInClass', lbl + ' should not be the Java built-in class!')
-            +form-field-feedback(name, 'javaKeywords', lbl + ' could not contains reserved Java keyword!')
-            +form-field-feedback(name, 'javaPackageSpecified', lbl + ' does not have package specified!')
-            +form-field-feedback(name, 'javaIdentifier', lbl + ' is invalid Java identifier!')
-
-            if block
-                block
 
 mixin list-java-package-field(lbl, model, name, items)
     +ignite-form-field-text(lbl, model, name, false, true, 'Enter package name')(
@@ -413,38 +355,6 @@ mixin list-java-package-field(lbl, model, name, items)
         if block
             block
 
-//- Mixin for table java package field.
-mixin table-java-package-field(name, model, items, valid, save, newItem)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', 'Enter package name')(
-                data-java-keywords='true'
-                data-java-package-name='package-only'
-
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
-            )
-        .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
-        )
-            +form-field-feedback(name, 'javaKeywords', 'Package name could not contains reserved Java keyword!')
-            +form-field-feedback(name, 'javaPackageName', 'Package name is invalid!')
-
-            if block
-                block
-
 mixin list-url-field(lbl, model, name, items)
     +ignite-form-field-text(lbl, model, name, false, true, 'Enter URL')(
         type='url'
@@ -457,119 +367,31 @@ mixin list-url-field(lbl, model, name, items)
         if block
             block
 
-//- Mixin for table url field.
-mixin table-url-field(name, model, items, valid, save, newItem)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', 'Enter URL')(
-                type='url'
-
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
-            )
-        .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
-        )
-            +form-field-feedback(name, 'url', 'URL should be valid!')
-
-            if block
-                block
-
-
-//- Mixin for table address field.
-mixin table-address-field(name, model, items, valid, save, newItem, portRange)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', 'IP address:port')(
+mixin list-addresses({ items, name })
+    pc-list-editable(ng-model=items name=name)
+        pc-list-editable-item-view
+            | {{ $parent.item }}
+        pc-list-editable-item-edit
+            - form = '$parent.form'
+            +ignite-form-field-text('Address', '$parent.item', '"address"', false, true, 'IP address:port')(
                 data-ipaddress='true'
                 data-ipaddress-with-port='true'
-                data-ipaddress-with-port-range=portRange ? 'true' : null
+                data-ipaddress-with-port-range='true'
                 data-ignite-unique=items
                 data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
             )
-        .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
-        )
-            +ipaddress-feedback(name)
-            +ipaddress-port-feedback(name)
-            +ipaddress-port-range-feedback(name)
-            +form-field-feedback(name, 'required', 'IP address:port could not be empty!')
+                +unique-feedback('"address"', 'Such IP address already exists!')
+                +ipaddress-feedback('"address"')
+                +ipaddress-port-feedback('"address"')
+                +ipaddress-port-range-feedback('"address"')
+                +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
 
-            if block
-                block
+        pc-list-editable-no-items
+            | You have no addresses.&nbsp;
+            a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
 
-//- Mixin for table UUID field.
-mixin table-uuid-field(name, model, items, valid, save, newItem)
-    -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
-    -var onEnter = `${valid} && (${save}); ${valid} && ${resetOnEnter};`
-
-    -var onEscape = newItem ? 'group.add = []' : 'field.edit = false'
-
-    -var resetOnBlur = newItem ? '!stopblur && (group.add = [])' : 'field.edit = false'
-    -var onBlur = `${valid} && (${save}); ${resetOnBlur};`
-
-    div(ignite-on-focus-out=onBlur)
-        if block
-            block
-
-        .input-tip
-            +ignite-form-field-input(name, model, false, 'true', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')(
-                data-uuid='true'
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-
-                ignite-on-enter=onEnter
-                ignite-on-escape=onEscape
-            )
-
-//- Mixin for table save button.
-   "||" used instead of "&&" to workaround escaping of "&&" to "&amp;&amp;"
-mixin table-save-button(valid, save, newItem)
-    -var reset = newItem ? 'group.add = []' : 'field.edit = false'
-
-    i.fa.fa-floppy-o.form-field-save(
-        ng-show=valid
-        ng-click=`!(${valid}) || (${save}); !(${valid}) || (${reset});`
-        bs-tooltip
-        data-title='Click icon or press [Enter] to save item'
-    )
-
-//- Mixin for table remove button.
-mixin table-remove-conditional-button(items, show, tip, row)
-    i.tipField.fa.fa-remove(
-        ng-hide=`!${show} || field.edit`
-        bs-tooltip
-        data-title=tip
-        ng-click=`${items}.splice(${items}.indexOf(${row}), 1)`
-    )
-
-//- Mixin for table remove button.
-mixin table-remove-button(items, tip)
-    +table-remove-conditional-button(items, 'true', tip, 'model')
+    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
+        | + Add new address
 
 //- Mixin for cache mode.
 mixin cacheMode(lbl, model, name, placeholder)
@@ -669,7 +491,7 @@ mixin btn-remove(click, tip)
 mixin btn-remove-cond(cond, click, tip)
     i.tipField.fa.fa-remove(ng-show=cond ng-click=click bs-tooltip=tip data-trigger='hover')
 
-mixin list-pair-edit({ items, keyLbl, valLbl })
+mixin list-pair-edit({ items, keyLbl, valLbl, itemName, itemsName })
     pc-list-editable(ng-model=items)
         pc-list-editable-item-view
             | {{ $parent.item.name }} = {{ $parent.item.value }}
@@ -687,31 +509,11 @@ mixin list-pair-edit({ items, keyLbl, valLbl })
                     +ignite-form-field-text(valLbl, '$parent.item.value', '"value"', false, true, valLbl)
 
         pc-list-editable-no-items
-            | Not defined
+            | You have no #{itemsName}.&nbsp;
+            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
-//- LEGACY mixin for LEGACY pair values tables.
-mixin table-pair-edit(tbl, prefix, keyPlaceholder, valPlaceholder, valueJavaBuiltInClasses, focusId, index, divider)
-    -var keyModel = `${tbl}.${prefix}Key`
-    -var valModel = `${tbl}.${prefix}Value`
-
-    -var keyFocusId = `${prefix}Key${focusId}`
-    -var valFocusId = `${prefix}Value${focusId}`
-
-    .col-xs-6.col-sm-6.col-md-6
-        .fieldSep !{divider}
-        .input-tip
-            input.form-control(id=keyFocusId ignite-on-enter-focus-move=valFocusId type='text' ng-model=keyModel placeholder=keyPlaceholder ignite-on-escape='tableReset(false)')
-    .col-xs-6.col-sm-6.col-md-6
-        -var btnVisible = 'tablePairSaveVisible(' + tbl + ', ' + index + ')'
-        -var btnSave = 'tablePairSave(tablePairValid, backupItem, ' + tbl + ', ' + index + ')'
-        -var btnVisibleAndSave = btnVisible + ' && ' + btnSave
-
-        +btn-save(btnVisible, btnSave)
-        .input-tip
-            if valueJavaBuiltInClasses
-                input.form-control(id=valFocusId type='text' ng-model=valModel placeholder=valPlaceholder bs-typeahead container='body' ignite-retain-selection data-min-length='1' bs-options='javaClass for javaClass in javaBuiltInClasses' ignite-on-enter=btnVisibleAndSave ignite-on-escape='tableReset(false)')
-            else
-                input.form-control(id=valFocusId type='text' ng-model=valModel placeholder=valPlaceholder ignite-on-enter=btnVisibleAndSave ignite-on-escape='tableReset(false)')
+    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+        | + Add new #{itemName}
 
 //- Mixin for DB dialect.
 mixin dialect(lbl, model, name, required, tipTitle, genericDialectName, placeholder)
