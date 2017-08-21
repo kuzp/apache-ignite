@@ -35,8 +35,34 @@ export default class Clusters {
         {value: 'Kubernetes', label: 'Kubernetes'}
     ];
 
-    // In bytes
-    minMemoryPolicySize = 10485760;
+    minMemoryPolicySize = 10485760; // In bytes
+    ackSendThreshold = {
+        min: 1,
+        default: 16
+    };
+    messageQueueLimit = {
+        min: 0,
+        default: 1024
+    };
+    unacknowledgedMessagesBufferSize = {
+        min: (
+            currentValue = this.unacknowledgedMessagesBufferSize.default,
+            messageQueueLimit = this.messageQueueLimit.default,
+            ackSendThreshold = this.ackSendThreshold.default
+        ) => {
+            if (currentValue === this.unacknowledgedMessagesBufferSize.default) return currentValue;
+            const {validRatio} = this.unacknowledgedMessagesBufferSize;
+            return Math.max(messageQueueLimit * validRatio, ackSendThreshold * validRatio);
+        },
+        validRatio: 5,
+        default: 0
+    };
+    sharedMemoryPort = {
+        default: 48100,
+        min: -1,
+        max: 65535,
+        invalidValues: [0]
+    };
 
     constructor($http) {
         Object.assign(this, {$http});
@@ -216,4 +242,11 @@ export default class Clusters {
     addLoadBalancingSpi(cluster) {
         return cluster.loadBalancingSpi.push(this.makeBlankLoadBalancingSpi());
     }
+
+    loadBalancingKinds = [
+        {value: 'RoundRobin', label: 'Round-robin'},
+        {value: 'Adaptive', label: 'Adaptive'},
+        {value: 'WeightedRandom', label: 'Random'},
+        {value: 'Custom', label: 'Custom'}
+    ];
 }

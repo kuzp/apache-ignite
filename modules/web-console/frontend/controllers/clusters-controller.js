@@ -654,24 +654,24 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             }));
         }
 
-        function checkCommunicationConfiguration(item) {
-            const c = item.communication;
+        // function checkCommunicationConfiguration(item) {
+        //     const c = item.communication;
 
-            if (LegacyUtils.isDefined(c)) {
-                if (LegacyUtils.isDefined(c.unacknowledgedMessagesBufferSize)) {
-                    if (LegacyUtils.isDefined(c.messageQueueLimit) && c.unacknowledgedMessagesBufferSize < 5 * c.messageQueueLimit)
-                        return ErrorPopover.show('unacknowledgedMessagesBufferSizeInput', 'Maximum number of stored unacknowledged messages should be at least 5 * message queue limit!', $scope.ui, 'communication');
+        //     if (LegacyUtils.isDefined(c)) {
+        //         if (LegacyUtils.isDefined(c.unacknowledgedMessagesBufferSize)) {
+        //             if (LegacyUtils.isDefined(c.messageQueueLimit) && c.unacknowledgedMessagesBufferSize < 5 * c.messageQueueLimit)
+        //                 return ErrorPopover.show('unacknowledgedMessagesBufferSizeInput', 'Maximum number of stored unacknowledged messages should be at least 5 * message queue limit!', $scope.ui, 'communication');
 
-                    if (LegacyUtils.isDefined(c.ackSendThreshold) && c.unacknowledgedMessagesBufferSize < 5 * c.ackSendThreshold)
-                        return ErrorPopover.show('unacknowledgedMessagesBufferSizeInput', 'Maximum number of stored unacknowledged messages should be at least 5 * ack send threshold!', $scope.ui, 'communication');
-                }
+        //             if (LegacyUtils.isDefined(c.ackSendThreshold) && c.unacknowledgedMessagesBufferSize < 5 * c.ackSendThreshold)
+        //                 return ErrorPopover.show('unacknowledgedMessagesBufferSizeInput', 'Maximum number of stored unacknowledged messages should be at least 5 * ack send threshold!', $scope.ui, 'communication');
+        //         }
 
-                if (c.sharedMemoryPort === 0)
-                    return ErrorPopover.show('sharedMemoryPortInput', 'Shared memory port should be more than "0" or equals to "-1"!', $scope.ui, 'communication');
-            }
+        //         if (c.sharedMemoryPort === 0)
+        //             return ErrorPopover.show('sharedMemoryPortInput', 'Shared memory port should be more than "0" or equals to "-1"!', $scope.ui, 'communication');
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
         // function checkDiscoveryConfiguration(item) {
         //     const d = item.discovery;
@@ -687,19 +687,19 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         //     return true;
         // }
 
-        function checkLoadBalancingConfiguration(item) {
-            const balancingSpis = item.loadBalancingSpi;
+        // function checkLoadBalancingConfiguration(item) {
+        //     const balancingSpis = item.loadBalancingSpi;
 
-            return _.isNil(_.find(balancingSpis, (curSpi, curIx) => {
-                if (_.find(balancingSpis, (spi, ix) => curIx > ix && curSpi.kind === spi.kind)) {
-                    ErrorPopover.show('loadBalancingKind' + curIx, 'Load balancing SPI of that type is already configured', $scope.ui, 'loadBalancing');
+        //     return _.isNil(_.find(balancingSpis, (curSpi, curIx) => {
+        //         if (_.find(balancingSpis, (spi, ix) => curIx > ix && curSpi.kind === spi.kind)) {
+        //             ErrorPopover.show('loadBalancingKind' + curIx, 'Load balancing SPI of that type is already configured', $scope.ui, 'loadBalancing');
 
-                    return true;
-                }
+        //             return true;
+        //         }
 
-                return false;
-            }));
-        }
+        //         return false;
+        //     }));
+        // }
 
         function checkMemoryConfiguration(item) {
             const memory = item.memoryConfiguration;
@@ -912,14 +912,14 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             // if (!checkCheckpointSpis(item))
             //     return false;
 
-            if (!checkCommunicationConfiguration(item))
-                return false;
+            // if (!checkCommunicationConfiguration(item))
+            //     return false;
 
             // if (!checkDiscoveryConfiguration(item))
             //     return false;
 
-            if (!checkLoadBalancingConfiguration(item))
-                return false;
+            // if (!checkLoadBalancingConfiguration(item))
+            //     return false;
 
             if (!checkMemoryConfiguration(item))
                 return false;

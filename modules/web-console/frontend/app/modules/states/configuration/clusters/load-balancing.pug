@@ -43,18 +43,24 @@ include /app/helpers/jade/mixins
                                 pc-list-editable-item-edit
                                     - form = '$parent.form'
                                     .settings-row
-                                        +dropdown-required-autofocus('Load balancing:', '$parent.item.kind', '"loadBalancingKind"', 'true', 'true', 'Choose load balancing SPI', '[\
-                                                {value: "RoundRobin", label: "Round-robin"},\
-                                                {value: "Adaptive", label: "Adaptive"},\
-                                                {value: "WeightedRandom", label: "Random"},\
-                                                {value: "Custom", label: "Custom"}\
-                                            ]', 'Provides the next best balanced node for job execution\
-                                            <ul>\
-                                                <li>Round-robin - Iterates through nodes in round-robin fashion and pick the next sequential node</li>\
-                                                <li>Adaptive - Adapts to overall node performance</li>\
-                                                <li>Random - Picks a random node for job execution</li>\
-                                                <li>Custom - Custom load balancing implementation</li>\
-                                            </ul>')
+                                        +sane-ignite-form-field-dropdown({
+                                            label: 'Load balancing:',
+                                            model: '$parent.item.kind',
+                                            name: '"loadBalancingKind"',
+                                            required: true,
+                                            options: '::$ctrl.Clusters.loadBalancingKinds',
+                                            tip: `Provides the next best balanced node for job execution
+                                            <ul>
+                                                <li>Round-robin - Iterates through nodes in round-robin fashion and pick the next sequential node</li>
+                                                <li>Adaptive - Adapts to overall node performance</li>
+                                                <li>Random - Picks a random node for job execution</li>
+                                                <li>Custom - Custom load balancing implementation</li>
+                                            </ul>`
+                                        })(
+                                            ignite-unique=`${loadBalancingSpi}`
+                                            ignite-unique-property='kind'
+                                        )
+                                            +unique-feedback('"loadBalancingKind"', 'Load balancing SPI of that type is already configured')
                                     .settings-row(ng-show='$parent.item.kind === "RoundRobin"')
                                         +checkbox('Per task', '$parent.item.RoundRobin.perTask', '"loadBalancingRRPerTask"', 'A new round robin order should be created for every task flag')
                                     .settings-row(ng-show='$parent.item.kind === "Adaptive"')

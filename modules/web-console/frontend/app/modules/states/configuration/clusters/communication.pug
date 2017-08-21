@@ -50,9 +50,18 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-20
                     +number('Local port range:', `${communication}.localPortRange`, '"comLocalPortRange"', 'true', '100', '1', 'Local port range for local host ports')
                 .pc-form-grid-col-20
-                    +number-min-max('Shared memory port:', `${communication}.sharedMemoryPort`, '"sharedMemoryPort"', 'true', '48100', '-1', '65535',
-                        'Local port to accept shared memory connections<br/>\
-                        If set to <b>-1</b> shared memory communication will be disabled')
+                    +sane-ignite-form-field-number({
+                        label: 'Shared memory port:',
+                        model: `${communication}.sharedMemoryPort`,
+                        name: '"sharedMemoryPort"',
+                        placeholder: '{{ ::$ctrl.Clusters.sharedMemoryPort.default }}',
+                        min: '{{ ::$ctrl.Clusters.sharedMemoryPort.min }}',
+                        max: '{{ ::$ctrl.Clusters.sharedMemoryPort.max }}',
+                        tip: `Local port to accept shared memory connections<br/>If set to <b>-1</b> shared memory communication will be disabled`
+                    })(
+                        pc-not-in-collection='::$ctrl.Clusters.sharedMemoryPort.invalidValues'
+                    )
+                        +form-field-feedback('"sharedMemoryPort"', 'notInCollection', 'Shared memory port should be more than "{{ ::$ctrl.Clusters.sharedMemoryPort.invalidValues[0] }}" or equal to "{{ ::$ctrl.Clusters.sharedMemoryPort.min }}"')
                 .pc-form-grid-col-20
                     +number('Idle connection timeout:', `${communication}.idleConnectionTimeout`, '"idleConnectionTimeout"', 'true', '30000', '1',
                         'Maximum idle connection timeout upon which a connection to client will be closed')
@@ -70,17 +79,46 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-20
                     +number('Slow client queue limit:', `${communication}.slowClientQueueLimit`, '"slowClientQueueLimit"', 'true', '0', '0', 'Slow client queue limit')
                 .pc-form-grid-col-20
-                    +number('Ack send threshold:', `${communication}.ackSendThreshold`, '"ackSendThreshold"', 'true', '16', '1', 'Number of received messages per connection to node after which acknowledgment message is sent')
+                    +sane-ignite-form-field-number({
+                        label: 'Ack send threshold:',
+                        model: `${communication}.ackSendThreshold`,
+                        name: '"ackSendThreshold"',
+                        placeholder: '{{ ::$ctrl.Clusters.ackSendThreshold.default }}',
+                        min: '{{ ::$ctrl.Clusters.ackSendThreshold.min }}',
+                        tip: 'Number of received messages per connection to node after which acknowledgment message is sent'
+                    })
                 .pc-form-grid-col-30
-                    +number('Message queue limit:', `${communication}.messageQueueLimit`, '"messageQueueLimit"', 'true', '1024', '0', 'Message queue limit for incoming and outgoing messages')
+                    +sane-ignite-form-field-number({
+                        label: 'Message queue limit:',
+                        model: `${communication}.messageQueueLimit`,
+                        name: '"messageQueueLimit"',
+                        placeholder: '{{ ::$ctrl.Clusters.messageQueueLimit.default }}',
+                        min: '{{ ::$ctrl.Clusters.messageQueueLimit.min }}',
+                        tip: 'Message queue limit for incoming and outgoing messages'
+                    })
                 .pc-form-grid-col-30
-                    +number('Unacknowledged messages:', `${communication}.unacknowledgedMessagesBufferSize`, '"unacknowledgedMessagesBufferSize"', 'true', '0', '0',
-                        'Maximum number of stored unacknowledged messages per connection to node<br/>\
-                        If specified non zero value it should be\
-                        <ul>\
-                            <li>At least ack send threshold * 5</li>\
-                            <li>At least message queue limit * 5</li>\
-                        </ul>')
+                    +sane-ignite-form-field-number({
+                        label: 'Unacknowledged messages:',
+                        model: `${communication}.unacknowledgedMessagesBufferSize`,
+                        name: '"unacknowledgedMessagesBufferSize"',
+                        placeholder: '{{ ::$ctrl.Clusters.unacknowledgedMessagesBufferSize.default }}',
+                        min: `{{ $ctrl.Clusters.unacknowledgedMessagesBufferSize.min(
+                            ${communication}.unacknowledgedMessagesBufferSize,
+                            ${communication}.messageQueueLimit,
+                            ${communication}.ackSendThreshold
+                        ) }}`,
+                        tip: `Maximum number of stored unacknowledged messages per connection to node<br/>
+                        If specified non zero value it should be
+                        <ul>
+                            <li>At least ack send threshold * {{ ::$ctrl.Clusters.unacknowledgedMessagesBufferSize.validRatio }}</li>
+                            <li>At least message queue limit * {{ ::$ctrl.Clusters.unacknowledgedMessagesBufferSize.validRatio }}</li>
+                        </ul>`
+                    })(
+                        //- allowInvalid: true prevents from infinite digest loop when old value was 0 and becomes less than allowed minimum
+                        ng-model-options=`{
+                            allowInvalid: true
+                        }`
+                    )
                 .pc-form-grid-col-30
                     +number('Socket write timeout:', `${communication}.socketWriteTimeout`, '"socketWriteTimeout"', 'true', '2000', '0', 'Socket write timeout')
                 .pc-form-grid-col-30
