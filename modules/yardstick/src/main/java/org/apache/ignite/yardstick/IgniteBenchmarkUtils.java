@@ -35,7 +35,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
-import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
+import org.apache.ignite.yardstick.cache.IgniteStreamerSinglePartQueryBenchmark;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
@@ -108,9 +108,9 @@ public class IgniteBenchmarkUtils {
      * @throws Exception If failed.
      */
     public static void main(String[] args) throws Exception {
-        final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
+        final String cfg = "modules/yardstick/config/ignite-streamer-scan-query-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgnitePutBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgniteStreamerSinglePartQueryBenchmark.class;
 
         final int threads = 1;
 
@@ -118,15 +118,19 @@ public class IgniteBenchmarkUtils {
 
         final int extraNodes = 1;
 
-        final int warmUp = 60;
+        final int warmUp = 0;
         final int duration = 120;
 
-        final int range = 100_000;
+        final int range = 1_000_000;
+
+        final boolean bigEntry = true;
 
         final boolean throughputLatencyProbe = false;
 
+        final boolean compute = true;
+
         for (int i = 0; i < extraNodes; i++) {
-            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "grid.cfg");
+            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "base-ignite.cfg");
 
             nodeCfg.setIgniteInstanceName("node-" + i);
             nodeCfg.setMetricsLogFrequency(0);
@@ -144,12 +148,22 @@ public class IgniteBenchmarkUtils {
         addArg(args0, "-sn", "IgniteNode");
         addArg(args0, "-cfg", cfg);
         addArg(args0, "-wom", "PRIMARY");
+        addArg(args0, "-cts", 8);
+        addArg(args0, "-ct", "NONE");
+        addArg(args0, "-sr", "0.9");
+        addArg(args0, "-qt", "SCAN_UPDATE");
 
         if (throughputLatencyProbe)
             addArg(args0, "-pr", "ThroughputLatencyProbe");
 
         if (clientDriverNode)
             args0.add("-cl");
+
+        if (bigEntry)
+            args0.add("-be");
+
+        if (compute)
+            args0.add("-cmp");
 
         BenchmarkDriverStartUp.main(args0.toArray(new String[args0.size()]));
     }
