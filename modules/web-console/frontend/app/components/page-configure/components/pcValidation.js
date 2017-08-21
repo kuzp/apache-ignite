@@ -1,6 +1,30 @@
 import angular from 'angular';
 
 export default angular.module('ignite-console.page-configure.validation', [])
+    .directive('pcNotInCollection', function() {
+        class Controller {
+            $onInit() {
+                this.ngModel.$validators.notInCollection = (item) => {
+                    if (!this.items) return true;
+                    return !this.items.includes(item);
+                };
+            }
+
+            $onChanges() {
+                this.ngModel.$validate();
+            }
+        }
+
+        return {
+            controller: Controller,
+            require: {
+                ngModel: 'ngModel'
+            },
+            bindToController: {
+                items: '<pcNotInCollection'
+            }
+        };
+    })
     .directive('bsCollapseTarget', function() {
         return {
             require: {
