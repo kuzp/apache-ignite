@@ -31,67 +31,60 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body(ng-i_f=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
-                .settings-row(ng-init='checkpointSpiTbl={type: "checkpointSpi", model: "checkpointSpi", focusId: "kind", ui: "checkpoint-table"}')
-                    .group-section
-                        .group
-                            .group-legend
-                                label
-                                    span Checkpoint SPI configurations
+                .ignite-form-field(ng-init='checkpointSpiTbl={type: "checkpointSpi", model: "checkpointSpi", focusId: "kind", ui: "checkpoint-table"}')
+                    +ignite-form-field__label('Checkpoint SPI configurations:', '"checkpointSPIConfigurations"')
+                        +tooltip(`Checkpoint SPI configurations`)
+                    .ignite-form-field__control
+                        pc-list-editable(ng-model=model name='checkpointSPIConfigurations')
+                            pc-list-editable-item-edit
+                                - form = '$parent.form'
+                                .settings-row
+                                    +dropdown-required('Checkpoint SPI:', '$parent.item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
+                                            {value: "FS", label: "File System"},\
+                                            {value: "Cache", label: "Cache"},\
+                                            {value: "S3", label: "Amazon S3"},\
+                                            {value: "JDBC", label: "Database"},\
+                                            {value: "Custom", label: "Custom"}\
+                                        ]',
+                                        'Provides an ability to save an intermediate job state\
+                                        <ul>\
+                                            <li>File System - Uses a shared file system to store checkpoints</li>\
+                                            <li>Cache - Uses a cache to store checkpoints</li>\
+                                            <li>Amazon S3 - Uses Amazon S3 to store checkpoints</li>\
+                                            <li>Database - Uses a database to store checkpoints</li>\
+                                            <li>Custom - Custom checkpoint SPI implementation</li>\
+                                        </ul>')
 
-                                ignite-form-group-tooltip
-                                    | Checkpoint SPI configurations
-                                
-                            .group-content
-                                pc-list-editable(ng-model=model)
-                                    pc-list-editable-item-edit
-                                        - form = '$parent.form'
-                                        .settings-row
-                                            +dropdown-required('Checkpoint SPI:', '$parent.item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
-                                                    {value: "FS", label: "File System"},\
-                                                    {value: "Cache", label: "Cache"},\
-                                                    {value: "S3", label: "Amazon S3"},\
-                                                    {value: "JDBC", label: "Database"},\
-                                                    {value: "Custom", label: "Custom"}\
-                                                ]',
-                                                'Provides an ability to save an intermediate job state\
-                                                <ul>\
-                                                    <li>File System - Uses a shared file system to store checkpoints</li>\
-                                                    <li>Cache - Uses a cache to store checkpoints</li>\
-                                                    <li>Amazon S3 - Uses Amazon S3 to store checkpoints</li>\
-                                                    <li>Database - Uses a database to store checkpoints</li>\
-                                                    <li>Custom - Custom checkpoint SPI implementation</li>\
-                                                </ul>')
+                                div(ng-show='$parent.item.kind === "FS"')
+                                    include ./checkpoint/fs
 
-                                        div(ng-show='$parent.item.kind === "FS"')
-                                            include ./checkpoint/fs
+                                div(ng-show=CacheCheckpoint)
+                                    .settings-row
+                                        +dropdown-required-empty('Cache:', '$parent.item.Cache.cache', '"checkpointCacheCache"', 'true', CacheCheckpoint,
+                                            'Choose cache', 'No caches configured for current cluster', '$ctrl.cachesMenu', 'Cache to use for storing checkpoints')(
+                                            pc-is-in-collection='$ctrl.clonedCluster.caches'
+                                        )
+                                            +form-field-feedback(form, 'isInCollection', `Cluster doesn't have such a cache`)
+                                    .settings-row
+                                        +java-class('Listener:', '$parent.item.Cache.checkpointListener', '"checkpointCacheListener"', 'true', 'false',
+                                            'Checkpoint listener implementation class name', CacheCheckpoint)
 
-                                        div(ng-show=CacheCheckpoint)
-                                            .settings-row
-                                                +dropdown-required-empty('Cache:', '$parent.item.Cache.cache', '"checkpointCacheCache"', 'true', CacheCheckpoint,
-                                                    'Choose cache', 'No caches configured for current cluster', '$ctrl.cachesMenu', 'Cache to use for storing checkpoints')(
-                                                    pc-is-in-collection='$ctrl.clonedCluster.caches'
-                                                )
-                                                    +form-field-feedback(form, 'isInCollection', `Cluster doesn't have such a cache`)
-                                            .settings-row
-                                                +java-class('Listener:', '$parent.item.Cache.checkpointListener', '"checkpointCacheListener"', 'true', 'false',
-                                                    'Checkpoint listener implementation class name', CacheCheckpoint)
+                                div(ng-show='$parent.item.kind === "S3"')
+                                    include ./checkpoint/s3
 
-                                        div(ng-show='$parent.item.kind === "S3"')
-                                            include ./checkpoint/s3
+                                div(ng-show='$parent.item.kind === "JDBC"')
+                                    include ./checkpoint/jdbc
 
-                                        div(ng-show='$parent.item.kind === "JDBC"')
-                                            include ./checkpoint/jdbc
+                                .settings-row(ng-show=CustomCheckpoint)
+                                    +java-class('Class name:', '$parent.item.Custom.className', '"checkpointCustomClassName"', 'true', CustomCheckpoint,
+                                    'Custom CheckpointSpi implementation class', CustomCheckpoint)
 
-                                        .settings-row(ng-show=CustomCheckpoint)
-                                            +java-class('Class name:', '$parent.item.Custom.className', '"checkpointCustomClassName"', 'true', CustomCheckpoint,
-                                            'Custom CheckpointSpi implementation class', CustomCheckpoint)
+                            pc-list-editable-no-items
+                                | You have no checkpoint SPI configurations.&nbsp;
+                                a.link-success(ng-click=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`) Create one?
 
-                                    pc-list-editable-no-items
-                                        | Not defined
-
-                            a.link-success(ng-click='$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)')
-                                | + Add checkpoint SPI
+                        button.btn-ignite.btn-ignite--link(type='button' ng-if=`${model}.length` ng-click=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`)
+                            | + Add new checkpoint SPI configuration
             
-            - form = 'checkpoint'
             .pca-form-column-6
                 +preview-xml-java('$ctrl.clonedCluster', 'clusterCheckpoint', '$ctrl.shortCaches')

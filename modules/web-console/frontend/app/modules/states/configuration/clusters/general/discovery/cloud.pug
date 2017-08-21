@@ -42,47 +42,33 @@ mixin discovery-cloud(modelAt='$ctrl.clonedCluster')
         .pc-form-grid-col-30
             +text('Provider:', `${model}.provider`, '"' + discoveryKind + 'Provider"', required, 'Input provider', 'Cloud provider to use')
         .details-row.pc-form-grid-col-60
-            .group-section
-                .group
-                    .group-legend
-                        label
-                            span Regions
-
-                        ignite-form-group-tooltip
-                            | List of regions where VMs are located#[br]
-                            | If the regions are not set then every region, that a cloud provider has, will be investigated. This could lead to significant performance degradation#[br]
-                            | Note, that some cloud providers, like Google Compute Engine, doesn't have a notion of a region. For such providers regions are redundant
-                        
-                    .group-content
-                        +list-text-field({
-                            items: regions,
-                            lbl: 'Region name',
-                            name: 'regionName'
-                        })
-                            +unique-feedback('"regionName"', 'Such region already exists!')
-
-                    a.link-success(ng-click=`${regions}.push("")`)
-                        | + Add new region
+            .ignite-form-field
+                +ignite-form-field__label('Regions:', '"regions"')
+                    +tooltip(`List of regions where VMs are located<br />
+                            If the regions are not set then every region, that a cloud provider has, will be investigated. This could lead to significant performance degradation<br />
+                            Note, that some cloud providers, like Google Compute Engine, doesn't have a notion of a region. For such providers regions are redundant`)
+                .ignite-form-field__control
+                    +list-text-field({
+                        items: regions,
+                        lbl: 'Region name',
+                        name: 'regionName',
+                        itemName: 'region',
+                        itemsName: 'regions'
+                    })
+                        +unique-feedback('"regionName"', 'Such region already exists!')
 
         .details-row.pc-form-grid-col-60
-            .group-section
-                .group
-                    .group-legend
-                        label
-                            span Zones
-
-                        ignite-form-group-tooltip
-                            | List of zones where VMs are located#[br]
-                            | If the zones are not set then every zone from specified regions, will be taken into account#[br]
-                            | Note, that some cloud providers, like Rackspace, doesn't have a notion of a zone. For such providers zones are redundant
-
-                    .group-content
-                        +list-text-field({
-                            items: zones,
-                            lbl: 'Zone name',
-                            name: 'zoneName'
-                        })
-                            +unique-feedback('"zoneName"', 'Such zone already exists!')
-
-                    a.link-success(ng-click=`${zones}.push("")`)
-                        | + Add new zone
+            .ignite-form-field
+                +ignite-form-field__label('Zones:', '"zones"')
+                    +tooltip(`List of zones where VMs are located<br />
+                            If the zones are not set then every zone from specified regions, will be taken into account<br />
+                            Note, that some cloud providers, like Rackspace, doesn't have a notion of a zone. For such providers zones are redundant`)
+                .ignite-form-field__control
+                    +list-text-field({
+                        items: zones,
+                        lbl: 'Zone name',
+                        name: 'zoneName',
+                        itemName: 'zone',
+                        itemsName: 'zones'
+                    })
+                        +unique-feedback('"zoneName"', 'Such zone already exists!')
