@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.yardstick.IgniteAbstractBenchmark;
 import org.apache.ignite.yardstick.cache.model.SampleValue;
+import org.jsr166.ThreadLocalRandom8;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkUtils;
 
@@ -122,12 +123,14 @@ public class IgniteStreamerBenchmark extends IgniteAbstractBenchmark {
 
                             int key = 1;
 
+                            byte[] warmupPayload = new byte[512];
+
                             try (IgniteDataStreamer<Object, Object> streamer = ignite().dataStreamer(cacheName)) {
                                 streamer.perNodeBufferSize(args.streamerBufferSize());
 
                                 while (System.currentTimeMillis() < warmupEnd && !stop.get()) {
                                     for (int i = 0; i < 10; i++) {
-                                        streamer.addData(-key++, new SampleValue(key));
+                                        streamer.addData(-key++, new SampleValue(key, warmupPayload));
 
                                         if (key >= KEYS)
                                             key = 1;
@@ -165,6 +168,12 @@ public class IgniteStreamerBenchmark extends IgniteAbstractBenchmark {
         try {
             List<Future<Void>> futs = new ArrayList<>();
 
+            // Preallocate payload to reduce GC pressure.
+            final byte[][] payloads = new byte[300][];
+
+            for (int i = 0; i < 300; i++)
+                payloads[i] = new byte[300 + i];
+
             for (final String cacheName : cacheNames) {
                 futs.add(executor.submit(new Callable<Void>() {
                     @Override public Void call() throws Exception {
@@ -176,7 +185,7 @@ public class IgniteStreamerBenchmark extends IgniteAbstractBenchmark {
 
                         try (IgniteDataStreamer<Object, Object> streamer = ignite().dataStreamer(cacheName)) {
                             for (int i = 0; i < entries; i++) {
-                                streamer.addData(i, new SampleValue(i));
+                                streamer.addData(i, new SampleValue(i, payloads[ThreadLocalRandom8.current().nextInt(300)]));
 
                                 if (i > 0 && i % 1000 == 0) {
                                     if (stop.get())
