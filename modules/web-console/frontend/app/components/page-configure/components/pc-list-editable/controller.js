@@ -16,6 +16,7 @@
  */
 
 import clone from 'lodash/fp/clone';
+import isNaN from 'lodash/fp/isNaN';
 import isEmpty from 'lodash/fp/isEmpty';
 import indexOf from 'lodash/fp/indexOf';
 
