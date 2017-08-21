@@ -143,7 +143,8 @@ export default class Clusters {
             logger: {Log4j: { mode: 'Default'}},
             caches: [],
             igfss: [],
-            checkpointSpi: []
+            checkpointSpi: [],
+            loadBalancingSpi: []
         };
     }
 
@@ -195,5 +196,24 @@ export default class Clusters {
 
     addCheckpointSPI(cluster) {
         return cluster.checkpointSpi.push(this.makeBlankCheckpointSPI());
+    }
+
+    makeBlankLoadBalancingSpi() {
+        return {
+            Adaptive: {
+                loadProbe: {
+                    Job: {useAverage: true},
+                    CPU: {
+                        useAverage: true,
+                        useProcessors: true
+                    },
+                    ProcessingTime: {useAverage: true}
+                }
+            }
+        };
+    }
+
+    addLoadBalancingSpi(cluster) {
+        return cluster.loadBalancingSpi.push(this.makeBlankLoadBalancingSpi());
     }
 }
