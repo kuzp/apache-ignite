@@ -140,6 +140,8 @@ public class IgniteDataStreamerBenchmarkV2 extends IgniteAbstractBenchmark {
                     @Override public void run() {
                         for (long i = start; i < end; i += threads)
                             streamer.addData(i, data);
+
+                        streamer.flush();
                     }
                 });
             }
@@ -151,6 +153,8 @@ public class IgniteDataStreamerBenchmarkV2 extends IgniteAbstractBenchmark {
 
         for (long i = start; i < end; i += threads)
             streamer.addData(i, data);
+
+        streamer.flush();
 
         if (futs != null) {
             for (int i = 0; i < threads - 1; i++)
