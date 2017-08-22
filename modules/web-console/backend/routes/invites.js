@@ -34,7 +34,7 @@ module.exports = {
  * @param {UtilsService} utilsService
  * @returns {Promise}
  */
-module.exports.factory = function (_, express, mongo, settings, mailsService, utilsService) {
+module.exports.factory = function(_, express, mongo, settings, mailsService, utilsService) {
     return new Promise((resolveFactory) => {
         const router = new express.Router();
 
@@ -44,51 +44,29 @@ module.exports.factory = function (_, express, mongo, settings, mailsService, ut
 
             return mongo.Account.findOne({email: data.email})
                 .then((foundAccount) => {
-                        const invite = {
-                            token: utilsService.randomString(settings.tokenLength),
-                            organization: data.organization,
-                            email: data.email
-                        };
+                    const invite = {
+                        token: utilsService.randomString(settings.tokenLength),
+                        organization: data.organization,
+                        email: data.email
+                    };
 
-                        if (foundAccount)
-                            invite.account = foundAccount._id;
+                    if (foundAccount)
+                        invite.account = foundAccount._id;
 
-                        return mongo.Invite.create(invite)
-                            .then((savedInvite) => {
-                                return mailsService.emailInvite(host, user, savedInvite);
-                            })
-                            .catch((err) => {
-                                console.log(err);
-                            });
-                    }
-                );
+                    return mongo.Invite.create(invite)
+                        .then((savedInvite) => {
+                            return mailsService.emailInvite(host, user, savedInvite);
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+                });
         };
 
         // Invite user to join organization.
-        router.post('/invite', (req, res) => {
-            _createInvite(req.origin(), {name: 'Test'},  req.body)
+        router.post('/create', (req, res) => {
+            _createInvite(req.origin(), {name: 'Test'}, req.body)
                 .then(res.api.ok)
-                .catch(res.api.error);
-        });
-
-        // Find invite and return data.
-        router.post('/find', (req, res) => {
-            mongo.Invite.findOne(req.body)
-                .then((invite) => {
-                    if (invite) {
-                        mongo.Organization.findOne({_id: invite.organization})
-                            .then((organization) => {
-                                res.api.ok({
-                                    organization: {name: organization.name},
-                                    email: invite.email,
-                                    existingUser: !_.isNil(invite.account),
-                                    found: true
-                                })
-                            });
-                    }
-                    else
-                        res.api.ok({found: false});
-                })
                 .catch(res.api.error);
         });
 

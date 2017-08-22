@@ -29,6 +29,6 @@ export default class Invites {
      * @returns {*} Invite data.
      */
     find(token) {
-        return this.$http.post('/api/v1/invite/find', {token});
+        return this.$http.post('/api/v1/invites/find', {token});
     }
 }

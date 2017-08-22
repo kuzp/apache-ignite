@@ -56,7 +56,7 @@ export default class AuthSrv {
     }
 
     acceptInvite(invite) {
-        this.$http.post('/api/v1/invite/accept', invite)
+        this.$http.post('/api/v1/invites/accept', invite)
             .then(() => this._afterLogin())
             .catch(this.Messages.showError);
     }

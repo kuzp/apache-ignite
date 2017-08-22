@@ -17,9 +17,9 @@
 
 // Sign in controller.
 export default class SigninCtrl {
-    static $inject = ['$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites'];
+    static $inject = ['$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites', 'IgniteMessages'];
 
-    constructor($uiRouterGlobals, Focus, Countries, Auth, Invites) {
+    constructor($uiRouterGlobals, Focus, Countries, Auth, Invites, Messages) {
         const self = this;
 
         self.Auth = Auth;
@@ -49,7 +49,8 @@ export default class SigninCtrl {
                     }
 
                     self.showSignIn = true;
-                });
+                })
+                .catch((err) => Messages.showError('Failed to find invite: ', err));
         }
     }
 
@@ -63,9 +64,7 @@ export default class SigninCtrl {
     }
 
     acceptInvite() {
-        console.log(this.invite);
-
-        // Auth.acceptInvite
+        this.Auth.acceptInvite(_.merge(this.invite, this.invite.existingUser ? this.ui_signin : this.ui_signup));
     }
 
     forgotPassword() {

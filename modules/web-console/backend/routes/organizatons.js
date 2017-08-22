@@ -31,7 +31,7 @@ module.exports = {
  * @param mongo
  * @returns {Promise}
  */
-module.exports.factory = function (_, express, mongo) {
+module.exports.factory = function(_, express, mongo) {
     return new Promise((resolveFactory) => {
         const router = new express.Router();
 

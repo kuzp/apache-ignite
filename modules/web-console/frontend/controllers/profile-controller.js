@@ -126,7 +126,7 @@ export default ['profileController', [
                         organization: $scope.user.organization
                     };
 
-                    $http.post('/api/v1/organizations/invite', data)
+                    return $http.post('/api/v1/invites/create', data)
                         .then(() => Messages.showInfo(`Invite has been sent to: ${email}.`));
                 })
                 .catch((err) => Messages.showError('Failed to invite user: ', err));

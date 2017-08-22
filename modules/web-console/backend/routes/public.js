@@ -22,10 +22,11 @@
 
 module.exports = {
     implements: 'routes/public',
-    inject: ['require(express)', 'require(passport)', 'mongo', 'services/mails', 'services/users', 'services/auth']
+    inject: ['require(lodash)', 'require(express)', 'require(passport)', 'mongo', 'services/mails', 'services/users', 'services/auth']
 };
 
 /**
+ * @param _
  * @param express
  * @param passport
  * @param mongo
@@ -34,7 +35,7 @@ module.exports = {
  * @param {AuthService} authService
  * @returns {Promise}
  */
-module.exports.factory = function(express, passport, mongo, mailsService, usersService, authService) {
+module.exports.factory = function(_, express, passport, mongo, mailsService, usersService, authService) {
     return new Promise((factoryResolve) => {
         const router = new express.Router();
 
@@ -89,31 +90,48 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
          */
         router.post('/signin', (req, res, next) => _signin(req, res, next));
 
-        /**
-         * Sign in into exist account.
-         */
-        router.post('/invite/accept', (req, res, next) => {
-            const data = req.body;
-
-            mongo.Invite.findOne({token: data.token})
+        // Find invite and return data.
+        router.post('/invites/find', (req, res) => {
+            mongo.Invite.findOne({token: req.body.token}).exec()
                 .then((invite) => {
-
-                });
-
-            if (data.existingUser)
-                return _signin(req, res, next);
-
-            const user = {
-                email: data.email
-            };
-
-            _signup(req, res, user)
-                .then((data) => {
-                    // TODO IGNITE-4775
-                    console.log("Accepted new user: " + data);
+                    if (invite) {
+                        mongo.Organization.findOne({_id: invite.organization})
+                            .then((organization) => {
+                                res.api.ok({
+                                    organization: {name: organization.name},
+                                    email: invite.email,
+                                    existingUser: !_.isNil(invite.account),
+                                    found: true
+                                });
+                            });
+                    }
+                    else
+                        res.api.ok({found: false});
                 })
-                .then(res.api.ok)
                 .catch(res.api.error);
+        });
+
+        /**
+         * Accept invite and signup if needed.
+         */
+        router.post('/invites/accept', (req, res, next) => {
+            const data = req.body;
+            const token = data.token;
+
+            mongo.Invite.findOne({token}).exec()
+                .then((invite) => {
+                    if (invite) {
+                        mongo.Invite.remove({_id: invite._id}).exec().then(() => {
+                            if (data.existingUser)
+                                return _signin(req, res, next);
+
+                            return _signup(req, res, data);
+                        });
+                    }
+                    else
+                        throw new Error(`Failed to accept invite, token not found: ${token}`);
+                })
+                .catch((err) => console.log(err));
         });
 
         /**

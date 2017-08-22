@@ -129,16 +129,16 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
 
     // Define Invite schema.
     const InviteSchema = new Schema({
-       token: String,
-       organization: {type: ObjectId, ref: 'Organization'},
-       account: {type: ObjectId, ref: 'Account'},
-       email: String
+        token: String,
+        organization: {type: ObjectId, ref: 'Organization'},
+        account: {type: ObjectId, ref: 'Account'},
+        email: String
     });
 
     // Define model for Invite.
     result.Invite = mongoose.model('Invite', InviteSchema);
 
-        // Define Domain model schema.
+    // Define Domain model schema.
     const DomainModelSchema = new Schema({
         space: {type: ObjectId, ref: 'Space', index: true, required: true},
         caches: [{type: ObjectId, ref: 'Cache'}],
