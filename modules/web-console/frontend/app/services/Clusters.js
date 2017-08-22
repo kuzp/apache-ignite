@@ -19,6 +19,7 @@ import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
 import ObjectID from 'bson-objectid';
+import {uniqueName} from 'app/utils/uniqueName';
 
 export default class Clusters {
     static $inject = ['$http'];
@@ -249,4 +250,17 @@ export default class Clusters {
         {value: 'WeightedRandom', label: 'Random'},
         {value: 'Custom', label: 'Custom'}
     ];
+
+    makeBlankMemoryPolicy() {
+        return {_id: ObjectID.generate()};
+    }
+
+    addMemoryPolicy(cluster) {
+        const memoryPolicies = get(cluster, 'memoryConfiguration.memoryPolicies');
+        if (!memoryPolicies) return;
+        return memoryPolicies.push(Object.assign(this.makeBlankMemoryPolicy(), {
+            // Blank name for default policy if there are not other policies
+            name: memoryPolicies.length ? uniqueName('New memory policy', memoryPolicies) : ''
+        }));
+    }
 }

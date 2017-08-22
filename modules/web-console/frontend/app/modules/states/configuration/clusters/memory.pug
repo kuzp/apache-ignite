@@ -111,9 +111,9 @@ include /app/helpers/jade/mixins
 
                                         pc-list-editable-no-items
                                             | You have no memory policy configurations.&nbsp;
-                                            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                            a.link-success(ng-click=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`) Create one?
 
-                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`)
                                         | + Add new memory policy configuration
                         +clusters-memory-policies
 
