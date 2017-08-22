@@ -141,7 +141,7 @@
         }
    }
    .ignite-form-field__error-blink {
-        &, .ignite-form-field__errors {
+        .ignite-form-field__errors {
             animation-name: error-pulse;
             animation-iteration-count: 2;
             animation-duration: 500ms;
