@@ -17,6 +17,7 @@
 
 package org.apache.ignite.yardstick.cache.model;
 
+import com.sun.istack.internal.Nullable;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -35,11 +36,18 @@ public class SampleValue implements Externalizable, Binarylizable {
     @QuerySqlField
     private int id;
 
-    private byte[] payload;
+    private @Nullable byte[] payload;
 
     /** */
     public SampleValue() {
         // No-op.
+    }
+
+    /**
+     * @param id Id.
+     */
+    public SampleValue(int id) {
+        this(id, null);
     }
 
     /**
@@ -64,11 +72,11 @@ public class SampleValue implements Externalizable, Binarylizable {
         return id;
     }
 
-    public byte[] getPayload() {
+    @Nullable public byte[] getPayload() {
         return payload;
     }
 
-    public void setPayload(byte[] payload) {
+    public void setPayload(@Nullable byte[] payload) {
         this.payload = payload;
     }
 
