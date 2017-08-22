@@ -28,8 +28,8 @@ include /app/helpers/jade/mixins
             | {{ $ctrl.sizeScale.label }}
             span.fa.fa-caret-down.icon-right
 .ignite-form-field__errors(
-    ng-messages='$ctrl.form[$ctrl.name].$error'
-    ng-if='!$ctrl.form[$ctrl.name].$pristine'
+    ng-messages='$ctrl.ngModel.$error'
+    ng-if='!$ctrl.ngModel.$pristine'
 )
     div(ng-transclude)
     div(ng-message='required')
