@@ -15,6 +15,7 @@ export default {
         name: '@',
         placeholder: '@',
         min: '@',
+        max: '@?',
         tip: '@',
         required: '<?',
         sizeScaleLabel: '@?',

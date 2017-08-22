@@ -12,7 +12,7 @@ include /app/helpers/jade/mixins
             placeholder='{{$ctrl.placeholder}}'
             pcb-scale-number="$ctrl.sizeScale.value"
             min='{{ $ctrl.min/$ctrl.sizeScale.value }}'
-            max='999999999'
+            max='{{ $ctrl.max ? $ctrl.max / $ctrl.sizeScale.value : "" }}'
             step='1'
             ng-required='$ctrl.required'
             ng-disabled='$ctrl.ngDisabled'
@@ -34,7 +34,7 @@ include /app/helpers/jade/mixins
         | This field could not be empty
     div(ng-message='min')
         | Value is less than allowable minimum: {{ $ctrl.min/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
-    div(ng-message='min')
-        | Value is less than allowable maximum: {{ $ctrl.max/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
+    div(ng-message='max')
+        | Value is more than allowable maximum: {{ $ctrl.max/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
     div(ng-message='number')
         | Only numbers allowed
