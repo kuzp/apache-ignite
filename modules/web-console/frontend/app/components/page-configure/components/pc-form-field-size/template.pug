@@ -23,6 +23,7 @@ include /app/helpers/jade/mixins
             ng-model='$ctrl.sizeScale'
             protect-from-bs-select-render
             ng-disabled='$ctrl.ngDisabled'
+            type='button'
         )
             | {{ $ctrl.sizeScale.label }}
             span.fa.fa-caret-down.icon-right
