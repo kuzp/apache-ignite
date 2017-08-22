@@ -36,6 +36,7 @@ public class SampleValue implements Externalizable, Binarylizable {
     @QuerySqlField
     private int id;
 
+    /** */
     private @Nullable byte[] payload;
 
     /** */
@@ -53,7 +54,7 @@ public class SampleValue implements Externalizable, Binarylizable {
     /**
      * @param id Id.
      */
-    public SampleValue(int id, byte[] payload) {
+    public SampleValue(int id, @Nullable byte[] payload) {
         this.id = id;
         this.payload = payload;
     }
@@ -72,10 +73,16 @@ public class SampleValue implements Externalizable, Binarylizable {
         return id;
     }
 
+    /**
+     * @return Payload.
+     */
     @Nullable public byte[] getPayload() {
         return payload;
     }
 
+    /**
+     * @param payload Payload.
+     */
     public void setPayload(@Nullable byte[] payload) {
         this.payload = payload;
     }
@@ -83,21 +90,28 @@ public class SampleValue implements Externalizable, Binarylizable {
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         id = in.readInt();
+        int l = in.readByte();
+        payload = l == -1 ? null : new byte[l];
+        in.read(payload);
     }
 
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         out.writeInt(id);
+        out.writeByte(payload == null ? -1 : payload.length);
+        out.write(payload);
     }
 
     /** {@inheritDoc} */
     @Override public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
         writer.writeInt("id", id);
+        writer.writeByteArray("payload", payload);
     }
 
     /** {@inheritDoc} */
     @Override public void readBinary(BinaryReader reader) throws BinaryObjectException {
         id = reader.readInt("id");
+        payload = reader.readByteArray("payload");
     }
 
     /** {@inheritDoc} */
