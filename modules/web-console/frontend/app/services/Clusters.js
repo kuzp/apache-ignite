@@ -141,6 +141,7 @@ export default class Clusters {
                 dataRegionConfigurations: []
             },
             memoryConfiguration: {
+                pageSize: null,
                 memoryPolicies: [{
                     name: 'default',
                     maxSize: null
@@ -198,8 +199,40 @@ export default class Clusters {
         })[get(cluster, 'discovery.Jdbc.dialect')];
     }
 
+    memoryPolicy = {
+        name: {
+            default: 'default',
+            invalidValues: ['sysMemPlc']
+        },
+        initialSize: {
+            default: 268435456,
+            min: 10485760
+        },
+        maxSize: {
+            min: (memoryPolicy) => {
+                return memoryPolicy.initialSize || this.memoryPolicy.initialSize.default;
+            }
+        },
+        customValidators: {
+            defaultMemoryPolicyExists: (name, items = []) => {
+                const def = this.memoryPolicy.name.default;
+                const normalizedName = (name || def);
+                if (normalizedName === def) return true;
+                return items.some((policy) => (policy.name || def) === normalizedName);
+            },
+            uniqueMemoryPolicyName: (a, items = []) => {
+                const def = this.memoryPolicy.name.default;
+                return !items.some((b) => b._id !== a._id && (a.name || def) === (b.name || def));
+            }
+        }
+    };
+
     getDefaultClusterMemoryPolicy(cluster) {
-        return get(cluster, 'memoryConfiguration.memoryPolicies', []).find((p) => p.name === 'default');
+        const def = this.memoryPolicy.name.default;
+        const normalizedName = get(cluster, 'memoryConfiguration.defaultMemoryPolicyName') || def;
+        return get(cluster, 'memoryConfiguration.memoryPolicies', []).find((p) => {
+            return (p.name || def) === normalizedName;
+        });
     }
 
     makeBlankCheckpointSPI() {
@@ -263,4 +296,27 @@ export default class Clusters {
             name: memoryPolicies.length ? uniqueName('New memory policy', memoryPolicies) : ''
         }));
     }
+
+    memoryConfiguration = {
+        pageSize: {
+            values: [
+                {value: null, label: 'Default (2kb)'},
+                {value: 1024 * 1, label: '1 kb'},
+                {value: 1024 * 2, label: '2 kb'},
+                {value: 1024 * 4, label: '4 kb'},
+                {value: 1024 * 8, label: '8 kb'},
+                {value: 1024 * 16, label: '16 kb'}
+            ]
+        },
+        systemCacheInitialSize: {
+            default: 41943040,
+            min: 10485760
+        },
+        systemCacheMaxSize: {
+            default: 104857600,
+            min: (cluster) => {
+                return get(cluster, 'memoryConfiguration.systemCacheInitialSize') || this.memoryConfiguration.systemCacheInitialSize.default;
+            }
+        }
+    };
 }

@@ -18,6 +18,7 @@
 import angular from 'angular';
 
 import {Visualizer} from '@uirouter/visualizer';
+import uiValidate from 'angular-ui-validate';
 
 import component from './component';
 import ConfigureState from './services/ConfigureState';
@@ -54,6 +55,7 @@ import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegrat
 
 export default angular
     .module('ignite-console.page-configure', [
+        uiValidate,
         pcFormFieldSize.name,
         pcUiGridFilters.name,
         pcListEditable.name,
