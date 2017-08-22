@@ -6,12 +6,12 @@ include /app/helpers/jade/mixins
     .input-tip
         input.form-control(
             type='number'
-            ng-model='$ctrl.ngModel'
+            ng-model='$ctrl.value'
+            ng-change='$ctrl.onValueChange()'
             id='{{::$ctrl.id}}'
             name='{{::$ctrl.name}}'
             placeholder='{{$ctrl.placeholder}}'
-            pcb-scale-number="$ctrl.sizeScale.value"
-            min='{{ $ctrl.min/$ctrl.sizeScale.value }}'
+            min='{{ $ctrl.min ? $ctrl.min / $ctrl.sizeScale.value : "" }}'
             max='{{ $ctrl.max ? $ctrl.max / $ctrl.sizeScale.value : "" }}'
             step='1'
             ng-required='$ctrl.required'
