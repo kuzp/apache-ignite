@@ -5,6 +5,7 @@ import './style.scss';
 export default {
     controller,
     template,
+    transclude: true,
     require: {
         form: '^form'
     },

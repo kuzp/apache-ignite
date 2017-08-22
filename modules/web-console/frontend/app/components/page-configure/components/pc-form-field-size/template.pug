@@ -30,6 +30,7 @@ include /app/helpers/jade/mixins
     ng-messages='$ctrl.form[$ctrl.name].$error'
     ng-if='!$ctrl.form[$ctrl.name].$pristine'
 )
+    div(ng-transclude)
     div(ng-message='required')
         | This field could not be empty
     div(ng-message='min')
