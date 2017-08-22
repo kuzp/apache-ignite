@@ -17,7 +17,6 @@
 
 package org.apache.ignite.yardstick.cache.model;
 
-import com.sun.istack.internal.Nullable;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -27,6 +26,7 @@ import org.apache.ignite.binary.BinaryReader;
 import org.apache.ignite.binary.BinaryWriter;
 import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Entity class for benchmark.
