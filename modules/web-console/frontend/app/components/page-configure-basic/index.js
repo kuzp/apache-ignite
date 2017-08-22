@@ -21,7 +21,6 @@ import component from './component';
 import service from './service';
 import {reducer} from './reducer';
 
-import pcbScaleNumber from './components/pcbScaleNumber';
 import pcListEditableOneWay from './components/pcListEditableOneWay';
 
 export default angular
@@ -30,6 +29,5 @@ export default angular
         configureBasic: reducer(state.configureBasic, action, state)
     }))])
     .component('pageConfigureBasic', component)
-    .directive('pcbScaleNumber', pcbScaleNumber)
     .directive('pcListEditableOneWay', pcListEditableOneWay)
     .service('PageConfigureBasic', service);
