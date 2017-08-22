@@ -21,13 +21,14 @@ export default class PCFormFieldSizeController {
     }
 
     $onChanges(changes) {
-        if ('sizeScaleLabel' in changes)
-            this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
+        if ('sizeScaleLabel' in changes) this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
+        if ('rawValue' in changes) this.assignValue();
     }
 
     set sizeScale(value) {
         this._sizeScale = value;
         if (this.onScaleChange) this.onScaleChange({$event: this.sizeScale});
+        this.assignValue();
         return this.sizeScale;
     }
 
@@ -35,7 +36,17 @@ export default class PCFormFieldSizeController {
         return this._sizeScale;
     }
 
-    chooseSizeScale(label = 'Mb') {
+    assignValue() {
+        return this.value = this.rawValue
+            ? this.rawValue / this.sizeScale.value
+            : this.rawValue;
+    }
+
+    onValueChange() {
+        this.ngModel.$setViewValue(this.value ? this.value * this.sizeScale.value : this.value);
+    }
+
+    chooseSizeScale(label = this.sizesMenu[1].label) {
         return this.sizesMenu.find((option) => option.label.toLowerCase() === label.toLowerCase());
     }
 }
