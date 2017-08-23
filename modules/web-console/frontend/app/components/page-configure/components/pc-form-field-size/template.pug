@@ -1,15 +1,16 @@
 include /app/helpers/jade/mixins
 
-+ignite-form-field__label('{{ ::$ctrl.label }}', '::$ctrl.name', '$ctrl.required')
++ignite-form-field__label('{{ ::$ctrl.label }}', '$ctrl.id', '$ctrl.required')
     +tooltip('{{::$ctrl.tip}}')
-.ignite-form-field__control
+.ignite-form-field__control(ng-form='$ctrl.innerForm')
     .input-tip
         input.form-control(
             type='number'
+            id='{{::$ctrl.id}}Input'
             ng-model='$ctrl.value'
+            ng-model-options='{allowInvalid: true}'
             ng-change='$ctrl.onValueChange()'
-            id='{{::$ctrl.id}}'
-            name='{{::$ctrl.name}}'
+            name='numberInput'
             placeholder='{{$ctrl.placeholder}}'
             min='{{ $ctrl.min ? $ctrl.min / $ctrl.sizeScale.value : "" }}'
             max='{{ $ctrl.max ? $ctrl.max / $ctrl.sizeScale.value : "" }}'
@@ -29,7 +30,7 @@ include /app/helpers/jade/mixins
             span.fa.fa-caret-down.icon-right
 .ignite-form-field__errors(
     ng-messages='$ctrl.ngModel.$error'
-    ng-if='!$ctrl.ngModel.$pristine'
+    ng-show=`($ctrl.ngModel.$dirty || $ctrl.ngModel.$touched || $ctrl.ngModel.$submitted) && $ctrl.ngModel.$invalid`
 )
     div(ng-transclude)
     div(ng-message='required')

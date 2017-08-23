@@ -7,14 +7,10 @@ export default {
     template,
     transclude: true,
     require: {
-        form: '^form',
         ngModel: 'ngModel'
     },
     bindings: {
-        rawValue: '<ngModel',
-        id: '@',
         label: '@',
-        name: '@',
         placeholder: '@',
         min: '@?',
         max: '@?',

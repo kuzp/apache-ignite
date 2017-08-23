@@ -1,14 +1,15 @@
 export default class PCFormFieldSizeController {
-    static $inject = ['$element'];
+    static $inject = ['$element', '$attrs'];
 
-    constructor($element) {
-        Object.assign(this, {$element});
+    constructor($element, $attrs) {
+        Object.assign(this, {$element, $attrs});
         this.sizesMenu = [
             {label: 'Kb', value: 1024},
             {label: 'Mb', value: 1024 * 1024},
             {label: 'Gb', value: 1024 * 1024 * 1024}
         ];
         this.sizeScale = this.sizesMenu[2];
+        this.id = Math.random();
     }
 
     $onDestroy() {
@@ -18,17 +19,27 @@ export default class PCFormFieldSizeController {
     $onInit() {
         if (!this.min) this.min = 0;
         this.$element.addClass('ignite-form-field');
+        this.ngModel.$viewChangeListeners.push(() => {
+            this.assignValue(this.ngModel.$viewValue);
+        });
+    }
+
+    $postLink() {
+        if ('min' in this.$attrs)
+            this.ngModel.$validators.min = (value) => this.ngModel.$isEmpty(value) || value === void 0 || value >= this.min;
+        if ('max' in this.$attrs)
+            this.ngModel.$validators.max = (value) => this.ngModel.$isEmpty(value) || value === void 0 || value <= this.max;
     }
 
     $onChanges(changes) {
         if ('sizeScaleLabel' in changes) this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
-        if ('rawValue' in changes) this.assignValue();
+        if ('min' in changes) this.ngModel.$validate();
     }
 
     set sizeScale(value) {
         this._sizeScale = value;
         if (this.onScaleChange) this.onScaleChange({$event: this.sizeScale});
-        this.assignValue();
+        if (this.ngModel) this.assignValue(this.ngModel.$viewValue);
         return this.sizeScale;
     }
 
@@ -36,10 +47,10 @@ export default class PCFormFieldSizeController {
         return this._sizeScale;
     }
 
-    assignValue() {
-        return this.value = this.rawValue
-            ? this.rawValue / this.sizeScale.value
-            : this.rawValue;
+    assignValue(rawValue) {
+        return this.value = rawValue
+            ? rawValue / this.sizeScale.value
+            : rawValue;
     }
 
     onValueChange() {
