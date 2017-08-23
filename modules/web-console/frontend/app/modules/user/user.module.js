@@ -60,7 +60,7 @@ angular.module('ignite-console.user', [
 
         let role = 'user';
 
-        if (user.admin)
+        if (user.admin || user.organizationAdmin)
             role = 'admin';
 
         if (user.becomeUsed)

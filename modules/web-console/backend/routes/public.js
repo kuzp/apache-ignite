@@ -98,7 +98,7 @@ module.exports.factory = function(_, express, passport, mongo, mailsService, use
                         mongo.Organization.findOne({_id: invite.organization})
                             .then((organization) => {
                                 res.api.ok({
-                                    organization: {name: organization.name},
+                                    organization,
                                     email: invite.email,
                                     existingUser: !_.isNil(invite.account),
                                     found: true
@@ -125,7 +125,17 @@ module.exports.factory = function(_, express, passport, mongo, mailsService, use
                             if (data.existingUser)
                                 return _signin(req, res, next);
 
-                            return _signup(req, res, data);
+                            const user = {
+                                email: data.email,
+                                password: data.password,
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                                company: data.organization.name,
+                                country: data.country,
+                                organization: data.organization._id
+                            };
+
+                            return _signup(req, res, user);
                         });
                     }
                     else

@@ -17,7 +17,7 @@
 
 const ICON_SORT = '<span ui-grid-one-bind-id-grid="col.uid + \'-sortdir-text\'" ui-grid-visible="col.sort.direction" aria-label="Sort Descending"><i ng-class="{ \'ui-grid-icon-up-dir\': col.sort.direction == asc, \'ui-grid-icon-down-dir\': col.sort.direction == desc, \'ui-grid-icon-blank\': !col.sort.direction }" title="" aria-hidden="true"></i></span>';
 
-const USER_TEMPLATE = '<div class="ui-grid-cell-contents"><i class="pull-left" ng-class="row.entity.admin ? \'icon-admin\' : \'icon-user\'"></i>&nbsp;{{ COL_FIELD }}</div>';
+const USER_TEMPLATE = '<div class="ui-grid-cell-contents"><i class="pull-left" ng-class="(row.entity.admin || row.entity.organizationAdmin) ? \'icon-admin\' : \'icon-user\'"></i>&nbsp;{{ COL_FIELD }}</div>';
 
 const CLUSTER_HEADER_TEMPLATE = `<div class='ui-grid-cell-contents' bs-tooltip data-title='{{ col.headerTooltip(col) }}' data-placement='top'><i class='icon-cluster'></i>${ICON_SORT}</div>`;
 const MODEL_HEADER_TEMPLATE = `<div class='ui-grid-cell-contents' bs-tooltip data-title='{{ col.headerTooltip(col) }}' data-placement='top'><i class='fa fa-object-group'></i>${ICON_SORT}</div>`;

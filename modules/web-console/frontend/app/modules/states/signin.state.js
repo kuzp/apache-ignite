@@ -39,6 +39,8 @@ angular
         redirectTo: (trans) => {
             return trans.injector().get('User').read()
                 .then(() => {
+                    console.log(trans.router.globals); // TODO Why param are empty?
+
                     try {
                         const {name, params} = JSON.parse(localStorage.getItem('lastStateChangeSuccess'));
 
