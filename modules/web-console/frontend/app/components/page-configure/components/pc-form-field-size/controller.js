@@ -19,9 +19,6 @@ export default class PCFormFieldSizeController {
     $onInit() {
         if (!this.min) this.min = 0;
         this.$element.addClass('ignite-form-field');
-        this.ngModel.$viewChangeListeners.push(() => {
-            this.assignValue(this.ngModel.$viewValue);
-        });
     }
 
     $postLink() {
@@ -33,6 +30,7 @@ export default class PCFormFieldSizeController {
 
     $onChanges(changes) {
         if ('sizeScaleLabel' in changes) this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
+        if ('rawValue' in changes) this.assignValue(changes.rawValue.currentValue);
         if ('min' in changes) this.ngModel.$validate();
     }
 

@@ -10,6 +10,7 @@ export default {
         ngModel: 'ngModel'
     },
     bindings: {
+        rawValue: '<ngModel',
         label: '@',
         placeholder: '@',
         min: '@?',
