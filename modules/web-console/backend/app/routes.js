@@ -39,7 +39,7 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
             };
 
             const _adminOnly = (req, res, next) => {
-                if (req.isAuthenticated() && req.user.admin)
+                if (req.isAuthenticated() && (req.user.admin || req.user.organizationAdmin))
                     return next();
 
                 res.status(401).send('Access denied. You are not authorized to access this page.');

@@ -131,33 +131,43 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
 
         /**
          * Get list of user accounts and summary information.
+         *
+         * @param user User.
+         * @param params Parameters.
          * @returns {mongo.Account[]} - returns all accounts with counters object
          */
-        static list(params) {
+        static list(user, params) {
+            const pipeline = [
+                {$lookup: {from: 'spaces', localField: '_id', foreignField: 'owner', as: 'spaces'}},
+                {$project: {
+                    _id: 1,
+                    firstName: 1,
+                    lastName: 1,
+                    admin: 1,
+                    email: 1,
+                    company: 1,
+                    country: 1,
+                    lastLogin: 1,
+                    lastActivity: 1,
+                    organization: 1,
+                    organizationAdmin: 1,
+                    spaces: {
+                        $filter: {
+                            input: '$spaces',
+                            as: 'space',
+                            cond: {$eq: ['$$space.demo', false]}
+                        }
+                    }
+                }},
+                { $sort: {firstName: 1, lastName: 1}}
+            ];
+
+            if (user.organizationAdmin)
+                pipeline.unshift({$match: {organization: user.organization}});
+
             return Promise.all([
                 Promise.all([
-                    mongo.Account.aggregate([
-                        {$lookup: {from: 'spaces', localField: '_id', foreignField: 'owner', as: 'spaces'}},
-                        {$project: {
-                            _id: 1,
-                            firstName: 1,
-                            lastName: 1,
-                            admin: 1,
-                            email: 1,
-                            company: 1,
-                            country: 1,
-                            lastLogin: 1,
-                            lastActivity: 1,
-                            spaces: {
-                                $filter: {
-                                    input: '$spaces',
-                                    as: 'space',
-                                    cond: {$eq: ['$$space.demo', false]}
-                                }
-                            }
-                        }},
-                        { $sort: {firstName: 1, lastName: 1}}
-                    ]).exec(),
+                    mongo.Account.aggregate(pipeline).exec(),
                     mongo.Cluster.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),
                     mongo.Cache.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),
                     mongo.DomainModel.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),
