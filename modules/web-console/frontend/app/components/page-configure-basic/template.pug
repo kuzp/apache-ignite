@@ -79,15 +79,16 @@ form(novalidate name=form)
     .pcb-form-grid-row.pc-form-grid-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
         .pc-form-grid-col-60
             pc-form-field-size(
-                required='true'
                 ng-model='$ctrl.defaultMemoryPolicy.maxSize'
                 id='memory'
                 name='memory'
                 label='Total Off-heap Size:'
-                placeholder='0.8 * totalMemoryAvailable'
-                min='{{::$ctrl.minMemorySize}}'
+                placeholder='{{ ::$ctrl.Clusters.memoryPolicy.maxSize.default }}'
+                min='{{ ::$ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) }}'
                 tip='“default” cluster memory policy off-heap max memory size. Leave empty to use 80% of physical memory available on current machine. Should be at least 10Mb.'
+                on-scale-change='scale = $event'
             )
+                +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
 
     .pcb-caches-list__header.pc-form-grid-row(ng-show='$ctrl.allClusterCaches.length')
         .pc-form-grid-col-10

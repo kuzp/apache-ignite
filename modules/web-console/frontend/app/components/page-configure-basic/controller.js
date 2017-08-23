@@ -19,6 +19,7 @@ import 'rxjs/add/operator/do';
 
 export default class PageConfigureBasicController {
     static $inject = [
+        'Clusters',
         'IgniteConfirm',
         '$scope',
         'PageConfigureBasic',
@@ -28,8 +29,8 @@ export default class PageConfigureBasicController {
         '$element'
     ];
 
-    constructor(IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element) {
-        Object.assign(this, {IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element});
+    constructor(Clusters, IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element) {
+        Object.assign(this, {Clusters, IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element});
     }
 
     $postLink() {
