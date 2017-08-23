@@ -701,57 +701,57 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         //     }));
         // }
 
-        function checkMemoryConfiguration(item) {
-            const memory = item.memoryConfiguration;
+        // function checkMemoryConfiguration(item) {
+        //     const memory = item.memoryConfiguration;
 
-            // if ((memory.systemCacheMaxSize || 104857600) < (memory.systemCacheInitialSize || 41943040))
-            //     return ErrorPopover.show('systemCacheMaxSize', 'System cache maximum size should be greater than initial size', $scope.ui, 'memoryConfiguration');
+        //     if ((memory.systemCacheMaxSize || 104857600) < (memory.systemCacheInitialSize || 41943040))
+        //         return ErrorPopover.show('systemCacheMaxSize', 'System cache maximum size should be greater than initial size', $scope.ui, 'memoryConfiguration');
 
-            // const pageSize = memory.pageSize;
+        //     const pageSize = memory.pageSize;
 
-            // if (pageSize > 0 && (pageSize & (pageSize - 1) !== 0)) {
-            //     ErrorPopover.show('MemoryConfigurationPageSize', 'Page size must be power of 2', $scope.ui, 'memoryConfiguration');
+        //     if (pageSize > 0 && (pageSize & (pageSize - 1) !== 0)) {
+        //         ErrorPopover.show('MemoryConfigurationPageSize', 'Page size must be power of 2', $scope.ui, 'memoryConfiguration');
 
-            //     return false;
-            // }
+        //         return false;
+        //     }
 
-            // const dfltPlc = memory.defaultMemoryPolicyName;
+        //     const dfltPlc = memory.defaultMemoryPolicyName;
 
-            // if (!_.isEmpty(dfltPlc) && !_.find(memory.memoryPolicies, (plc) => plc.name === dfltPlc))
-            //     return ErrorPopover.show('defaultMemoryPolicyName', 'Memory policy with that name should be configured', $scope.ui, 'memoryConfiguration');
+        //     if (!_.isEmpty(dfltPlc) && !_.find(memory.memoryPolicies, (plc) => plc.name === dfltPlc))
+        //         return ErrorPopover.show('defaultMemoryPolicyName', 'Memory policy with that name should be configured', $scope.ui, 'memoryConfiguration');
 
-            return _.isNil(_.find(memory.memoryPolicies, (curPlc, curIx) => {
-                // if (curPlc.name === 'sysMemPlc') {
-                //     ErrorPopover.show('MemoryPolicyName' + curIx, '"sysMemPlc" policy name is reserved for internal use', $scope.ui, 'memoryConfiguration');
+        //     return _.isNil(_.find(memory.memoryPolicies, (curPlc, curIx) => {
+        //         if (curPlc.name === 'sysMemPlc') {
+        //             ErrorPopover.show('MemoryPolicyName' + curIx, '"sysMemPlc" policy name is reserved for internal use', $scope.ui, 'memoryConfiguration');
 
-                //     return true;
-                // }
+        //             return true;
+        //         }
 
-                // if (_.find(memory.memoryPolicies, (plc, ix) => curIx > ix && (curPlc.name || 'default') === (plc.name || 'default'))) {
-                //     ErrorPopover.show('MemoryPolicyName' + curIx, 'Memory policy with that name is already configured', $scope.ui, 'memoryConfiguration');
+        //         if (_.find(memory.memoryPolicies, (plc, ix) => curIx > ix && (curPlc.name || 'default') === (plc.name || 'default'))) {
+        //             ErrorPopover.show('MemoryPolicyName' + curIx, 'Memory policy with that name is already configured', $scope.ui, 'memoryConfiguration');
 
-                //     return true;
-                // }
+        //             return true;
+        //         }
 
-                // if (curPlc.maxSize && curPlc.maxSize < (curPlc.initialSize || 268435456)) {
-                //     ErrorPopover.show('MemoryPolicyMaxSize' + curIx, 'Maximum size should be greater than initial size', $scope.ui, 'memoryConfiguration');
+        //         if (curPlc.maxSize && curPlc.maxSize < (curPlc.initialSize || 268435456)) {
+        //             ErrorPopover.show('MemoryPolicyMaxSize' + curIx, 'Maximum size should be greater than initial size', $scope.ui, 'memoryConfiguration');
 
-                //     return true;
-                // }
+        //             return true;
+        //         }
 
-                if (curPlc.maxSize) {
-                    const maxPoolSize = Math.floor(curPlc.maxSize / (memory.pageSize || 2048) / 10);
+        //         if (curPlc.maxSize) {
+        //             const maxPoolSize = Math.floor(curPlc.maxSize / (memory.pageSize || 2048) / 10);
 
-                    if (maxPoolSize < (curPlc.emptyPagesPoolSize || 100)) {
-                        ErrorPopover.show('MemoryPolicyEmptyPagesPoolSize' + curIx, 'Evicted pages pool size should be lesser than ' + maxPoolSize, $scope.ui, 'memoryConfiguration');
+        //             if (maxPoolSize < (curPlc.emptyPagesPoolSize || 100)) {
+        //                 ErrorPopover.show('MemoryPolicyEmptyPagesPoolSize' + curIx, 'Evicted pages pool size should be lesser than ' + maxPoolSize, $scope.ui, 'memoryConfiguration');
 
-                        return true;
-                    }
-                }
+        //                 return true;
+        //             }
+        //         }
 
-                return false;
-            }));
-        }
+        //         return false;
+        //     }));
+        // }
 
         function checkDataStorageConfiguration(item) {
             const dataStorage = item.dataStorageConfiguration;
@@ -921,8 +921,8 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             // if (!checkLoadBalancingConfiguration(item))
             //     return false;
 
-            if (!checkMemoryConfiguration(item))
-                return false;
+            // if (!checkMemoryConfiguration(item))
+            //     return false;
 
             if (!checkODBC(item))
                 return false;

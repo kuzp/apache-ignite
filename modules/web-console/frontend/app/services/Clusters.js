@@ -209,6 +209,7 @@ export default class Clusters {
             min: 10485760
         },
         maxSize: {
+            default: '0.8 * totalMemoryAvailable',
             min: (memoryPolicy) => {
                 return memoryPolicy.initialSize || this.memoryPolicy.initialSize.default;
             }
@@ -223,6 +224,18 @@ export default class Clusters {
             uniqueMemoryPolicyName: (a, items = []) => {
                 const def = this.memoryPolicy.name.default;
                 return !items.some((b) => b._id !== a._id && (a.name || def) === (b.name || def));
+            }
+        },
+        emptyPagesPoolSize: {
+            default: 100,
+            min: 11,
+            max: (cluster, memoryPolicy) => {
+                if (!memoryPolicy || !memoryPolicy.maxSize) return;
+                const perThreadLimit = 10; // Took from Ignite
+                const maxSize = memoryPolicy.maxSize;
+                const pageSize = cluster.memoryConfiguration.pageSize || this.memoryConfiguration.pageSize.default;
+                const maxPoolSize = Math.floor(maxSize / pageSize / perThreadLimit);
+                return maxPoolSize;
             }
         }
     };
@@ -299,6 +312,7 @@ export default class Clusters {
 
     memoryConfiguration = {
         pageSize: {
+            default: 1024 * 2,
             values: [
                 {value: null, label: 'Default (2kb)'},
                 {value: 1024 * 1, label: '1 kb'},

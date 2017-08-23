@@ -135,11 +135,10 @@ include /app/helpers/jade/mixins
                                                     ng-model-options='{allowInvalid: true}'
                                                     name='MemoryPolicyMaxSize'
                                                     label='Maximum size:'
-                                                    placeholder='0.8 * totalMemoryAvailable'
+                                                    placeholder='{{ ::$ctrl.Clusters.memoryPolicy.maxSize.default }}'
                                                     min='{{ $ctrl.Clusters.memoryPolicy.maxSize.min($parent.item) }}'
                                                     tip='Maximum memory region size defined by this memory policy'
                                                 )
-                                                    +form-field-feedback('"MemoryPolicyMaxSize"', 'min', 'Maximum size should be equal to or more than initial size.')
                                             .pc-form-grid-col-60
                                                 +text('Swap file path:', '$parent.item.swapFilePath', '"MemoryPolicySwapFilePath"', 'false',
                                                 'Input swap file path', 'An optional path to a memory mapped file for this memory policy')
@@ -160,8 +159,15 @@ include /app/helpers/jade/mixins
                                                 +number-min-max-step('Eviction threshold:', '$parent.item.evictionThreshold', '"MemoryPolicyEvictionThreshold"',
                                                 'true', '0.9', '0.5', '0.999', '0.05', 'A threshold for memory pages eviction initiation')
                                             .pc-form-grid-col-30
-                                                +number('Empty pages pool size:', '$parent.item.emptyPagesPoolSize', '"MemoryPolicyEmptyPagesPoolSize"',
-                                                'true', '100', '11', 'The minimal number of empty pages to be present in reuse lists for this memory policy')
+                                                +sane-ignite-form-field-number({
+                                                    label: 'Empty pages pool size:',
+                                                    model: '$parent.item.emptyPagesPoolSize',
+                                                    name: '"MemoryPolicyEmptyPagesPoolSize"',
+                                                    placeholder: '{{ ::$ctrl.Clusters.memoryPolicy.emptyPagesPoolSize.default }}',
+                                                    min: '{{ ::$ctrl.Clusters.memoryPolicy.emptyPagesPoolSize.min }}',
+                                                    max: '{{ $ctrl.Clusters.memoryPolicy.emptyPagesPoolSize.max($ctrl.clonedCluster, $parent.item) }}',
+                                                    tip: 'The minimal number of empty pages to be present in reuse lists for this memory policy'
+                                                })
 
                                             //- Since ignite 2.1
                                             .pc-form-grid-col-30(ng-if-start='$ctrl.available("2.1.0")')
