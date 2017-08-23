@@ -807,37 +807,37 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             return true;
         }
 
-        function checkSwapConfiguration(item) {
-            const swapKind = item.swapSpaceSpi && item.swapSpaceSpi.kind;
+        // function checkSwapConfiguration(item) {
+        //     const swapKind = item.swapSpaceSpi && item.swapSpaceSpi.kind;
 
-            if (swapKind && item.swapSpaceSpi[swapKind]) {
-                const swap = item.swapSpaceSpi[swapKind];
+        //     if (swapKind && item.swapSpaceSpi[swapKind]) {
+        //         const swap = item.swapSpaceSpi[swapKind];
 
-                const sparsity = swap.maximumSparsity;
+        //         const sparsity = swap.maximumSparsity;
 
-                if (LegacyUtils.isDefined(sparsity) && (sparsity < 0 || sparsity >= 1))
-                    return ErrorPopover.show('maximumSparsityInput', 'Maximum sparsity should be more or equal 0 and less than 1!', $scope.ui, 'swap');
+        //         if (LegacyUtils.isDefined(sparsity) && (sparsity < 0 || sparsity >= 1))
+        //             return ErrorPopover.show('maximumSparsityInput', 'Maximum sparsity should be more or equal 0 and less than 1!', $scope.ui, 'swap');
 
-                const readStripesNumber = swap.readStripesNumber;
+        //         const readStripesNumber = swap.readStripesNumber;
 
-                if (readStripesNumber && !(readStripesNumber === -1 || (readStripesNumber & (readStripesNumber - 1)) === 0))
-                    return ErrorPopover.show('readStripesNumberInput', 'Read stripe size must be positive and power of two!', $scope.ui, 'swap');
-            }
+        //         if (readStripesNumber && !(readStripesNumber === -1 || (readStripesNumber & (readStripesNumber - 1)) === 0))
+        //             return ErrorPopover.show('readStripesNumberInput', 'Read stripe size must be positive and power of two!', $scope.ui, 'swap');
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
-        function checkServiceConfiguration(item) {
-            return _.isNil(_.find(_.get(item, 'serviceConfigurations'), (curSrv, curIx) => {
-                if (_.find(item.serviceConfigurations, (srv, ix) => curIx > ix && curSrv.name === srv.name)) {
-                    ErrorPopover.show('ServiceName' + curIx, 'Service configuration with that name is already configured', $scope.ui, 'serviceConfiguration');
+        // function checkServiceConfiguration(item) {
+        //     return _.isNil(_.find(_.get(item, 'serviceConfigurations'), (curSrv, curIx) => {
+        //         if (_.find(item.serviceConfigurations, (srv, ix) => curIx > ix && curSrv.name === srv.name)) {
+        //             ErrorPopover.show('ServiceName' + curIx, 'Service configuration with that name is already configured', $scope.ui, 'serviceConfiguration');
 
-                    return true;
-                }
+        //             return true;
+        //         }
 
-                return false;
-            }));
-        }
+        //         return false;
+        //     }));
+        // }
 
         function checkSslConfiguration(item) {
             const r = item.connector;
@@ -927,11 +927,11 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             if (!checkODBC(item))
                 return false;
 
-            if (!checkSwapConfiguration(item))
-                return false;
+            // if (!checkSwapConfiguration(item))
+            //     return false;
 
-            if (!checkServiceConfiguration(item))
-                return false;
+            // if (!checkServiceConfiguration(item))
+            //     return false;
 
             if (!checkSslConfiguration(item))
                 return false;

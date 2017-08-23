@@ -46,7 +46,21 @@ include /app/helpers/jade/mixins
                                     -var customFilter = nodeFilterKind + ' === "Custom"'
 
                                     .settings-row
-                                        +text-enabled-autofocus('Name:', '$parent.item.name', '"serviceName"', 'true', 'true', 'Input service name', 'Service name')
+                                        +sane-ignite-form-field-text({
+                                            label: 'Name:',
+                                            model: '$parent.item.name',
+                                            name: '"serviceName"',
+                                            required: true,
+                                            placeholder: 'Input service name'
+                                        })(
+                                            ui-validate=`{
+                                                uniqueName: '$ctrl.Clusters.serviceConfigurations.serviceConfiguration.name.customValidators.uniqueName($parent.item, ${items})'
+                                            }`
+                                            ui-validate-watch=`"${items}"`
+                                            ui-validate-watch-object-equality='true'
+                                            ng-model-options='{allowInvalid: true}'
+                                        )
+                                            +form-field-feedback('"serviceName', 'uniqueName', 'Service with that name is already configured')
                                     .settings-row
                                         +java-class('Service class', '$parent.item.service', '"serviceService"', 'true', 'true', 'Service implementation class name')
                                     .settings-row
@@ -87,9 +101,9 @@ include /app/helpers/jade/mixins
 
                                 pc-list-editable-no-items
                                     | You have no service configurations.&nbsp;
-                                    a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                    a.link-success(ng-click=`$ctrl.Clusters.addServiceConfiguration($ctrl.clonedCluster)`) Create one?
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addServiceConfiguration($ctrl.clonedCluster)`)
                                 | + Add new service configuration
                 +clusters-service-configurations
 

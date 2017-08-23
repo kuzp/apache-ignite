@@ -21,6 +21,10 @@ import 'rxjs/add/observable/fromPromise';
 import ObjectID from 'bson-objectid';
 import {uniqueName} from 'app/utils/uniqueName';
 
+const uniqueNameValidator = (defaultName) => (a, items = []) => {
+    return !items.some((b) => b._id !== a._id && (a.name || defaultName) === (b.name || defaultName));
+};
+
 export default class Clusters {
     static $inject = ['$http'];
 
@@ -330,6 +334,38 @@ export default class Clusters {
             default: 104857600,
             min: (cluster) => {
                 return get(cluster, 'memoryConfiguration.systemCacheInitialSize') || this.memoryConfiguration.systemCacheInitialSize.default;
+            }
+        }
+    };
+
+    swapSpaceSpi = {
+        readStripesNumber: {
+            default: 'availableProcessors',
+            customValidators: {
+                powerOfTwo: (value) => {
+                    return !value || ((value & -value) === value);
+                }
+            }
+        }
+    };
+
+    makeBlankServiceConfiguration() {
+        return {_id: ObjectID.generate()};
+    }
+
+    addServiceConfiguration(cluster) {
+        if (!cluster.serviceConfigurations) cluster.serviceConfigurations = [];
+        cluster.serviceConfigurations.push(Object.assign(this.makeBlankServiceConfiguration(), {
+            name: uniqueName('New service configuration', cluster.serviceConfigurations)
+        }));
+    }
+
+    serviceConfigurations = {
+        serviceConfiguration: {
+            name: {
+                customValidators: {
+                    uniqueName: uniqueNameValidator('')
+                }
             }
         }
     };
