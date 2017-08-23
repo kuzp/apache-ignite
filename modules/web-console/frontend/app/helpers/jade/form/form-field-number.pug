@@ -45,7 +45,7 @@ mixin ignite-form-field-number(label, model, name, disabled, required, placehold
                 +form-field-input(attributes=attributes)
         .ignite-form-field__errors(
             ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
+            ng-show=`(${form}[${name}].$dirty || ${form}[${name}].$touched || ${form}[${name}].$submitted) && ${form}[${name}].$invalid`
         )
             if block
                 block
