@@ -15,10 +15,8 @@
     limitations under the License.
 
 mixin form-field-checkbox(label, model, name, disabled, required, tip)
-        label.form-field-checkbox
-            if block
-                block
-            else
+        label.form-field-checkbox.ignite-form-field
+            .ignite-form-field__control
                 input(
                     id=`{{ ${name} }}Input`
                     name=`{{ ${name} }}`
@@ -27,7 +25,19 @@ mixin form-field-checkbox(label, model, name, disabled, required, tip)
                     data-ng-model=model
                     data-ng-required=required && `${required}`
                     data-ng-disabled=disabled && `${disabled}`
-                )
-            span #{label}
+                )&attributes(attributes ? attributes.attributes ? attributes.attributes : attributes : {})
+                span #{label}
+                +tooltip(tip, tipOpts, 'tipLabel')
+            .ignite-form-field__errors(
+                ng-messages=`${form}[${name}].$error`
+                ng-show=`(${form}[${name}].$dirty || ${form}[${name}].$touched || ${form}[${name}].$submitted) && ${form}[${name}].$invalid`
+            )
+                if block
+                    block
+                if required
+                    +form-field-feedback(name, 'required', `${errLbl} could not be empty!`)
 
-            +tooltip(tip, tipOpts, 'tipLabel')
+mixin sane-form-field-checkbox({label, model, name, disabled, required, tip})
+    +form-field-checkbox(label, model, name, disabled = false, required = false, tip)&attributes(attributes)
+        if block
+            block
