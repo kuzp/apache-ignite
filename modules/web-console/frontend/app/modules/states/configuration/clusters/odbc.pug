@@ -31,7 +31,18 @@ include /app/helpers/jade/mixins
         .pca-panel-body(ng-if=`$ctrl.available(["1.0.0", "2.1.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
                 .settings-row
-                    +checkbox('Enabled', enabled, '"odbcEnabled"', 'Flag indicating whether to configure ODBC configuration')
+                    +sane-form-field-checkbox({
+                        label: 'Enabled',
+                        model: enabled,
+                        name: '"odbcEnabled"',
+                        tip: 'Flag indicating whether to configure ODBC configuration'
+                    })(
+                        ui-validate=`{
+                            correctMarshaller: '$ctrl.Clusters.odbc.odbcEnabled.correctMarshaller($ctrl.clonedCluster, $value)'
+                        }`
+                        ui-validate-watch='$ctrl.Clusters.odbc.odbcEnabled.correctMarshallerWatch("$ctrl.clonedCluster")'
+                    )
+                        +form-field-feedback(null, 'correctMarshaller', 'ODBC can only be used with BinaryMarshaller')
                 .settings-row
                     +text-ip-address-with-port-range('ODBC endpoint address:', `${model}.endpointAddress`, '"endpointAddress"', enabled, '0.0.0.0:10800..10810',
                         'ODBC endpoint address. <br/>\
