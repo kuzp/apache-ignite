@@ -685,18 +685,8 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
 
         this.cancelEdit = () => this.pageService.cancelEdit();
         this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
-        const propagateSubmitted = (form) => {
-            Object.keys(form).filter((key) => !key.startsWith('$')).forEach((key) => {
-                if (form.$submitted !== form[key].$submitted) {
-                    form[key].$submitted = form.$submitted;
-                    propagateSubmitted(form[key]);
-                }
-            });
-        };
         this.save = function(cluster = this.clonedCluster) {
             const isValid = triggerValidation(cluster) && this.$scope.ui.inputForm.$valid;
-            // propagateSubmitted(this.$scope.ui.inputForm);
-            // console.log(isValid);
             if (isValid) this.pageService.save(this.clonedCluster);
         };
     }
