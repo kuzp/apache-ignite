@@ -401,4 +401,20 @@ export default class Clusters {
             }
         }
     };
+
+    marshaller = {
+        kind: {
+            default: 'BinaryMarshaller'
+        }
+    };
+
+    odbc = {
+        odbcEnabled: {
+            correctMarshaller: (cluster, odbcEnabled) => {
+                const marshallerKind = get(cluster, 'marshaller.kind') || this.marshaller.kind.default;
+                return !odbcEnabled || marshallerKind === this.marshaller.kind.default;
+            },
+            correctMarshallerWatch: (root) => `${root}.marshaller.kind`
+        }
+    };
 }
