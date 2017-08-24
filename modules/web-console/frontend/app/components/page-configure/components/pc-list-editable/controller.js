@@ -31,6 +31,12 @@ export default class Controller {
         this._cache = {};
     }
 
+    $onInit() {
+        this.ngModel.$isEmpty = (value) => {
+            return !Array.isArray(value) || !value.length;
+        };
+    }
+
     save(data, idx) {
         this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? data : v));
     }
