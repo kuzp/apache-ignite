@@ -21,7 +21,7 @@ import 'rxjs/add/observable/fromPromise';
 import ObjectID from 'bson-objectid';
 import {uniqueName} from 'app/utils/uniqueName';
 
-const uniqueNameValidator = (defaultName) => (a, items = []) => {
+const uniqueNameValidator = (defaultName = '') => (a, items = []) => {
     return !items.some((b) => b._id !== a._id && (a.name || defaultName) === (b.name || defaultName));
 };
 
@@ -366,6 +366,38 @@ export default class Clusters {
                 customValidators: {
                     uniqueName: uniqueNameValidator('')
                 }
+            }
+        }
+    };
+
+    systemThreadPoolSize = {
+        default: 'max(8, availableProcessors) * 2',
+        min: 2
+    };
+
+    rebalanceThreadPoolSize = {
+        default: 1,
+        min: 1,
+        max: (cluster) => {
+            return cluster.systemThreadPoolSize ? cluster.systemThreadPoolSize - 1 : void 0;
+        }
+    };
+
+    makeBlankExecutorConfiguration() {
+        return {_id: ObjectID.generate()};
+    }
+
+    addExecutorConfiguration(cluster) {
+        if (!cluster.executorConfiguration) cluster.executorConfiguration = [];
+        cluster.executorConfiguration.push(Object.assign(this.makeBlankExecutorConfiguration(), {
+            name: uniqueName('New executor configuration', cluster.executorConfiguration)
+        }));
+    }
+
+    executorConfiguration = {
+        name: {
+            customValidators: {
+                uniqueName: uniqueNameValidator()
             }
         }
     };
