@@ -43,7 +43,6 @@ import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkServer;
 import org.yardstickframework.BenchmarkUtils;
 
-import static org.apache.ignite.cache.CacheMemoryMode.OFFHEAP_VALUES;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_MARSHALLER;
 
 /**
@@ -110,9 +109,6 @@ public class IgniteNode implements BenchmarkServer {
 
                 cc.setWriteSynchronizationMode(args.syncMode());
 
-                if (args.orderMode() != null)
-                    cc.setAtomicWriteOrderMode(args.orderMode());
-
                 cc.setBackups(args.backups());
 
                 if (args.restTcpPort() != 0) {
@@ -124,15 +120,6 @@ public class IgniteNode implements BenchmarkServer {
                         ccc.setHost(args.restTcpHost());
 
                     c.setConnectorConfiguration(ccc);
-                }
-
-                if (args.isOffHeap()) {
-                    cc.setOffHeapMaxMemory(0);
-
-                    if (args.isOffheapValues())
-                        cc.setMemoryMode(OFFHEAP_VALUES);
-                    else
-                        cc.setEvictionPolicy(new LruEvictionPolicy(50000));
                 }
 
                 cc.setReadThrough(args.isStoreEnabled());
@@ -160,15 +147,15 @@ public class IgniteNode implements BenchmarkServer {
         c.setCommunicationSpi(commSpi);
 
         if (args.getPageSize() != MemoryConfiguration.DFLT_PAGE_SIZE) {
-            MemoryConfiguration dbCfg = c.getMemoryConfiguration();
+            MemoryConfiguration memCfg = c.getMemoryConfiguration();
 
-            if (dbCfg == null) {
-                dbCfg = new MemoryConfiguration();
+            if (memCfg == null) {
+                memCfg = new MemoryConfiguration();
 
-                c.setMemoryConfiguration(dbCfg);
+                c.setMemoryConfiguration(memCfg);
             }
 
-            dbCfg.setPageSize(args.getPageSize());
+            memCfg.setPageSize(args.getPageSize());
         }
 
         ignite = IgniteSpring.start(c, appCtx);
@@ -181,8 +168,8 @@ public class IgniteNode implements BenchmarkServer {
      * @return Tuple with grid configuration and Spring application context.
      * @throws Exception If failed.
      */
-    private static IgniteBiTuple<IgniteConfiguration, ? extends ApplicationContext> loadConfiguration(String springCfgPath)
-        throws Exception {
+    public static IgniteBiTuple<IgniteConfiguration, ? extends ApplicationContext> loadConfiguration(String springCfgPath)
+            throws Exception {
         URL url;
 
         try {
@@ -193,8 +180,8 @@ public class IgniteNode implements BenchmarkServer {
 
             if (url == null)
                 throw new IgniteCheckedException("Spring XML configuration path is invalid: " + springCfgPath +
-                    ". Note that this path should be either absolute or a relative local file system path, " +
-                    "relative to META-INF in classpath or valid URL to IGNITE_HOME.", e);
+                        ". Note that this path should be either absolute or a relative local file system path, " +
+                        "relative to META-INF in classpath or valid URL to IGNITE_HOME.", e);
         }
 
         GenericApplicationContext springCtx;
@@ -208,7 +195,7 @@ public class IgniteNode implements BenchmarkServer {
         }
         catch (BeansException e) {
             throw new Exception("Failed to instantiate Spring XML application context [springUrl=" +
-                url + ", err=" + e.getMessage() + ']', e);
+                    url + ", err=" + e.getMessage() + ']', e);
         }
 
         Map<String, IgniteConfiguration> cfgMap;
@@ -218,7 +205,7 @@ public class IgniteNode implements BenchmarkServer {
         }
         catch (BeansException e) {
             throw new Exception("Failed to instantiate bean [type=" + IgniteConfiguration.class + ", err=" +
-                e.getMessage() + ']', e);
+                    e.getMessage() + ']', e);
         }
 
         if (cfgMap == null || cfgMap.isEmpty())
