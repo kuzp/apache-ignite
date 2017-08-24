@@ -17,6 +17,7 @@ export default {
         max: '@?',
         tip: '@',
         required: '<?',
+        sizeType: '@?',
         sizeScaleLabel: '@?',
         onScaleChange: '&?',
         ngDisabled: '<?'
