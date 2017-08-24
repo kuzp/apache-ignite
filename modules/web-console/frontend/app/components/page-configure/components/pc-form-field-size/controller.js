@@ -1,14 +1,23 @@
+import get from 'lodash/get';
+
 export default class PCFormFieldSizeController {
     static $inject = ['$element', '$attrs'];
 
-    constructor($element, $attrs) {
-        Object.assign(this, {$element, $attrs});
-        this.sizesMenu = [
+    static sizeTypes = {
+        bytes: [
             {label: 'Kb', value: 1024},
             {label: 'Mb', value: 1024 * 1024},
             {label: 'Gb', value: 1024 * 1024 * 1024}
-        ];
-        this.sizeScale = this.sizesMenu[2];
+        ],
+        seconds: [
+            {label: 'ns', value: 1 / 1000},
+            {label: 'ms', value: 1},
+            {label: 's', value: 1000}
+        ]
+    };
+
+    constructor($element, $attrs) {
+        Object.assign(this, {$element, $attrs});
         this.id = Math.random();
     }
 
@@ -18,6 +27,7 @@ export default class PCFormFieldSizeController {
 
     $onInit() {
         if (!this.min) this.min = 0;
+        if (!this.sizesMenu) this.setDefaultSizeType();
         this.$element.addClass('ignite-form-field');
     }
 
@@ -29,7 +39,14 @@ export default class PCFormFieldSizeController {
     }
 
     $onChanges(changes) {
-        if ('sizeScaleLabel' in changes) this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
+        if ('sizeType' in changes) {
+            this.sizesMenu = PCFormFieldSizeController.sizeTypes[changes.sizeType.currentValue];
+            this.sizeScale = this.chooseSizeScale(get(changes, 'sizeScaleLabel.currentValue'));
+        }
+        if (!this.sizesMenu) this.setDefaultSizeType();
+        if ('sizeScaleLabel' in changes)
+            this.sizeScale = this.chooseSizeScale(changes.sizeScaleLabel.currentValue);
+
         if ('rawValue' in changes) this.assignValue(changes.rawValue.currentValue);
         if ('min' in changes) this.ngModel.$validate();
     }
@@ -46,6 +63,7 @@ export default class PCFormFieldSizeController {
     }
 
     assignValue(rawValue) {
+        if (!this.sizesMenu) this.setDefaultSizeType();
         return this.value = rawValue
             ? rawValue / this.sizeScale.value
             : rawValue;
@@ -57,5 +75,10 @@ export default class PCFormFieldSizeController {
 
     chooseSizeScale(label = this.sizesMenu[1].label) {
         return this.sizesMenu.find((option) => option.label.toLowerCase() === label.toLowerCase());
+    }
+
+    setDefaultSizeType() {
+        this.sizesMenu = PCFormFieldSizeController.sizeTypes.bytes;
+        this.sizeScale = this.chooseSizeScale();
     }
 }
