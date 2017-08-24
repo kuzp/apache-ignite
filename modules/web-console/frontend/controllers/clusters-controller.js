@@ -839,24 +839,24 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         //     }));
         // }
 
-        function checkSslConfiguration(item) {
-            const r = item.connector;
+        // function checkSslConfiguration(item) {
+        //     const r = item.connector;
 
-            if (LegacyUtils.isDefined(r)) {
-                if (r.sslEnabled && LegacyUtils.isEmptyString(r.sslFactory))
-                    return ErrorPopover.show('connectorSslFactoryInput', 'SSL factory should not be empty!', $scope.ui, 'connector');
-            }
+        //     if (LegacyUtils.isDefined(r)) {
+        //         if (r.sslEnabled && LegacyUtils.isEmptyString(r.sslFactory))
+        //             return ErrorPopover.show('connectorSslFactoryInput', 'SSL factory should not be empty!', $scope.ui, 'connector');
+        //     }
 
-            if (item.sslEnabled) {
-                if (!LegacyUtils.isDefined(item.sslContextFactory) || LegacyUtils.isEmptyString(item.sslContextFactory.keyStoreFilePath))
-                    return ErrorPopover.show('keyStoreFilePathInput', 'Key store file should not be empty!', $scope.ui, 'sslConfiguration');
+        //     if (item.sslEnabled) {
+        //         if (!LegacyUtils.isDefined(item.sslContextFactory) || LegacyUtils.isEmptyString(item.sslContextFactory.keyStoreFilePath))
+        //             return ErrorPopover.show('keyStoreFilePathInput', 'Key store file should not be empty!', $scope.ui, 'sslConfiguration');
 
-                if (LegacyUtils.isEmptyString(item.sslContextFactory.trustStoreFilePath) && _.isEmpty(item.sslContextFactory.trustManagers))
-                    return ErrorPopover.show('sslConfiguration-title', 'Trust storage file or managers should be configured!', $scope.ui, 'sslConfiguration');
-            }
+        //         if (LegacyUtils.isEmptyString(item.sslContextFactory.trustStoreFilePath) && _.isEmpty(item.sslContextFactory.trustManagers))
+        //             return ErrorPopover.show('sslConfiguration-title', 'Trust storage file or managers should be configured!', $scope.ui, 'sslConfiguration');
+        //     }
 
-            return true;
-        }
+        //     return true;
+        // }
 
         function checkPoolSizes(item) {
             if (item.rebalanceThreadPoolSize && item.systemThreadPoolSize && item.systemThreadPoolSize <= item.rebalanceThreadPoolSize)
@@ -933,8 +933,8 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             // if (!checkServiceConfiguration(item))
             //     return false;
 
-            if (!checkSslConfiguration(item))
-                return false;
+            // if (!checkSslConfiguration(item))
+            //     return false;
 
             if (!checkPoolSizes(item))
                 return false;
