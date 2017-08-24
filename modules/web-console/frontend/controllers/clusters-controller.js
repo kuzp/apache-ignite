@@ -858,20 +858,20 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         //     return true;
         // }
 
-        function checkPoolSizes(item) {
-            if (item.rebalanceThreadPoolSize && item.systemThreadPoolSize && item.systemThreadPoolSize <= item.rebalanceThreadPoolSize)
-                return ErrorPopover.show('rebalanceThreadPoolSizeInput', 'Rebalance thread pool size exceed or equals System thread pool size!', $scope.ui, 'pools');
+        // function checkPoolSizes(item) {
+        //     if (item.rebalanceThreadPoolSize && item.systemThreadPoolSize && item.systemThreadPoolSize <= item.rebalanceThreadPoolSize)
+        //         return ErrorPopover.show('rebalanceThreadPoolSizeInput', 'Rebalance thread pool size exceed or equals System thread pool size!', $scope.ui, 'pools');
 
-            return _.isNil(_.find(_.get(item, 'executorConfiguration'), (curExec, curIx) => {
-                if (_.find(item.executorConfiguration, (srv, ix) => curIx > ix && curExec.name === srv.name)) {
-                    ErrorPopover.show('ExecutorName' + curIx, 'Executor configuration with that name is already configured', $scope.ui, 'pools');
+        //     return _.isNil(_.find(_.get(item, 'executorConfiguration'), (curExec, curIx) => {
+        //         if (_.find(item.executorConfiguration, (srv, ix) => curIx > ix && curExec.name === srv.name)) {
+        //             ErrorPopover.show('ExecutorName' + curIx, 'Executor configuration with that name is already configured', $scope.ui, 'pools');
 
-                    return true;
-                }
+        //             return true;
+        //         }
 
-                return false;
-            }));
-        }
+        //         return false;
+        //     }));
+        // }
 
         // Check cluster logical consistency.
         const validate = (item) => {
@@ -936,8 +936,8 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
             // if (!checkSslConfiguration(item))
             //     return false;
 
-            if (!checkPoolSizes(item))
-                return false;
+            // if (!checkPoolSizes(item))
+            //     return false;
 
             return true;
         };
