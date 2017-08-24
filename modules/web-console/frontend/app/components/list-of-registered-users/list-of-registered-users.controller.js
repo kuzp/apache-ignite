@@ -85,8 +85,13 @@ export default class IgniteListOfRegisteredUsersCtrl {
 
             user.adminChanging = true;
 
-            AdminData.toggleAdmin(user)
-                .then(() => user.admin = !user.admin)
+            AdminData.toggleAdmin($ctrl.user, user)
+                .then(() => {
+                    if (user.admin)
+                        user.admin = !user.admin;
+                    else if (user.organizationAdmin)
+                        user.organizationAdmin = !user.organizationAdmin;
+                })
                 .finally(() => user.adminChanging = false);
         };
 

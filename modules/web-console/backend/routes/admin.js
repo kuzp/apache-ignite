@@ -56,11 +56,13 @@ module.exports.factory = function(_, express, settings, mongo, spacesService, ma
                 .catch(res.api.error);
         });
 
-        // Save user.
-        router.post('/save', (req, res) => {
+        // Toggle user admin flag.
+        router.post('/toggle', (req, res) => {
             const params = req.body;
 
-            mongo.Account.findByIdAndUpdate(params.userId, {admin: params.adminFlag}).exec()
+            const update = params.organizationAdmin ? {organizationAdmin: params.adminFlag} : {admin: params.adminFlag};
+
+            mongo.Account.findByIdAndUpdate(params.userId, update).exec()
                 .then(res.api.ok)
                 .catch(res.api.error);
         });

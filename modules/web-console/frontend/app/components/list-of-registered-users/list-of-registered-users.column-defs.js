@@ -35,8 +35,8 @@ const ACTIONS_TEMPLATE = `
             <a ng-click='grid.api.becomeUser(row.entity)'>Become this user</a>
         </li>
         <li ng-show='row.entity._id != $root.user._id'>
-            <a ng-click='grid.api.toggleAdmin(row.entity)' ng-if='row.entity.admin && row.entity._id !== $root.user._id'>Revoke admin</a>
-            <a ng-click='grid.api.toggleAdmin(row.entity)' ng-if='!row.entity.admin && row.entity._id !== $root.user._id'>Grant admin</a>
+            <a ng-click='grid.api.toggleAdmin(row.entity)' ng-if='(row.entity.admin || row.entity.organizationAdmin) && row.entity._id !== $root.user._id'>Revoke admin</a>
+            <a ng-click='grid.api.toggleAdmin(row.entity)' ng-if='!(row.entity.admin || row.entity.organizationAdmin) && row.entity._id !== $root.user._id'>Grant admin</a>
         </li>
         <li ng-show='row.entity._id != $root.user._id'>
             <a ng-click='grid.api.removeUser(row.entity)'>Remove user</a>
