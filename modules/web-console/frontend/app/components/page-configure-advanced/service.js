@@ -26,10 +26,10 @@ const ofType = (type) => (action) => action.type === type;
 import {Observable} from 'rxjs/Observable';
 
 export default class PageConfigureAdvanced {
-    static $inject = ['ConfigureState', 'Clusters'];
+    static $inject = ['ConfigureState', 'Clusters', 'IgniteMessages'];
 
-    constructor(ConfigureState, Clusters) {
-        Object.assign(this, {ConfigureState, Clusters});
+    constructor(ConfigureState, Clusters, messages) {
+        Object.assign(this, {ConfigureState, Clusters, messages});
 
         this.saveCompleteConfiguration$ = this.ConfigureState.actions$
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
@@ -101,6 +101,15 @@ export default class PageConfigureAdvanced {
                 );
             });
 
+        this.saveOKMessages$ = this.ConfigureState.actions$
+            .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'))
+            .do((action) => this.messages.showInfo(`Cluster ${action.cluster.name} saved.`));
+
+        this.saveErrMessages$ = this.ConfigureState.actions$
+            .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
+            .do((action) => this.messages.showError(`Failed to save cluster ${action.cluster.name}.`));
+
+        Observable.merge(this.saveOKMessages$, this.saveErrMessages$).subscribe();
         this.saveCompleteConfiguration$.subscribe((a) => ConfigureState.dispatchAction(a));
     }
 }
