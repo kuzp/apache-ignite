@@ -37,10 +37,13 @@ angular
         },
         templateUrl,
         redirectTo: (trans) => {
+            const params = trans.params();
+
+            if (params.invite)
+                return true;
+
             return trans.injector().get('User').read()
                 .then(() => {
-                    console.log(trans.router.globals); // TODO Why param are empty?
-
                     try {
                         const {name, params} = JSON.parse(localStorage.getItem('lastStateChangeSuccess'));
 

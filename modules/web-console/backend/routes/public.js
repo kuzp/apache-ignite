@@ -122,8 +122,10 @@ module.exports.factory = function(_, express, passport, mongo, mailsService, use
                 .then((invite) => {
                     if (invite) {
                         mongo.Invite.remove({_id: invite._id}).exec().then(() => {
-                            if (data.existingUser)
-                                return _signin(req, res, next);
+                            if (data.existingUser) {
+                                return mongo.Account.update({email: data.email}, {$set: {organization: data.organization._id}}).exec()
+                                    .then(() => _signin(req, res, next));
+                            }
 
                             const user = {
                                 email: data.email,
