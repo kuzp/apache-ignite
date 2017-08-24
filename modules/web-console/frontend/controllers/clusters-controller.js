@@ -683,6 +683,7 @@ export default ['PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', 
         //         });
         // };
 
+        this.cancelEdit = () => this.pageService.cancelEdit();
         this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
         const propagateSubmitted = (form) => {
             Object.keys(form).filter((key) => !key.startsWith('$')).forEach((key) => {

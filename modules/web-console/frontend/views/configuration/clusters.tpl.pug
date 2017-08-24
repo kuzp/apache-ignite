@@ -79,8 +79,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
 
     button.btn-ignite.btn-ignite--link-success(
         type='button'
-        n_g-disabled='!ui.inputForm.$dirty'
-        ng-click='ui.inputForm.$dirty && resetAll()'
+        ng-click='$ctrl.cancelEdit()'
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(

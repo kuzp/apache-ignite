@@ -1,11 +1,29 @@
 import cloneDeep from 'lodash/cloneDeep';
+import matches from 'lodash/fp/matches';
 import {combineLatest} from 'rxjs/observable/combineLatest';
+import {fromPromise} from 'rxjs/observable/fromPromise';
+import {empty} from 'rxjs/observable/empty';
+import 'rxjs/add/operator/startWith';
+import 'rxjs/add/operator/mapTo';
+
+const confirmCancelEditAction = {type: 'CONFIRM_CANCEL_EDIT', for: 'cluster'};
+const cancelEditAction = {type: 'CANCEL_EDIT', for: 'cluster'};
 
 export default class PageConfigureAdvancedClusterService {
-    static $inject = ['ConfigureState', 'PageConfigureBasic', 'PageConfigureAdvanced', 'Clusters', '$state'];
+    static $inject = ['ConfigureState', 'PageConfigureBasic', 'PageConfigureAdvanced', 'Clusters', '$state', 'IgniteConfirm'];
 
-    constructor(ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state) {
-        Object.assign(this, {ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state});
+    constructor(ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state, IgniteConfirm) {
+        Object.assign(this, {ConfigureState, PageConfigureBasic, PageConfigureAdvanced, Clusters, $state, IgniteConfirm});
+
+        this.cancelEditEffect$ = this.ConfigureState.actions$
+            .filter(matches(confirmCancelEditAction))
+            .switchMap((a) => {
+                return fromPromise(
+                    this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cluster?')
+                ).mapTo(cancelEditAction).catch(() => empty());
+            });
+
+        this.cancelEditEffect$.do((a) => this.ConfigureState.actions$.next(a)).subscribe();
     }
 
     save(cluster) {
@@ -17,14 +35,18 @@ export default class PageConfigureAdvancedClusterService {
         });
     }
 
+    cancelEdit() {
+        this.ConfigureState.dispatchAction(confirmCancelEditAction);
+    }
+
     getObservable() {
-        const {state$} = this.ConfigureState;
+        const {state$, actions$} = this.ConfigureState;
 
         const cluster = state$
             .pluck('clusters')
             .map((clusters) => clusters.get(this.$state.params.clusterID))
-            // .pluck('clusterConfiguration', 'originalCluster')
             .distinctUntilChanged()
+            .switchMap((v) => actions$.filter(matches(cancelEditAction)).mapTo(v).startWith(v))
             .map((cluster) => {
                 return {
                     originalCluster: cluster,
