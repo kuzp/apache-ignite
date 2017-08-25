@@ -927,6 +927,9 @@
 
         <profile>
             <id>ml</id>
+            <activation>
+                <jdk>[1.8,1.9)</jdk>
+            </activation>
             <modules>
                 <module>modules/ml</module>
             </modules>
