@@ -22,11 +22,13 @@
 module.exports = {
     implements: 'routes',
     inject: ['routes/public', 'routes/admin', 'routes/profiles', 'routes/demo', 'routes/clusters', 'routes/domains',
-        'routes/caches', 'routes/igfss', 'routes/notebooks', 'routes/downloads', 'routes/configurations', 'routes/activities']
+        'routes/caches', 'routes/igfss', 'routes/notebooks', 'routes/downloads', 'routes/configurations',
+        'routes/activities', 'routes/organizations', 'routes/invites']
 };
 
 module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRoute,
-    clustersRoute, domainsRoute, cachesRoute, igfssRoute, notebooksRoute, downloadsRoute, configurationsRoute, activitiesRoute) {
+    clustersRoute, domainsRoute, cachesRoute, igfssRoute, notebooksRoute, downloadsRoute, configurationsRoute,
+    activitiesRoute, organizationsRoute, invitesRoute) {
     return {
         register: (app) => {
             const _mustAuthenticated = (req, res, next) => {
@@ -37,7 +39,7 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
             };
 
             const _adminOnly = (req, res, next) => {
-                if (req.isAuthenticated() && req.user.admin)
+                if (req.isAuthenticated() && (req.user.admin || req.user.organizationAdmin))
                     return next();
 
                 res.status(401).send('Access denied. You are not authorized to access this page.');
@@ -60,6 +62,8 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
             app.use('/notebooks', _mustAuthenticated, notebooksRoute);
             app.use('/downloads', _mustAuthenticated, downloadsRoute);
             app.use('/activities', _mustAuthenticated, activitiesRoute);
+            app.use('/organizations', _mustAuthenticated, organizationsRoute);
+            app.use('/invites', _mustAuthenticated, invitesRoute);
         }
     };
 };

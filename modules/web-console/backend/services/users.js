@@ -21,7 +21,7 @@
 
 module.exports = {
     implements: 'services/users',
-    inject: ['require(lodash)', 'errors', 'settings', 'mongo', 'services/spaces', 'services/mails', 'services/activities', 'agents-handler']
+    inject: ['require(lodash)', 'errors', 'settings', 'mongo', 'services/spaces', 'services/mails', 'services/activities', 'services/utils', 'agents-handler']
 };
 
 /**
@@ -32,22 +32,11 @@ module.exports = {
  * @param {SpacesService} spacesService
  * @param {MailsService} mailsService
  * @param {ActivitiesService} activitiesService
+ * @param {UtilsService} utilsService
  * @param {AgentsHandler} agentHnd
  * @returns {UsersService}
  */
-module.exports.factory = (_, errors, settings, mongo, spacesService, mailsService, activitiesService, agentHnd) => {
-    const _randomString = () => {
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const possibleLen = possible.length;
-
-        let res = '';
-
-        for (let i = 0; i < settings.tokenLength; i++)
-            res += possible.charAt(Math.floor(Math.random() * possibleLen));
-
-        return res;
-    };
-
+module.exports.factory = (_, errors, settings, mongo, spacesService, mailsService, activitiesService, utilsService, agentHnd) => {
     class UsersService {
         /**
          * Save profile information.
@@ -59,8 +48,8 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
             return mongo.Account.count().exec()
                 .then((cnt) => {
                     user.admin = cnt === 0;
-
-                    user.token = _randomString();
+                    user.registered = new Date();
+                    user.token = utilsService.randomString(settings.tokenLength);
 
                     return new mongo.Account(user);
                 })
@@ -78,7 +67,7 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
                     });
                 })
                 .then((registered) => {
-                    registered.resetPasswordToken = _randomString();
+                    registered.resetPasswordToken = utilsService.randomString(settings.tokenLength);
 
                     return registered.save()
                         .then(() => mongo.Space.create({name: 'Personal space', owner: registered._id}))
@@ -142,33 +131,44 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
 
         /**
          * Get list of user accounts and summary information.
+         *
+         * @param user User.
+         * @param params Parameters.
          * @returns {mongo.Account[]} - returns all accounts with counters object
          */
-        static list(params) {
+        static list(user, params) {
+            const pipeline = [
+                {$lookup: {from: 'spaces', localField: '_id', foreignField: 'owner', as: 'spaces'}},
+                {$project: {
+                    _id: 1,
+                    firstName: 1,
+                    lastName: 1,
+                    admin: 1,
+                    email: 1,
+                    company: 1,
+                    country: 1,
+                    lastLogin: 1,
+                    lastActivity: 1,
+                    organization: 1,
+                    organizationAdmin: 1,
+                    spaces: {
+                        $filter: {
+                            input: '$spaces',
+                            as: 'space',
+                            cond: {$eq: ['$$space.demo', false]}
+                        }
+                    }
+                }},
+                { $sort: {firstName: 1, lastName: 1}}
+            ];
+
+            // Filter by Organization for Organization admins.
+            if (user.organizationAdmin && !user.admin)
+                pipeline.unshift({$match: {organization: user.organization}});
+
             return Promise.all([
                 Promise.all([
-                    mongo.Account.aggregate([
-                        {$lookup: {from: 'spaces', localField: '_id', foreignField: 'owner', as: 'spaces'}},
-                        {$project: {
-                            _id: 1,
-                            firstName: 1,
-                            lastName: 1,
-                            admin: 1,
-                            email: 1,
-                            company: 1,
-                            country: 1,
-                            lastLogin: 1,
-                            lastActivity: 1,
-                            spaces: {
-                                $filter: {
-                                    input: '$spaces',
-                                    as: 'space',
-                                    cond: {$eq: ['$$space.demo', false]}
-                                }
-                            }
-                        }},
-                        { $sort: {firstName: 1, lastName: 1}}
-                    ]).exec(),
+                    mongo.Account.aggregate(pipeline).exec(),
                     mongo.Cluster.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),
                     mongo.Cache.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),
                     mongo.DomainModel.aggregate([{$group: {_id: '$space', count: { $sum: 1 }}}]).exec(),

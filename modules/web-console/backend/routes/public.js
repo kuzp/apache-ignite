@@ -21,10 +21,11 @@
 
 module.exports = {
     implements: 'routes/public',
-    inject: ['require(express)', 'require(passport)', 'mongo', 'services/mails', 'services/users', 'services/auth']
+    inject: ['require(lodash)', 'require(express)', 'require(passport)', 'mongo', 'services/mails', 'services/users', 'services/auth']
 };
 
 /**
+ * @param _
  * @param express
  * @param passport
  * @param mongo
@@ -33,7 +34,7 @@ module.exports = {
  * @param {AuthService} authService
  * @returns {Promise}
  */
-module.exports.factory = function(express, passport, mongo, mailsService, usersService, authService) {
+module.exports.factory = function(_, express, passport, mongo, mailsService, usersService, authService) {
     return new Promise((factoryResolve) => {
         const router = new express.Router();
 
@@ -44,11 +45,8 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                 .catch(res.api.error);
         });
 
-        /**
-         * Register new account.
-         */
-        router.post('/signup', (req, res) => {
-            usersService.create(req.origin(), req.body)
+        const _signup = (req, res, user) => {
+            return usersService.create(req.origin(), user)
                 .then((user) => new Promise((resolve, reject) => {
                     req.logIn(user, {}, (err) => {
                         if (err)
@@ -59,12 +57,9 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                 }))
                 .then(res.api.ok)
                 .catch(res.api.error);
-        });
+        };
 
-        /**
-         * Sign in into exist account.
-         */
-        router.post('/signin', (req, res, next) => {
+        const _signin = (req, res, next, cb) => {
             passport.authenticate('local', (errAuth, user) => {
                 if (errAuth)
                     return res.status(401).send(errAuth.message);
@@ -76,9 +71,78 @@ module.exports.factory = function(express, passport, mongo, mailsService, usersS
                     if (errLogIn)
                         return res.status(401).send(errLogIn.message);
 
+                    if (cb)
+                        return cb(req, res);
+
                     return res.sendStatus(200);
                 });
             })(req, res, next);
+        };
+
+        /**
+         * Register new account.
+         */
+        router.post('/signup', (req, res) => _signup(req, res, req.body));
+
+        /**
+         * Sign in into exist account.
+         */
+        router.post('/signin', (req, res, next) => _signin(req, res, next));
+
+        // Find invite and return data.
+        router.post('/invites/find', (req, res) => {
+            mongo.Invite.findOne({token: req.body.token}).exec()
+                .then((invite) => {
+                    if (invite) {
+                        mongo.Organization.findOne({_id: invite.organization})
+                            .then((organization) => {
+                                res.api.ok({
+                                    organization,
+                                    email: invite.email,
+                                    existingUser: !_.isNil(invite.account),
+                                    found: true
+                                });
+                            });
+                    }
+                    else
+                        res.api.ok({found: false});
+                })
+                .catch(res.api.error);
+        });
+
+        /**
+         * Accept invite and signup if needed.
+         */
+        router.post('/invites/accept', (req, res, next) => {
+            const data = req.body;
+            const token = data.token;
+
+            mongo.Invite.findOne({token}).exec()
+                .then((invite) => {
+                    if (invite) {
+                        mongo.Invite.remove({_id: invite._id}).exec().then(() => {
+                            if (data.existingUser) {
+                                return mongo.Account.update({email: data.email}, {$set: {organization: data.organization._id}}).exec()
+                                    .then(() => _signin(req, res, next));
+                            }
+
+                            const user = {
+                                email: data.email,
+                                password: data.password,
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                                company: data.organization.name,
+                                country: data.country,
+                                organization: data.organization._id
+                            };
+
+                            return _signup(req, res, user);
+                        });
+                    }
+                    else
+                        throw new Error(`Failed to accept invite, token not found: ${token}`);
+                })
+                .catch((err) => console.log(err));
         });
 
         /**

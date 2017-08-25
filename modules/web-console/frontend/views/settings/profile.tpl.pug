@@ -28,19 +28,23 @@ mixin lbl(txt)
                     .details-row
                         +lbl('First name:')
                         .col-xs-5.col-sm-4
-                            input#profile-firstname.form-control(ignite-on-enter-focus-move='profile-lastname' type='text' ng-model='user.firstName' placeholder='Input first name' required ignite-auto-focus)
+                            input#profile-firstname.form-control(ignite-on-enter-focus-move='profile-lastname' ng-model='user.firstName' placeholder='Input first name' required ignite-auto-focus)
                     .details-row
                         +lbl('Last name:')
                         .col-xs-5.col-sm-4
-                            input#profile-lastname.form-control(ignite-on-enter-focus-move='profile-email' type='text' ng-model='user.lastName' placeholder='Input last name' required)
+                            input#profile-lastname.form-control(ignite-on-enter-focus-move='profile-email' ng-model='user.lastName' placeholder='Input last name' required)
                     .details-row
                         +lbl('Email:')
                         .col-xs-5.col-sm-4
                             input#profile-email.form-control(ignite-on-enter-focus-move='profile-company' type='email' ng-model='user.email' placeholder='Input email' required)
-                    .details-row
+                    .details-row(ng-if='canCreateOrganization()')
                         +lbl('Company:')
                         .col-xs-5.col-sm-4
-                            input#profile-company.form-control(ignite-on-enter-focus-move='profile-country' type='text' ng-model='user.company' placeholder='Input company name' required)
+                            input#profile-company.form-control(ignite-on-enter-focus-move='profile-country' ng-model='user.company' placeholder='Input company name' required)
+                    .details-row(ng-if='!canCreateOrganization()')
+                        +lbl('Organization:')
+                        .col-xs-5.col-sm-4
+                            label {{::user.company}}
                     .details-row
                         +lbl('Country:')
                         .col-xs-5.col-sm-4
@@ -74,3 +78,5 @@ mixin lbl(txt)
                                     input#profile_confirm.form-control(type='password' ng-model='user.confirm' ignite-match='user.password' placeholder='Confirm new password')
                 .col-xs-12.col-sm-12.details-row
                     a.btn.btn-primary(ng-disabled='!profileCouldBeSaved()' ng-click='profileCouldBeSaved() && saveUser()' bs-tooltip='' data-title='{{saveBtnTipText()}}' data-placement='bottom' data-trigger='hover') Save
+                    a.btn.btn-primary(ng-if='canCreateOrganization()' ng-click='createOrganization()') Create organization
+                    a.btn.btn-primary(ng-if='canInviteUsers()' ng-click='inviteUser()') Invite user

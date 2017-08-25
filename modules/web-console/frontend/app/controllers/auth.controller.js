@@ -16,14 +16,58 @@
  */
 
 // Sign in controller.
-export default [
-    '$scope', '$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth',
-    ($scope, $uiRouterGlobals, Focus, Countries, Auth) => {
-        $scope.auth = Auth.auth;
-        $scope.forgotPassword = Auth.forgotPassword;
-        $scope.action = 'signin';
-        $scope.countries = Countries.getAll();
+export default class SigninCtrl {
+    static $inject = ['$uiRouterGlobals', 'IgniteFocus', 'IgniteCountries', 'Auth', 'Invites', 'IgniteMessages'];
 
-        Focus.move('user_email');
+    constructor($uiRouterGlobals, Focus, Countries, Auth, Invites, Messages) {
+        const self = this;
+
+        self.Auth = Auth;
+        self.countries = Countries.getAll();
+        self.action = 'signin';
+        self.showSignIn = false;
+        self.ui_signin = {};
+        self.ui_signup = {};
+        self.ui_exclude = {};
+        self.invite = {};
+
+        self.invite.token = _.get($uiRouterGlobals.params, 'invite');
+
+        self.invited = _.nonEmpty(self.invite.token);
+
+        if (self.invited) {
+            Invites.find(self.invite.token)
+                .then((res) => {
+                    self.invite.found = res.data.found;
+
+                    if (self.invite.found) {
+                        self.invite.organization = res.data.organization;
+                        self.invite.existingUser = res.data.existingUser;
+                        self.invite.email = res.data.email;
+
+                        Focus.move(self.invite.existingUser ? 'signin_user_password' : 'signup_user_password');
+                    }
+
+                    self.showSignIn = true;
+                })
+                .catch((err) => Messages.showError('Failed to find invite: ', err));
+        }
     }
-];
+
+
+    signup() {
+        this.Auth.signup(this.ui_signup);
+    }
+
+    signin() {
+        this.Auth.signin(this.ui_signin);
+    }
+
+    acceptInvite() {
+        this.Auth.acceptInvite(_.merge(this.invite, this.invite.existingUser ? this.ui_signin : this.ui_signup));
+    }
+
+    forgotPassword() {
+        this.Auth.forgotPassword(this.ui_signin);
+    }
+}

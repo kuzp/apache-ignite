@@ -33,6 +33,7 @@ module.exports = {
  * @param {MailsService} mailsService
  * @param {SessionsService} sessionsService
  * @param {UsersService} usersService
+ * @param {NotificationsService} notificationsService
  * @returns {Promise}
  */
 module.exports.factory = function(_, express, settings, mongo, spacesService, mailsService, sessionsService, usersService, notificationsService) {
@@ -43,7 +44,7 @@ module.exports.factory = function(_, express, settings, mongo, spacesService, ma
          * Get list of user accounts.
          */
         router.post('/list', (req, res) => {
-            usersService.list(req.body)
+            usersService.list(req.user, req.body)
                 .then(res.api.ok)
                 .catch(res.api.error);
         });
@@ -55,11 +56,13 @@ module.exports.factory = function(_, express, settings, mongo, spacesService, ma
                 .catch(res.api.error);
         });
 
-        // Save user.
-        router.post('/save', (req, res) => {
+        // Toggle user admin flag.
+        router.post('/toggle', (req, res) => {
             const params = req.body;
 
-            mongo.Account.findByIdAndUpdate(params.userId, {admin: params.adminFlag}).exec()
+            const update = params.organizationAdmin ? {organizationAdmin: params.adminFlag} : {admin: params.adminFlag};
+
+            mongo.Account.findByIdAndUpdate(params.userId, update).exec()
                 .then(res.api.ok)
                 .catch(res.api.error);
         });

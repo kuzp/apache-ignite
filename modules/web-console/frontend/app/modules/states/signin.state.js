@@ -29,9 +29,19 @@ angular
     // set up the states
     $stateProvider
     .state('signin', {
-        url: '/',
+        url: '/?invite',
+        params: {
+            invite: {
+                type: 'query'
+            }
+        },
         templateUrl,
         redirectTo: (trans) => {
+            const params = trans.params();
+
+            if (params.invite)
+                return true;
+
             return trans.injector().get('User').read()
                 .then(() => {
                     try {

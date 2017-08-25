@@ -46,7 +46,7 @@ angular.module('ignite-console.user', [
 .config(['$httpProvider', ($httpProvider) => {
     $httpProvider.interceptors.push('sessionRecoverer');
 }])
-.service(...Auth)
+.service('Auth', Auth)
 .service(...User)
 .run(['$rootScope', '$transitions', 'AclService', 'User', 'IgniteActivitiesData', ($root, $transitions, AclService, User, Activities) => {
     AclService.setAbilities(aclData);
@@ -60,7 +60,7 @@ angular.module('ignite-console.user', [
 
         let role = 'user';
 
-        if (user.admin)
+        if (user.admin || user.organizationAdmin)
             role = 'admin';
 
         if (user.becomeUsed)

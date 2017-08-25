@@ -15,39 +15,59 @@
  * limitations under the License.
  */
 
-export default ['Auth', ['$http', '$rootScope', '$state', '$window', 'IgniteErrorPopover', 'IgniteMessages', 'gettingStarted', 'User',
-    ($http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User) => {
-        return {
-            forgotPassword(userInfo) {
-                $http.post('/api/v1/password/forgot', userInfo)
-                    .then(() => $state.go('password.send'))
-                    .catch(({data}) => ErrorPopover.show('forgot_email', Messages.errorMessage(null, data)));
-            },
-            auth(action, userInfo) {
-                $http.post('/api/v1/' + action, userInfo)
-                    .then(() => {
-                        if (action === 'password/forgot')
-                            return;
+export default class AuthSrv {
+    static $inject = ['$http', '$rootScope', '$state', '$window', 'IgniteErrorPopover', 'IgniteMessages', 'gettingStarted', 'User'];
 
-                        User.read()
-                            .then((user) => {
-                                $root.$broadcast('user', user);
+    constructor($http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User) {
+        Object.assign(this, {$http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User});
+    }
 
-                                $state.go('base.configuration.tabs');
+    _errorPopover(id, err) {
+        return this.ErrorPopover.show(id, this.Messages.errorMessage(null, err));
+    }
 
-                                $root.gettingStarted.tryShow();
-                            });
-                    })
-                    .catch((res) => ErrorPopover.show(action + '_email', Messages.errorMessage(null, res)));
-            },
-            logout() {
-                $http.post('/api/v1/logout')
-                    .then(() => {
-                        User.clean();
+    _afterLogin() {
+        return this.User.read()
+            .then((user) => {
+                this.$root.$broadcast('user', user);
 
-                        $window.open($state.href('signin'), '_self');
-                    })
-                    .catch(Messages.showError);
-            }
-        };
-    }]];
+                this.$state.go('base.configuration.tabs');
+
+                this.gettingStarted.tryShow();
+            });
+    }
+
+    forgotPassword(userInfo) {
+        this.$http.post('/api/v1/password/forgot', userInfo)
+            .then(() => this.$state.go('password.send'))
+            .catch((err) => this._errorPopover('forgot_email', err));
+    }
+
+    signup(userInfo) {
+        this.$http.post('/api/v1/signup', userInfo)
+            .then(() => this._afterLogin())
+            .catch((err) => this._errorPopover('signup_email', err));
+    }
+
+    signin(userInfo) {
+        this.$http.post('/api/v1/signin', userInfo)
+            .then(() => this._afterLogin())
+            .catch((err) => this._errorPopover('signin_email', err));
+    }
+
+    acceptInvite(invite) {
+        this.$http.post('/api/v1/invites/accept', invite)
+            .then(() => this._afterLogin())
+            .catch(this.Messages.showError);
+    }
+
+    logout() {
+        this.$http.post('/api/v1/logout')
+            .then(() => {
+                this.User.clean();
+
+                this.$window.open(this.$state.href('signin'), '_self');
+            })
+            .catch(this.Messages.showError);
+    }
+}

@@ -46,17 +46,16 @@ export default class IgniteAdminData {
         });
     }
 
-    toggleAdmin(user) {
-        return this.$http.post('/api/v1/admin/save', {
+    toggleAdmin(admin, user) {
+        const organizationAdmin = !admin.admin && admin.organizationAdmin;
+
+        return this.$http.post('/api/v1/admin/toggle', {
             userId: user._id,
-            adminFlag: !user.admin
+            organizationAdmin,
+            adminFlag: organizationAdmin ? !user.organizationAdmin : !user.admin
         })
-        .then(() => {
-            this.Messages.showInfo(`Admin right was successfully toggled for user: "${user.userName}"`);
-        })
-        .catch((res) => {
-            this.Messages.showError('Failed to toggle admin right for user: ', res);
-        });
+        .then(() => this.Messages.showInfo(`Admin right was successfully toggled for user: "${user.userName}"`))
+        .catch((err) => this.Messages.showError('Failed to toggle admin right for user: ', err));
     }
 
     prepareUsers(user) {

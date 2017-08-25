@@ -17,8 +17,8 @@
 
 // Controller for Profile screen.
 export default ['profileController', [
-    '$rootScope', '$scope', '$http', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteCountries', 'User',
-    function($root, $scope, $http, LegacyUtils, Messages, Focus, Confirm, Countries, User) {
+    '$rootScope', '$scope', '$http', 'IgniteLegacyUtils', 'IgniteFocus', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteCountries', 'User',
+    function($root, $scope, $http, LegacyUtils, Focus, Messages, Confirm, Input, Countries, User) {
         User.read()
             .then((user) => $scope.user = angular.copy(user));
 
@@ -88,7 +88,48 @@ export default ['profileController', [
 
                     $root.$broadcast('user', $scope.user);
                 })
-                .catch((res) => Messages.showError('Failed to save profile: ', res));
+                .catch((err) => Messages.showError('Failed to save profile: ', err));
+        };
+
+        $scope.canCreateOrganization = () => {
+            return _.isNil($scope.user.organization);
+        };
+
+        $scope.canInviteUsers = () => {
+            return _.nonNil($scope.user.organization) && _.get($scope.user, 'organizationAdmin');
+        };
+
+        $scope.createOrganization = () => {
+            Confirm.confirm(`Are you sure you want to create organization "${$scope.user.company}"?`)
+                .then(() => {
+                    const data = {
+                        organization: $scope.user.company,
+                        account: $scope.user._id
+                    };
+
+                    $http.post('/api/v1/organizations/create', data)
+                        .then((organization) => {
+                            $scope.user.organization = organization;
+                            $scope.user.organizationAdmin = true;
+
+                            Messages.showInfo(`Organization "${$scope.user.company}" created.`);
+                        })
+                        .catch((err) => Messages.showError('Failed to create organization: ', err));
+                });
+        };
+
+        $scope.inviteUser = () => {
+            Input.input('Invite user', 'e-mail')
+                .then((email) => {
+                    const data = {
+                        email,
+                        organization: $scope.user.organization
+                    };
+
+                    return $http.post('/api/v1/invites/create', data)
+                        .then(() => Messages.showInfo(`Invite has been sent to: ${email}.`));
+                })
+                .catch((err) => Messages.showError('Failed to invite user: ', err));
         };
     }
 ]];
