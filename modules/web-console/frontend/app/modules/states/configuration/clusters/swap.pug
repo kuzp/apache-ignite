@@ -33,10 +33,7 @@ include /app/helpers/jade/mixins
             .pca-form-column-6.pc-form-grid-row
                 .pc-form-grid-col-60
                     +dropdown('Swap space SPI:', `${swapModel}.kind`, '"swapSpaceSpi"', 'true', 'Choose swap SPI',
-                        '[\
-                            {value: "FileSwapSpaceSpi", label: "File-based swap"},\
-                            {value: null, label: "Not set"}\
-                        ]',
+                        '::$ctrl.Clusters.swapSpaceSpis',
                         'Provides a mechanism in grid for storing data on disk<br/>\
                         Ignite cache uses swap space to overflow data to disk if it cannot fit in memory\
                         <ul>\

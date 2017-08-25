@@ -35,14 +35,14 @@ include /app/helpers/jade/mixins
     .details-row
         +text('Key field name:', 'model.JDBC.keyFieldName', '"checkpointJdbcKeyFieldName" + $index', 'false', 'NAME', 'Checkpoint key field name')
     .details-row
-        +dropdown('Key field type:', 'model.JDBC.keyFieldType', '"checkpointJdbcKeyFieldType" + $index', 'true', 'VARCHAR', 'supportedJdbcTypes', 'Checkpoint key field type')
+        +dropdown('Key field type:', 'model.JDBC.keyFieldType', '"checkpointJdbcKeyFieldType" + $index', 'true', 'VARCHAR', '::$ctrl.supportedJdbcTypes', 'Checkpoint key field type')
     .details-row
         +text('Value field name:', 'model.JDBC.valueFieldName', '"checkpointJdbcValueFieldName" + $index', 'false', 'VALUE', 'Checkpoint value field name')
     .details-row
-        +dropdown('Value field type:', 'model.JDBC.valueFieldType', '"checkpointJdbcValueFieldType" + $index', 'true', 'BLOB', 'supportedJdbcTypes', 'Checkpoint value field type')
+        +dropdown('Value field type:', 'model.JDBC.valueFieldType', '"checkpointJdbcValueFieldType" + $index', 'true', 'BLOB', '::$ctrl.supportedJdbcTypes', 'Checkpoint value field type')
     .details-row
         +text('Expire date field name:', 'model.JDBC.expireDateFieldName', '"checkpointJdbcExpireDateFieldName" + $index', 'false', 'EXPIRE_DATE', 'Checkpoint expire date field name')
     .details-row
-        +dropdown('Expire date field type:', 'model.JDBC.expireDateFieldType', '"checkpointJdbcExpireDateFieldType"', 'true', 'DATETIME', 'supportedJdbcTypes', 'Checkpoint expire date field type')
+        +dropdown('Expire date field type:', 'model.JDBC.expireDateFieldType', '"checkpointJdbcExpireDateFieldType"', 'true', 'DATETIME', '::$ctrl.supportedJdbcTypes', 'Checkpoint expire date field type')
     .details-row
         +number('Number of retries:', 'model.JDBC.numberOfRetries', '"checkpointJdbcNumberOfRetries"', 'true', '2', '0', 'Number of retries in case of DB failure')
