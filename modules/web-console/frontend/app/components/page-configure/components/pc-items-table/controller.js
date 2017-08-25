@@ -27,7 +27,7 @@ export default class ItemsTableController {
 
     $onInit() {
         this.grid = {
-            data: [],
+            data: this.items,
             columnDefs: this.columnDefs,
             rowHeight: 46,
             enableColumnMenus: false,
