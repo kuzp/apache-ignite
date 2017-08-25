@@ -34,14 +34,14 @@ include /app/helpers/jade/mixins
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6.pc-form-grid-row
                 .pc-form-grid-col-60(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
-                    +dropdown('Event storage:', modelEventStorageKind, '"eventStorageKind"', 'true', 'Disabled', 'eventStorage',
+                    +dropdown('Event storage:', modelEventStorageKind, '"eventStorageKind"', 'true', 'Disabled', '$ctrl.eventStorage',
                     'Regulate how grid store events locally on node\
                     <ul>\
                         <li>Memory - All events are kept in the FIFO queue in-memory</li>\
                         <li>Custom - Custom implementation of event storage SPI</li>\
                     </ul>')
                 .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
-                    +dropdown('Event storage:', modelEventStorageKind, '"eventStorageKind"', 'true', 'Disabled', 'eventStorage',
+                    +dropdown('Event storage:', modelEventStorageKind, '"eventStorageKind"', 'true', 'Disabled', '$ctrl.eventStorage',
                     'Regulate how grid store events locally on node\
                     <ul>\
                         <li>Memory - All events are kept in the FIFO queue in-memory</li>\
@@ -62,7 +62,7 @@ include /app/helpers/jade/mixins
                         +java-class('Class:', `${modelEventStorage}.Custom.className`, '"EventStorageCustom"', 'true', eventStorageCustom, 'Event storage implementation class name', eventStorageCustom)
 
                     .pc-form-grid-col-60
-                        +dropdown-multiple('Include type:', `${model}.includeEventTypes`, '"includeEventTypes"', true, 'Choose recorded event types', '', 'eventGroups',
+                        +dropdown-multiple('Include type:', `${model}.includeEventTypes`, '"includeEventTypes"', true, 'Choose recorded event types', '', '$ctrl.eventGroups',
                         'Array of event types, which will be recorded by GridEventStorageManager#record(Event)<br/>\
                         Note, that either the include event types or the exclude event types can be established')
             .pca-form-column-6

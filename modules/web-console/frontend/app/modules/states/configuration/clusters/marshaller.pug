@@ -34,7 +34,7 @@ include /app/helpers/jade/mixins
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6.pc-form-grid-row
                 .pc-form-grid-col-60(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')
-                    +dropdown('Marshaller:', marshaller + '.kind', '"kind"', 'true', 'Default', 'marshallerVariant',
+                    +dropdown('Marshaller:', marshaller + '.kind', '"kind"', 'true', 'Default', '$ctrl.marshallerVariant',
                         'Instance of marshaller to use in grid<br/>\
                         <ul>\
                             <li>OptimizedMarshaller - Optimized implementation of marshaller</li>\
@@ -42,7 +42,7 @@ include /app/helpers/jade/mixins
                             <li>Default - BinaryMarshaller serialize and deserialize all objects in the binary format</li>\
                         </ul>')
                 .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')
-                    +dropdown('Marshaller:', marshaller + '.kind', '"kind"', 'true', 'Default', 'marshallerVariant',
+                    +dropdown('Marshaller:', marshaller + '.kind', '"kind"', 'true', 'Default', '$ctrl.marshallerVariant',
                         'Instance of marshaller to use in grid<br/>\
                         <ul>\
                             <li>JdkMarshaller - Marshaller based on JDK serialization mechanism</li>\
