@@ -417,4 +417,15 @@ export default class Clusters {
             correctMarshallerWatch: (root) => `${root}.marshaller.kind`
         }
     };
+
+    swapSpaceSpis = [
+        {value: 'FileSwapSpaceSpi', label: 'File-based swap'},
+        {value: null, label: 'Not set'}
+    ];
+
+    affinityFunctions = [
+        {value: 'Rendezvous', label: 'Rendezvous'},
+        {value: 'Custom', label: 'Custom'},
+        {value: null, label: 'Default'}
+    ];
 }
