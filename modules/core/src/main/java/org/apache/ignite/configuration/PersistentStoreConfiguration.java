@@ -44,7 +44,7 @@ public class PersistentStoreConfiguration implements Serializable {
     public static final int DFLT_RATE_TIME_INTERVAL_MILLIS = 60_000;
 
     /** Default number of checkpointing threads. */
-    public static final int DFLT_CHECKPOINTING_THREADS = 4; //
+    public static final int DFLT_CHECKPOINTING_THREADS = 4;
 
     /** Default checkpoint write order. */
     public static final CheckpointWriteOrder DFLT_CHECKPOINT_WRITE_ORDER = CheckpointWriteOrder.SEQUENTIAL;
