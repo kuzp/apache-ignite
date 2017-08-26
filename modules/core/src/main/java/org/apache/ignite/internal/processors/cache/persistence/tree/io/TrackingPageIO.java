@@ -306,6 +306,7 @@ public class TrackingPageIO extends PageIO {
                         PageIdUtils.flag(start),
                         PageIdUtils.pageIndex(trackingPage) + ((idx - zeroIdx) << 3) + foundSetBit);
 
+                    if (!wasChanged(buf, foundPageId, curSnapshotTag, lastSuccessfulSnapshotTag, pageSize))
                     assert wasChanged(buf, foundPageId, curSnapshotTag, lastSuccessfulSnapshotTag, pageSize);
                     assert trackingPageFor(foundPageId, pageSize) == trackingPage;
 
