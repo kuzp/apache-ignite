@@ -2384,6 +2384,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         int pagesSubLists = cpThreads == 1 ? 1 : cpThreads * 4;
         // Splitting pages to (threads * 4) subtasks. If any thread will be faster, it will help slower threads.
 
+        if (cctx.snapshot() != null && cctx.snapshot().getClass() != IgniteCacheSnapshotManager.class)
+            pagesSubLists = 1; // TODO: disabling multithreaded checkpoint for a while due to assertions in snapshots
+
         Collection[] pagesSubListArr = new Collection[pagesSubLists];
 
         for (int i = 0; i < pagesSubLists; i++) {
