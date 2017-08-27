@@ -737,37 +737,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>net.ju-n.maven.plugins</groupId>
-                <artifactId>checksum-maven-plugin</artifactId>
-                <version>1.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>files</goal>
-                        </goals>
-                        <phase>install</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <failOnError>false</failOnError>
-                    <fileSets>
-                        <fileSet>
-                            <directory>${basedir}/target</directory>
-                            <includes>
-                                <include>*.jar</include>
-                            </includes>
-                        </fileSet>
-                    </fileSets>
-                    <algorithms>
-                        <algorithm>MD5</algorithm>
-                        <algorithm>SHA-1</algorithm>
-                        <algorithm>SHA-256</algorithm>
-                        <algorithm>SHA-512</algorithm>
-                    </algorithms>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
