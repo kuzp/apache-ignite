@@ -601,7 +601,7 @@
         </profile>
 
         <profile>
-            <id>deploy-ignite-site</id>
+            <id>sources-and-checksum</id>
             <build>
                 <plugins>
                     <plugin>
@@ -681,16 +681,23 @@
                             </fileSets>
                             <algorithms>
                                 <algorithm>MD5</algorithm>
+                                <algorithm>SHA-1</algorithm>
                                 <algorithm>SHA-256</algorithm>
                                 <algorithm>SHA-512</algorithm>
                             </algorithms>
                         </configuration>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
 
+        <profile>
+            <id>deploy-ignite-site</id>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
                         <inherited>false</inherited>
                         <executions>
                             <execution>
@@ -698,7 +705,7 @@
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
-                                <phase>initialize</phase>
+                                <phase>validate</phase>
                                 <configuration>
                                     <failOnError>false</failOnError>
                                     <target>
@@ -707,6 +714,7 @@
                                         <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip" failonerror="false" />
                                         <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip.asc" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.asc" failonerror="false" />
                                         <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip.md5" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.md5" failonerror="false" />
+                                        <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip.sha1" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.sha1" failonerror="false" />
                                         <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip.sha256" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.sha256" failonerror="false" />
                                         <copy file="${basedir}/target/${project.artifactId}-${project.version}-src.zip.sha512" tofile="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.sha512" failonerror="false" />
 
@@ -718,24 +726,8 @@
                                     </target>
                                 </configuration>
                             </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>update-checksum-files</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
-                        <inherited>false</inherited>
-                        <executions>
                             <execution>
-                                <id>update-checksum</id>
+                                <id>update-checksum-files</id>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
@@ -746,9 +738,11 @@
                                         <!-- appending filename to md5 and sha256 files. to be improved!! -->
                                         <!-- update versions task will replace "  " to " ", so additional echo added. -->
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.md5" append="true" message=" " />
+                                        <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha1" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha256" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha512" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.md5" append="true" message=" " />
+                                        <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha1" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha256" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha512" append="true" message=" " />
                                         <echo file="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.md5" append="true" message=" " />
@@ -756,9 +750,11 @@
                                         <echo file="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.sha512" append="true" message=" " />
 
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.md5" append="true" message=" ${project.artifactId}-fabric-${project.version}-bin.zip" />
+                                        <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha1" append="true" message=" ${project.artifactId}-fabric-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha256" append="true" message=" ${project.artifactId}-fabric-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-fabric-${project.version}-bin.zip.sha512" append="true" message=" ${project.artifactId}-fabric-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.md5" append="true" message=" ${project.artifactId}-hadoop-${project.version}-bin.zip" />
+                                        <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha1" append="true" message=" ${project.artifactId}-hadoop-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha256" append="true" message=" ${project.artifactId}-hadoop-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-hadoop-${project.version}-bin.zip.sha512" append="true" message=" ${project.artifactId}-hadoop-${project.version}-bin.zip" />
                                         <echo file="${basedir}/target/site/${project.artifactId}-${project.version}-src.zip.md5" append="true" message=" ${project.artifactId}-${project.version}-src.zip" />
@@ -772,7 +768,6 @@
                 </plugins>
             </build>
         </profile>
-
 
         <profile>
             <id>web-console</id>
