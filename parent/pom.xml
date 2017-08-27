@@ -747,7 +747,7 @@
                         <goals>
                             <goal>files</goal>
                         </goals>
-                        <phase>deploy</phase>
+                        <phase>install</phase>
                     </execution>
                 </executions>
                 <configuration>
