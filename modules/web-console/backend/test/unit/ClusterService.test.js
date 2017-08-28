@@ -203,18 +203,18 @@ suite('ClusterServiceTestsSuite', () => {
             .catch(done);
     });
 
-    test('Create new cluster without space', (done) => {
-        const cluster = _.cloneDeep(_.head(testClusters));
-        const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
-
-        delete cluster.space;
-
-        db.drop()
-            .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
-            .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
-            .then(() => done())
-            .catch(done);
-    });
+    // test('Create new cluster without space', (done) => {
+    //     const cluster = _.cloneDeep(_.head(testClusters));
+    //     const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
+    //
+    //     delete cluster.space;
+    //
+    //     db.drop()
+    //         .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
+    //         .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
+    //         .then(() => done())
+    //         .catch(done);
+    // });
 
     test('Create new cluster with duplicated name', (done) => {
         const cluster = _.cloneDeep(_.head(testClusters));
@@ -276,8 +276,10 @@ suite('ClusterServiceTestsSuite', () => {
                 assert.isTrue(cb1.readThrough);
             })
             .then(() => cacheService.get(testAccounts[0]._id, false, _.head(testClusters).caches[1]))
-            .then((cb2) => {
-                assert.isNull(cb2);
+            .then((c2) => {
+                assert.isNotNull(c2);
+                assert.equal(c2.cacheMode, 'PARTITIONED');
+                assert.isTrue(c2.readThrough);
             })
             .then(done)
             .catch(done);
@@ -293,7 +295,9 @@ suite('ClusterServiceTestsSuite', () => {
 
         const caches = _.filter(testCaches, ({_id}) => _.includes(cluster.caches, _id));
 
-        clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches})
+        db.drop()
+            .then(() => Promise.all([mongo.Account.create(testAccounts), mongo.Space.create(testSpaces)]))
+            .then(() => clusterService.upsertBasic(testAccounts[0]._id, false, {cluster, caches}))
             .then(() => cacheService.get(testAccounts[0]._id, false, removedCache))
             .then((cache) => {
                 assert.isNull(cache);

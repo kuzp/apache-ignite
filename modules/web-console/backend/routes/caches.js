@@ -34,6 +34,12 @@ module.exports.factory = function(_, express, mongo, cachesService) {
                 .catch(res.api.error);
         });
 
+        router.delete('/', (req, res) => {
+            cachesService.remove(req.body.ids)
+                .then(res.api.ok)
+                .catch(res.api.error);
+        });
+
         /**
          * Save cache.
          */

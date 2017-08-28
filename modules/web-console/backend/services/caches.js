@@ -169,21 +169,24 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
         }
 
         /**
-         * Remove cache.
+         * Remove caches.
          *
-         * @param {mongo.ObjectId|String} cacheId - The cache id for remove.
+         * @param {Array.<String>|String} ids - The cache ids for remove.
          * @returns {Promise.<{rowsAffected}>} - The number of affected rows.
          */
-        static remove(cacheId) {
-            if (_.isNil(cacheId))
+        static remove(ids) {
+            if (_.isNil(ids))
                 return Promise.reject(new errors.IllegalArgumentException('Cache id can not be undefined or null'));
 
-            return mongo.Cluster.update({caches: {$in: [cacheId]}}, {$pull: {caches: cacheId}}, {multi: true}).exec()
-                .then(() => mongo.Cluster.update({}, {$pull: {checkpointSpi: {kind: 'Cache', Cache: {cache: cacheId}}}}, {multi: true}).exec())
-                // TODO WC-201 fix clenup of cache on deletion for cluster service configuration.
+            if (_.isEmpty(ids))
+                return Promise.resolve({rowsAffected: 0});
+
+            return mongo.Cluster.update({caches: {$in: [ids]}}, {$pull: {caches: ids}}, {multi: true}).exec()
+                .then(() => mongo.Cluster.update({}, {$pull: {checkpointSpi: {kind: 'Cache', Cache: {cache: ids}}}}, {multi: true}).exec())
+                // TODO WC-201 fix cleanup of cache on deletion for cluster service configuration.
                 // .then(() => mongo.Cluster.update({'serviceConfigurations.cache': cacheId}, {$unset: {'serviceConfigurations.$.cache': ''}}, {multi: true}).exec())
-                .then(() => mongo.DomainModel.update({caches: {$in: [cacheId]}}, {$pull: {caches: cacheId}}, {multi: true}).exec())
-                .then(() => mongo.Cache.remove({_id: cacheId}).exec())
+                .then(() => mongo.DomainModel.update({caches: {$in: [ids]}}, {$pull: {caches: ids}}, {multi: true}).exec())
+                .then(() => mongo.Cache.remove({_id: {$in: _.castArray(ids)}}).exec())
                 .then(convertRemoveStatus);
         }
 

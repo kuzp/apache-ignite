@@ -21,7 +21,7 @@
 
 module.exports = {
     implements: 'services/clusters',
-    inject: ['require(lodash)', 'mongo', 'services/spaces', 'services/caches', 'errors']
+    inject: ['require(lodash)', 'mongo', 'services/spaces', 'services/caches', 'services/igfss', 'errors']
 };
 
 /**
@@ -29,10 +29,11 @@ module.exports = {
  * @param mongo
  * @param {SpacesService} spacesService
  * @param {CachesService} cachesService
+ * @param {IgfssService} igfssService
  * @param errors
  * @returns {ClustersService}
  */
-module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
+module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, errors) => {
     /**
      * Convert remove status operation to own presentation.
      *
@@ -126,19 +127,33 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                 .then((spaceIds) => mongo.Cluster.findOne({space: {$in: spaceIds}, _id}).lean().exec());
         }
 
+        static normalize(spaceId, cluster, ...models) {
+            cluster.space = spaceId;
+
+            _.forEach(models, (model) => {
+                _.forEach(model, (item) => {
+                    item.space = spaceId;
+                    item.clusters = [cluster._id];
+                });
+            });
+        }
+
+        static removedInCluster(oldCluster, newCluster, field) {
+            return _.difference(_.invokeMap(_.get(oldCluster, field), 'toString'), _.get(newCluster, field));
+        }
+
         static upsertBasic(userId, demo, {cluster, caches}) {
             if (_.isNil(cluster._id))
                 return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
 
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
-                    cluster.space = _.head(spaceIds);
-                    cluster.caches = _.map(caches, '_id');
+                    this.normalize(_.head(spaceIds), cluster, caches);
 
                     const query = _.pick(cluster, ['space', '_id']);
-                    const newDoc = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
+                    const basicCluster = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
 
-                    return mongo.Cluster.findOneAndUpdate(query, {$set: newDoc}, {projection: 'caches', upsert: true}).lean().exec()
+                    return mongo.Cluster.findOneAndUpdate(query, {$set: basicCluster}, {projection: {caches: 1, igfss: 1}, upsert: true}).lean().exec()
                         .catch((err) => {
                             if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
                                 throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
@@ -147,37 +162,27 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                         })
                         .then((oldCluster) => {
                             if (oldCluster) {
-                                const removed = _.difference(_.invokeMap(oldCluster.caches, 'toString'), cluster.caches);
+                                const ids = this.removedInCluster(oldCluster, cluster, 'caches');
 
-                                if (_.isEmpty(removed))
-                                    return {n: 1};
-
-                                return Promise.all(_.map(removed, cachesService.remove))
-                                    .then(() => ({n: 1}));
+                                return _.isEmpty(ids) && cachesService.remove(ids);
                             }
 
-                            return mongo.Cluster.update(query, {$set: cluster, new: true}, {upsert: true}).exec();
-                        })
-                        .then((output) => {
-                            return Promise.all(_.map(caches, (c) => {
-                                c.space = _.head(spaceIds);
-                                c.clusters = [cluster._id];
+                            cluster.caches = _.map(caches, '_id');
 
-                                return cachesService.upsertBasic(c);
-                            }))
-                                .then(() => _.pick(output, 'n'));
+                            return mongo.Cluster.update(query, {$set: cluster, new: true}, {upsert: true}).exec();
                         });
-                });
+                })
+                .then(() => _.map(caches, cachesService.upsertBasic))
+                .then(() => ({n: 1}));
         }
 
-        static upsert(userId, demo, {cluster, caches}) {
+        static upsert(userId, demo, {cluster, caches, igfss}) {
             if (_.isNil(cluster._id))
                 return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
 
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
-                    cluster.space = _.head(spaceIds);
-                    cluster.caches = _.map(caches, '_id');
+                    this.normalize(_.head(spaceIds), cluster, caches, igfss);
 
                     const query = _.pick(cluster, ['space', '_id']);
 
@@ -189,26 +194,14 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                             throw err;
                         })
                         .then((oldCluster) => {
-                            if (_.isNil(oldCluster))
-                                return;
+                            const cacheIds = this.removedInCluster(oldCluster, cluster, 'caches');
+                            const igfsIds = this.removedInCluster(oldCluster, cluster, 'igfss');
 
-                            const removed = _.difference(_.invokeMap(oldCluster.caches, 'toString'), cluster.caches);
-
-                            if (_.isEmpty(removed))
-                                return;
-
-                            return Promise.all(_.map(removed, cachesService.remove));
-                        })
-                        .then(() => {
-                            return Promise.all(_.map(caches, (c) => {
-                                c.space = _.head(spaceIds);
-                                c.clusters = [cluster._id];
-
-                                return cachesService.upsert(c);
-                            }))
-                                .then(() => ({n: 1}));
+                            return Promise.all([cachesService.remove(cacheIds), igfssService.remove(igfsIds)]);
                         });
-                });
+                })
+                .then(() => Promise.all(_.map(caches, cachesService.upsert), _.map(igfss, igfssService.upsert)))
+                .then(() => ({n: 1}));
         }
 
         /**
@@ -235,18 +228,23 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
         }
 
         /**
-         * Remove cluster.
+         * Remove clusters.
          *
-         * @param {mongo.ObjectId|String} clusterId - The cluster id for remove.
+         * @param {Array.<String>|String} ids - The cluster ids for remove.
          * @returns {Promise.<{rowsAffected}>} - The number of affected rows.
          */
-        static remove(clusterId) {
-            if (_.isNil(clusterId))
+        static remove(ids) {
+            if (_.isNil(ids))
                 return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
 
-            return mongo.Cache.remove({clusters: [clusterId]}).exec()
-                .then(() => mongo.Igfs.remove({clusters: [clusterId]}).exec())
-                .then(() => mongo.Cluster.remove({_id: clusterId}).exec())
+            if (_.isEmpty(ids))
+                return Promise.resolve({rowsAffected: 0});
+
+            ids = _.castArray(ids);
+
+            return mongo.Cache.remove({clusters: {$in: ids}}).exec()
+                .then(() => mongo.Igfs.remove({clusters: {$in: ids}}).exec())
+                .then(() => mongo.Cluster.remove({_id: {$in: ids}}).exec())
                 .then(convertRemoveStatus);
         }
 
