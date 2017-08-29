@@ -36,6 +36,7 @@ import org.apache.ignite.resources.LoggerResource;
 import org.apache.ignite.services.Service;
 import org.apache.ignite.services.ServiceContext;
 import org.apache.ignite.services.ServiceDescriptor;
+import org.apache.ignite.services.ServiceTopology;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
@@ -191,11 +192,11 @@ public class ClosureServiceClientsNodesTest extends GridCommonAbstractTest {
 
             assertEquals(1, srvDscs.size());
 
-            Map<UUID, Integer> nodesMap = F.first(srvDscs).topologySnapshot();
+            ServiceTopology nodesMap = F.first(srvDscs).topologySnapshot();
 
-            assertEquals(NODES_CNT - 1, nodesMap.size());
+            assertEquals(NODES_CNT - 1, nodesMap.nodeCount());
 
-            for (Map.Entry<UUID, Integer> nodeInfo : nodesMap.entrySet()) {
+            for (Map.Entry<UUID, Integer> nodeInfo : nodesMap) {
                 assertFalse(clientNodeId.equals(nodeInfo.getKey()));
 
                 assertEquals(1, nodeInfo.getValue().intValue());
@@ -232,11 +233,11 @@ public class ClosureServiceClientsNodesTest extends GridCommonAbstractTest {
 
             assertEquals(1, srvDscs.size());
 
-            Map<UUID, Integer> nodesMap = F.first(srvDscs).topologySnapshot();
+            ServiceTopology nodesMap = F.first(srvDscs).topologySnapshot();
 
-            assertEquals(1, nodesMap.size());
+            assertEquals(1, nodesMap.nodeCount());
 
-            for (Map.Entry<UUID, Integer> nodeInfo : nodesMap.entrySet()) {
+            for (Map.Entry<UUID, Integer> nodeInfo : nodesMap) {
                 assertEquals(clientNodeId, nodeInfo.getKey());
 
                 assertEquals(1, nodeInfo.getValue().intValue());

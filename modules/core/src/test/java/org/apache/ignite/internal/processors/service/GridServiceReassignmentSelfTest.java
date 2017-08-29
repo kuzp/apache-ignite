@@ -166,7 +166,7 @@ public class GridServiceReassignmentSelfTest extends GridServiceProcessorAbstrac
 
         int sum = 0;
 
-        for (Map.Entry<UUID, Integer> entry : assignments.assigns().entrySet()) {
+        for (Map.Entry<UUID, Integer> entry : assignments.topology()) {
             UUID nodeId = entry.getKey();
 
             if (!lastTry && !nodes.contains(nodeId))
@@ -180,12 +180,14 @@ public class GridServiceReassignmentSelfTest extends GridServiceProcessorAbstrac
                 assertTrue("Max per node limit exceeded [nodeId=" + nodeId + ", max=" + maxPerNode +
                     ", actual=" + nodeCnt, nodeCnt <= maxPerNode);
 
+            assertTrue("Topology should not store explicit zero assignments", entry.getValue() != 0);
+
             sum += nodeCnt;
         }
 
         if (total > 0)
             assertTrue("Total number of services limit exceeded [sum=" + sum +
-                ", assigns=" + assignments.assigns() + ']', sum <= total);
+                ", topology=" + assignments.topology() + ']', sum <= total);
 
         if (!lastTry && proxy(grid).get() != 10)
             return false;

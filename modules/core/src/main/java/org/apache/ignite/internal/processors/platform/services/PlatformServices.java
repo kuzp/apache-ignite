@@ -28,7 +28,6 @@ import org.apache.ignite.internal.processors.platform.PlatformTarget;
 import org.apache.ignite.internal.processors.platform.dotnet.PlatformDotNetService;
 import org.apache.ignite.internal.processors.platform.dotnet.PlatformDotNetServiceImpl;
 import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
-import org.apache.ignite.internal.processors.platform.utils.PlatformWriterBiClosure;
 import org.apache.ignite.internal.processors.platform.utils.PlatformWriterClosure;
 import org.apache.ignite.internal.processors.service.GridServiceProxy;
 import org.apache.ignite.internal.util.typedef.T3;
@@ -45,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.ignite.services.ServiceTopology;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -276,14 +276,14 @@ public class PlatformServices extends PlatformAbstractTarget {
                             ? PLATFORM_DOTNET : PLATFORM_JAVA;
                         writer.writeByte(platform);
 
-                        Map<UUID, Integer> top = d.topologySnapshot();
+                        ServiceTopology top = d.topologySnapshot();
 
-                        PlatformUtils.writeMap(writer, top, new PlatformWriterBiClosure<UUID, Integer>() {
-                            @Override public void write(BinaryRawWriterEx writer, UUID key, Integer val) {
-                                writer.writeUuid(key);
-                                writer.writeInt(val);
-                            }
-                        });
+                        writer.writeInt(top.nodeCount());
+
+                        for (Map.Entry<UUID, Integer> e : top) {
+                            writer.writeUuid(e.getKey());
+                            writer.writeInt(e.getValue());
+                        }
                     }
                 });
 

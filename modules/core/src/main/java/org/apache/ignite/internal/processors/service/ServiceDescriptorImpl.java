@@ -17,7 +17,6 @@
 
 package org.apache.ignite.internal.processors.service;
 
-import java.util.Map;
 import java.util.UUID;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
@@ -25,6 +24,7 @@ import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.services.Service;
 import org.apache.ignite.services.ServiceConfiguration;
 import org.apache.ignite.services.ServiceDescriptor;
+import org.apache.ignite.services.ServiceTopology;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -40,7 +40,7 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
 
     /** Topology snapshot. */
     @GridToStringInclude
-    private Map<UUID, Integer> top;
+    private ServiceTopology top;
 
     /**
      * @param dep Deployment.
@@ -99,14 +99,14 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Integer> topologySnapshot() {
+    @Override public ServiceTopology topologySnapshot() {
         return top;
     }
 
     /**
      * @param top Topology snapshot.
      */
-    void topologySnapshot(Map<UUID, Integer> top) {
+    void topologySnapshot(ServiceTopology top) {
         this.top = top;
     }
 

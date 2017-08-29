@@ -19,7 +19,9 @@ package org.apache.ignite.internal.processors.service;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.Ignite;
@@ -775,8 +777,8 @@ public abstract class GridServiceProcessorAbstractSelfTest extends GridCommonAbs
 
         for (ServiceDescriptor d : descs) {
             if (d.name().equals(svcName)) {
-                for (Integer i : d.topologySnapshot().values())
-                    sum += i;
+                for (Map.Entry<UUID, Integer> i : d.topologySnapshot())
+                    sum += i.getValue();
             }
         }
 

@@ -18,8 +18,6 @@
 package org.apache.ignite.internal.processors.service;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.internal.processors.cache.GridCacheInternal;
@@ -27,6 +25,7 @@ import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.services.ServiceConfiguration;
+import org.apache.ignite.services.ServiceTopology;
 
 /**
  * Service per-node assignment.
@@ -44,9 +43,9 @@ public class GridServiceAssignments implements Serializable, GridCacheInternal {
     /** Service configuration. */
     private final ServiceConfiguration cfg;
 
-    /** Assignments. */
+    /** Service topology. */
     @GridToStringInclude
-    private Map<UUID, Integer> assigns = Collections.emptyMap();
+    private ServiceTopology top;
 
     /**
      * @param cfg Configuration.
@@ -109,17 +108,17 @@ public class GridServiceAssignments implements Serializable, GridCacheInternal {
     }
 
     /**
-     * @return Assignments.
+     * @return Service topology.
      */
-    public Map<UUID, Integer> assigns() {
-        return assigns;
+    public ServiceTopology topology() {
+        return top;
     }
 
     /**
-     * @param assigns Assignments.
+     * @param top Service topology.
      */
-    public void assigns(Map<UUID, Integer> assigns) {
-        this.assigns = assigns;
+    public void topology(ServiceTopology top) {
+        this.top = top;
     }
 
     /** {@inheritDoc} */

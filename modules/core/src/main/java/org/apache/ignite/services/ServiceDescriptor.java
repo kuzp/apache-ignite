@@ -18,7 +18,6 @@
 package org.apache.ignite.services;
 
 import java.io.Serializable;
-import java.util.Map;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,7 +83,7 @@ public interface ServiceDescriptor extends Serializable {
      * Gets service deployment topology snapshot. Service topology snapshot is represented
      * by number of service instances deployed on a node mapped to node ID.
      *
-     * @return Map of number of service instances per node ID.
+     * @return Service deployment topology.
      */
-    public Map<UUID, Integer> topologySnapshot();
+    public ServiceTopology topologySnapshot();
 }
