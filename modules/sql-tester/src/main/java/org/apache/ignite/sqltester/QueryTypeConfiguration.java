@@ -12,6 +12,8 @@ public class QueryTypeConfiguration {
 
     private String dbInitScriptPath;
 
+    private String igniteCfgPath;
+
     private Map<String, ?> props;
 
     public QueryTestType getType() {
@@ -44,5 +46,13 @@ public class QueryTypeConfiguration {
 
     public void setProperties(Map<String, ?> properties) {
         this.props = properties;
+    }
+
+    public String getIgniteCfgPath() {
+        return igniteCfgPath;
+    }
+
+    public void setIgniteCfgPath(String igniteCfgPath) {
+        this.igniteCfgPath = igniteCfgPath;
     }
 }
