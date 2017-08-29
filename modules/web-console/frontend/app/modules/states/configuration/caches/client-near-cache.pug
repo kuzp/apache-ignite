@@ -17,9 +17,9 @@
 include /app/helpers/jade/mixins
 
 -var form = 'clientNearCache'
--var model = 'backupItem.clientNearConfiguration'
+-var model = '$ctrl.clonedCache.clientNearConfiguration'
 
-.pca-panel(ng-form=form novalidate ng-show='backupItem.cacheMode === "PARTITIONED"')
+.pca-panel(ng-form=form novalidate ng-show='$ctrl.clonedCache.cacheMode === "PARTITIONED"')
     .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)
         ignite-form-panel-chevron
         .pca-panel-heading-title Client near cache
@@ -46,4 +46,4 @@ include /app/helpers/jade/mixins
                             <li>SORTED - Eviction policy which will select the minimum cache entry for eviction</li>\
                         </ul>')
             .pca-form-column-6
-                +preview-xml-java('backupItem', 'cacheClientNearCache')
+                +preview-xml-java('$ctrl.clonedCache', 'cacheClientNearCache')

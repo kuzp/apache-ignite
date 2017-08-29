@@ -20,6 +20,7 @@ import 'rxjs/add/observable/merge';
 import 'rxjs/add/operator/distinctUntilChanged';
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 import get from 'lodash/get';
+import matches from 'lodash/fp/matches';
 import angular from 'angular';
 import naturalCompare from 'natural-compare-lite';
 
@@ -29,48 +30,41 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         Object.assign(this, {pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $state, Confirm, Caches});
 
         this.$onInit = function() {
-            this.subscription = this.getObservable(this.ConfigureState.state$).subscribe();
-            this.off = this.$transitions.onBefore({
-                from: 'base.configuration.tabs.advanced.caches.cache'
-            }, ($transition$) => {
-                // TODO Find a better way to prevent target
-                // this.$scope.backupItem = angular.copy(this.$scope.backupItem);
-                const oldCacheID = this.$state.params.cacheID;
-                return !get(this, '$scope.ui.inputForm.$dirty') || this.Confirm.confirm(`
-                    You have unsaved changes. Are you sure want to discard them?
-                `).catch(() => {
-                    this.selectedItemIDs = [oldCacheID];
-                    return Promise.reject();
+            const redirects = this.ConfigureState.actions$
+                .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
+                .do(() => {
+                    this.$state.go('.', {
+                        cacheID: this.clonedCache._id,
+                        selectedCaches: [this.clonedCache._id]
+                    });
                 });
-            });
+
+            this.subscription = this.pageService.getObservable()
+                .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+                .merge(redirects)
+                .subscribe();
+
+            this.tableActions = this.makeTableActions(this.selectedItemIDs);
         };
+
+        this.uiOnParamsChanged = function(params) {
+            this.tableActions = this.makeTableActions(params.selectedCaches);
+        };
+
+        Object.defineProperty(this, 'selectedItemIDs', {
+            get() {
+                return this.$state.params.selectedCaches;
+            }
+        });
+
+        Object.defineProperty(this, 'isNew', {
+            get() {
+                return this.$state.params.cacheID === 'new';
+            }
+        });
 
         this.$onDestroy = function() {
             this.subscription.unsubscribe();
-            this.off();
-        };
-
-        this.getObservable = function(state$) {
-            const caches = state$
-                .pluck('shortCaches')
-                .distinctUntilChanged()
-                .map((i) => [...i.values()])
-                .do((caches) => this.$scope.$applyAsync(() => this.assignCaches(caches)));
-
-            const cache = state$
-                .pluck('clusterConfiguration', 'originalCache')
-                .distinctUntilChanged()
-                .do((cache) => this.$scope.$applyAsync(() => {
-                    this.$scope.selectItem(cache);
-                    if (cache) this.selectedItemIDs = [cache._id];
-                }));
-
-            return Observable.merge(caches, cache);
-        };
-
-        this.assignCaches = function(caches) {
-            this.$scope.caches = caches;
-            this.cachesTable = this.buildCachesTable($scope.caches);
         };
 
         this.cachesColumnDefs = [
@@ -109,8 +103,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             }
         ];
 
-        this.buildCachesTable = (caches = []) => caches;
-
         this.makeTableActions = function(selectedItems) {
             return [
                 {
@@ -129,14 +121,19 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         };
 
         this.selectionHook = function(selected) {
-            this.tableActions = this.makeTableActions(selected);
-            this.selectedItemIDs = selected.map((r) => r._id);
-            if (selected.length !== 1) this.$scope.selectItem(null);
-            return this.selectedItemIDs.length === 1
+            const selectedItemIDs = selected.map((r) => r._id);
+            return selectedItemIDs.length === 1
                 ? this.$state.go('base.configuration.tabs.advanced.caches.cache', {
-                    cacheID: this.selectedItemIDs[0]
+                    cacheID: selectedItemIDs[0],
+                    selectedCaches: selectedItemIDs
+                }, {
+                    location: 'replace'
                 })
-                : this.$state.go('base.configuration.tabs.advanced.caches');
+                : this.$state.go('base.configuration.tabs.advanced.caches', {
+                    selectedCaches: selectedItemIDs
+                }, {
+                    location: 'replace'
+                });
         };
 
         this.available = Version.available.bind(Version);
@@ -211,19 +208,11 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         };
 
         $scope.caches = [];
-        this.cachesTable = this.buildCachesTable($scope.caches);
         $scope.domains = [];
 
         function _cacheLbl(cache) {
             return cache.name + ', ' + cache.cacheMode + ', ' + cache.atomicityMode;
         }
-
-        // function selectFirstItem() {
-        //     if ($scope.caches.length > 0)
-        //         $scope.selectItem($scope.caches[0]);
-        //     else
-        //         $scope.createItem();
-        // }
 
         function cacheDomains(item) {
             return _.reduce($scope.domains, function(memo, domain) {
@@ -383,61 +372,37 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         //         Loading.finish('loadingCachesScreen');
         //     });
 
-        $scope.selectItem = (item, backup) => {
-            const selectItem = () => {
-                $scope.selectedItem = item;
-                // $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
-
-                // if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
-                //     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
-
-                if (backup)
-                    $scope.backupItem = backup;
-                else if (item)
-                    $scope.backupItem = angular.copy(item);
-                else
-                    $scope.backupItem = emptyCache;
-
-                $scope.backupItem = _.merge({}, blank, $scope.backupItem);
-
-                if ($scope.ui.inputForm) {
-                    $scope.ui.inputForm.$error = {};
-                    $scope.ui.inputForm.$setPristine();
-                }
-
-                // setOffHeapMode($scope.backupItem);
-
-                __original_value = ModelNormalizer.normalize($scope.backupItem);
-
-                filterModel();
-
-                // if (LegacyUtils.getQueryVariable('new'))
-                //     $state.go('base.configuration.tabs.advanced.caches');
-            };
-            selectItem();
-        };
-
-        $scope.linkId = () => $scope.backupItem._id ? $scope.backupItem._id : 'create';
-
-        // function prepareNewItem(linkId) {
-        //     return {
-        //         space: $scope.spaces[0]._id,
-        //         cacheMode: 'PARTITIONED',
-        //         atomicityMode: 'ATOMIC',
-        //         readFromBackup: true,
-        //         copyOnRead: true,
-        //         clusters: linkId && _.find($scope.clusters, {value: linkId})
-        //             ? [linkId] : _.map($scope.clusters, function(cluster) { return cluster.value; }),
-        //         domains: linkId && _.find($scope.domains, { value: linkId }) ? [linkId] : [],
-        //         cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
-        //     };
-        // }
-
-        // Add new cache.
-        this.createItem = function(linkId) {
-            this.$state.go('base.configuration.tabs.advanced.caches.cache', {cacheID: 'new'});
-            // $scope.selectItem(null, prepareNewItem(linkId));
+        $scope.selectItem = (item) => {
+            // $scope.selectedItem = item;
             // $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
+
+            // if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
+            //     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
+
+            this.clonedCache = item;
+
+            // if (backup)
+            //     $scope.backupItem = backup;
+            // else if (item)
+            //     $scope.backupItem = angular.copy(item);
+            // else
+            //     $scope.backupItem = emptyCache;
+
+            // $scope.backupItem = _.merge({}, blank, $scope.backupItem);
+
+            if ($scope.ui.inputForm) {
+                $scope.ui.inputForm.$error = {};
+                $scope.ui.inputForm.$setPristine();
+            }
+
+            // setOffHeapMode($scope.backupItem);
+
+            // __original_value = ModelNormalizer.normalize($scope.backupItem);
+
+            // filterModel();
+
+            // if (LegacyUtils.getQueryVariable('new'))
+            //     $state.go('base.configuration.tabs.advanced.caches');
         };
 
         function cacheClusters() {
@@ -625,7 +590,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                     });
 
                     $scope.selectItem(item);
-                    this.cachesTable = this.buildCachesTable($scope.caches);
 
                     Messages.showInfo('Cache "' + item.name + '" saved.');
                 })
@@ -634,10 +598,18 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         // Save cache.
         this.saveItem = function(item) {
-            _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
+            // _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
 
-            if (validate(item))
-                save(item);
+            if (validate(item)) {
+                this.ConfigureState.dispatchAction({
+                    type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+                    cluster: this.originalCluster,
+                    caches: {
+                        ids: [...new Set(this.originalCluster.caches.concat(item._id)).values()],
+                        changedItems: [item]
+                    }
+                });
+            }
         };
 
         function _cacheNames() {
@@ -683,7 +655,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                                 _.forEach($scope.clusters, (cluster) => _.remove(cluster.caches, (id) => id === _id));
                                 _.forEach($scope.domains, (domain) => _.remove(domain.meta.caches, (id) => id === _id));
                             }
-                            this.cachesTable = this.buildCachesTable($scope.caches);
                         })
                         .catch(Messages.showError);
                 });
@@ -698,7 +669,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                             Messages.showInfo('All caches have been removed');
 
                             $scope.caches = [];
-                            this.cachesTable = this.buildCachesTable($scope.caches);
 
                             _.forEach($scope.clusters, (cluster) => cluster.caches = []);
                             _.forEach($scope.domains, (domain) => domain.meta.caches = []);

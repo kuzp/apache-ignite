@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'serverNearCache'
--var model = 'backupItem'
+-var model = '$ctrl.clonedCache'
 
 .pca-panel(ng-form=form novalidate ng-show=`${model}.cacheMode === 'PARTITIONED'`)
     .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)

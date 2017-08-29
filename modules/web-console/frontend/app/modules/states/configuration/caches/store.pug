@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 -var form = 'store'
--var model = 'backupItem'
+-var model = '$ctrl.clonedCache'
 
 mixin hibernateField(name, model, items, valid, save, newItem)
     -var resetOnEnter = newItem ? '(stopblur = true) && (group.add = [{}])' : '(field.edit = false)'
