@@ -86,6 +86,7 @@
     "json-bigint": "0.2.3",
     "jszip": "3.1.4",
     "lodash": "4.17.4",
+    "natural-compare-lite": "^1.4.0",
     "node-sass": "4.5.3",
     "nvd3": "1.8.4",
     "pako": "1.0.6",
