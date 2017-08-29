@@ -46,11 +46,22 @@ export default class Caches {
     getBlankCache() {
         return {
             _id: ObjectID.generate(),
+            evictionPolicy: {},
             cacheMode: 'PARTITIONED',
             atomicityMode: 'ATOMIC',
             readFromBackup: true,
             copyOnRead: true,
-            cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
+            cacheStoreFactory: {
+                CacheJdbcBlobStoreFactory: {
+                    connectVia: 'DataSource'
+                },
+                CacheHibernateBlobStoreFactory: {
+                    hibernateProperties: []
+                }
+            },
+            writeBehindCoalescing: true,
+            nearConfiguration: {},
+            sqlFunctionClasses: []
         };
     }
 
