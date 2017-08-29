@@ -21,6 +21,7 @@ import 'rxjs/add/operator/distinctUntilChanged';
 import infoMessageTemplateUrl from 'views/templates/message.tpl.pug';
 import get from 'lodash/get';
 import angular from 'angular';
+import naturalCompare from 'natural-compare-lite';
 
 // Controller for Caches screen.
 export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
@@ -82,6 +83,7 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                 filter: {
                     placeholder: 'Filter by key type…'
                 },
+                sortingAlgorithm: naturalCompare,
                 minWidth: 165
             },
             {
