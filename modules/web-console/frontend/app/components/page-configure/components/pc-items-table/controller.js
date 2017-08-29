@@ -61,11 +61,13 @@ export default class ItemsTableController {
         this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);
     }
 
+    oneWaySelection = false;
+
     onRowsSelectionChange = debounce((rows, e = {}) => {
-        if (e.ignore || !this.onSelectionChange) return;
+        if (e.ignore) return;
         const selected = this.gridAPI.selection.getSelectedRows();
-        rows.forEach((r) => r.isSelected = false);
-        this.onSelectionChange({$event: selected});
+        if (this.oneWaySelection) rows.forEach((r) => r.isSelected = false);
+        if (this.onSelectionChange) this.onSelectionChange({$event: selected});
     });
 
     makeActionsMenu(incomingActionsMenu = []) {
