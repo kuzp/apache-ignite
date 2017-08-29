@@ -58,15 +58,15 @@ export default class ItemsTableController {
                 });
             }
         };
-        this.onRowsSelectionChange = debounce(this.onRowsSelectionChange);
         this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);
     }
 
-    onRowsSelectionChange(rows, e = {}) {
-        if (e.ignore) return;
+    onRowsSelectionChange = debounce((rows, e = {}) => {
+        if (e.ignore || !this.onSelectionChange) return;
         const selected = this.gridAPI.selection.getSelectedRows();
-        if (this.onSelectionChange) this.onSelectionChange({$event: selected});
-    }
+        rows.forEach((r) => r.isSelected = false);
+        this.onSelectionChange({$event: selected});
+    });
 
     makeActionsMenu(incomingActionsMenu = []) {
         const resetSelection = () => this.gridAPI.selection.clearSelectedRows();
@@ -81,6 +81,7 @@ export default class ItemsTableController {
             this.grid.data = changes.items.currentValue;
             this.gridAPI.grid.modifyRows(this.grid.data);
             this.adjustHeight(this.gridAPI, this.grid.data.length);
+            this.applyIncomingSelection(this.selectedRowId);
         }
         if (hasChanged('selectedRowId') && this.grid && this.grid.data)
             this.applyIncomingSelection(changes.selectedRowId.currentValue);
