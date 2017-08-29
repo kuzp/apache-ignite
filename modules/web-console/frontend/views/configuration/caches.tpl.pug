@@ -17,27 +17,32 @@
 pc-items-table(
     table-title='::"My caches"'
     column-defs='$ctrl.cachesColumnDefs'
-    items='$ctrl.cachesTable'
+    items='$ctrl.shortCaches'
     actions-menu='$ctrl.tableActions'
     selected-row-id='$ctrl.selectedItemIDs'
     on-selection-change='$ctrl.selectionHook($event)'
 )
     footer-slot
-        div(style='font-style: italic' ng-hide='$ctrl.cachesTable.length')
-            | You have no caches. #[a.link-success(ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new"})') Create one?]                
+        div(style='font-style: italic' ng-hide='$ctrl.shortCaches.length')
+            | You have no caches.
+            a.link-success(
+                ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+                ui-sref-opts='{location: "replace"}'
+            ) Create one?           
         a.link-success(
-            ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new"})'
-            ng-show='$ctrl.cachesTable.length'
+            ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+            ui-sref-opts='{location: "replace"}'
+            ng-show='$ctrl.shortCaches.length'
         ) + Add new cache
 
-h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length !== 1')
+h2.pc-page-header(ng-if='!($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)')
     | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} caches selected
     span.pc-page-header-sub Select only one cache to see settings and edit it
 
-h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1')
-    | {{ $ctrl.$state.params.cacheID !== 'new' ? 'Edit' : 'Create' }} cache {{ selectedItem.name ? '‘'+selectedItem.name+'’' : '' }}
+h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1 || $ctrl.isNew')
+    | {{ $ctrl.isNew ? 'Create' : 'Edit' }} cache {{ $ctrl.originalCache.name ? '‘'+$ctrl.originalCache.name+'’' : '' }}
 
-div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
+div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}')
     form.form-horizontal(name='ui.inputForm' novalidate)
         include /app/modules/states/configuration/caches/general
         include /app/modules/states/configuration/caches/memory
@@ -52,15 +57,13 @@ div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": $ct
         include /app/modules/states/configuration/caches/rebalance
         include /app/modules/states/configuration/caches/statistics
 
-.pc-form-actions-panel(ng-class='{"pca-form-blocked": $ctrl.selectedItemIDs.length !== 1}')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}')
     .pc-form-actions-panel__right-after
     button.btn-ignite.btn-ignite--link-success(
         type='button'
-        ng-disabled='!ui.inputForm.$dirty'
         ng-click='ui.inputForm.$dirty && resetAll()'
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
-        n_g-disabled='!ui.inputForm.$dirty'
-        ng-click='$ctrl.saveItem(backupItem)'
+        ng-click='$ctrl.saveItem($ctrl.clonedCache)'
     ) Save

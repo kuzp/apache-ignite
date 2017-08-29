@@ -187,6 +187,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
+                params: {
+                    clusterID: 'string'
+                },
                 resolve: {
                     clustersTable: clustersTableResolve,
                     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
@@ -305,7 +308,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.tabs.advanced.caches', {
-                url: '/caches',
+                url: '/caches?selectedCaches',
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
@@ -315,24 +318,71 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
+                params: {
+                    selectedCaches: {
+                        array: true,
+                        value: [],
+                        type: 'string',
+                        dynamic: true
+                    }
+                },
                 ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
                 redirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
                     const fromState = $transition$.from();
                     const toState = $transition$.to();
-                    return fromState.name === cacheStateName
-                        ? toState
-                        : $transition$.injector().getAsync('caches').then((caches) => {
+                    const params = $transition$.params();
+                    const caches = $transition$.injector().getAsync('caches');
+                    if (fromState.name === cacheStateName) return;
+                    if (params.cacheID === 'new') {
+                        return {
+                            state: toState.name,
+                            params: {
+                                ...params,
+                                selectedCaches: []
+                            }
+                        };
+                    }
+                    if (params.selectedCaches.length) {
+                        return caches.then((caches) => {
+                            const exists = ({_id}) => params.selectedCaches.includes(_id);
+                            if (!caches.some(exists)) {
+                                return {
+                                    state: toState.name,
+                                    params: {
+                                        ...params,
+                                        selectedCaches: params.selectedCaches.filter(exists)
+                                    }
+                                };
+                            }
+                        });
+                    }
+                    if (
+                        !params.cacheID && !params.selectedCaches.length
+                        && fromState.name !== 'base.configuration.tabs.advanced.caches'
+                    ) {
+                        return caches.then((caches) => {
                             return caches.length
                                 ? {
                                     state: cacheStateName,
                                     params: {
                                         cacheID: caches[0]._id,
+                                        selectedCaches: [caches[0]._id],
                                         clusterID: $transition$.params().clusterID
                                     }
                                 }
                                 : toState;
                         });
+                    }
+                    if (params.cacheID && !params.selectedCaches.length) {
+                        return {
+                            state: toState.name,
+                            params: {
+                                ...params,
+                                selectedCaches: [params.cacheID]
+                            }
+                        };
+                    }
                 },
                 tfMetaTags: {
                     title: 'Configure Caches'
