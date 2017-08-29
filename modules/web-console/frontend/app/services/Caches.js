@@ -61,7 +61,8 @@ export default class Caches {
             },
             writeBehindCoalescing: true,
             nearConfiguration: {},
-            sqlFunctionClasses: []
+            sqlFunctionClasses: [],
+            domains: []
         };
     }
 
@@ -70,4 +71,49 @@ export default class Caches {
         {value: 'Custom', label: 'Custom'},
         {value: null, label: 'Not set'}
     ];
+
+    memoryModes = [
+        {value: 'ONHEAP_TIERED', label: 'ONHEAP_TIERED'},
+        {value: 'OFFHEAP_TIERED', label: 'OFFHEAP_TIERED'},
+        {value: 'OFFHEAP_VALUES', label: 'OFFHEAP_VALUES'}
+    ];
+
+    offHeapMode = {
+        onChange: (cache) => {
+            const offHeapMode = (cache.offHeapMode === null || cache.offHeapMode === void 0) ? -1 : cache.offHeapMode;
+            console.debug(`Value: ${offHeapMode}, offHeapMaxMemory: ${cache.offHeapMaxMemory}`);
+            switch (offHeapMode) {
+                case 1:
+                    return cache.offHeapMaxMemory > 0 ? cache.offHeapMaxMemory : null;
+                case 0:
+                case -1:
+                    return cache.offHeapMaxMemory = cache.offHeapMode;
+                default: break;
+            }
+        },
+        required: (cache) => cache.memoryMode === 'OFFHEAP_TIERED',
+        default: 'Disabled'
+    };
+
+    offHeapModes = [
+        {value: -1, label: 'Disabled'},
+        {value: 1, label: 'Limited'},
+        {value: 0, label: 'Unlimited'}
+    ];
+
+    offHeapMaxMemory = {
+        min: 1
+    };
+
+    memoryMode = {
+        default: 'ONHEAP_TIERED'
+    };
+
+    evictionPolicy = {
+        required: (cache) => {
+            return (cache.memoryMode || this.memoryMode.default) === 'ONHEAP_TIERED'
+                && cache.offHeapMaxMemory > 0
+                && !cache.evictionPolicy.kind;
+        }
+    };
 }
