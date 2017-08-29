@@ -133,25 +133,13 @@ module.exports.factory = (_, nodemailer, settings) => {
          * @param invite
          */
         static emailInvite(host, user, invite) {
-            // TODO IGNITE-4775 implement e-mail with invite!
-            // const invitedUser = {
-            //     firstName: '',
-            //     secondName: '',
-            //     email: invite.email
-            // };
-
             const inviteLink = `${host}?invite=${invite.token}`;
 
-            console.log('inviteLink: ' + inviteLink);
-
-            return true;
-
-
-            // return send(invitedUser, 'You was invited to join organization',
-            //     `Hello!<br><br>` +
-            //     `User ${user.firstName} ${user.lastName} invites you to join organization ${invite.organization.name}`+
-            //     'To accept invintation, please click on the following link, or paste this into your browser to complete the process:<br><br>' +
-            //     `<a href="${inviteLink}">${inviteLink}</a><br><br>`);
+            return send(user, `You was invited to join company for ${settings.mail.greeting}.`,
+                `Hello!<br><br>` +
+                `User ${user.firstName} ${user.lastName} invites you to join organization ${user.registeredCompany}<br><br>` +
+                'To accept invintation, please click on the following link, or paste this into your browser to complete the process:<br><br>' +
+                `<a href="${inviteLink}">${inviteLink}</a><br><br>`);
         }
     }
 

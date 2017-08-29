@@ -146,11 +146,11 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
                     admin: 1,
                     email: 1,
                     company: 1,
+                    registeredCompany: 1,
                     country: 1,
                     lastLogin: 1,
                     lastActivity: 1,
-                    organization: 1,
-                    organizationAdmin: 1,
+                    companyAdmin: 1,
                     spaces: {
                         $filter: {
                             input: '$spaces',
@@ -163,8 +163,8 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
             ];
 
             // Filter by Organization for Organization admins.
-            if (user.organizationAdmin && !user.admin)
-                pipeline.unshift({$match: {organization: user.organization}});
+            if (user.companyAdmin && !user.admin)
+                pipeline.unshift({$match: {company: user.company}});
 
             return Promise.all([
                 Promise.all([

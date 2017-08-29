@@ -49,15 +49,15 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
     // Define Role model.
     result.Role = mongoose.model('Role', RoleSchema);
 
-    // Define Organization schema.
-    const OrganizationSchema = new Schema({
+    // Define company schema.
+    const CompanySchema = new Schema({
         name: String
     });
 
-    OrganizationSchema.index({name: 1}, {unique: true});
+    CompanySchema.index({name: 1}, {unique: true});
 
     // Define Organization model.
-    result.Organization = mongoose.model('Organization', OrganizationSchema);
+    result.Company = mongoose.model('Company', CompanySchema);
 
     // Define Account schema.
     const AccountSchema = new Schema({
@@ -65,13 +65,13 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         lastName: String,
         email: String,
         company: String,
+        registeredCompany: {type: ObjectId, ref: 'Company'},
         country: String,
         registered: Date,
         lastLogin: Date,
         lastActivity: Date,
         admin: Boolean,
-        organization: {type: ObjectId, ref: 'Organization'},
-        organizationAdmin: Boolean,
+        companyAdmin: Boolean,
         roles: [{type: ObjectId, ref: 'Role'}],
         token: String,
         resetPasswordToken: String
@@ -91,12 +91,12 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
             lastName: ret.lastName,
             company: ret.company,
             country: ret.country,
+            registeredCompany: ret.registeredCompany,
             registered: ret.registered,
             lastLogin: ret.lastLogin,
             lastActivity: ret.lastActivity,
             admin: ret.admin,
-            organization: ret.organization,
-            organizationAdmin: ret.organizationAdmin,
+            companyAdmin: ret.companyAdmin,
             roles: ret.roles,
             token: ret.token
         };
@@ -130,7 +130,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
     // Define Invite schema.
     const InviteSchema = new Schema({
         token: String,
-        organization: {type: ObjectId, ref: 'Organization'},
+        company: {type: ObjectId, ref: 'Company'},
         account: {type: ObjectId, ref: 'Account'},
         email: String
     });

@@ -22,24 +22,23 @@ const express = require('express');
 // Fire me up!
 
 module.exports = {
-    implements: 'routes/invites',
-    inject: ['services/mails', 'services/invites']
+    implements: 'routes/companies',
+    inject: ['mongo', 'services/companies']
 };
 
 /**
- * @param {MailsService} mailsService
- * @param {InvitesService} invitesService
+ * @param mongo
+ * @param companiesService
  * @returns {Promise}
  */
-module.exports.factory = function(mailsService, invitesService) {
+module.exports.factory = function(mongo, companiesService) {
     return new Promise((resolveFactory) => {
         const router = new express.Router();
 
-        // Invite user to join organization.
+        // Create company.
         router.put('/', (req, res) => {
-            invitesService.create(req.user, req.body.email)
-                .then((invite) => mailsService.emailInvite(req.origin(), req.user, invite))
-                .then(res.api.ok)
+            companiesService.upsert(req.currentUserId(), req.body)
+                .then((saved) => res.api.ok(saved._id))
                 .catch(res.api.error);
         });
 

@@ -60,7 +60,7 @@ module.exports.factory = function(_, express, settings, mongo, spacesService, ma
         router.post('/toggle', (req, res) => {
             const params = req.body;
 
-            const update = params.organizationAdmin ? {organizationAdmin: params.adminFlag} : {admin: params.adminFlag};
+            const update = params.companyAdmin ? {companyAdmin: params.adminFlag} : {admin: params.adminFlag};
 
             mongo.Account.findByIdAndUpdate(params.userId, update).exec()
                 .then(res.api.ok)

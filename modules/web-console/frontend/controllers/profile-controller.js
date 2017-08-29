@@ -91,30 +91,29 @@ export default ['profileController', [
                 .catch((err) => Messages.showError('Failed to save profile: ', err));
         };
 
-        $scope.canCreateOrganization = () => {
-            return _.isNil($scope.user.organization);
+        $scope.canRegisterCompany = () => {
+            return $scope.user && _.isNil($scope.user.registeredCompany);
         };
 
         $scope.canInviteUsers = () => {
-            return _.nonNil($scope.user.organization) && _.get($scope.user, 'organizationAdmin');
+            return $scope.user && _.nonNil($scope.user.registeredCompany) && _.get($scope.user, 'companyAdmin');
         };
 
-        $scope.createOrganization = () => {
-            Confirm.confirm(`Are you sure you want to create organization "${$scope.user.company}"?`)
+        $scope.registerCompany = () => {
+            Confirm.confirm(`Are you sure you want to register company: "${$scope.user.company}"?`)
                 .then(() => {
-                    const data = {
-                        organization: $scope.user.company,
-                        account: $scope.user._id
+                    const company = {
+                        name: $scope.user.company
                     };
 
-                    $http.post('/api/v1/organizations/create', data)
-                        .then((organization) => {
-                            $scope.user.organization = organization;
-                            $scope.user.organizationAdmin = true;
+                    return $http.put('/api/v1/companies', company)
+                        .then(User.load)
+                        .then((user) => {
+                            $scope.user = user;
 
-                            Messages.showInfo(`Organization "${$scope.user.company}" created.`);
+                            Messages.showInfo(`Company: "${$scope.user.company}" successfully registered.`);
                         })
-                        .catch((err) => Messages.showError('Failed to create organization: ', err));
+                        .catch((err) => Messages.showError(`Failed to register company: "${$scope.user.company}". `, err));
                 });
         };
 
@@ -123,13 +122,13 @@ export default ['profileController', [
                 .then((email) => {
                     const data = {
                         email,
-                        organization: $scope.user.organization
+                        company: $scope.user.company
                     };
 
-                    return $http.post('/api/v1/invites/create', data)
+                    return $http.put('/api/v1/invites', data)
                         .then(() => Messages.showInfo(`Invite has been sent to: ${email}.`));
                 })
-                .catch((err) => Messages.showError('Failed to invite user: ', err));
+                .catch((err) => Messages.showError('Failed to invite user. ', err));
         };
     }
 ]];

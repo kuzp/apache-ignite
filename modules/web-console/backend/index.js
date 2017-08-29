@@ -63,15 +63,6 @@ const _onError = (addr, error) => {
 };
 
 /**
- * Event listener for HTTP server "listening" event.
- */
-const _onListening = (addr) => {
-    const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-
-    console.log('Start listening on ' + bind);
-};
-
-/**
  * @param settings
  * @param {ApiServer} apiSrv
  * @param {AgentsHandler} agentsHnd

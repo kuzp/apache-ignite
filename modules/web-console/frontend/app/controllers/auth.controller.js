@@ -41,7 +41,7 @@ export default class SigninCtrl {
                     self.invite.found = res.data.found;
 
                     if (self.invite.found) {
-                        self.invite.organization = res.data.organization;
+                        self.invite.registeredCompany = res.data.registeredCompany;
                         self.invite.existingUser = res.data.existingUser;
                         self.invite.email = res.data.email;
 

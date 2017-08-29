@@ -20,14 +20,15 @@
 // Fire me up!
 
 module.exports = {
-    implements: 'services/utils'
+    implements: 'services/utils',
+    inject: ['settings']
 };
 
 /**
  * @returns {UtilsService}
  */
 
-module.exports.factory = () => {
+module.exports.factory = (settings) => {
     class UtilsService {
         /**
          * Generate token string.
@@ -35,7 +36,7 @@ module.exports.factory = () => {
          * @param len length of string
          * @returns {String} Random string.
          */
-        static randomString(len) {
+        static randomString(len = settings.tokenLength) {
             const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             const possibleLen = possible.length;
 

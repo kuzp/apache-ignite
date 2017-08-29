@@ -47,12 +47,12 @@ export default class IgniteAdminData {
     }
 
     toggleAdmin(admin, user) {
-        const organizationAdmin = !admin.admin && admin.organizationAdmin;
+        const organizationAdmin = !admin.admin && admin.companyAdmin;
 
         return this.$http.post('/api/v1/admin/toggle', {
             userId: user._id,
             organizationAdmin,
-            adminFlag: organizationAdmin ? !user.organizationAdmin : !user.admin
+            adminFlag: organizationAdmin ? !user.companyAdmin : !user.admin
         })
         .then(() => this.Messages.showInfo(`Admin right was successfully toggled for user: "${user.userName}"`))
         .catch((err) => this.Messages.showError('Failed to toggle admin right for user: ', err));

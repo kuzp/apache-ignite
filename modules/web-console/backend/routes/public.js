@@ -90,22 +90,22 @@ module.exports.factory = function(_, express, passport, mongo, mailsService, use
         router.post('/signin', (req, res, next) => _signin(req, res, next));
 
         // Find invite and return data.
-        router.post('/invites/find', (req, res) => {
-            mongo.Invite.findOne({token: req.body.token}).exec()
+        router.get('/invites/:token', (req, res) => {
+            mongo.Invite.findOne({token: req.params.token}).exec()
                 .then((invite) => {
-                    if (invite) {
-                        mongo.Organization.findOne({_id: invite.organization})
-                            .then((organization) => {
-                                res.api.ok({
-                                    organization,
-                                    email: invite.email,
-                                    existingUser: !_.isNil(invite.account),
-                                    found: true
-                                });
+                    if (_.isNil(invite))
+                        return res.api.ok({found: false});
+
+                    return mongo.Company.findOne({_id: invite.company})
+                        .then((registeredCompany) => {
+                            res.api.ok({
+                                email: invite.email,
+                                company: registeredCompany.name,
+                                registeredCompany: registeredCompany.id,
+                                existingUser: !_.isNil(invite.account),
+                                found: true
                             });
-                    }
-                    else
-                        res.api.ok({found: false});
+                        });
                 })
                 .catch(res.api.error);
         });
@@ -119,30 +119,30 @@ module.exports.factory = function(_, express, passport, mongo, mailsService, use
 
             mongo.Invite.findOne({token}).exec()
                 .then((invite) => {
-                    if (invite) {
-                        mongo.Invite.remove({_id: invite._id}).exec().then(() => {
+                    if (_.isNil(invite))
+                        throw new Error(`Failed to accept invite, token not found: ${token}`);
+
+                    return mongo.Invite.remove({_id: invite._id}).exec()
+                        .then(() => {
                             if (data.existingUser) {
-                                return mongo.Account.update({email: data.email}, {$set: {organization: data.organization._id}}).exec()
+                                return mongo.Account.update({email: data.email}, {$set: {registeredCompany: data.company._id}}).exec()
                                     .then(() => _signin(req, res, next));
                             }
 
                             const user = {
-                                email: data.email,
-                                password: data.password,
                                 firstName: data.firstName,
                                 lastName: data.lastName,
-                                company: data.organization.name,
-                                country: data.country,
-                                organization: data.organization._id
+                                email: data.email,
+                                password: data.password,
+                                company: data.company.name,
+                                registeredCompany: data.company._id,
+                                country: data.country
                             };
 
                             return _signup(req, res, user);
                         });
-                    }
-                    else
-                        throw new Error(`Failed to accept invite, token not found: ${token}`);
                 })
-                .catch((err) => console.log(err));
+                .catch(res.api.error);
         });
 
         /**

@@ -89,8 +89,8 @@ export default class IgniteListOfRegisteredUsersCtrl {
                 .then(() => {
                     if (user.admin)
                         user.admin = !user.admin;
-                    else if (user.organizationAdmin)
-                        user.organizationAdmin = !user.organizationAdmin;
+                    else if (user.companyAdmin)
+                        user.companyAdmin = !user.companyAdmin;
                 })
                 .finally(() => user.adminChanging = false);
         };
