@@ -83,8 +83,6 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
-        n_g-disabled='!ui.inputForm.$dirty'
-        n_g-click='$ctrl.save(backupItem)'
         form='cluster'
         type='submit'
     ) Save
