@@ -21,7 +21,7 @@ import isEqual from 'lodash/isEqual';
 // Controller for Clusters screen.
 export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
     function(IgniteModelNormalizer, pageService, ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        Object.assign(this, {IgniteModelNormalizer, pageService, ConfigureState, Clusters, $scope, Confirm, Version});
+        Object.assign(this, {IgniteModelNormalizer, pageService, ConfigureState, Clusters, $scope, Confirm, FormUtils, Version});
 
         this.available = function(...args) {
             return this.Version.available(...args);
@@ -102,25 +102,10 @@ export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'Config
                 : this.Confirm.confirm('You have unsaved changes. Are you sure want to discard them?');
         };
 
-        this.triggerValidation = function(item) {
-            const fe = (m) => Object.keys(m.$error)[0];
-            const em = (e) => (m) => {
-                if (!e) return;
-                const walk = (m) => {
-                    if (!m.$error[e]) return;
-                    if (m.$error[e] === true) return m;
-                    return walk(m.$error[e][0]);
-                };
-                return walk(m);
-            };
-
-            this.$scope.$broadcast('$showValidationError', em(fe(this.$scope.ui.inputForm))(this.$scope.ui.inputForm));
-        };
-
         this.cancelEdit = () => this.pageService.cancelEdit();
         this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
         this.save = function(cluster = this.clonedCluster) {
-            this.triggerValidation(cluster);
+            this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
             if (this.$scope.ui.inputForm.$valid) this.pageService.save(this.clonedCluster);
         };
     }
