@@ -43,20 +43,27 @@ h2.pc-page-header(ng-if='!($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)')
 h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1 || $ctrl.isNew')
     | {{ $ctrl.isNew ? 'Create' : 'Edit' }} cache {{ $ctrl.originalCache.name ? '‘'+$ctrl.originalCache.name+'’' : '' }}
 
-div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}')
-    form.form-horizontal(name='ui.inputForm' novalidate)
-        include /app/modules/states/configuration/caches/general
-        include /app/modules/states/configuration/caches/memory
-        include /app/modules/states/configuration/caches/query
-        include /app/modules/states/configuration/caches/store
+form(
+    name='ui.inputForm'
+    id='cache'
+    novalidate
+    bs-collapse=''
+    data-allow-multiple='true'
+    ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}'
+    ng-submit='$ctrl.save($ctrl.clonedCache)'
+)
+    include /app/modules/states/configuration/caches/general
+    include /app/modules/states/configuration/caches/memory
+    include /app/modules/states/configuration/caches/query
+    include /app/modules/states/configuration/caches/store
 
-        include /app/modules/states/configuration/caches/affinity
-        include /app/modules/states/configuration/caches/concurrency
-        include /app/modules/states/configuration/caches/near-cache-client
-        include /app/modules/states/configuration/caches/near-cache-server
-        include /app/modules/states/configuration/caches/node-filter
-        include /app/modules/states/configuration/caches/rebalance
-        include /app/modules/states/configuration/caches/statistics
+    include /app/modules/states/configuration/caches/affinity
+    include /app/modules/states/configuration/caches/concurrency
+    include /app/modules/states/configuration/caches/near-cache-client
+    include /app/modules/states/configuration/caches/near-cache-server
+    include /app/modules/states/configuration/caches/node-filter
+    include /app/modules/states/configuration/caches/rebalance
+    include /app/modules/states/configuration/caches/statistics
 
 .pc-form-actions-panel(ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}')
     .pc-form-actions-panel__right-after
@@ -66,5 +73,6 @@ div(bs-collapse='' data-allow-multiple='true' ng-class='{"pca-form-blocked": !($
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
-        ng-click='$ctrl.saveItem($ctrl.clonedCache)'
+        form='cache'
+        type='submit'
     ) Save

@@ -10,6 +10,17 @@ export default class PageConfigureAdvancedCachesService {
         Object.assign(this, {ConfigureState, $state, Caches, Clusters});
     }
 
+    save(item, cluster) {
+        this.ConfigureState.dispatchAction({
+            type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+            cluster,
+            caches: {
+                ids: [...new Set(cluster.caches.concat(item._id)).values()],
+                changedItems: [item]
+            }
+        });
+    }
+
     getObservable() {
         const {state$, actions$} = this.ConfigureState;
 

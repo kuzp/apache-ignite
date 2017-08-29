@@ -27,7 +27,7 @@ import naturalCompare from 'natural-compare-lite';
 // Controller for Caches screen.
 export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
     function(pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $state, Confirm, Caches});
+        Object.assign(this, {pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.$onInit = function() {
             const redirects = this.ConfigureState.actions$
@@ -439,18 +439,11 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         // Save cache in database.
 
+        this.save = function(item) {
             // _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
-
-            if (validate(item)) {
-                this.ConfigureState.dispatchAction({
-                    type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
-                    cluster: this.originalCluster,
-                    caches: {
-                        ids: [...new Set(this.originalCluster.caches.concat(item._id)).values()],
-                        changedItems: [item]
-                    }
-                });
-            }
+            this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
+            if (!validate(item)) return;
+            if (this.$scope.ui.inputForm.$valid) this.pageService.save(item, this.originalCluster);
         };
 
         function _cacheNames() {
