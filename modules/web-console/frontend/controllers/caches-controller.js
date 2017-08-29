@@ -407,11 +407,11 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             // if (LegacyUtils.isEmptyString(item.name))
             //     return ErrorPopover.show('cacheNameInput', 'Cache name should not be empty!', $scope.ui, 'general');
 
-            if (item.memoryMode === 'ONHEAP_TIERED' && item.offHeapMaxMemory > 0 && !LegacyUtils.isDefined(item.evictionPolicy.kind))
-                return ErrorPopover.show('evictionPolicyKindInput', 'Eviction policy should be configured!', $scope.ui, 'memory');
+            // if (item.memoryMode === 'ONHEAP_TIERED' && item.offHeapMaxMemory > 0 && !LegacyUtils.isDefined(item.evictionPolicy.kind))
+            //     return ErrorPopover.show('evictionPolicyKindInput', 'Eviction policy should be configured!', $scope.ui, 'memory');
 
-            if (!LegacyUtils.checkFieldValidators($scope.ui))
-                return false;
+            // if (!LegacyUtils.checkFieldValidators($scope.ui))
+            //     return false;
 
             if (item.memoryMode === 'OFFHEAP_VALUES' && !_.isEmpty(item.domains))
                 return ErrorPopover.show('memoryModeInput', 'Query indexing could not be enabled while values are stored off-heap!', $scope.ui, 'memory');
