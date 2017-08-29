@@ -352,8 +352,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ? Promise.resolve(cachedValue)
                             : cacheID === 'new'
                                 ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
-                                    name: uniqueName('New cache', caches),
-                                    clusters: [cluster._id]
+                                    name: uniqueName('New cache', caches)
                                 }))
                                 : Caches.getCache(cacheID).then(({data}) => {
                                     ConfigureState.dispatchAction({
