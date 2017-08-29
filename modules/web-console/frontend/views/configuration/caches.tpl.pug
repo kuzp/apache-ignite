@@ -20,6 +20,7 @@ pc-items-table(
     items='$ctrl.shortCaches'
     actions-menu='$ctrl.tableActions'
     selected-row-id='$ctrl.selectedItemIDs'
+    one-way-selection='::true'
     on-selection-change='$ctrl.selectionHook($event)'
 )
     footer-slot

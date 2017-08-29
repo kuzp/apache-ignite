@@ -33,6 +33,7 @@ export default {
         selectedRowId: '<?',
         maxRowsToShow: '@?',
         onSelectionChange: '&?',
+        oneWaySelection: '<?',
         incomingActionsMenu: '<?actionsMenu'
     }
 };
