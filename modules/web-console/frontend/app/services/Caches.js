@@ -53,4 +53,10 @@ export default class Caches {
             cacheStoreFactory: {CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}}
         };
     }
+
+    nodeFilterKinds = [
+        {value: 'IGFS', label: 'IGFS nodes'},
+        {value: 'Custom', label: 'Custom'},
+        {value: null, label: 'Not set'}
+    ];
 }
