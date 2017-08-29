@@ -4,20 +4,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.file.FileSystem;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
-import org.apache.ignite.internal.util.typedef.internal.S;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import org.yaml.snakeyaml.DumperOptions;
@@ -162,6 +157,11 @@ public class IgniteSqlTester {
 
                 String st = (String)entry.get(runCtx.runner.getType());
 
+                long queryStartTime = System.currentTimeMillis();
+
+                //if(runCtx.runner.getType().equals("ignite"))
+                    //Thread.sleep(100);
+
                 try {
                     stmt.execute(st);
                 }
@@ -169,18 +169,29 @@ public class IgniteSqlTester {
                     e.printStackTrace();
                 }
 
+                long queryFinishTime = System.currentTimeMillis();
+
                 runCtx.res = stmt.getResultSet();
+
+                runCtx.time = queryFinishTime - queryStartTime;
             }
 
             try {
+                long[] timeRes = getExecTime(runners);
+
+                String result = "OK";
+
                 if (!compareSets(runners)) {
                     failedOPS++;
-                    writer.println("---------------------------------------------------------------------------");
-                    writer.println("Statement ID = " + operID);
-                    writer.println("===========================================================================");
+                    result = "fail";
                 }
                 else
                     passedOPS++;
+
+                writer.println("---------------------------------------------------------------------------");
+                writer.println("Statement ID = " + operID + "; Ignite time = " + timeRes[0] + "; other base time = " + timeRes[1] + "; result = " + result + ";");
+                writer.println("===========================================================================");
+
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -373,12 +384,26 @@ public class IgniteSqlTester {
 
     }
 
+    private static long[] getExecTime(List<RunContext> runners){
+        long[] res = new long[2];
+
+        for (RunContext runner : runners){
+            if (runner.runner.getType().equals("ignite"))
+                res[0] = runner.time;
+            else
+                res[1] = runner.time;
+        }
+            return res;
+    }
+
     private static class RunContext {
         QueryTestRunner runner;
 
         Connection conn;
 
         ResultSet res;
+
+        long time;
 
         LinkedList<ArrayList<String>> resultTbl;
         ArrayList<String> colNames;
