@@ -31,7 +31,18 @@ include /app/helpers/jade/mixins
             .pca-form-column-6.pc-form-grid-row
                 
                 .pc-form-grid-col-30
-                    +text('Name:', `${model}.name`, '"cacheName"', 'true', 'Input name', 'Cache name')
+                    +sane-ignite-form-field-text({
+                        label: 'Name:',
+                        model: `${model}.name`,
+                        name: '"cacheName"',
+                        placeholder: 'Input name',
+                        required: true
+                    })(
+                        ignite-unique='$ctrl.shortCaches'
+                        ignite-unique-property='name'
+                        ignite-unique-skip=`["_id", ${model}]`
+                    )
+                        +unique-feedback(`${model}.name`, 'Cache name should be unique')
                 .pc-form-grid-col-30(ng-if='$ctrl.available("2.1.0")')
                     +text('Group:', `${model}.groupName`, '"groupName"', 'false', 'Input group name',
                         'Cache group name.<br/>\
