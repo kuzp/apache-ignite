@@ -170,21 +170,8 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         // UnsavedChangesGuard.install($scope);
 
-        const emptyCache = {empty: true};
 
-        let __original_value;
 
-        const blank = {
-            evictionPolicy: {},
-            cacheStoreFactory: {
-                CacheHibernateBlobStoreFactory: {
-                    hibernateProperties: []
-                }
-            },
-            writeBehindCoalescing: true,
-            nearConfiguration: {},
-            sqlFunctionClasses: []
-        };
 
         // We need to initialize backupItem with empty object in order to properly used from angular directives.
         // $scope.backupItem = emptyCache;
@@ -193,26 +180,10 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         $scope.ui.activePanels = [0];
         $scope.ui.topPanels = [0, 1, 2, 3];
 
-        $scope.saveBtnTipText = FormUtils.saveBtnTipText;
-        $scope.widthIsSufficient = FormUtils.widthIsSufficient;
         $scope.offHeapMode = 'DISABLED';
-
-        $scope.contentVisible = function() {
-            return !get($scope, 'backupItem.empty');
-        };
-
-        $scope.toggleExpanded = function() {
-            $scope.ui.expanded = !$scope.ui.expanded;
-
-            ErrorPopover.hide();
-        };
 
         $scope.caches = [];
         $scope.domains = [];
-
-        function _cacheLbl(cache) {
-            return cache.name + ', ' + cache.cacheMode + ', ' + cache.atomicityMode;
-        }
 
         function cacheDomains(item) {
             return _.reduce($scope.domains, function(memo, domain) {
@@ -237,73 +208,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                 return item.offHeapMaxMemory = value;
 
             item.offHeapMaxMemory = item.offHeapMaxMemory > 0 ? item.offHeapMaxMemory : null;
-        };
-
-        $scope.tablePairSave = LegacyTable.tablePairSave;
-        $scope.tablePairSaveVisible = LegacyTable.tablePairSaveVisible;
-        $scope.tableNewItem = LegacyTable.tableNewItem;
-        $scope.tableNewItemActive = LegacyTable.tableNewItemActive;
-
-        $scope.tableStartEdit = function(item, field, index) {
-            if ($scope.tableReset(true))
-                LegacyTable.tableStartEdit(item, field, index, $scope.tableSave);
-        };
-
-        $scope.tableEditing = LegacyTable.tableEditing;
-
-        $scope.tableSave = function(field, index, stopEdit) {
-            if (LegacyTable.tablePairSaveVisible(field, index))
-                return LegacyTable.tablePairSave($scope.tablePairValid, $scope.backupItem, field, index, stopEdit);
-
-            return true;
-        };
-
-        $scope.tableRemove = function(item, field, index) {
-            if ($scope.tableReset(true))
-                LegacyTable.tableRemove(item, field, index);
-        };
-
-        $scope.tableReset = (trySave) => {
-            const field = LegacyTable.tableField();
-
-            if (trySave && LegacyUtils.isDefined(field) && !$scope.tableSave(field, LegacyTable.tableEditedRowIndex(), true))
-                return false;
-
-            LegacyTable.tableReset();
-
-            return true;
-        };
-
-        $scope.hibernatePropsTbl = {
-            type: 'hibernate',
-            model: 'cacheStoreFactory.CacheHibernateBlobStoreFactory.hibernateProperties',
-            focusId: 'Property',
-            ui: 'table-pair',
-            keyName: 'name',
-            valueName: 'value',
-            save: $scope.tableSave
-        };
-
-        $scope.tablePairValid = function(item, field, index, stopEdit) {
-            const pairValue = LegacyTable.tablePairValue(field, index);
-
-            const model = _.get(item, field.model);
-
-            if (!_.isNil(model)) {
-                const idx = _.findIndex(model, (pair) => {
-                    return pair.name === pairValue.key;
-                });
-
-                // Found duplicate by key.
-                if (idx >= 0 && idx !== index) {
-                    if (stopEdit)
-                        return false;
-
-                    return ErrorPopover.show(LegacyTable.tableFieldId(index, 'KeyProperty'), 'Property with such name already exists!', $scope.ui, 'query');
-                }
-            }
-
-            return true;
         };
 
         // Loading.start('loadingCachesScreen');
@@ -373,36 +277,13 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         //     });
 
         $scope.selectItem = (item) => {
-            // $scope.selectedItem = item;
             // $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
 
             // if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
             //     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
 
-            this.clonedCache = item;
-
-            // if (backup)
-            //     $scope.backupItem = backup;
-            // else if (item)
-            //     $scope.backupItem = angular.copy(item);
-            // else
-            //     $scope.backupItem = emptyCache;
-
-            // $scope.backupItem = _.merge({}, blank, $scope.backupItem);
-
-            if ($scope.ui.inputForm) {
-                $scope.ui.inputForm.$error = {};
-                $scope.ui.inputForm.$setPristine();
-            }
-
             // setOffHeapMode($scope.backupItem);
-
-            // __original_value = ModelNormalizer.normalize($scope.backupItem);
-
             // filterModel();
-
-            // if (LegacyUtils.getQueryVariable('new'))
-            //     $state.go('base.configuration.tabs.advanced.caches');
         };
 
         function cacheClusters() {
@@ -557,47 +438,7 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         }
 
         // Save cache in database.
-        const save = (item) => {
-            $http.post('/api/v1/configuration/caches/save', item)
-                .then(({data}) => {
-                    const _id = data;
 
-                    item.label = _cacheLbl(item);
-
-                    $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
-
-                    const idx = _.findIndex($scope.caches, {_id});
-
-                    if (idx >= 0)
-                        _.assign($scope.caches[idx], item);
-                    else {
-                        item._id = _id;
-                        $scope.caches.push(item);
-                    }
-
-                    _.forEach($scope.clusters, (cluster) => {
-                        if (_.includes(item.clusters, cluster.value))
-                            cluster.caches = _.union(cluster.caches, [_id]);
-                        else
-                            _.pull(cluster.caches, _id);
-                    });
-
-                    _.forEach($scope.domains, (domain) => {
-                        if (_.includes(item.domains, domain.value))
-                            domain.meta.caches = _.union(domain.meta.caches, [_id]);
-                        else
-                            _.pull(domain.meta.caches, _id);
-                    });
-
-                    $scope.selectItem(item);
-
-                    Messages.showInfo('Cache "' + item.name + '" saved.');
-                })
-                .catch(Messages.showError);
-        };
-
-        // Save cache.
-        this.saveItem = function(item) {
             // _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
 
             if (validate(item)) {
@@ -647,10 +488,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
                                 $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
 
-                                if (caches.length > 0)
-                                    $scope.selectItem(caches[0]);
-                                else
-                                    $scope.backupItem = emptyCache;
 
                                 _.forEach($scope.clusters, (cluster) => _.remove(cluster.caches, (id) => id === _id));
                                 _.forEach($scope.domains, (domain) => _.remove(domain.meta.caches, (id) => id === _id));
@@ -673,11 +510,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                             _.forEach($scope.clusters, (cluster) => cluster.caches = []);
                             _.forEach($scope.domains, (domain) => domain.meta.caches = []);
 
-                            $scope.backupItem = emptyCache;
-                            if ($scope.ui.inputForm) {
-                                $scope.ui.inputForm.$error = {};
-                                $scope.ui.inputForm.$setPristine();
-                            }
                         })
                         .catch(Messages.showError);
                 });
