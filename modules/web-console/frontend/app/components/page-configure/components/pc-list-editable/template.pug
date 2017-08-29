@@ -21,6 +21,10 @@
             'pcle-row--editable': $ctrl.isEditView($index),
             'pcle-row--has-item-view': $ctrl.hasItemView
         }`)
+        .pcle-row-sort(ng-hide='true')
+            button.btn-ignite.btn-ignite--link-dashed-secondary
+                svg(ignite-icon='sort')
+
         .pcle-row-index
             span {{ $index+1 }}
 
