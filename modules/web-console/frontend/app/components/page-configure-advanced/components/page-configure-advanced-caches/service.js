@@ -21,6 +21,10 @@ export default class PageConfigureAdvancedCachesService {
         });
     }
 
+    clone(items = []) {
+
+    }
+
     getObservable() {
         const {state$, actions$} = this.ConfigureState;
 
