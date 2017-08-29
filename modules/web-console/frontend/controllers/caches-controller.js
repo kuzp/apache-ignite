@@ -404,8 +404,8 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         function validate(item) {
             ErrorPopover.hide();
 
-            if (LegacyUtils.isEmptyString(item.name))
-                return ErrorPopover.show('cacheNameInput', 'Cache name should not be empty!', $scope.ui, 'general');
+            // if (LegacyUtils.isEmptyString(item.name))
+            //     return ErrorPopover.show('cacheNameInput', 'Cache name should not be empty!', $scope.ui, 'general');
 
             if (item.memoryMode === 'ONHEAP_TIERED' && item.offHeapMaxMemory > 0 && !LegacyUtils.isDefined(item.evictionPolicy.kind))
                 return ErrorPopover.show('evictionPolicyKindInput', 'Eviction policy should be configured!', $scope.ui, 'memory');
