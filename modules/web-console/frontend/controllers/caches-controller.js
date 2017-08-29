@@ -107,7 +107,7 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             return [
                 {
                     action: 'Clone',
-                    click: () => this.cloneItems(selectedItems),
+                    click: () => this.clone(selectedItems),
                     available: true
                 },
                 {
@@ -451,14 +451,9 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         }
 
         // Clone cache with new name.
-        this.cloneItems = (items = []) => items.reduce((prev, item) => prev.then(() => {
-            return Input.clone(item.name, _cacheNames()).then((newName) => {
-                const clonedItem = angular.copy(item);
-                delete clonedItem._id;
-                clonedItem.name = newName;
-                return save(clonedItem);
-            });
-        }), $q.resolve());
+        this.clone = function(items) {
+            this.pageService.clone(items);
+        };
 
         // Remove cache from db.
         $scope.removeItem = (selectedItem) => {
