@@ -33,14 +33,7 @@ include /app/helpers/jade/mixins
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
             .pca-form-column-6
                 .pc-form-grid-col-60
-                    +dropdown('Node filter:', nodeFilterKind, '"nodeFilter"', 'true', 'Not set',
-                        '[\
-                            {value: "IGFS", label: "IGFS nodes"},\
-                            {value: "Custom", label: "Custom"},\
-                            {value: null, label: "Not set"}\
-                        ]',
-                        'Node filter variant'
-                    )
+                    +dropdown('Node filter:', nodeFilterKind, '"nodeFilter"', 'true', 'Not set', '::$ctrl.Caches.nodeFilterKinds', 'Node filter variant')
                 .pc-form-grid-col-60(ng-show=igfsFilter)
                     +dropdown-required-empty('IGFS:', `${nodeFilter}.IGFS.igfs`, '"igfsNodeFilter"', 'true', igfsFilter,
                         'Choose IGFS', 'No IGFS configured', 'igfss', 'Select IGFS to filter nodes')
