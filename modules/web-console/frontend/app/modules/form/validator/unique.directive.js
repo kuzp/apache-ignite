@@ -53,9 +53,7 @@ class Controller {
     }
 
     $onChanges(changes) {
-        if ('items' in changes && changes.items.currentValue !== changes.items.previousValue)
-            this.ngModel.$validate();
-
+        this.ngModel.$validate();
     }
 }
 
