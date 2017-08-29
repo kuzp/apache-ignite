@@ -34,3 +34,4 @@ export alert from './alert.svg';
 export attention from './attention.svg';
 export expand from './expand.svg';
 export collapse from './collapse.svg';
+export sort from './sort.svg';
