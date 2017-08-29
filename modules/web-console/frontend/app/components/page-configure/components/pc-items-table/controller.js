@@ -59,7 +59,7 @@ export default class ItemsTableController {
             }
         };
         this.onRowsSelectionChange = debounce(this.onRowsSelectionChange);
-        this.actionsMenu = [];
+        this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);
     }
 
     onRowsSelectionChange(rows, e = {}) {
@@ -84,7 +84,7 @@ export default class ItemsTableController {
         }
         if (hasChanged('selectedRowId') && this.grid && this.grid.data)
             this.applyIncomingSelection(changes.selectedRowId.currentValue);
-        if (hasChanged('incomingActionsMenu'))
+        if ('incomingActionsMenu' in changes)
             this.actionsMenu = this.makeActionsMenu(changes.incomingActionsMenu.currentValue);
     }
 
