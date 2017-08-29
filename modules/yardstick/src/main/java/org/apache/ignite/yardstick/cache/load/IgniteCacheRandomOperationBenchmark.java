@@ -970,6 +970,8 @@ public class IgniteCacheRandomOperationBenchmark extends IgniteAbstractBenchmark
 
                 sq = new SqlFieldsQuery(sql);
 
+                ((SqlFieldsQuery)sq).setLazy(true);
+
                 ((SqlFieldsQuery)sq).setDistributedJoins(qry.distributedJoin);
             }
 
