@@ -107,7 +107,7 @@ include /app/helpers/jade/mixins
                             <li>Unlimited - Off-heap storage grow infinitely (it is up to user to properly add and remove entries from cache to ensure that off-heap storage does not grow infinitely)</li>
                         </ul>`
                     })(
-                        ng-change=`{{::$ctrl.Caches.offHeapMode.onChange(${model})}}`
+                        ng-change=`$ctrl.Caches.offHeapMode.onChange(${model})`
                     )
                 .pc-form-grid-col-60(
                     ng-if=`${model}.offHeapMode === 1 && ${model}.memoryMode !== 'OFFHEAP_VALUES'`
