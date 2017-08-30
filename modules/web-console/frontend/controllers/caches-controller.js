@@ -422,8 +422,8 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             // if (!checkEvictionPolicy(item.evictionPolicy))
             //     return false;
 
-            if (!checkSQLSchemas())
-                return false;
+            // if (!checkSQLSchemas())
+            //     return false;
 
             if (!checkStoreFactory(item))
                 return false;
