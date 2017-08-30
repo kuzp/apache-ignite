@@ -84,7 +84,7 @@ export default class Caches {
             console.debug(`Value: ${offHeapMode}, offHeapMaxMemory: ${cache.offHeapMaxMemory}`);
             switch (offHeapMode) {
                 case 1:
-                    return cache.offHeapMaxMemory > 0 ? cache.offHeapMaxMemory : null;
+                    return cache.offHeapMaxMemory = cache.offHeapMaxMemory > 0 ? cache.offHeapMaxMemory : null;
                 case 0:
                 case -1:
                     return cache.offHeapMaxMemory = cache.offHeapMode;
