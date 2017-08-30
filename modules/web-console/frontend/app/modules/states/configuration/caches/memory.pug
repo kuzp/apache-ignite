@@ -108,7 +108,13 @@ include /app/helpers/jade/mixins
                         </ul>`
                     })(
                         ng-change=`$ctrl.Caches.offHeapMode.onChange(${model})`
+                        ui-validate=`{
+                            offheapDisabled: '$ctrl.Caches.offHeapMode.offheapDisabled(${model})'
+                        }`
+                        ui-validate-watch=`'${model}.memoryMode'`
+                        ng-model-options='{allowInvalid: true}'
                     )
+                        +form-field-feedback(null, 'offheapDisabled', 'Off-heap storage can\'t be disabled when memory mode is OFFHEAP_TIERED')
                 .pc-form-grid-col-60(
                     ng-if=`${model}.offHeapMode === 1 && ${model}.memoryMode !== 'OFFHEAP_VALUES'`
                     ng-if-end
