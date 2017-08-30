@@ -75,9 +75,20 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                         -var required = `${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`
 
                         .pc-form-grid-col-60
-                            +text('Data source bean name:', `${pojoStoreFactory}.dataSourceBean`,
-                                '"pojoDataSourceBean"', required, 'Input bean name',
-                                'Name of the data source bean in Spring context')
+                            +sane-ignite-form-field-text({
+                                label: 'Data source bean name:',
+                                model: `${pojoStoreFactory}.dataSourceBean`,
+                                name: '"pojoDataSourceBean"',
+                                required: required,
+                                placeholder: 'Input bean name',
+                                tip: 'Name of the data source bean in Spring context'
+                            })(
+                                is-valid-java-identifier
+                                not-java-reserved-word
+                            )
+                                +form-field-feedback(null, 'required', 'Data source bean name is required')
+                                +form-field-feedback(null, 'isValidJavaIdentifier', 'Data source bean name is not a valid Java identifier')
+                                +form-field-feedback(null, 'notJavaReservedWord', 'Data source bean name should not be a Java reserved word')
                         .pc-form-grid-col-60
                             +dialect('Dialect:', `${pojoStoreFactory}.dialect`, '"pojoDialect"', required,
                                 'Dialect of SQL implemented by a particular RDBMS:', 'Generic JDBC dialect',
@@ -123,20 +134,32 @@ mixin hibernateField(name, model, items, valid, save, newItem)
 
                         -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} === 'URL'`
 
-                        .pc-form-grid-col-60(ng-show-start=`${blobStoreFactoryVia} === 'URL'`)
+                        .pc-form-grid-col-60(ng-if-start=`${blobStoreFactoryVia} === 'URL'`)
                             +text('Connection URL:', `${blobStoreFactory}.connectionUrl`, '"connectionUrl"', required, 'Input URL',
                                 'URL for database access, for example: jdbc:h2:mem:myDatabase')
                         .pc-form-grid-col-30
                             +text('User:', `${blobStoreFactory}.user`, '"user"', required, 'Input user name', 'User name for database access')
-                        .pc-form-grid-col-30(ng-show-end)
+                        .pc-form-grid-col-30(ng-if-end)
                             .pc-form-grid__text-only-item Password will be generated as stub.
 
                         -var required = `${storeFactoryKind} === 'CacheJdbcBlobStoreFactory' && ${blobStoreFactoryVia} !== 'URL'`
 
-                        .pc-form-grid-col-60(ng-show-start=`${blobStoreFactoryVia} !== 'URL'`)
-                            +text('Data source bean name:', `${blobStoreFactory}.dataSourceBean`, '"blobDataSourceBean"', required, 'Input bean name',
-                                'Name of the data source bean in Spring context')
-                        .pc-form-grid-col-60(ng-show-end)
+                        .pc-form-grid-col-60(ng-if-start=`${blobStoreFactoryVia} !== 'URL'`)
+                            +sane-ignite-form-field-text({
+                                label: 'Data source bean name:',
+                                model: `${blobStoreFactory}.dataSourceBean`,
+                                name: '"blobDataSourceBean"',
+                                required: required,
+                                placeholder: 'Input bean name',
+                                tip: 'Name of the data source bean in Spring context'
+                            })(
+                                is-valid-java-identifier
+                                not-java-reserved-word
+                            )
+                                +form-field-feedback(null, 'required', 'Data source bean name is required')
+                                +form-field-feedback(null, 'isValidJavaIdentifier', 'Data source bean name is not a valid Java identifier')
+                                +form-field-feedback(null, 'notJavaReservedWord', 'Data source bean name should not be a Java reserved word')
+                        .pc-form-grid-col-60(ng-if-end)
                             +dialect('Database:', `${blobStoreFactory}.dialect`, '"blobDialect"', required, 'Supported databases:', 'Generic database', 'Choose database')
 
                         .pc-form-grid-col-60
