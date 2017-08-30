@@ -60,11 +60,16 @@ export default class PageConfigureAdvancedCachesService {
         const shortClusters = shortItems('shortClusters');
         const shortCaches = shortItems('shortCaches');
 
+        const modelsMenu = shortItems('shortModels').map(({shortModels}) => ({
+            modelsMenu: shortModels.map((m) => ({value: m._id, label: m.valueType}))
+        }));
+
         return combineLatest(
             cluster,
             cache,
             shortClusters,
             shortCaches,
+            modelsMenu,
             (...values) => Object.assign({}, ...values)
         );
     }
