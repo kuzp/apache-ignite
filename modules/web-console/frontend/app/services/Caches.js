@@ -121,6 +121,39 @@ export default class Caches {
             return (cache.memoryMode || this.memoryMode.default) === 'ONHEAP_TIERED'
                 && cache.offHeapMaxMemory > 0
                 && !cache.evictionPolicy.kind;
+        },
+        values: [
+            {value: 'LRU', label: 'LRU'},
+            {value: 'FIFO', label: 'FIFO'},
+            {value: 'SORTED', label: 'Sorted'},
+            {value: null, label: 'Not set'}
+        ],
+        kind: {
+            default: 'Not set'
+        },
+        maxMemorySize: {
+            min: (evictionPolicy) => {
+                const policy = evictionPolicy[evictionPolicy.kind];
+                if (!policy) return true;
+                const maxSize = policy.maxSize === null || policy.maxSize === void 0
+                    ? this.evictionPolicy.maxSize.default
+                    : policy.maxSize;
+
+                return maxSize ? 0 : 1;
+            },
+            default: 0
+        },
+        maxSize: {
+            min: (evictionPolicy) => {
+                const policy = evictionPolicy[evictionPolicy.kind];
+                if (!policy) return true;
+                const maxMemorySize = policy.maxMemorySize === null || policy.maxMemorySize === void 0
+                    ? this.evictionPolicy.maxMemorySize.default
+                    : policy.maxMemorySize;
+
+                return maxMemorySize ? 0 : 1;
+            },
+            default: 100000
         }
     };
 }

@@ -419,8 +419,8 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             // if (item.memoryMode === 'OFFHEAP_TIERED' && item.offHeapMaxMemory === -1)
             //     return ErrorPopover.show('offHeapModeInput', 'Invalid value!', $scope.ui, 'memory');
 
-            if (!checkEvictionPolicy(item.evictionPolicy))
-                return false;
+            // if (!checkEvictionPolicy(item.evictionPolicy))
+            //     return false;
 
             if (!checkSQLSchemas())
                 return false;
