@@ -85,7 +85,7 @@ include /app/helpers/jade/mixins
                         label: 'Off-heap memory:',
                         model: `${model}.offHeapMode`,
                         name: '"offHeapMode"',
-                        required: `{{$ctrl.Caches.offHeapMode.required(${model})}}`,
+                        required: `$ctrl.Caches.offHeapMode.required(${model})`,
                         placeholder: '{{::$ctrl.Caches.offHeapMode.default}}',
                         options: '{{::$ctrl.Caches.offHeapModes}}',
                         tip: `Off-heap storage mode
