@@ -377,16 +377,16 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         function checkStoreFactory(item) {
             const cacheStoreFactorySelected = item.cacheStoreFactory && item.cacheStoreFactory.kind;
 
-            if (cacheStoreFactorySelected) {
-                const storeFactory = item.cacheStoreFactory[item.cacheStoreFactory.kind];
+            // if (cacheStoreFactorySelected) {
+            //     const storeFactory = item.cacheStoreFactory[item.cacheStoreFactory.kind];
 
-                if (item.cacheStoreFactory.kind === 'CacheJdbcPojoStoreFactory' && !checkStoreFactoryBean(storeFactory, 'pojoDataSourceBean'))
-                    return false;
+            //     if (item.cacheStoreFactory.kind === 'CacheJdbcPojoStoreFactory' && !checkStoreFactoryBean(storeFactory, 'pojoDataSourceBean'))
+            //         return false;
 
-                if (item.cacheStoreFactory.kind === 'CacheJdbcBlobStoreFactory' && storeFactory.connectVia !== 'URL'
-                    && !checkStoreFactoryBean(storeFactory, 'blobDataSourceBean'))
-                    return false;
-            }
+            //     if (item.cacheStoreFactory.kind === 'CacheJdbcBlobStoreFactory' && storeFactory.connectVia !== 'URL'
+            //         && !checkStoreFactoryBean(storeFactory, 'blobDataSourceBean'))
+            //         return false;
+            // }
 
             if ((item.readThrough || item.writeThrough) && !cacheStoreFactorySelected)
                 return ErrorPopover.show('cacheStoreFactoryInput', (item.readThrough ? 'Read' : 'Write') + ' through are enabled but store is not configured!', $scope.ui, 'store');
