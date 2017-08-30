@@ -362,16 +362,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         && fromState.name !== 'base.configuration.tabs.advanced.caches'
                     ) {
                         return caches.then((caches) => {
-                            return caches.length
-                                ? {
+                            if (caches.length) {
+                                return {
                                     state: cacheStateName,
                                     params: {
                                         cacheID: caches[0]._id,
                                         selectedCaches: [caches[0]._id],
                                         clusterID: $transition$.params().clusterID
                                     }
-                                }
-                                : toState;
+                                };
+                            }
                         });
                     }
                     if (params.cacheID && !params.selectedCaches.length) {
