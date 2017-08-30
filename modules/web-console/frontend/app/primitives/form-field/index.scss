@@ -28,6 +28,15 @@
 
         &.radio--ignite {
             width: auto;
+
+        }
+
+        &.ignite-form-field-dropdown {
+            .ignite-form-field__control button {
+                display: inline-block;
+                overflow: hidden !important;
+                text-overflow: ellipsis;
+            }
         }
 
         [ignite-icon='info'], .tipLabel {
