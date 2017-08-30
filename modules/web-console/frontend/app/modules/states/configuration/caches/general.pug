@@ -48,9 +48,16 @@ include /app/helpers/jade/mixins
                         'Cache group name.<br/>\
                         Caches with the same group name share single underlying "physical" cache (partition set), but are logically isolated.')
                 .pc-form-grid-col-30
-                    +dropdown-multiple('Domain models:',
-                        `${model}.domains`, '"domains"', true, 'Choose domain models', 'No valid domain models configured', 'domains',
-                        'Select domain models to describe types in cache')
+                    +sane-ignite-form-field-dropdown({
+                        label: 'Domain models:',
+                        model: `${model}.domains`,
+                        name: '"domains"',
+                        multiple: true,
+                        placeholder: 'Choose domain models',
+                        placeholderEmpty: 'No valid domain models configured',
+                        options: '$ctrl.modelsMenu',
+                        tip: 'Select domain models to describe types in cache'
+                    })
                 .pc-form-grid-col-30
                     +cacheMode('Mode:', `${model}.cacheMode`, '"cacheMode"', 'PARTITIONED')
 
