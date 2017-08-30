@@ -79,8 +79,11 @@ export default class Caches {
     ];
 
     offHeapMode = {
+        _val(cache) {
+            return (cache.offHeapMode === null || cache.offHeapMode === void 0) ? -1 : cache.offHeapMode;
+        },
         onChange: (cache) => {
-            const offHeapMode = (cache.offHeapMode === null || cache.offHeapMode === void 0) ? -1 : cache.offHeapMode;
+            const offHeapMode = this.offHeapMode._val(cache);
             console.debug(`Value: ${offHeapMode}, offHeapMaxMemory: ${cache.offHeapMaxMemory}`);
             switch (offHeapMode) {
                 case 1:
@@ -92,6 +95,7 @@ export default class Caches {
             }
         },
         required: (cache) => cache.memoryMode === 'OFFHEAP_TIERED',
+        offheapDisabled: (cache) => !(cache.memoryMode === 'OFFHEAP_TIERED' && this.offHeapMode._val(cache) === -1),
         default: 'Disabled'
     };
 

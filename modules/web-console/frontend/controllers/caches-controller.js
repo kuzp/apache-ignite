@@ -416,8 +416,8 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             // if (item.memoryMode === 'OFFHEAP_VALUES' && !_.isEmpty(item.domains))
             //     return ErrorPopover.show('memoryModeInput', 'Query indexing could not be enabled while values are stored off-heap!', $scope.ui, 'memory');
 
-            if (item.memoryMode === 'OFFHEAP_TIERED' && item.offHeapMaxMemory === -1)
-                return ErrorPopover.show('offHeapModeInput', 'Invalid value!', $scope.ui, 'memory');
+            // if (item.memoryMode === 'OFFHEAP_TIERED' && item.offHeapMaxMemory === -1)
+            //     return ErrorPopover.show('offHeapModeInput', 'Invalid value!', $scope.ui, 'memory');
 
             if (!checkEvictionPolicy(item.evictionPolicy))
                 return false;
