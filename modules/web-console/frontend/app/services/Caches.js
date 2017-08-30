@@ -106,7 +106,10 @@ export default class Caches {
     };
 
     memoryMode = {
-        default: 'ONHEAP_TIERED'
+        default: 'ONHEAP_TIERED',
+        offheapAndDomains: (cache) => {
+            return !(cache.memoryMode === 'OFFHEAP_VALUES' && cache.domains.length);
+        }
     };
 
     evictionPolicy = {
