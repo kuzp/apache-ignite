@@ -19,6 +19,7 @@ mixin ignite-form-field-dropdown(label, model, name, disabled, required, multipl
         -var errLbl = label.substring(0, label.length - 1)
 
         button.select-toggle.form-control(
+            type='button'
             id=`{{ ${name} }}Input`
             name=`{{ ${name} }}`
 
