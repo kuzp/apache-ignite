@@ -56,6 +56,6 @@ mixin ignite-form-field-dropdown(label, model, name, disabled, required, multipl
                 +form-field-feedback(name, 'required', multiple ? 'At least one option should be selected' : 'An option should be selected')
 
 mixin sane-ignite-form-field-dropdown({label, model, name, disabled = false, required = false, multiple = false, placeholder, placeholderEmpty, options, tip})
-    +ignite-form-field-dropdown(label, model, name, disabled = false, required = false, multiple = false, placeholder, placeholderEmpty, options, tip)&attributes(attributes)
+    +ignite-form-field-dropdown(label, model, name, disabled, required, multiple, placeholder, placeholderEmpty, options, tip)&attributes(attributes)
         if block
             block
