@@ -715,6 +715,14 @@ public class GridDhtPartitionDemander {
                         if (log.isDebugEnabled())
                             log.debug("Skipping rebalancing partition (state is not MOVING): " + part);
                     }
+
+                    try {
+                        if (grp.offheap().dataStore(part).fullSize() != e.getValue().infos().size())
+                            System.err.println("");
+                    }
+                    catch (Exception ex) {
+                        System.err.println("");
+                    }
                 }
                 else {
                     fut.partitionDone(id, p);
@@ -723,6 +731,7 @@ public class GridDhtPartitionDemander {
                         log.debug("Skipping rebalancing partition (it does not belong on current node): " + p);
                 }
             }
+
 
             // Only request partitions based on latest topology version.
             for (Integer miss : supply.missed()) {

@@ -84,6 +84,7 @@ public abstract class IgniteDbAbstractTest extends GridCommonAbstractTest {
             ccfg.setIndexedTypes(Integer.class, DbValue.class);
 
         ccfg.setAtomicityMode(TRANSACTIONAL);
+        ccfg.setGroupName("group1");
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
         ccfg.setRebalanceMode(SYNC);
         ccfg.setAffinity(new RendezvousAffinityFunction(false, 32));
@@ -164,12 +165,6 @@ public abstract class IgniteDbAbstractTest extends GridCommonAbstractTest {
     /** {@inheritDoc} */
     @Override protected void beforeTest() throws Exception {
         deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "db", false));
-
-//        long seed = System.currentTimeMillis();
-//
-//        info("Seed: " + seed + "L");
-//
-//        BPlusTree.rnd = new Random(seed);
 
         startGrids(gridCount());
 

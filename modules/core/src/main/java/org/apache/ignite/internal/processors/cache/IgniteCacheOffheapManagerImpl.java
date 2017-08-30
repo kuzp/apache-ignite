@@ -1073,6 +1073,13 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             this.name = name;
             this.rowStore = rowStore;
             this.dataTree = dataTree;
+
+            try {
+                System.err.println("CnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+            }
+            catch (IgniteCheckedException e) {
+                e.printStackTrace();
+            }
         }
 
         /**
@@ -1080,6 +1087,13 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
          */
         void incrementSize(int cacheId) {
             storageSize.incrementAndGet();
+
+            try {
+                System.err.println("+nodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+            }
+            catch (IgniteCheckedException e) {
+                e.printStackTrace();
+            }
 
             if (grp.sharedGroup()) {
                 AtomicLong size = cacheSizes.get(cacheId);
@@ -1099,7 +1113,17 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
          * @param cacheId Cache ID.
          */
         void decrementSize(int cacheId) {
-            storageSize.decrementAndGet();
+            long s = storageSize.decrementAndGet();
+
+            try {
+                System.err.println("DnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+            }
+            catch (IgniteCheckedException e) {
+                e.printStackTrace();
+            }
+
+            if (s < 0)
+            assert s >= 0;
 
             if (grp.sharedGroup()) {
                 AtomicLong size = cacheSizes.get(cacheId);
@@ -1124,7 +1148,11 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 return size != null ? (int)size.get() : 0;
             }
 
-            return (int)storageSize.get();
+            int i = (int)storageSize.get();
+
+            assert i >= 0;
+
+            return i;
         }
 
         /** {@inheritDoc} */
@@ -1142,7 +1170,11 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
         /** {@inheritDoc} */
         @Override public int fullSize() {
-            return (int)storageSize.get();
+            int size = (int)storageSize.get();
+
+            assert size >= 0;
+
+            return size;
         }
 
         /** {@inheritDoc} */
@@ -1234,6 +1266,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                     default:
                         assert false : c.operationType();
                 }
+
+                assert storageSize.get() == dataTree.size();
             }
             finally {
                 busyLock.leaveBusy();
@@ -1323,6 +1357,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 }
 
                 finishUpdate(cctx, dataRow, old);
+
+                assert storageSize.get() == dataTree.size();
             }
             finally {
                 busyLock.leaveBusy();
@@ -1420,9 +1456,16 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             try {
                 int cacheId = grp.sharedGroup() ? cctx.cacheId() : UNDEFINED_CACHE_ID;
 
+                long size = dataTree.size();
+                long old = storageSize.get();
+
                 CacheDataRow oldRow = dataTree.remove(new SearchRow(cacheId, key));
 
                 finishRemove(cctx, key, oldRow);
+
+                assert storageSize.get() == dataTree.size();
+
+                System.out.println(size);
             }
             finally {
                 busyLock.leaveBusy();
@@ -1572,6 +1615,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                     rowStore.removeRow(row.link());
 
                     decrementSize(cacheId);
+
+                    assert storageSize.get() == dataTree.size();
                 }
                 catch (IgniteCheckedException e) {
                     U.error(log, "Fail remove row [link=" + row.link() + "]");
@@ -1614,8 +1659,20 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
         /** {@inheritDoc} */
         @Override public void init(long size, long updCntr, @Nullable Map<Integer, Long> cacheSizes) {
+            assert size >= 0;
+
             initCntr = updCntr;
             storageSize.set(size);
+
+            try {
+                System.err.println("InodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get()+ ", dataTree.size = " + dataTree.size());
+
+                if (size != dataTree.size())
+                    System.err.println("");
+            }
+            catch (IgniteCheckedException e) {
+                e.printStackTrace();
+            }
             cntr.set(updCntr);
 
             if (cacheSizes != null) {
