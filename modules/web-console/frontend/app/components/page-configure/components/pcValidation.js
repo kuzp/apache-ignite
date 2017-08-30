@@ -82,4 +82,20 @@ export default angular.module('ignite-console.page-configure.validation', [])
             restrict: 'C',
             controller: Controller
         };
-    });
+    })
+    .directive('isValidJavaIdentifier', ['IgniteLegacyUtils', function(LegacyUtils) {
+        return {
+            link(scope, el, attr, ngModel) {
+                ngModel.$validators.isValidJavaIdentifier = (value) => LegacyUtils.VALID_JAVA_IDENTIFIER.test(value);
+            },
+            require: 'ngModel'
+        };
+    }])
+    .directive('notJavaReservedWord', ['IgniteLegacyUtils', function(LegacyUtils) {
+        return {
+            link(scope, el, attr, ngModel) {
+                ngModel.$validators.notJavaReservedWord = (value) => !LegacyUtils.JAVA_KEYWORDS.includes(value);
+            },
+            require: 'ngModel'
+        };
+    }]);
