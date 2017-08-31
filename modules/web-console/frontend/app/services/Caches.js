@@ -43,6 +43,10 @@ export default class Caches {
         return this.$http.get(`/api/v1/configuration/caches/${cacheID}`);
     }
 
+    removeCache(cacheID) {
+        return this.$http.post(`/api/v1/configuration/caches/remove/${cacheID}`);
+    }
+
     getBlankCache() {
         return {
             _id: ObjectID.generate(),

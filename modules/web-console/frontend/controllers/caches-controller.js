@@ -112,12 +112,14 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                 },
                 {
                     action: 'Delete',
-                    click: () => selectedItems.length === this.cachesTable.length
-                        ? $scope.removeAllItems()
-                        : $scope.removeItem(selectedItems[0]),
+                    click: () => this.remove(selectedItems),
                     available: true
                 }
             ];
+        };
+
+        this.remove = function(items) {
+            this.pageService.remove(items, this.originalCluster);
         };
 
         this.selectionHook = function(selected) {
@@ -264,54 +266,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         // Clone cache with new name.
         this.clone = function(items) {
             this.pageService.clone(items);
-        };
-
-        // Remove cache from db.
-        $scope.removeItem = (selectedItem) => {
-            Confirm.confirm('Are you sure you want to remove cache: "' + selectedItem.name + '"?')
-                .then(() => {
-                    const _id = selectedItem._id;
-
-                    $http.post('/api/v1/configuration/caches/remove', {_id})
-                        .then(() => {
-                            Messages.showInfo('Cache has been removed: ' + selectedItem.name);
-
-                            const caches = $scope.caches;
-
-                            const idx = _.findIndex(caches, function(cache) {
-                                return cache._id === _id;
-                            });
-
-                            if (idx >= 0) {
-                                caches.splice(idx, 1);
-
-                                $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
-
-
-                                _.forEach($scope.clusters, (cluster) => _.remove(cluster.caches, (id) => id === _id));
-                                _.forEach($scope.domains, (domain) => _.remove(domain.meta.caches, (id) => id === _id));
-                            }
-                        })
-                        .catch(Messages.showError);
-                });
-        };
-
-        // Remove all caches from db.
-        $scope.removeAllItems = () => {
-            Confirm.confirm('Are you sure you want to remove all caches?')
-                .then(() => {
-                    $http.post('/api/v1/configuration/caches/remove/all')
-                        .then(() => {
-                            Messages.showInfo('All caches have been removed');
-
-                            $scope.caches = [];
-
-                            _.forEach($scope.clusters, (cluster) => cluster.caches = []);
-                            _.forEach($scope.domains, (domain) => domain.meta.caches = []);
-
-                        })
-                        .catch(Messages.showError);
-                });
         };
 
         $scope.resetAll = function() {

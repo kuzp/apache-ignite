@@ -4,10 +4,10 @@ import {combineLatest} from 'rxjs/observable/combineLatest';
 import {empty} from 'rxjs/observable/empty';
 
 export default class PageConfigureAdvancedCachesService {
-    static $inject = ['ConfigureState', '$state', 'Caches', 'Clusters'];
+    static $inject = ['ConfigureState', '$state', 'Caches', 'Clusters', 'IgniteConfirm'];
 
-    constructor(ConfigureState, $state, Caches, Clusters) {
-        Object.assign(this, {ConfigureState, $state, Caches, Clusters});
+    constructor(ConfigureState, $state, Caches, Clusters, IgniteConfirm) {
+        Object.assign(this, {ConfigureState, $state, Caches, Clusters, IgniteConfirm});
     }
 
     save(item, cluster) {
@@ -23,6 +23,29 @@ export default class PageConfigureAdvancedCachesService {
 
     clone(items = []) {
 
+    }
+
+    remove(items = [], cluster) {
+        return this.ConfigureState.state$
+            .pluck('shortCaches')
+            .take(1)
+            .map((shortCaches) => items.map((id) => shortCaches.get(id)))
+            .switchMap((shortCaches) => {
+                const names = `<p><ul>${shortCaches.map((c) => `<li>${c.name}</li>`).join('')}</ul></p>`;
+                return this.IgniteConfirm.confirm(`Are you sure want to remove these caches? ${names}`);
+            })
+            .catch(() => {})
+            .do(() => {
+                this.ConfigureState.dispatchAction({
+                    type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+                    cluster,
+                    caches: {
+                        ids: cluster.caches.filter((id) => !items.includes(id)),
+                        changedItems: []
+                    }
+                });
+            })
+            .subscribe();
     }
 
     getObservable() {
