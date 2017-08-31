@@ -400,46 +400,11 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             return true;
         }
 
-        // Check cache logical consistency.
-        function validate(item) {
-            ErrorPopover.hide();
-
-            // if (LegacyUtils.isEmptyString(item.name))
-            //     return ErrorPopover.show('cacheNameInput', 'Cache name should not be empty!', $scope.ui, 'general');
-
-            // if (item.memoryMode === 'ONHEAP_TIERED' && item.offHeapMaxMemory > 0 && !LegacyUtils.isDefined(item.evictionPolicy.kind))
-            //     return ErrorPopover.show('evictionPolicyKindInput', 'Eviction policy should be configured!', $scope.ui, 'memory');
-
-            // if (!LegacyUtils.checkFieldValidators($scope.ui))
-            //     return false;
-
-            // if (item.memoryMode === 'OFFHEAP_VALUES' && !_.isEmpty(item.domains))
-            //     return ErrorPopover.show('memoryModeInput', 'Query indexing could not be enabled while values are stored off-heap!', $scope.ui, 'memory');
-
-            // if (item.memoryMode === 'OFFHEAP_TIERED' && item.offHeapMaxMemory === -1)
-            //     return ErrorPopover.show('offHeapModeInput', 'Invalid value!', $scope.ui, 'memory');
-
-            // if (!checkEvictionPolicy(item.evictionPolicy))
-            //     return false;
-
-            // if (!checkSQLSchemas())
-            //     return false;
-
-            // if (!checkStoreFactory(item))
-            //     return false;
-
-            // if (item.writeBehindFlushSize === 0 && item.writeBehindFlushFrequency === 0)
-            //     return ErrorPopover.show('writeBehindFlushSizeInput', 'Both "Flush frequency" and "Flush size" are not allowed as 0!', $scope.ui, 'store');
-
-            return true;
-        }
-
         // Save cache in database.
 
         this.save = function(item) {
             // _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
             this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-            if (!validate(item)) return;
             if (this.$scope.ui.inputForm.$valid) this.pageService.save(item, this.originalCluster);
         };
 
