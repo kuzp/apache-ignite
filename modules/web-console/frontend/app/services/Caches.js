@@ -156,4 +156,30 @@ export default class Caches {
             default: 100000
         }
     };
+
+    cacheStoreFactory = {
+        kind: {
+            default: 'Not set'
+        },
+        values: [
+            {value: 'CacheJdbcPojoStoreFactory', label: 'JDBC POJO store factory'},
+            {value: 'CacheJdbcBlobStoreFactory', label: 'JDBC BLOB store factory'},
+            {value: 'CacheHibernateBlobStoreFactory', label: 'Hibernate BLOB store factory'},
+            {value: null, label: 'Not set'}
+        ],
+        storeDisabledValueOff: (cache, value) => {
+            return cache.cacheStoreFactory.kind ? true : !value;
+        },
+        storeEnabledReadOrWriteOn: (cache) => {
+            return cache.cacheStoreFactory.kind ? (cache.readThrough || cache.writeThrough) : true;
+        }
+    };
+
+    writeBehindFlush = {
+        min: (cache) => {
+            return cache.writeBehindFlushSize === 0 && cache.writeBehindFlushFrequency === 0
+                ? 1
+                : 0;
+        }
+    };
 }

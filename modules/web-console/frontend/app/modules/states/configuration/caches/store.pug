@@ -55,22 +55,32 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                 -var storeFactory = `${model}.cacheStoreFactory`;
                 -var storeFactoryKind = `${storeFactory}.kind`;
                 .pc-form-grid-col-60
-                    +dropdown('Store factory:', storeFactoryKind, '"cacheStoreFactory"', 'true', 'Not set',
-                        '[\
-                            {value: "CacheJdbcPojoStoreFactory", label: "JDBC POJO store factory"},\
-                            {value: "CacheJdbcBlobStoreFactory", label: "JDBC BLOB store factory"},\
-                            {value: "CacheHibernateBlobStoreFactory", label: "Hibernate BLOB store factory"},\
-                            {value: null, label: "Not set"}\
-                        ]',
-                        'Factory for persistent storage for cache data\
-                        <ul>\
-                            <li>JDBC POJO store factory - Objects are stored in underlying database by using java beans mapping description via reflection backed by JDBC</li>\
-                            <li>JDBC BLOB store factory - Objects are stored in underlying database in BLOB format backed by JDBC</li>\
-                            <li>Hibernate BLOB store factory - Objects are stored in underlying database in BLOB format backed by Hibernate</li>\
-                        </ul>'
+                    +sane-ignite-form-field-dropdown({
+                        label: 'Store factory:',
+                        model: storeFactoryKind,
+                        name: '"cacheStoreFactory"',
+                        placeholder: '{{ ::$ctrl.Caches.cacheStoreFactory.kind.default }}',
+                        options: '::$ctrl.Caches.cacheStoreFactory.values',
+                        tip: `Factory for persistent storage for cache data
+                        <ul>
+                            <li>JDBC POJO store factory - Objects are stored in underlying database by using java beans mapping description via reflection backed by JDBC</li>
+                            <li>JDBC BLOB store factory - Objects are stored in underlying database in BLOB format backed by JDBC</li>
+                            <li>Hibernate BLOB store factory - Objects are stored in underlying database in BLOB format backed by Hibernate</li>
+                        </ul>`
+                    })(
+                        ui-validate=`{
+                            writeThroughOn: '$ctrl.Caches.cacheStoreFactory.storeDisabledValueOff(${model}, ${model}.writeThrough)',
+                            readThroughOn: '$ctrl.Caches.cacheStoreFactory.storeDisabledValueOff(${model}, ${model}.readThrough)',
+                            writeBehindOn: '$ctrl.Caches.cacheStoreFactory.storeDisabledValueOff(${model}, ${model}.writeBehindEnabled)'
+                        }`
+                        ui-validate-watch-collection=`"[${model}.readThrough, ${model}.writeThrough, ${model}.writeBehindEnabled]"`
+                        ng-model-options='{allowInvalid: true}'
                     )
-                .pc-form-group(ng-show=storeFactoryKind)
-                    .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`)
+                        +form-field-feedback(null, 'writeThroughOn', 'Write through is enabled but store is not set')
+                        +form-field-feedback(null, 'readThroughOn', 'Read through is enabled but store is not set')
+                        +form-field-feedback(null, 'writeBehindOn', 'Write-behind is enabled but store is not set')
+                .pc-form-group(ng-if=storeFactoryKind)
+                    .pc-form-grid-row(ng-if=`${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`)
                         -var pojoStoreFactory = `${storeFactory}.CacheJdbcPojoStoreFactory`
                         -var required = `${storeFactoryKind} === 'CacheJdbcPojoStoreFactory'`
 
@@ -116,7 +126,7 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                                 'If enabled than all schema, table and field names will be escaped with double quotes (for example: "tableName"."fieldName").<br/>\
                                 This enforces case sensitivity for field names and also allows having special characters in table and field names.<br/>\
                                 Escaped names will be used for CacheJdbcPojoStore internal SQL queries.')
-                    .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheJdbcBlobStoreFactory'`)
+                    .pc-form-grid-row(ng-if=`${storeFactoryKind} === 'CacheJdbcBlobStoreFactory'`)
                         -var blobStoreFactory = `${storeFactory}.CacheJdbcBlobStoreFactory`
                         -var blobStoreFactoryVia = `${blobStoreFactory}.connectVia`
 
@@ -186,7 +196,7 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                                 'Query for delete entry from underlying database<br/>\
                                 Default value: delete from ENTRIES where key=?')
 
-                    .pc-form-grid-row(ng-show=`${storeFactoryKind} === 'CacheHibernateBlobStoreFactory'`)
+                    .pc-form-grid-row(ng-if=`${storeFactoryKind} === 'CacheHibernateBlobStoreFactory'`)
                         -var hibernateStoreFactory = `${storeFactory}.CacheHibernateBlobStoreFactory`
 
                         .pc-form-grid-col-60
@@ -220,29 +230,77 @@ mixin hibernateField(name, model, items, valid, save, newItem)
                             <li> IgniteCache.getAndPutIfAbsent()</li>\
                         </ul>')
                 .pc-form-grid-col-60
-                    +checkbox('Read-through', `${model}.readThrough`, '"readThrough"', 'Flag indicating whether read-through caching should be used')
+                    +sane-form-field-checkbox({
+                        label: 'Read-through',
+                        model: `${model}.readThrough`,
+                        name: '"readThrough"',
+                        tip: 'Flag indicating whether read-through caching should be used'
+                    })(
+                        ng-model-options='{allowInvalid: true}'
+                        ui-validate=`{
+                            storeEnabledReadOrWriteOn: '$ctrl.Caches.cacheStoreFactory.storeEnabledReadOrWriteOn(${model})'
+                        }`
+                        ui-validate-watch-collection=`"[${storeFactoryKind}, ${model}.writeThrough, ${model}.readThrough]"`
+                    )
+                        +form-field-feedback(0, 'storeEnabledReadOrWriteOn', 'Read or write through should be turned on when store kind is set')
                 .pc-form-grid-col-60
-                    +checkbox('Write-through', `${model}.writeThrough`, '"writeThrough"', 'Flag indicating whether write-through caching should be used')
+                    +sane-form-field-checkbox({
+                        label: 'Write-through',
+                        model: `${model}.writeThrough`,
+                        name: '"writeThrough"',
+                        tip: 'Flag indicating whether write-through caching should be used'
+                    })(
+                        ng-model-options='{allowInvalid: true}'
+                        ui-validate=`{
+                            storeEnabledReadOrWriteOn: '$ctrl.Caches.cacheStoreFactory.storeEnabledReadOrWriteOn(${model})'
+                        }`
+                        ui-validate-watch-collection=`"[${storeFactoryKind}, ${model}.writeThrough, ${model}.readThrough]"`
+                    )
+                        +form-field-feedback(0, 'storeEnabledReadOrWriteOn', 'Read or write through should be turned on when store kind is set')
 
                 -var enabled = `${model}.writeBehindEnabled`
 
                 .pc-form-grid-col-60
-                    +checkbox('Write-behind', enabled, '"writeBehindEnabled"', `
-                        Cache write-behind settings.<br>
-                        Write-behind is a special mode when updates to cache accumulated and then asynchronously flushed to persistent store as a bulk operation.
-                    `)
+                    +sane-form-field-checkbox({
+                        label: 'Write-behind',
+                        model: enabled,
+                        name: '"writeBehindEnabled"',
+                        tip: `
+                            Cache write-behind settings.<br>
+                            Write-behind is a special mode when updates to cache accumulated and then asynchronously flushed to persistent store as a bulk operation.
+                        `
+                    })(
+                        ng-model-options='{allowInvalid: true}'
+                    )
+                        +form-field-feedback(0, 'storeDisabledValueOff', 'Write-behind is enabled but store kind is not set')
                 .pc-form-group.pc-form-group__text-title.pc-form-grid-row(ng-if=enabled)
                     .pc-form-grid-col-30
                         +number('Batch size:', `${model}.writeBehindBatchSize`, '"writeBehindBatchSize"', enabled, '512', '1',
                             'Maximum batch size for write-behind cache store operations<br/>\
                              Store operations(get or remove) are combined in a batch of this size to be passed to cache store')
                     .pc-form-grid-col-30
-                        +number('Flush size:', `${model}.writeBehindFlushSize`, '"writeBehindFlushSize"', enabled, '10240', '0',
-                            'Maximum size of the write-behind cache<br/>\
-                             If cache size exceeds this value, all cached items are flushed to the cache store and write cache is cleared')
+                        +sane-ignite-form-field-number({
+                            label: 'Flush size:',
+                            model: `${model}.writeBehindFlushSize`,
+                            name: '"writeBehindFlushSize"',
+                            placeholder: '10240',
+                            min: `{{ $ctrl.Caches.writeBehindFlush.min(${model}) }}`,
+                            tip: `Maximum size of the write-behind cache<br/>
+                             If cache size exceeds this value, all cached items are flushed to the cache store and write cache is cleared`
+                        })(
+                            ng-model-options='{allowInvalid: true}'
+                        )
                     .pc-form-grid-col-30
-                        +number('Flush frequency:', `${model}.writeBehindFlushFrequency`, '"writeBehindFlushFrequency"', enabled, '5000', '0',
-                            'Frequency with which write-behind cache is flushed to the cache store in milliseconds')
+                        +sane-ignite-form-field-number({
+                            label: 'Flush frequency:',
+                            model: `${model}.writeBehindFlushFrequency`,
+                            name: '"writeBehindFlushFrequency"',
+                            placeholder: '5000',
+                            min: `{{ $ctrl.Caches.writeBehindFlush.min(${model}) }}`,
+                            tip: `Frequency with which write-behind cache is flushed to the cache store in milliseconds`
+                        })(
+                            ng-model-options='{allowInvalid: true}'
+                        )
                     .pc-form-grid-col-30
                         +number('Flush threads count:', `${model}.writeBehindFlushThreadCount`, '"writeBehindFlushThreadCount"', enabled, '1', '1',
                             'Number of threads that will perform cache flushing')
