@@ -431,8 +431,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             if (item.writeBehindFlushSize === 0 && item.writeBehindFlushFrequency === 0)
                 return ErrorPopover.show('writeBehindFlushSizeInput', 'Both "Flush frequency" and "Flush size" are not allowed as 0!', $scope.ui, 'store');
 
-            if (item.nodeFilter && item.nodeFilter.kind === 'OnNodes' && _.isEmpty(item.nodeFilter.OnNodes.nodeIds))
-                return ErrorPopover.show('nodeFilter-title', 'At least one node ID should be specified!', $scope.ui, 'nodeFilter');
 
             return true;
         }
