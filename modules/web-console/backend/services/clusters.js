@@ -164,7 +164,7 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
                             if (oldCluster) {
                                 const ids = this.removedInCluster(oldCluster, cluster, 'caches');
 
-                                return _.isEmpty(ids) && cachesService.remove(ids);
+                                return cachesService.remove(ids);
                             }
 
                             cluster.caches = _.map(caches, '_id');

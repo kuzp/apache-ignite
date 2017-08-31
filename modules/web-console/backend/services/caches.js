@@ -178,6 +178,8 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
             if (_.isNil(ids))
                 return Promise.reject(new errors.IllegalArgumentException('Cache id can not be undefined or null'));
 
+            ids = _.castArray(ids);
+
             if (_.isEmpty(ids))
                 return Promise.resolve({rowsAffected: 0});
 
@@ -186,7 +188,7 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                 // TODO WC-201 fix cleanup of cache on deletion for cluster service configuration.
                 // .then(() => mongo.Cluster.update({'serviceConfigurations.cache': cacheId}, {$unset: {'serviceConfigurations.$.cache': ''}}, {multi: true}).exec())
                 .then(() => mongo.DomainModel.update({caches: {$in: [ids]}}, {$pull: {caches: ids}}, {multi: true}).exec())
-                .then(() => mongo.Cache.remove({_id: {$in: _.castArray(ids)}}).exec())
+                .then(() => mongo.Cache.remove({_id: {$in: ids}}).exec())
                 .then(convertRemoveStatus);
         }
 
