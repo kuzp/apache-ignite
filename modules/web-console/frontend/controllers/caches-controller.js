@@ -170,20 +170,9 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         // UnsavedChangesGuard.install($scope);
 
-
-
-
-        // We need to initialize backupItem with empty object in order to properly used from angular directives.
-        // $scope.backupItem = emptyCache;
-
         $scope.ui = FormUtils.formUI();
         $scope.ui.activePanels = [0];
         $scope.ui.topPanels = [0, 1, 2, 3];
-
-        $scope.offHeapMode = 'DISABLED';
-
-        $scope.caches = [];
-        $scope.domains = [];
 
         function cacheDomains(item) {
             return _.reduce($scope.domains, function(memo, domain) {
@@ -193,22 +182,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
                 return memo;
             }, []);
         }
-
-        const setOffHeapMode = (item) => {
-            if (_.isNil(item.offHeapMaxMemory))
-                return;
-
-            return item.offHeapMode = Math.sign(item.offHeapMaxMemory);
-        };
-
-        const setOffHeapMaxMemory = (value) => {
-            const item = $scope.backupItem;
-
-            if (_.isNil(value) || value <= 0)
-                return item.offHeapMaxMemory = value;
-
-            item.offHeapMaxMemory = item.offHeapMaxMemory > 0 ? item.offHeapMaxMemory : null;
-        };
 
         // Loading.start('loadingCachesScreen');
 
@@ -275,130 +248,6 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         //         Loading.finish('loadingCachesScreen');
         //     });
-
-        $scope.selectItem = (item) => {
-            // $timeout(() => FormUtils.ensureActivePanel($scope.ui, 'general', 'cacheNameInput'));
-
-            // if (item && !_.get(item.cacheStoreFactory.CacheJdbcBlobStoreFactory, 'connectVia'))
-            //     _.set(item.cacheStoreFactory, 'CacheJdbcBlobStoreFactory.connectVia', 'DataSource');
-
-            // setOffHeapMode($scope.backupItem);
-            // filterModel();
-        };
-
-        function cacheClusters() {
-            return _.filter($scope.clusters, (cluster) => _.includes($scope.backupItem.clusters, cluster.value));
-        }
-
-        function clusterCaches(cluster) {
-            const caches = _.filter($scope.caches,
-                (cache) => cache._id !== $scope.backupItem._id && _.includes(cluster.caches, cache._id));
-
-            caches.push($scope.backupItem);
-
-            return caches;
-        }
-
-        const _objToString = (type, name, prefix = '') => {
-            if (type === 'checkpoint')
-                return `${prefix} checkpoint configuration in cluster "${name}"`;
-            if (type === 'cluster')
-                return `${prefix} discovery IP finder in cluster "${name}"`;
-
-            return `${prefix} ${type} "${name}"`;
-        };
-
-        function checkDataSources() {
-            const clusters = cacheClusters();
-
-            let checkRes = {checked: true};
-
-            const failCluster = _.find(clusters, (cluster) => {
-                const caches = clusterCaches(cluster);
-
-                checkRes = LegacyUtils.checkDataSources(cluster, caches, $scope.backupItem);
-
-                return !checkRes.checked;
-            });
-
-            if (!checkRes.checked) {
-                return ErrorPopover.show(checkRes.firstObj.cacheStoreFactory.kind === 'CacheJdbcPojoStoreFactory' ? 'pojoDialectInput' : 'blobDialectInput',
-                    'Found ' + _objToString(checkRes.secondType, checkRes.secondObj.name || failCluster.label) + ' with the same data source bean name "' +
-                    checkRes.firstDs.dataSourceBean + '" and different database: "' +
-                    LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.firstDs.dialect) + '" in ' + _objToString(checkRes.firstType, checkRes.firstObj.name, 'current') + ' and "' +
-                    LegacyUtils.cacheStoreJdbcDialectsLabel(checkRes.secondDs.dialect) + '" in ' + _objToString(checkRes.secondType, checkRes.secondObj.name || failCluster.label),
-                    $scope.ui, 'store', 10000);
-            }
-
-            return true;
-        }
-
-        function checkEvictionPolicy(evictionPlc) {
-            if (evictionPlc && evictionPlc.kind) {
-                const plc = evictionPlc[evictionPlc.kind];
-
-                if (plc && !plc.maxMemorySize && !plc.maxSize)
-                    return ErrorPopover.show('evictionPolicymaxMemorySizeInput', 'Either maximum memory size or maximum size should be great than 0!', $scope.ui, 'memory');
-            }
-
-            return true;
-        }
-
-        function checkSQLSchemas() {
-            const clusters = cacheClusters();
-
-            let checkRes = {checked: true};
-
-            const failCluster = _.find(clusters, (cluster) => {
-                const caches = clusterCaches(cluster);
-
-                checkRes = LegacyUtils.checkCacheSQLSchemas(caches, $scope.backupItem);
-
-                return !checkRes.checked;
-            });
-
-            if (!checkRes.checked) {
-                return ErrorPopover.show('sqlSchemaInput',
-                    'Found cache "' + checkRes.secondCache.name + '" in cluster "' + failCluster.label + '" ' +
-                    'with the same SQL schema name "' + checkRes.firstCache.sqlSchema + '"',
-                    $scope.ui, 'query', 10000);
-            }
-
-            return true;
-        }
-
-        function checkStoreFactoryBean(storeFactory, beanFieldId) {
-            if (!LegacyUtils.isValidJavaIdentifier('Data source bean', storeFactory.dataSourceBean, beanFieldId, $scope.ui, 'store'))
-                return false;
-
-            return checkDataSources();
-        }
-
-        function checkStoreFactory(item) {
-            const cacheStoreFactorySelected = item.cacheStoreFactory && item.cacheStoreFactory.kind;
-
-            if (cacheStoreFactorySelected) {
-                const storeFactory = item.cacheStoreFactory[item.cacheStoreFactory.kind];
-
-                if (item.cacheStoreFactory.kind === 'CacheJdbcPojoStoreFactory' && !checkStoreFactoryBean(storeFactory, 'pojoDataSourceBean'))
-                    return false;
-
-                if (item.cacheStoreFactory.kind === 'CacheJdbcBlobStoreFactory' && storeFactory.connectVia !== 'URL'
-                    && !checkStoreFactoryBean(storeFactory, 'blobDataSourceBean'))
-                    return false;
-            }
-
-            if ((item.readThrough || item.writeThrough) && !cacheStoreFactorySelected)
-                return ErrorPopover.show('cacheStoreFactoryInput', (item.readThrough ? 'Read' : 'Write') + ' through are enabled but store is not configured!', $scope.ui, 'store');
-
-            if (item.writeBehindEnabled && !cacheStoreFactorySelected)
-                return ErrorPopover.show('cacheStoreFactoryInput', 'Write behind enabled but store is not configured!', $scope.ui, 'store');
-
-            if (cacheStoreFactorySelected && !item.readThrough && !item.writeThrough)
-                return ErrorPopover.show('readThroughLabel', 'Store is configured but read/write through are not enabled!', $scope.ui, 'store');
-
-            return true;
-        }
 
         // Save cache in database.
 
