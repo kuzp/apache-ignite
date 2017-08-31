@@ -183,11 +183,11 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
             if (_.isEmpty(ids))
                 return Promise.resolve({rowsAffected: 0});
 
-            return mongo.Cluster.update({caches: {$in: [ids]}}, {$pull: {caches: ids}}, {multi: true}).exec()
-                .then(() => mongo.Cluster.update({}, {$pull: {checkpointSpi: {kind: 'Cache', Cache: {cache: ids}}}}, {multi: true}).exec())
+            return mongo.Cluster.update({caches: {$in: ids}}, {$pull: {caches: {$in: ids}}}, {multi: true}).exec()
+                .then(() => mongo.Cluster.update({}, {$pull: {checkpointSpi: {kind: 'Cache', Cache: {cache: {$in: ids}}}}}, {multi: true}).exec())
                 // TODO WC-201 fix cleanup of cache on deletion for cluster service configuration.
                 // .then(() => mongo.Cluster.update({'serviceConfigurations.cache': cacheId}, {$unset: {'serviceConfigurations.$.cache': ''}}, {multi: true}).exec())
-                .then(() => mongo.DomainModel.update({caches: {$in: [ids]}}, {$pull: {caches: ids}}, {multi: true}).exec())
+                .then(() => mongo.DomainModel.update({caches: {$in: ids}}, {$pull: {caches: {$in: ids}}}, {multi: true}).exec())
                 .then(() => mongo.Cache.remove({_id: {$in: ids}}).exec())
                 .then(convertRemoveStatus);
         }

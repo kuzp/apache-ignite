@@ -131,16 +131,18 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
             if (_.isNil(ids))
                 return Promise.reject(new errors.IllegalArgumentException('IGFS id can not be undefined or null'));
 
+            ids = _.castArray(ids);
+
             if (_.isEmpty(ids))
                 return Promise.resolve({rowsAffected: 0});
 
-            return mongo.Cluster.update({igfss: {$in: [ids]}}, {$pull: {igfss: ids}}, {multi: true}).exec()
+            return mongo.Cluster.update({igfss: {$in: ids}}, {$pull: {igfss: {$in: ids}}}, {multi: true}).exec()
                 // TODO WC-201 fix cleanup on node filter on deletion for cluster serviceConfigurations and caches.
                 // .then(() => mongo.Cluster.update({ 'serviceConfigurations.$.nodeFilter.kind': { $ne: 'IGFS' }, 'serviceConfigurations.nodeFilter.IGFS.igfs': igfsId},
                 //     {$unset: {'serviceConfigurations.$.nodeFilter.IGFS.igfs': ''}}, {multi: true}).exec())
                 // .then(() => mongo.Cluster.update({ 'serviceConfigurations.nodeFilter.kind': 'IGFS', 'serviceConfigurations.nodeFilter.IGFS.igfs': igfsId},
                 //     {$unset: {'serviceConfigurations.$.nodeFilter': ''}}, {multi: true}).exec())
-                .then(() => mongo.Igfs.remove({_id: {$in: _.castArray(ids)}}).exec())
+                .then(() => mongo.Igfs.remove({_id: {$in: ids}}).exec())
                 .then(convertRemoveStatus);
         }
 
