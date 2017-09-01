@@ -1583,7 +1583,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     assert part != null;
 
                     // TODO: https://issues.apache.org/jira/browse/IGNITE-6097
-//                    grp.offheap().onPartitionInitialCounterUpdated(i, 0);
+                    grp.offheap().onPartitionInitialCounterUpdated(i, 0);
 
                     long partMetaId = pageMem.partitionMetaPageId(grpId, i);
                     long partMetaPage = pageMem.acquirePage(grpId, partMetaId);
