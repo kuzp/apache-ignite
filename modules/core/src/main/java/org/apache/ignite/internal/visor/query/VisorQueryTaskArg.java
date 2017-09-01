@@ -52,6 +52,9 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
     /** Result batch size. */
     private int pageSize;
 
+    /** Lazy query execution flag */
+    private boolean lazy;
+
     /**
      * Default constructor.
      */
@@ -67,9 +70,10 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
      * @param replicatedOnly {@code true} then query contains only replicated tables.
      * @param loc Flag whether to execute query locally.
      * @param pageSize Result batch size.
+     * @param lazy Lazy query execution flag.
      */
-    public VisorQueryTaskArg(String cacheName, String qryTxt,
-        boolean distributedJoins, boolean enforceJoinOrder, boolean replicatedOnly, boolean loc, int pageSize) {
+    public VisorQueryTaskArg(String cacheName, String qryTxt, boolean distributedJoins,
+        boolean enforceJoinOrder, boolean replicatedOnly, boolean loc, int pageSize, boolean lazy) {
         this.cacheName = cacheName;
         this.qryTxt = qryTxt;
         this.distributedJoins = distributedJoins;
@@ -77,6 +81,7 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
         this.replicatedOnly = replicatedOnly;
         this.loc = loc;
         this.pageSize = pageSize;
+        this.lazy = lazy;
     }
 
     /**
@@ -128,6 +133,20 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
         return pageSize;
     }
 
+    /**
+     * Lazy query execution flag.
+     *
+     * @return Lazy flag.
+     */
+    public boolean getLazy() {
+        return lazy;
+    }
+
+    /** {@inheritDoc} */
+    @Override public byte getProtocolVersion() {
+        return V2;
+    }
+
     /** {@inheritDoc} */
     @Override protected void writeExternalData(ObjectOutput out) throws IOException {
         U.writeString(out, cacheName);
@@ -136,6 +155,7 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
         out.writeBoolean(enforceJoinOrder);
         out.writeBoolean(loc);
         out.writeInt(pageSize);
+        out.writeBoolean(lazy);
     }
 
     /** {@inheritDoc} */
@@ -146,6 +166,9 @@ public class VisorQueryTaskArg extends VisorDataTransferObject {
         enforceJoinOrder = in.readBoolean();
         loc = in.readBoolean();
         pageSize = in.readInt();
+
+        if (protoVer == V2)
+            lazy = in.readBoolean();
     }
 
     /** {@inheritDoc} */
