@@ -25,7 +25,8 @@ import java.util.logging.Logger;
  * defines the implementation to load, defaulting to null. <p> <i>This requires 1D column-major linearized arrays, as
  * expected by the lower level routines; contrary to typical Java 2D row-major arrays.</i>
  */
-@SuppressWarnings("JavaDoc") public abstract class BlasOffHeap {
+@SuppressWarnings({"JavaDoc", "unused"})
+public abstract class BlasOffHeap {
     /** */
     private static final Logger log = Logger.getLogger(BlasOffHeap.class.getName());
     /** */
@@ -50,13 +51,15 @@ import java.util.logging.Logger;
                     break;
                 }
                 catch (Throwable e) {
-                    log.warning("Failed to load implementation from: " + className);
+                    log.warning("Failed to load implementation from: " + className
+                        + ", exception " + e + ", " + e.getMessage());
                 }
             }
             INSTANCE = impl;
             log.config("Implementation provided by " + (INSTANCE == null ? null : INSTANCE.getClass()));
         }
         catch (Throwable e) {
+            log.warning("Exception in initializer: " + e.getMessage());
             throw new ExceptionInInitializerError(e);
         }
     }
@@ -70,7 +73,10 @@ import java.util.logging.Logger;
         if (klass == null)
             return null;
 
-        BlasOffHeap res = (BlasOffHeap)klass.newInstance();
+        Object inst = klass.newInstance();
+        log.warning("Result object instance class is not null: " + (inst != null));
+
+        BlasOffHeap res = (BlasOffHeap)inst;
         log.warning("Result class instance class is not null: " + (res != null));
 
         return res;
@@ -128,11 +134,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @return
      */
-    abstract public double dasum(int n, long dx, int _dx_offset, int incx);
+    abstract public double dasum(int n, long dx, int _dx_off, int incx);
 
     /**
      * <pre><code>
@@ -178,13 +184,13 @@ import java.util.logging.Logger;
      * @param n
      * @param da
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      */
-    abstract public void daxpy(int n, double da, long dx, int _dx_offset, int incx, long dy, int _dy_offset,
+    abstract public void daxpy(int n, double da, long dx, int _dx_off, int incx, long dy, int _dy_off,
         int incy);
 
     /**
@@ -229,13 +235,13 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      */
-    abstract public void dcopy(int n, long dx, int _dx_offset, int incx, long dy, int _dy_offset, int incy);
+    abstract public void dcopy(int n, long dx, int _dx_off, int incx, long dy, int _dy_off, int incy);
 
     /**
      * <pre><code>
@@ -280,14 +286,14 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      * @return
      */
-    abstract public double ddot(int n, long dx, int _dx_offset, int incx, long dy, int _dy_offset, int incy);
+    abstract public double ddot(int n, long dx, int _dx_off, int incx, long dy, int _dy_off, int incy);
 
     /**
      * <pre><code>
@@ -559,18 +565,18 @@ import java.util.logging.Logger;
      * @param ku
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
     abstract public void dgbmv(java.lang.String trans, int m, int n, int kl, int ku, double alpha, long a,
-        int _a_offset, int lda, long x, int _x_offset, int incx, double beta, long y, int _y_offset, int incy);
+        int _a_off, int lda, long x, int _x_off, int incx, double beta, long y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -850,18 +856,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void dgemm(java.lang.String transa, java.lang.String transb, int m, int n, int k, double alpha,
-        long a, int _a_offset, int lda, long b, int _b_offset, int ldb, double beta, long c, int _c_offset,
+        long a, int _a_off, int lda, long b, int _b_off, int ldb, double beta, long c, int _c_off,
         int Ldc);
 
     /**
@@ -1080,18 +1086,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void dgemv(java.lang.String trans, int m, int n, double alpha, long a, int _a_offset, int lda,
-        long x, int _x_offset, int incx, double beta, long y, int _y_offset, int incy);
+    abstract public void dgemv(java.lang.String trans, int m, int n, double alpha, long a, int _a_off, int lda,
+        long x, int _x_off, int incx, double beta, long y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -1264,17 +1270,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void dger(int m, int n, double alpha, long x, int _x_offset, int incx, long y,
-        int _y_offset, int incy, long a, int _a_offset, int lda);
+    abstract public void dger(int m, int n, double alpha, long x, int _x_off, int incx, long y,
+        int _y_off, int incy, long a, int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -1327,11 +1333,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @return
      */
-    abstract public double dnrm2(int n, long x, int _x_offset, int incx);
+    abstract public double dnrm2(int n, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -1375,15 +1381,15 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      * @param c
      * @param s
      */
-    abstract public void drot(int n, long dx, int _dx_offset, int incx, long dy, int _dy_offset, int incy,
+    abstract public void drot(int n, long dx, int _dx_off, int incx, long dy, int _dy_off, int incy,
         double c, double s);
 
     /**
@@ -1525,16 +1531,16 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      * @param dparam
-     * @param _dparam_offset
+     * @param _dparam_off
      */
-    abstract public void drotm(int n, long dx, int _dx_offset, int incx, long dy, int _dy_offset, int incy,
-        long dparam, int _dparam_offset);
+    abstract public void drotm(int n, long dx, int _dx_off, int incx, long dy, int _dy_off, int incy,
+        long dparam, int _dparam_off);
 
     /**
      * <pre><code>
@@ -1648,10 +1654,10 @@ import java.util.logging.Logger;
      * @param dx1
      * @param dy1
      * @param dparam
-     * @param _dparam_offset
+     * @param _dparam_off
      */
     abstract public void drotmg(org.netlib.util.doubleW dd1, org.netlib.util.doubleW dd2, org.netlib.util.doubleW dx1,
-        double dy1, long dparam, int _dparam_offset);
+        double dy1, long dparam, int _dparam_off);
 
     /**
      * <pre><code>
@@ -1927,18 +1933,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void dsbmv(java.lang.String uplo, int n, int k, double alpha, long a, int _a_offset, int lda,
-        long x, int _x_offset, int incx, double beta, long y, int _y_offset, int incy);
+    abstract public void dsbmv(java.lang.String uplo, int n, int k, double alpha, long a, int _a_off, int lda,
+        long x, int _x_off, int incx, double beta, long y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -1984,10 +1990,10 @@ import java.util.logging.Logger;
      * @param n
      * @param da
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      */
-    abstract public void dscal(int n, double da, long dx, int _dx_offset, int incx);
+    abstract public void dscal(int n, double da, long dx, int _dx_off, int incx);
 
     /**
      * <pre><code>
@@ -2192,17 +2198,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void dspmv(java.lang.String uplo, int n, double alpha, long ap, int _ap_offset, long x,
-        int _x_offset, int incx, double beta, long y, int _y_offset, int incy);
+    abstract public void dspmv(java.lang.String uplo, int n, double alpha, long ap, int _ap_off, long x,
+        int _x_off, int incx, double beta, long y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -2377,13 +2383,13 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      */
-    abstract public void dspr(java.lang.String uplo, int n, double alpha, long x, int _x_offset, int incx,
-        long ap, int _ap_offset);
+    abstract public void dspr(java.lang.String uplo, int n, double alpha, long x, int _x_off, int incx,
+        long ap, int _ap_off);
 
     /**
      * <pre><code>
@@ -2583,16 +2589,16 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      */
-    abstract public void dspr2(java.lang.String uplo, int n, double alpha, long x, int _x_offset, int incx,
-        long y, int _y_offset, int incy, long ap, int _ap_offset);
+    abstract public void dspr2(java.lang.String uplo, int n, double alpha, long x, int _x_off, int incx,
+        long y, int _y_off, int incy, long ap, int _ap_off);
 
     /**
      * <pre><code>
@@ -2636,13 +2642,13 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @param dy
-     * @param _dy_offset
+     * @param _dy_off
      * @param incy
      */
-    abstract public void dswap(int n, long dx, int _dx_offset, int incx, long dy, int _dy_offset, int incy);
+    abstract public void dswap(int n, long dx, int _dx_off, int incx, long dy, int _dy_off, int incy);
 
     /**
      * <pre><code>
@@ -2928,18 +2934,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void dsymm(java.lang.String side, java.lang.String uplo, int m, int n, double alpha, long a,
-        int _a_offset, int lda, long b, int _b_offset, int ldb, double beta, long c, int _c_offset, int Ldc);
+        int _a_off, int lda, long b, int _b_off, int ldb, double beta, long c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -3151,18 +3157,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void dsymv(java.lang.String uplo, int n, double alpha, long a, int _a_offset, int lda,
-        long x, int _x_offset, int incx, double beta, long y, int _y_offset, int incy);
+    abstract public void dsymv(java.lang.String uplo, int n, double alpha, long a, int _a_off, int lda,
+        long x, int _x_off, int incx, double beta, long y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -3344,14 +3350,14 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void dsyr(java.lang.String uplo, int n, double alpha, long x, int _x_offset, int incx,
-        long a, int _a_offset, int lda);
+    abstract public void dsyr(java.lang.String uplo, int n, double alpha, long x, int _x_off, int incx,
+        long a, int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -3558,17 +3564,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void dsyr2(java.lang.String uplo, int n, double alpha, long x, int _x_offset, int incx,
-        long y, int _y_offset, int incy, long a, int _a_offset, int lda);
+    abstract public void dsyr2(java.lang.String uplo, int n, double alpha, long x, int _x_off, int incx,
+        long y, int _y_off, int incy, long a, int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -3860,18 +3866,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void dsyr2k(java.lang.String uplo, java.lang.String trans, int n, int k, double alpha, long a,
-        int _a_offset, int lda, long b, int _b_offset, int ldb, double beta, long c, int _c_offset, int Ldc);
+        int _a_off, int lda, long b, int _b_off, int ldb, double beta, long c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -4123,15 +4129,15 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void dsyrk(java.lang.String uplo, java.lang.String trans, int n, int k, double alpha, long a,
-        int _a_offset, int lda, double beta, long c, int _c_offset, int Ldc);
+        int _a_off, int lda, double beta, long c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -4422,14 +4428,14 @@ import java.util.logging.Logger;
      * @param n
      * @param k
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtbmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, int k,
-        long a, int _a_offset, int lda, long x, int _x_offset, int incx);
+        long a, int _a_off, int lda, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -4728,14 +4734,14 @@ import java.util.logging.Logger;
      * @param n
      * @param k
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtbsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, int k,
-        long a, int _a_offset, int lda, long x, int _x_offset, int incx);
+        long a, int _a_off, int lda, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -4943,13 +4949,13 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtpmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, long ap,
-        int _ap_offset, long x, int _x_offset, int incx);
+        int _ap_off, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -5163,13 +5169,13 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtpsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, long ap,
-        int _ap_offset, long x, int _x_offset, int incx);
+        int _ap_off, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -5440,15 +5446,15 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      */
     abstract public void dtrmm(java.lang.String side, java.lang.String uplo, java.lang.String transa,
-        java.lang.String diag, int m, int n, double alpha, long a, int _a_offset, int lda, long b,
-        int _b_offset, int ldb);
+        java.lang.String diag, int m, int n, double alpha, long a, int _a_off, int lda, long b,
+        int _b_off, int ldb);
 
     /**
      * <pre><code>
@@ -5663,14 +5669,14 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtrmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, long a,
-        int _a_offset, int lda, long x, int _x_offset, int incx);
+        int _a_off, int lda, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -5947,15 +5953,15 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      */
     abstract public void dtrsm(java.lang.String side, java.lang.String uplo, java.lang.String transa,
-        java.lang.String diag, int m, int n, double alpha, long a, int _a_offset, int lda, long b,
-        int _b_offset, int ldb);
+        java.lang.String diag, int m, int n, double alpha, long a, int _a_off, int lda, long b,
+        int _b_off, int ldb);
 
     /**
      * <pre><code>
@@ -6176,14 +6182,14 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void dtrsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, long a,
-        int _a_offset, int lda, long x, int _x_offset, int incx);
+        int _a_off, int lda, long x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -6226,11 +6232,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param dx
-     * @param _dx_offset
+     * @param _dx_off
      * @param incx
      * @return
      */
-    abstract public int idamax(int n, long dx, int _dx_offset, int incx);
+    abstract public int idamax(int n, long dx, int _dx_off, int incx);
 
     /**
      * <pre><code>
@@ -6273,11 +6279,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @return
      */
-    abstract public int isamax(int n, float[] sx, int _sx_offset, int incx);
+    abstract public int isamax(int n, float[] sx, int _sx_off, int incx);
 
     /**
      * <pre><code>
@@ -6353,11 +6359,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @return
      */
-    abstract public float sasum(int n, float[] sx, int _sx_offset, int incx);
+    abstract public float sasum(int n, float[] sx, int _sx_off, int incx);
 
     /**
      * <pre><code>
@@ -6403,13 +6409,13 @@ import java.util.logging.Logger;
      * @param n
      * @param sa
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      */
-    abstract public void saxpy(int n, float sa, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset,
+    abstract public void saxpy(int n, float sa, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off,
         int incy);
 
     /**
@@ -6454,13 +6460,13 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      */
-    abstract public void scopy(int n, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset, int incy);
+    abstract public void scopy(int n, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off, int incy);
 
     /**
      * <pre><code>
@@ -6507,14 +6513,14 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      * @return
      */
-    abstract public float sdot(int n, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset, int incy);
+    abstract public float sdot(int n, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off, int incy);
 
     /**
      * <pre><code>
@@ -6667,14 +6673,14 @@ import java.util.logging.Logger;
      * @param n
      * @param sb
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      * @return
      */
-    abstract public float sdsdot(int n, float sb, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset,
+    abstract public float sdsdot(int n, float sb, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off,
         int incy);
 
     /**
@@ -6947,18 +6953,18 @@ import java.util.logging.Logger;
      * @param ku
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
     abstract public void sgbmv(java.lang.String trans, int m, int n, int kl, int ku, float alpha, float[] a,
-        int _a_offset, int lda, float[] x, int _x_offset, int incx, float beta, float[] y, int _y_offset, int incy);
+        int _a_off, int lda, float[] x, int _x_off, int incx, float beta, float[] y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -7238,18 +7244,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void sgemm(java.lang.String transa, java.lang.String transb, int m, int n, int k, float alpha,
-        float[] a, int _a_offset, int lda, float[] b, int _b_offset, int ldb, float beta, float[] c, int _c_offset,
+        float[] a, int _a_off, int lda, float[] b, int _b_off, int ldb, float beta, float[] c, int _c_off,
         int Ldc);
 
     /**
@@ -7468,18 +7474,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void sgemv(java.lang.String trans, int m, int n, float alpha, float[] a, int _a_offset, int lda,
-        float[] x, int _x_offset, int incx, float beta, float[] y, int _y_offset, int incy);
+    abstract public void sgemv(java.lang.String trans, int m, int n, float alpha, float[] a, int _a_off, int lda,
+        float[] x, int _x_off, int incx, float beta, float[] y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -7651,17 +7657,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void sger(int m, int n, float alpha, float[] x, int _x_offset, int incx, float[] y, int _y_offset,
-        int incy, float[] a, int _a_offset, int lda);
+    abstract public void sger(int m, int n, float alpha, float[] x, int _x_off, int incx, float[] y, int _y_off,
+        int incy, float[] a, int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -7718,11 +7724,11 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @return
      */
-    abstract public float snrm2(int n, float[] x, int _x_offset, int incx);
+    abstract public float snrm2(int n, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -7776,15 +7782,15 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      * @param c
      * @param s
      */
-    abstract public void srot(int n, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset, int incy,
+    abstract public void srot(int n, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off, int incy,
         float c, float s);
 
     /**
@@ -7928,16 +7934,16 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      * @param sparam
-     * @param _sparam_offset
+     * @param _sparam_off
      */
-    abstract public void srotm(int n, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset, int incy,
-        float[] sparam, int _sparam_offset);
+    abstract public void srotm(int n, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off, int incy,
+        float[] sparam, int _sparam_off);
 
     /**
      * <pre><code>
@@ -8055,10 +8061,10 @@ import java.util.logging.Logger;
      * @param sx1
      * @param sy1
      * @param sparam
-     * @param _sparam_offset
+     * @param _sparam_off
      */
     abstract public void srotmg(org.netlib.util.floatW sd1, org.netlib.util.floatW sd2, org.netlib.util.floatW sx1,
-        float sy1, float[] sparam, int _sparam_offset);
+        float sy1, float[] sparam, int _sparam_off);
 
     /**
      * <pre><code>
@@ -8334,18 +8340,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void ssbmv(java.lang.String uplo, int n, int k, float alpha, float[] a, int _a_offset, int lda,
-        float[] x, int _x_offset, int incx, float beta, float[] y, int _y_offset, int incy);
+    abstract public void ssbmv(java.lang.String uplo, int n, int k, float alpha, float[] a, int _a_off, int lda,
+        float[] x, int _x_off, int incx, float beta, float[] y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -8391,10 +8397,10 @@ import java.util.logging.Logger;
      * @param n
      * @param sa
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      */
-    abstract public void sscal(int n, float sa, float[] sx, int _sx_offset, int incx);
+    abstract public void sscal(int n, float sa, float[] sx, int _sx_off, int incx);
 
     /**
      * <pre><code>
@@ -8599,17 +8605,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void sspmv(java.lang.String uplo, int n, float alpha, float[] ap, int _ap_offset, float[] x,
-        int _x_offset, int incx, float beta, float[] y, int _y_offset, int incy);
+    abstract public void sspmv(java.lang.String uplo, int n, float alpha, float[] ap, int _ap_off, float[] x,
+        int _x_off, int incx, float beta, float[] y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -8784,13 +8790,13 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      */
-    abstract public void sspr(java.lang.String uplo, int n, float alpha, float[] x, int _x_offset, int incx, float[] ap,
-        int _ap_offset);
+    abstract public void sspr(java.lang.String uplo, int n, float alpha, float[] x, int _x_off, int incx, float[] ap,
+        int _ap_off);
 
     /**
      * <pre><code>
@@ -8990,16 +8996,16 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      */
-    abstract public void sspr2(java.lang.String uplo, int n, float alpha, float[] x, int _x_offset, int incx, float[] y,
-        int _y_offset, int incy, float[] ap, int _ap_offset);
+    abstract public void sspr2(java.lang.String uplo, int n, float alpha, float[] x, int _x_off, int incx, float[] y,
+        int _y_off, int incy, float[] ap, int _ap_off);
 
     /**
      * <pre><code>
@@ -9043,13 +9049,13 @@ import java.util.logging.Logger;
      *
      * @param n
      * @param sx
-     * @param _sx_offset
+     * @param _sx_off
      * @param incx
      * @param sy
-     * @param _sy_offset
+     * @param _sy_off
      * @param incy
      */
-    abstract public void sswap(int n, float[] sx, int _sx_offset, int incx, float[] sy, int _sy_offset, int incy);
+    abstract public void sswap(int n, float[] sx, int _sx_off, int incx, float[] sy, int _sy_off, int incy);
 
     /**
      * <pre><code>
@@ -9335,18 +9341,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void ssymm(java.lang.String side, java.lang.String uplo, int m, int n, float alpha, float[] a,
-        int _a_offset, int lda, float[] b, int _b_offset, int ldb, float beta, float[] c, int _c_offset, int Ldc);
+        int _a_off, int lda, float[] b, int _b_off, int ldb, float beta, float[] c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -9558,18 +9564,18 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param beta
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      */
-    abstract public void ssymv(java.lang.String uplo, int n, float alpha, float[] a, int _a_offset, int lda, float[] x,
-        int _x_offset, int incx, float beta, float[] y, int _y_offset, int incy);
+    abstract public void ssymv(java.lang.String uplo, int n, float alpha, float[] a, int _a_off, int lda, float[] x,
+        int _x_off, int incx, float beta, float[] y, int _y_off, int incy);
 
     /**
      * <pre><code>
@@ -9751,14 +9757,14 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void ssyr(java.lang.String uplo, int n, float alpha, float[] x, int _x_offset, int incx, float[] a,
-        int _a_offset, int lda);
+    abstract public void ssyr(java.lang.String uplo, int n, float alpha, float[] x, int _x_off, int incx, float[] a,
+        int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -9965,17 +9971,17 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      * @param y
-     * @param _y_offset
+     * @param _y_off
      * @param incy
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      */
-    abstract public void ssyr2(java.lang.String uplo, int n, float alpha, float[] x, int _x_offset, int incx, float[] y,
-        int _y_offset, int incy, float[] a, int _a_offset, int lda);
+    abstract public void ssyr2(java.lang.String uplo, int n, float alpha, float[] x, int _x_off, int incx, float[] y,
+        int _y_off, int incy, float[] a, int _a_off, int lda);
 
     /**
      * <pre><code>
@@ -10267,18 +10273,18 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void ssyr2k(java.lang.String uplo, java.lang.String trans, int n, int k, float alpha, float[] a,
-        int _a_offset, int lda, float[] b, int _b_offset, int ldb, float beta, float[] c, int _c_offset, int Ldc);
+        int _a_off, int lda, float[] b, int _b_off, int ldb, float beta, float[] c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -10530,15 +10536,15 @@ import java.util.logging.Logger;
      * @param k
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param beta
      * @param c
-     * @param _c_offset
+     * @param _c_off
      * @param Ldc
      */
     abstract public void ssyrk(java.lang.String uplo, java.lang.String trans, int n, int k, float alpha, float[] a,
-        int _a_offset, int lda, float beta, float[] c, int _c_offset, int Ldc);
+        int _a_off, int lda, float beta, float[] c, int _c_off, int Ldc);
 
     /**
      * <pre><code>
@@ -10829,14 +10835,14 @@ import java.util.logging.Logger;
      * @param n
      * @param k
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void stbmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, int k,
-        float[] a, int _a_offset, int lda, float[] x, int _x_offset, int incx);
+        float[] a, int _a_off, int lda, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -11135,14 +11141,14 @@ import java.util.logging.Logger;
      * @param n
      * @param k
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void stbsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, int k,
-        float[] a, int _a_offset, int lda, float[] x, int _x_offset, int incx);
+        float[] a, int _a_off, int lda, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -11350,13 +11356,13 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void stpmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, float[] ap,
-        int _ap_offset, float[] x, int _x_offset, int incx);
+        int _ap_off, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -11570,13 +11576,13 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param ap
-     * @param _ap_offset
+     * @param _ap_off
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void stpsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, float[] ap,
-        int _ap_offset, float[] x, int _x_offset, int incx);
+        int _ap_off, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -11847,14 +11853,14 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      */
     abstract public void strmm(java.lang.String side, java.lang.String uplo, java.lang.String transa,
-        java.lang.String diag, int m, int n, float alpha, float[] a, int _a_offset, int lda, float[] b, int _b_offset,
+        java.lang.String diag, int m, int n, float alpha, float[] a, int _a_off, int lda, float[] b, int _b_off,
         int ldb);
 
     /**
@@ -12070,14 +12076,14 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void strmv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, float[] a,
-        int _a_offset, int lda, float[] x, int _x_offset, int incx);
+        int _a_off, int lda, float[] x, int _x_off, int incx);
 
     /**
      * <pre><code>
@@ -12354,14 +12360,14 @@ import java.util.logging.Logger;
      * @param n
      * @param alpha
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param b
-     * @param _b_offset
+     * @param _b_off
      * @param ldb
      */
     abstract public void strsm(java.lang.String side, java.lang.String uplo, java.lang.String transa,
-        java.lang.String diag, int m, int n, float alpha, float[] a, int _a_offset, int lda, float[] b, int _b_offset,
+        java.lang.String diag, int m, int n, float alpha, float[] a, int _a_off, int lda, float[] b, int _b_off,
         int ldb);
 
     /**
@@ -12583,12 +12589,12 @@ import java.util.logging.Logger;
      * @param diag
      * @param n
      * @param a
-     * @param _a_offset
+     * @param _a_off
      * @param lda
      * @param x
-     * @param _x_offset
+     * @param _x_off
      * @param incx
      */
     abstract public void strsv(java.lang.String uplo, java.lang.String trans, java.lang.String diag, int n, float[] a,
-        int _a_offset, int lda, float[] x, int _x_offset, int incx);
+        int _a_off, int lda, float[] x, int _x_off, int incx);
 }
