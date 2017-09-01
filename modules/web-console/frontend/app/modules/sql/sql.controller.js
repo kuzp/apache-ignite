@@ -1330,7 +1330,7 @@ export default ['$rootScope', '$scope', '$http', '$q', '$timeout', '$interval', 
                 .then(() => _closeOldQuery(paragraph))
                 .then(() => args.localNid || _chooseNode(args.cacheName, false))
                 .then((nid) => agentMgr.querySql(nid, args.cacheName, args.query, args.nonCollocatedJoins,
-                    args.enforceJoinOrder, false, !!args.localNid, args.pageSize))
+                    args.enforceJoinOrder, false, !!args.localNid, args.pageSize, args.lazy))
                 .then((res) => _processQueryResult(paragraph, false, res))
                 .catch((err) => paragraph.setError(err));
         };
@@ -1466,7 +1466,7 @@ export default ['$rootScope', '$scope', '$http', '$q', '$timeout', '$interval', 
 
                     ActivitiesData.post({ action: '/queries/explain' });
 
-                    return agentMgr.querySql(nid, args.cacheName, args.query, false, !!paragraph.enforceJoinOrder, false, false, args.pageSize);
+                    return agentMgr.querySql(nid, args.cacheName, args.query, false, !!paragraph.enforceJoinOrder, false, false, args.pageSize, false);
                 })
                 .then((res) => _processQueryResult(paragraph, true, res))
                 .catch((err) => {
