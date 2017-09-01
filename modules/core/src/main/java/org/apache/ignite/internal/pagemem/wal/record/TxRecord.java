@@ -66,6 +66,9 @@ public class TxRecord extends WALRecord {
     /** */
     private UUID[] participatingNodeIds;
 
+    /** */
+    private long timeStamp;
+
     /** {@inheritDoc} */
     @Override public RecordType type() {
         return RecordType.TX_RECORD;
@@ -125,5 +128,19 @@ public class TxRecord extends WALRecord {
      */
     public UUID[] participatingNodeId() {
         return participatingNodeIds;
+    }
+
+    /**
+     *
+     */
+    public long timeStamp() {
+        return timeStamp;
+    }
+
+    /**
+     *
+     */
+    public void timeStamp(long timeStamp) {
+        this.timeStamp = timeStamp;
     }
 }
