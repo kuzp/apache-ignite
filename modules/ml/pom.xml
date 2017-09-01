@@ -32,10 +32,13 @@
     <artifactId>ignite-ml</artifactId>
     <version>2.2.0-SNAPSHOT</version>
     <url>http://ignite.apache.org</url>
+    <!-- TODO recover build for ignite-ml.jar after testing completed -->
+    <packaging>so</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netlibjava.version>1.1.2</netlibjava.version>
+        <native.src.dir>${project.basedir}/src/main/c</native.src.dir>
     </properties>
 
     <dependencies>
@@ -104,7 +107,6 @@
             <artifactId>commons-rng-simple</artifactId>
             <version>1.0</version>
         </dependency>
-
     </dependencies>
 
     <profiles>
@@ -129,8 +131,92 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <compileSourceRoots>${project.basedir}/src/main/java,${project.basedir}/src/test/java</compileSourceRoots>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <linkerMiddleOptions>
+                        <linkerMiddleOption>-shared</linkerMiddleOption>
+                        <linkerMiddleOption>-lgfortran</linkerMiddleOption>
+                        <linkerMiddleOption>-lblas</linkerMiddleOption>
+                        <linkerMiddleOption>-llapack</linkerMiddleOption>
+                        <linkerMiddleOption>-Wl,-s</linkerMiddleOption>
+                        <linkerMiddleOption>-Wl,--version-script=${native.src.dir}/symbol.map</linkerMiddleOption>
+                        <linkerMiddleOption>-Wl,--gc-sections</linkerMiddleOption>
+                    </linkerMiddleOptions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>runtime</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classesDirectory>${project.build.directory}</classesDirectory>
+                            <includes>
+                                <include>${project.artifactId}.*</include>
+                            </includes>
+                            <classifier>natives</classifier>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                    <classpathPrefix>${project.build.directory}/${project.artifactId}</classpathPrefix>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.build.directory}/${project.artifactId}-natives.jar</additionalClasspathElement>
+                    </additionalClasspathElements>
                 </configuration>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <javahOS>linux</javahOS>
+                        <compilerStartOptions>
+                            <compilerStartOption>-O3</compilerStartOption>
+                        </compilerStartOptions>
+                        <compilerMiddleOptions>
+                            <compilerMiddleOption>-Wall -fPIC -DADD_</compilerMiddleOption>
+                            <compilerMiddleOption>-fdata-sections</compilerMiddleOption>
+                            <compilerMiddleOption>-ffunction-sections</compilerMiddleOption>
+                        </compilerMiddleOptions>
+                        <linkerStartOptions>
+                            <linkerStartOption>-O3</linkerStartOption>
+                        </linkerStartOptions>
+                        <sources>
+                            <source>
+                                <directory>${native.src.dir}</directory>
+                                <includes>
+                                    <include>*.c</include>
+                                </includes>
+                            </source>
+                        </sources>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>
