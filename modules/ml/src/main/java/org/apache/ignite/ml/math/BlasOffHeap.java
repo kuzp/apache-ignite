@@ -39,7 +39,7 @@ public abstract class BlasOffHeap {
     static {
         try {
             try {
-                BlasJniLoader.loadLibraryFromJar("/ignite-ml.so");
+                BlasJniLoader.loadLibraryFromJar("/ignite-cblas-jni-linux-x86_64.so");
             } catch (Exception e) {
                 log.warning("Failed to load library from jar: " + e.getMessage());
             }

@@ -30,11 +30,9 @@ import org.junit.Test;
 
 /** Tests for BLAS operations (all operations are only available for local matrices and vectors). */
 public class BlasOffHeapTest {
-    /** Test off-heap blas availability. Todo remove later because it's OS-dependent. */
+    /** Test off-heap blas availability. Todo remove later or make it OS-independent. */
     @Test
     public void testBlasOffHeap() {
-        //Assert.assertNotNull("Unexpected null BLAS instance.", BLAS.getInstance());
-
         Assert.assertNotNull("Unexpected null BlasOffHeap instance.", BlasOffHeap.getInstance());
     }
 
