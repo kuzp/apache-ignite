@@ -39,6 +39,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netlibjava.version>1.1.2</netlibjava.version>
         <native.src.dir>${project.basedir}/src/main/c</native.src.dir>
+        <native.lib.name>ignite-cblas-jni-linux-x86_64</native.lib.name>
     </properties>
 
     <dependencies>
@@ -148,6 +149,7 @@
                         <linkerMiddleOption>-Wl,--version-script=${native.src.dir}/symbol.map</linkerMiddleOption>
                         <linkerMiddleOption>-Wl,--gc-sections</linkerMiddleOption>
                     </linkerMiddleOptions>
+                    <linkerFinalName>${native.lib.name}-${project.version}</linkerFinalName>
                 </configuration>
             </plugin>
             <plugin>
@@ -169,7 +171,7 @@
                             <archive>
                                 <manifest>
                                     <addClasspath>true</addClasspath>
-                                    <classpathPrefix>${project.build.directory}/${project.artifactId}</classpathPrefix>
+                                    <classpathPrefix>${project.build.directory}/${native.lib.name}-${project.version}</classpathPrefix>
                                 </manifest>
                             </archive>
                         </configuration>
@@ -181,7 +183,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <additionalClasspathElements>
-                        <additionalClasspathElement>${project.build.directory}/${project.artifactId}-natives.jar</additionalClasspathElement>
+                        <additionalClasspathElement>${project.build.directory}/${native.lib.name}-${project.version}.jar</additionalClasspathElement>
                     </additionalClasspathElements>
                 </configuration>
             </plugin>
