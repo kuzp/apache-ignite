@@ -197,7 +197,7 @@ export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), actio
             if (!action.items.length) return state;
             return action.items.reduce((acc, item) => {acc.set(item._id, item); return acc;}, new Map(state));
         case actionTypes.REMOVE:
-            if (!action.items.length) return state;
+            if (!action.ids.length) return state;
             return action.ids.reduce((acc, id) => {acc.delete(id); return acc;}, new Map(state));
         default:
             return state;
