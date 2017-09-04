@@ -37,6 +37,7 @@ import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
 
 import {
+    editReducer2,
     reducer,
     editReducer,
     loadingReducer,
@@ -87,11 +88,12 @@ export default angular
             clusters: mapStoreReducerFactory(clustersActionTypes)(state.clusters, action),
             shortClusters: mapCacheReducerFactory(shortClustersActionTypes)(state.shortClusters, action),
             caches: mapStoreReducerFactory(cachesActionTypes)(state.caches, action),
-            shortCaches: mapStoreReducerFactory(shortCachesActionTypes)(state.shortCaches, action),
+            shortCaches: mapCacheReducerFactory(shortCachesActionTypes)(state.shortCaches, action),
             models: mapStoreReducerFactory(modelsActionTypes)(state.models, action),
             shortModels: mapStoreReducerFactory(shortModelsActionTypes)(state.shortModels, action),
             igfss: mapStoreReducerFactory(igfssActionTypes)(state.igfss, action),
-            shortIGFSs: mapStoreReducerFactory(shortIGFSsActionTypes)(state.shortIGFSs, action)
+            shortIGFSs: mapStoreReducerFactory(shortIGFSsActionTypes)(state.shortIGFSs, action),
+            edit: editReducer2(state.edit, action)
         }));
     }])
     .component('pageConfigure', component)
