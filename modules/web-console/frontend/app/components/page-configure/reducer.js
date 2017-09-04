@@ -194,12 +194,36 @@ export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), actio
         case actionTypes.RESET:
             return new Map();
         case actionTypes.UPSERT:
+            if (!action.items.length) return state;
             return action.items.reduce((acc, item) => {acc.set(item._id, item); return acc;}, new Map(state));
         case actionTypes.REMOVE:
+            if (!action.items.length) return state;
             return action.ids.reduce((acc, id) => {acc.delete(id); return acc;}, new Map(state));
         default:
             return state;
     }
+};
+
+export const mapCacheReducerFactory = (actionTypes) => {
+    const mapStoreReducer = mapStoreReducerFactory(actionTypes);
+    return (state = {value: mapStoreReducer(), pristine: true}, action) => {
+        switch (action.type) {
+            case actionTypes.REMOVE:
+            case actionTypes.UPSERT:
+            case actionTypes.SET:
+                return {
+                    value: mapStoreReducer(state.value, action),
+                    pristine: false
+                };
+            case actionTypes.RESET:
+                return {
+                    value: mapStoreReducer(state.value, action),
+                    pristine: true
+                };
+            default:
+                return state;
+        }
+    };
 };
 
 export const basicCachesActionTypes = {

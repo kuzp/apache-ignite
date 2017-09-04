@@ -17,6 +17,7 @@
 
 import angular from 'angular';
 
+import {UIRouterRx} from '@uirouter/rx';
 import {Visualizer} from '@uirouter/visualizer';
 import uiValidate from 'angular-ui-validate';
 
@@ -41,6 +42,7 @@ import {
     loadingReducer,
     itemsEditReducerFactory,
     mapStoreReducerFactory,
+    mapCacheReducerFactory,
     basicCachesActionTypes,
     clustersActionTypes,
     shortClustersActionTypes,
@@ -64,6 +66,7 @@ export default angular
         pcValidation.name
     ])
     .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
+        $uiRouter.plugin(UIRouterRx);
         // $uiRouter.plugin(Visualizer);
         if (devTools) {
             devTools.subscribe((e) => {
@@ -77,12 +80,12 @@ export default angular
 
             ConfigureState.addReducer(reduxDevtoolsReducer);
         }
-        ConfigureState.addReducer((state, action) => Object.assign(state, {
+        ConfigureState.addReducer((state, action) => Object.assign({}, state, {
             clusterConfiguration: editReducer(state.clusterConfiguration, action),
             configurationLoading: loadingReducer(state.configurationLoading, action),
             basicCaches: itemsEditReducerFactory(basicCachesActionTypes)(state.basicCaches, action),
             clusters: mapStoreReducerFactory(clustersActionTypes)(state.clusters, action),
-            shortClusters: mapStoreReducerFactory(shortClustersActionTypes)(state.shortClusters, action),
+            shortClusters: mapCacheReducerFactory(shortClustersActionTypes)(state.shortClusters, action),
             caches: mapStoreReducerFactory(cachesActionTypes)(state.caches, action),
             shortCaches: mapStoreReducerFactory(shortCachesActionTypes)(state.shortCaches, action),
             models: mapStoreReducerFactory(modelsActionTypes)(state.models, action),

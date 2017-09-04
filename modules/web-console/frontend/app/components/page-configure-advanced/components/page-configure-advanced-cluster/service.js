@@ -5,6 +5,7 @@ import {fromPromise} from 'rxjs/observable/fromPromise';
 import {empty} from 'rxjs/observable/empty';
 import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/mapTo';
+import {uniqueName} from 'app/utils/uniqueName';
 
 const confirmCancelEditAction = {type: 'CONFIRM_CANCEL_EDIT', for: 'cluster'};
 const cancelEditAction = {type: 'CANCEL_EDIT', for: 'cluster'};
@@ -44,7 +45,14 @@ export default class PageConfigureAdvancedClusterService {
 
         const cluster = state$
             .pluck('clusters')
-            .map((clusters) => clusters.get(this.$state.params.clusterID))
+            .map((clusters) => {
+                return clusters.has(this.$state.params.clusterID)
+                    ? clusters.get(this.$state.params.clusterID)
+                    : {
+                        ...this.Clusters.getBlankCluster(),
+                        name: uniqueName('New cluster', [...clusters.values()])
+                    };
+            })
             .distinctUntilChanged()
             .switchMap((v) => actions$.filter(matches(cancelEditAction)).mapTo(v).startWith(v))
             .map((cluster) => {

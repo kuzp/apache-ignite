@@ -66,11 +66,12 @@ export default class PageConfigureBasic {
                 };
                 const shortCluster = clusters.toShortCluster(cluster);
                 const caches = [...action.caches.changedItems.values()]
-                    .filter((shortCache) => state.caches.has(shortCache._id))
-                    .map((shortCache) => ({...state.caches.get(shortCache._id), ...shortCache}));
-                const shortCaches = [...action.caches.changedItems.values()].map((cache) => ({
-                    ...cache, clusters: [action.cluster._id]
-                }));
+                    .filter((shortCache) => state.caches.has(shortCache._id) || shortCache.domains)
+                    .map((shortCache) => ({...(state.caches.get(shortCache._id) || {}), ...shortCache}));
+                const shortCaches = [...action.caches.changedItems.values()];
+                // .map((cache) => ({
+                //     ...cache, clusters: [action.cluster._id]
+                // }));
 
                 // Backups
                 const clustersBak = state.clusters;
