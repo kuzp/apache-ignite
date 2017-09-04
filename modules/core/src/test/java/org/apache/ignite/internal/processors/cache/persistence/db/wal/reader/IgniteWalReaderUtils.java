@@ -18,26 +18,20 @@
 package org.apache.ignite.internal.processors.cache.persistence.db.wal.reader;
 
 import java.io.File;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.pagemem.wal.WALIterator;
 import org.apache.ignite.internal.pagemem.wal.WALPointer;
-import org.apache.ignite.internal.pagemem.wal.record.PageSnapshot;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.persistence.file.RandomAccessFileIOFactory;
-import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWriteAheadLogManager;
 import org.apache.ignite.internal.processors.cache.persistence.wal.reader.IgniteWalIteratorFactory;
-import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.logger.NullLogger;
 
-public class IgniteWalReaderTest2 {
+public class IgniteWalReaderUtils {
     public static void main(String[] args) throws Exception {
-        final File walArchiveDirWithConsistentId = new File("/ssd/dev/incubator-ignite/work/db/wal/127_0_0_1_47501");
+        final File walArchiveDirWithConsistentId = new File("/tmp/database_IgniteDbSnapshotSelfMultiNodeTest1/");
 //        final File walArchiveDirWithConsistentId = new File("/ssd/dev/incubator-ignite/work/db/wal/archive/database_IgniteDbSnapshotSelfMultiNodeTest1");
-        final File walWorkDirWithConsistentId = new File("/ssd/dev/incubator-ignite/work/db/wal/archive/127_0_0_1_47501");
+        final File walWorkDirWithConsistentId = new File("/ssd/dev/incubator-ignite/work/db/wal/archive/database_IgniteDbSnapshotSelfMultiNodeTest1");
 //        final File walWorkDirWithConsistentId = new File("/ssd/dev/incubator-ignite/work/db/wal/database_IgniteDbSnapshotSelfMultiNodeTest1");
 
         final IgniteWalIteratorFactory factory = new IgniteWalIteratorFactory(new NullLogger(),

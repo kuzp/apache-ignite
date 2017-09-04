@@ -955,6 +955,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         try {
             CheckpointStatus status = readCheckpointStatus();
 
+            log.error(status.toString());
+            log.error("needRestoreMemory=" + status.needRestoreMemory());
+
             checkpointReadLock();
 
             try {
