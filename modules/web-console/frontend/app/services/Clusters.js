@@ -93,6 +93,10 @@ export default class Clusters {
         return this.$http.get('/api/v1/configuration/clusters/');
     }
 
+    getClustersOverview$() {
+        return Observable.fromPromise(this.getClustersOverview());
+    }
+
     saveCluster(cluster) {
         return this.$http.post('/api/v1/configuration/clusters/save', cluster);
     }

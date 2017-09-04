@@ -37,12 +37,12 @@ export default angular
 .module('page-configuration', ['asyncFilter'])
 .component('pageConf', {
     controller: class PageConfController {
-        static $inject = ['$state', 'conf', 'Caches', 'PageConfigureOverviewService'];
-        constructor($state, conf, Caches, overview) {
-            Object.assign(this, {$state, conf, Caches, overview});
+        static $inject = ['$state', 'conf', 'Caches', 'PageConfigureOverviewService', 'ConfigureState'];
+        constructor($state, conf, Caches, overview, ConfigureState) {
+            Object.assign(this, {$state, conf, Caches, overview, ConfigureState});
         }
         $onInit() {
-            this.cluster$ = this.conf.cluster$;
+            this.cluster$ = this.ConfigureState.state$.pluck('edit', 'changes', 'cluster');
             this.clusters$ = this.conf.shortClusters$;
             this.clustersDefs = [{
                 name: 'name',
@@ -62,56 +62,20 @@ export default angular
                 enableFiltering: false,
                 width: 95
             }];
-            this.itemActions$ = new Subject();
-            this.changedItems$ = this.cluster$.switchMap((cluster) => {
-                if (!cluster) return empty();
-                return this.itemActions$
-                .startWith({caches: {ids: cluster.caches, changedItems: []}})
-                .scan((state, action) => {
-                    switch (action.type) {
-                        case 'ADD': {
-                            const item = this.Caches.getBlankCache();
-                            return {
-                                ...state,
-                                [action.itemType]: {
-                                    ids: state[action.itemType].ids.concat(item._id),
-                                    changedItems: state[action.itemType].changedItems.concat({...item, name: item._id})
-                                }
-                            };
-                        }
-                        case 'CHANGE': {
-                            return {
-                                ...state,
-                                [action.itemType]: {
-                                    ids: state[action.itemType].ids.filter((_id) => _id !== action.item._id).concat(action.item._id),
-                                    changedItems: state[action.itemType].changedItems.filter(({_id}) => _id !== action.item._id).concat(action.item)
-                                }
-                            };
-                        }
-                        case 'REMOVE': {
-                            return {
-                                ...state,
-                                [action.itemType]: {
-                                    ids: state[action.itemType].ids.filter((_id) => _id !== action.item._id),
-                                    changedItems: state[action.itemType].changedItems.filter(({_id}) => _id !== action.item._id)
-                                }
-                            };
-                        }
-                        default:
-                            return state;
-                    }
+            const clusterShortCaches$ = combineLatest(
+                this.cluster$.filter((v) => v).pluck('caches').distinctUntilChanged(),
+                this.ConfigureState.state$.pluck('edit', 'changes', 'caches').distinctUntilChanged(),
+                this.ConfigureState.state$.pluck('shortCaches', 'value').distinctUntilChanged()
+            )
+                .map(([ids, changed, shortCaches]) => {
+                    if (!ids.length || !shortCaches) return [];
+                    return ids.map((id) => changed.find(({_id}) => _id === id) || shortCaches.get(id));
                 });
-            }).publishReplay(1).refCount();
-            this.clusterItems$ = combineLatest(this.changedItems$, this.conf.clusterItems$, (changed, old) => {
-                return {
-                    caches: changed.caches.ids.map((id) => {
-                        const sameID = ({_id}) => _id === id;
-                        return changed.caches.changedItems.find(sameID) || old.caches.find(sameID);
-                    }).sort((a, b) => naturalCompare(a.name, b.name))
-                };
-            })
-            .filter((v) => v.caches.every((v) => v))
-            .do((v) => console.log('cluster items', v));
+
+            this.clusterItems$ = combineLatest(clusterShortCaches$, ((caches) => {
+                return {caches};
+            })).publishReplay(1).refCount();
+            this.changedItems$ = this.ConfigureState.state$.pluck('edit', 'changes');
         }
         onSelectionChange(selectedClusters) {
             return this.clustersActions = this.makeClusterActions(selectedClusters);
@@ -136,29 +100,29 @@ export default angular
         onBasicSave(cluster) {
             console.log('basic save', cluster);
             this.changedItems$.take(1).do((changedItems) => {
-                this.conf.saveBasic(cluster, changedItems);
+                this.conf.saveBasic(changedItems);
             }).subscribe();
         }
         onItemChange({type, item}) {
-            this.itemActions$.next({
-                type: 'CHANGE',
+            this.ConfigureState.dispatchAction({
+                type: 'UPSERT_CLUSTER_ITEM',
                 itemType: type,
                 item
             });
         }
         onItemAdd({type}) {
             const item = this.Caches.getBlankCache();
-            this.itemActions$.next({
-                type: 'ADD',
+            this.ConfigureState.dispatchAction({
+                type: 'UPSERT_CLUSTER_ITEM',
                 itemType: type,
                 item: {...item, name: item._id}
             });
         }
         onItemRemove({type, item}) {
-            this.itemActions$.next({
-                type: 'REMOVE',
+            this.ConfigureState.dispatchAction({
+                type: 'REMOVE_CLUSTER_ITEM',
                 itemType: type,
-                item
+                itemID: item._id
             });
         }
     },
@@ -255,11 +219,11 @@ export default angular
 
         Object.assign(this, {shortClusters$, cluster$, clusterItems$});
     }
-    saveBasic(cluster, changedItems) {
+    saveBasic(changedItems) {
         this.ConfigureState.dispatchAction({
             type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
-            cluster: {...cluster, caches: changedItems.caches.ids},
-            caches: changedItems.caches
+            cluster: changedItems.cluster,
+            caches: {ids: changedItems.cluster.caches, changedItems: changedItems.caches}
         });
     }
 })
@@ -314,20 +278,33 @@ export default angular
     constructor(Clusters, ConfigureState) {
         Object.assign(this, {Clusters, ConfigureState});
     }
-    loadCluster$(id) {
+    loadCluster$(id, shortClusters = []) {
+        const dispatch = (cluster) => {
+            this.ConfigureState.dispatchAction({
+                type: clustersActionTypes.UPSERT,
+                items: [cluster]
+            });
+            this.ConfigureState.dispatchAction({
+                type: 'EDIT_CLUSTER',
+                cluster
+            });
+        };
+        if (id === 'new') {
+            return of({
+                ...this.Clusters.getBlankCluster(),
+                name: uniqueName('New cluster', shortClusters)
+            })
+            .do(dispatch);
+        }
         return this.ConfigureState.state$
             .pluck('clusters')
             .take(1)
             .map((c) => c && c.get(id))
             .switchMap((c) => c
                 ? of(c)
-                : fromPromise(this.Clusters.getCluster(id))
-                    .pluck('data')
-                    .do((cluster) => this.ConfigureState.dispatchAction({
-                        type: clustersActionTypes.UPSERT,
-                        items: [cluster]
-                    }))
-            );
+                : fromPromise(this.Clusters.getCluster(id)).pluck('data')
+            )
+            .do(dispatch);
     }
     loadShortClusters$() {
         return fromPromise(this.Clusters.getClustersOverview())
@@ -338,8 +315,9 @@ export default angular
             }));
     }
     loadShortCaches$(clusterID) {
+        if (clusterID === 'new') return of([]);
         const cluster$ = this.loadCluster$(clusterID);
-        const shortCaches$ = this.ConfigureState.state$.pluck('shortCaches');
+        const shortCaches$ = this.ConfigureState.state$.pluck('shortCaches', 'value');
         return shortCaches$.withLatestFrom(cluster$)
             .switchMap(([shortCaches, cluster]) => {
                 if (!cluster.caches.length) return of([]);
@@ -383,13 +361,12 @@ export default angular
         url: '/{clusterID:string}/{mode:string}',
         resolve: {
             cluster: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
-                return ConfigClusters.loadCluster$($transition$.params().clusterID).toPromise();
+                return $transition$.injector().getAsync('shortClusters').then((shortClusters) => {
+                    return ConfigClusters.loadCluster$($transition$.params().clusterID, shortClusters).toPromise();
+                });
             }],
             shortCaches: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
-                return $transition$.injector().getAsync('cluster')
-                    .then(({_id}) => {
-                        return ConfigClusters.loadShortCaches$(_id).toPromise();
-                    });
+                return ConfigClusters.loadShortCaches$($transition$.params().clusterID).toPromise();
             }]
         },
         redirectTo: ($transition$) => {
