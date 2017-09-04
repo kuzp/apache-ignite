@@ -6,6 +6,7 @@ import {merge} from 'rxjs/observable/merge';
 import {of} from 'rxjs/observable/of';
 import 'rxjs/add/operator/share';
 import 'rxjs/add/operator/publishReplay';
+import 'rxjs/add/operator/toPromise';
 import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 // import {Observable} from 'rxjs/observable';
@@ -107,7 +108,9 @@ export default angular
                         return changed.caches.changedItems.find(sameID) || old.caches.find(sameID);
                     }).sort((a, b) => naturalCompare(a.name, b.name))
                 };
-            });
+            })
+            // .filter((v) => v.caches.every((v) => v))
+            .do((v) => console.log('cluster items', v));
         }
         onSelectionChange(selectedClusters) {
             return this.clustersActions = this.makeClusterActions(selectedClusters);
@@ -199,14 +202,6 @@ export default angular
         const shortClusters$ = state$
             .pluck('shortClusters')
             .distinctUntilChanged()
-            /*            .do((shortClusters) => {
-                if (!shortClusters || shortClusters.pristine) {
-                    Clusters.getClustersOverview().then(({data}) => ConfigureState.dispatchAction({
-                        type: shortClustersActionTypes.UPSERT,
-                        items: data
-                    }));
-                }
-            })*/
             .filter((v) => v)
             .pluck('value')
             .map((v) => [...v.values()])
@@ -221,14 +216,6 @@ export default angular
             .distinctUntilChanged();
 
         const oldCluster$ = combineLatest(clusterID$, clusters$)
-            .do(([id, clusters]) => {
-                if (!clusters || !clusters.has(id)) {
-                    Clusters.getCluster(id).then(({data}) => ConfigureState.dispatchAction({
-                        type: clustersActionTypes.UPSERT,
-                        items: [data]
-                    }));
-                }
-            })
             .filter(([, v]) => v)
             .map(([id, clusters]) => clusters.get(id))
             .distinctUntilChanged();
@@ -332,11 +319,6 @@ export default angular
     $stateProvider
     .state('conf', {
         url: '/conf',
-        // params: {
-        //     clusterID: {
-        //         dynamic: true
-        //     }
-        // },
         component: 'pageConf',
         resolve: {
             shortClusters: ['ConfigureState', 'Clusters', (ConfigureState, Clusters) => {
@@ -347,10 +329,42 @@ export default angular
             }]
         }
     })
+    // .state('conf.edit', {
+    //     url: '/{clusterID:string}/{mode:string}',
+    //     redirectTo: ($transition$) => {
+    //         const clusters = $transition$.injector().getAsync('clustersTable');
+    //         const cluster = $transition$.injector().getAsync('cluster');
+    //         return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
+    //             return (clusters.length > 10 || cluster.caches.length > 5)
+    //                 ? 'base.configuration.tabs.advanced'
+    //                 : 'base.configuration.tabs.basic';
+    //         });
+    //     },       
+    // })
     .state('conf.edit', {
         url: '/{clusterID:string}/{mode:string}',
+        resolve: {
+            cluster: ['ConfigureState', 'Clusters', '$transition$', (ConfigureState, Clusters, $transition$) => {
+                const clusterID = $transition$.params().clusterID;
+                return ConfigureState.state$
+                    .pluck('clusters')
+                    .take(1)
+                    .map((c) => c && c.get(clusterID))
+                    .switchMap((c) => c
+                        ? of(c)
+                        : Clusters
+                            .getCluster(clusterID)
+                            .then(({data}) => ConfigureState.dispatchAction({
+                                type: clustersActionTypes.UPSERT,
+                                items: [data]
+                            }))
+                    )
+                    .toPromise();
+            }]
+        },
         template: `
             <conf-basic-form
+                ng-if='$resolve.$stateParams.mode === "basic"'
                 cluster='($ctrl.cluster$|async:this)'
                 cluster-items='$ctrl.clusterItems$|async:this'
                 on-cache-add='$ctrl.onItemAdd($event)'
@@ -358,9 +372,18 @@ export default angular
                 on-cache-remove='$ctrl.onItemRemove($event)'
                 on-save='$ctrl.onBasicSave($event)'
             ></conf-basic-form>
+            <conf-advanced-form
+                ng-if='$resolve.$stateParams.mode === "basic"'
+                cluster='($ctrl.cluster$|async:this)'
+                cluster-items='$ctrl.clusterItems$|async:this'
+
+                on-cache-add='$ctrl.onItemAdd($event)'
+                on-cache-change='$ctrl.onItemChange($event)'
+                on-cache-remove='$ctrl.onItemRemove($event)'
+
+                on-save='$ctrl.onBasicSave($event)'
+            >
+            </conf-advanced-form>
         `
     });
-    // .state('conf.cluster.edit', {
-    //     url: '/{mode:string}',
-    // });
 }]);
