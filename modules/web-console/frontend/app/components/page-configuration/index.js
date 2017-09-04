@@ -1,5 +1,6 @@
 import {Subject} from 'rxjs/Subject';
 import {combineLatest} from 'rxjs/observable/combineLatest';
+import {fromPromise} from 'rxjs/observable/fromPromise';
 import {empty} from 'rxjs/observable/empty';
 import {never} from 'rxjs/observable/never';
 import {merge} from 'rxjs/observable/merge';
@@ -109,7 +110,7 @@ export default angular
                     }).sort((a, b) => naturalCompare(a.name, b.name))
                 };
             })
-            // .filter((v) => v.caches.every((v) => v))
+            .filter((v) => v.caches.every((v) => v))
             .do((v) => console.log('cluster items', v));
         }
         onSelectionChange(selectedClusters) {
@@ -238,21 +239,14 @@ export default angular
             .publishReplay(1).refCount();
 
         const clusterShortCaches$ = combineLatest(
-                state$.pluck('shortCaches').distinctUntilChanged(),
-                cluster$.filter((v) => v)
+            cluster$.filter((v) => v).pluck('caches').distinctUntilChanged(),
+            state$.pluck('shortCaches').distinctUntilChanged()
         )
-            .switchMap(([shortCaches, cluster]) => {
-                if (!cluster.caches.length) return of([]);
-                if (shortCaches && cluster.caches.every((_id) => shortCaches.has(_id)))
-                    return of(cluster.caches.map((_id) => shortCaches.get(_id)));
-
-                Clusters.getClusterCaches(cluster._id).then(({data: items}) => {
-                    ConfigureState.dispatchAction({
-                        type: shortCachesActionTypes.UPSERT,
-                        items
-                    });
-                });
-                return empty();
+            .switchMap(([ids, shortCaches]) => {
+                if (!ids.length) return of([]);
+                return shortCaches && ids.every((id) => shortCaches.has(id))
+                    ? of(ids.map((id) => shortCaches.get(id)))
+                    : empty();
             });
 
         const clusterItems$ = combineLatest(clusterShortCaches$, ((caches) => {
@@ -315,18 +309,62 @@ export default angular
         onSaveAndDownload: '&?'
     }
 })
+.service('ConfigClusters', class ConfigClusters {
+    static $inject = ['Clusters', 'ConfigureState'];
+    constructor(Clusters, ConfigureState) {
+        Object.assign(this, {Clusters, ConfigureState});
+    }
+    loadCluster$(id) {
+        return this.ConfigureState.state$
+            .pluck('clusters')
+            .take(1)
+            .map((c) => c && c.get(id))
+            .switchMap((c) => c
+                ? of(c)
+                : fromPromise(this.Clusters.getCluster(id))
+                    .pluck('data')
+                    .do((cluster) => this.ConfigureState.dispatchAction({
+                        type: clustersActionTypes.UPSERT,
+                        items: [cluster]
+                    }))
+            );
+    }
+    loadShortClusters$() {
+        return fromPromise(this.Clusters.getClustersOverview())
+            .pluck('data')
+            .do((items) => this.ConfigureState.dispatchAction({
+                type: shortClustersActionTypes.UPSERT,
+                items
+            }));
+    }
+    loadShortCaches$(clusterID) {
+        const cluster$ = this.loadCluster$(clusterID);
+        const shortCaches$ = this.ConfigureState.state$.pluck('shortCaches');
+        return shortCaches$.withLatestFrom(cluster$)
+            .switchMap(([shortCaches, cluster]) => {
+                if (!cluster.caches.length) return of([]);
+                if (shortCaches && cluster.caches.every((_id) => shortCaches.has(_id)))
+                    return of(cluster.caches.map((_id) => shortCaches.get(_id)));
+
+                return fromPromise(this.Clusters.getClusterCaches(clusterID))
+                .pluck('data')
+                .do((items) => {
+                    this.ConfigureState.dispatchAction({
+                        type: shortCachesActionTypes.UPSERT,
+                        items
+                    });
+                });
+            })
+            .take(1);
+    }
+})
 .config(['$stateProvider', ($stateProvider) => {
     $stateProvider
     .state('conf', {
         url: '/conf',
         component: 'pageConf',
         resolve: {
-            shortClusters: ['ConfigureState', 'Clusters', (ConfigureState, Clusters) => {
-                return Clusters.getClustersOverview().then(({data}) => ConfigureState.dispatchAction({
-                    type: shortClustersActionTypes.UPSERT,
-                    items: data
-                }));
-            }]
+            shortClusters: ['ConfigClusters', (ConfigClusters) => ConfigClusters.loadShortClusters$().toPromise()]
         }
     })
     // .state('conf.edit', {
@@ -344,23 +382,20 @@ export default angular
     .state('conf.edit', {
         url: '/{clusterID:string}/{mode:string}',
         resolve: {
-            cluster: ['ConfigureState', 'Clusters', '$transition$', (ConfigureState, Clusters, $transition$) => {
-                const clusterID = $transition$.params().clusterID;
-                return ConfigureState.state$
-                    .pluck('clusters')
-                    .take(1)
-                    .map((c) => c && c.get(clusterID))
-                    .switchMap((c) => c
-                        ? of(c)
-                        : Clusters
-                            .getCluster(clusterID)
-                            .then(({data}) => ConfigureState.dispatchAction({
-                                type: clustersActionTypes.UPSERT,
-                                items: [data]
-                            }))
-                    )
-                    .toPromise();
+            cluster: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
+                return ConfigClusters.loadCluster$($transition$.params().clusterID).toPromise();
+            }],
+            shortCaches: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
+                return $transition$.injector().getAsync('cluster')
+                    .then(({_id}) => {
+                        return ConfigClusters.loadShortCaches$(_id).toPromise();
+                    });
             }]
+        },
+        redirectTo: ($transition$) => {
+            return $transition$.injector().getAsync('cluster').catch(() => {
+                return 'conf';
+            });
         },
         template: `
             <conf-basic-form
