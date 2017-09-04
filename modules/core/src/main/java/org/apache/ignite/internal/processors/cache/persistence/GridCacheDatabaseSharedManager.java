@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -133,6 +134,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.internal.util.worker.GridWorker;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteOutClosure;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.mxbean.PersistenceMetricsMXBean;
 import org.apache.ignite.thread.IgniteThread;
 import org.apache.ignite.thread.IgniteThreadPoolExecutor;
@@ -1493,6 +1495,71 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         String memPlcName = desc.config().getMemoryPolicyName();
 
         return (PageMemoryEx)sharedCtx.database().memoryPolicy(memPlcName).pageMemory();
+    }
+
+    /**
+     *
+     */
+    public void applyUpdatesOnRecovery(
+        WALPointer pnt,
+        IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
+        IgnitePredicate<DataEntry> entryPredicate
+    ) throws IgniteCheckedException {
+        cctx.kernalContext().query().skipFieldLookup(true);
+
+        try (WALIterator it = cctx.wal().replay(pnt)) {
+            Set<Integer> grpIds = new HashSet<>();
+
+            Map<T2<Integer, Integer>, T2<Integer, Long>> partStates = new HashMap<>();
+
+            while (it.hasNextX()) {
+                IgniteBiTuple<WALPointer, WALRecord> next = it.nextX();
+
+                WALRecord rec = next.get2();
+
+                if (!recPredicate.apply(next))
+                    break;
+
+                switch (rec.type()) {
+                    case DATA_RECORD:
+                        DataRecord dataRec = (DataRecord)rec;
+
+                        for (DataEntry dataEntry : dataRec.writeEntries()) {
+                            if (entryPredicate.apply(dataEntry)) {
+                                int cacheId = dataEntry.cacheId();
+
+                                GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
+
+                                applyUpdate(cacheCtx, dataEntry);
+
+                                grpIds.add(cacheCtx.groupId());
+                            }
+                        }
+
+                        break;
+
+                    case PART_META_UPDATE_STATE:
+                        PartitionMetaStateRecord metaStateRecord = (PartitionMetaStateRecord)rec;
+
+                        if (grpIds.contains(metaStateRecord.groupId())){
+                            partStates.put(
+                                new T2<>(metaStateRecord.groupId(), metaStateRecord.partitionId()),
+                                new T2<>((int)metaStateRecord.state(), metaStateRecord.updateCounter())
+                            );
+                        }
+
+                        break;
+
+                    default:
+                        // Skip other records.
+                }
+            }
+
+            restorePartitionState(partStates);
+        }
+        finally {
+            cctx.kernalContext().query().skipFieldLookup(false);
+        }
     }
 
     /**
