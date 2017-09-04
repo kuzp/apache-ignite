@@ -18,16 +18,23 @@
 import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/merge';
+import {combineLatest} from 'rxjs/observable/combineLatest';
 import 'rxjs/add/operator/distinctUntilChanged';
 
 export default class PageConfigureController {
-    static $inject = ['$state', 'ConfigureState', 'IgniteLoading'];
+    static $inject = ['$uiRouter', '$state', 'ConfigureState', 'IgniteLoading'];
 
-    constructor($state, ConfigureState, IgniteLoading) {
-        Object.assign(this, {$state, ConfigureState, IgniteLoading});
+    constructor($uiRouter, $state, ConfigureState, IgniteLoading) {
+        Object.assign(this, {$uiRouter, $state, ConfigureState, IgniteLoading});
     }
 
     $onInit() {
+        const clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID').filter((id) => id !== 'new').distinctUntilChanged();
+        const clusters$ = this.ConfigureState.state$.pluck('clusters');
+        const cluster$ = combineLatest(clusterID$, clusters$, (id, clusters) => clusters.get(id)).distinctUntilChanged();
+
+        const test = cluster$.do((c) => console.log('cluster', c));
+
         const clusterName = this.ConfigureState.state$
             .pluck('clusterConfiguration', 'originalCluster')
             .distinctUntilChanged()
@@ -47,7 +54,7 @@ export default class PageConfigureController {
                     this.IgniteLoading.finish('configuration');
             });
 
-        this.subscription = Observable.merge(clusterName, loading).subscribe();
+        this.subscription = Observable.merge(clusterName, loading, test).subscribe();
         this.tooltipsVisible = true;
     }
 

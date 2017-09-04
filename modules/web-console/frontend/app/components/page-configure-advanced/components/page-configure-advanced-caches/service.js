@@ -81,7 +81,23 @@ export default class PageConfigureAdvancedCachesService {
             }));
 
         const shortClusters = shortItems('shortClusters');
-        const shortCaches = shortItems('shortCaches');
+        // const shortCaches = shortItems('shortCaches');
+
+        // const caches = combineLatest(
+        //     state$.pluck('basicCaches', 'ids').distinctUntilChanged().map((ids) => [...ids.values()]),
+        //     state$.pluck('basicCaches', 'changedItems').distinctUntilChanged(),
+        //     state$.pluck('shortCaches').distinctUntilChanged(),
+        //     (ids, changedCaches, oldCaches) => ({
+        //         allClusterCaches: ids.map((id) => changedCaches.get(id) || oldCaches.get(id)).filter((v) => v)
+        //     })
+        // );
+
+        const shortCaches = cluster
+            .pluck('originalCluster', 'caches')
+            .withLatestFrom(state$.pluck('shortCaches'), (ids = [], caches) => {
+                return ids.map((id) => caches.get(id)).filter((v) => v);
+            })
+            .map((value) => ({shortCaches: value}));
 
         const modelsMenu = shortItems('shortModels').map(({shortModels}) => ({
             modelsMenu: shortModels.map((m) => ({value: m._id, label: m.valueType}))

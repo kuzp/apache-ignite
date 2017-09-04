@@ -23,7 +23,7 @@ import 'rxjs/add/operator/scan';
 export default class ConfigureState {
     constructor() {
         this.actions$ = new Subject();
-        this.state$ = new BehaviorSubject(void 0);
+        this.state$ = new BehaviorSubject({});
         this._combinedReducer = (state, action) => state;
 
         const reducer = (state = {}, action) => {
@@ -34,7 +34,7 @@ export default class ConfigureState {
                 return state;
             }
         };
-        this.actions$.scan(reducer, void 0).do((v) => this.state$.next(v)).subscribe();
+        this.actions$.scan(reducer, {}).do((v) => this.state$.next(v)).subscribe();
     }
 
     addReducer(combineFn) {

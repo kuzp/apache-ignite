@@ -17,19 +17,33 @@
 
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
+import matches from 'lodash/fp/matches';
 
 // Controller for Clusters screen.
 export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
     function(IgniteModelNormalizer, pageService, ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        Object.assign(this, {IgniteModelNormalizer, pageService, ConfigureState, Clusters, $scope, Confirm, FormUtils, Version});
+        Object.assign(this, {IgniteModelNormalizer, $state, pageService, ConfigureState, Clusters, $scope, Confirm, FormUtils, Version});
 
         this.available = function(...args) {
             return this.Version.available(...args);
         };
 
         this.$onInit = function() {
+            const redirects = this.ConfigureState.actions$
+                .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
+                .do(() => {
+                    this.$state.go('.', {
+                        clusterID: this.clonedCluster._id
+                    }, {
+                        location: 'replace'
+                    });
+                });
+
             this.subscription = this.pageService.getObservable()
-                .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+                .do((state) => this.$scope.$applyAsync(() => {
+                    Object.assign(this, state);
+                }))
+                .merge(redirects)
                 .subscribe();
 
             let __original_value;

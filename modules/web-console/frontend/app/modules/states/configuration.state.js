@@ -289,8 +289,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.tabs.advanced', {
                 url: '/advanced',
-                component: 'pageConfigureAdvanced',
+                template: '<page-configure-advanced joke="{{$resolve.joke}}"></page-configure-advanced>',
+                // component: 'pageConfigureAdvanced',
                 permission: 'configuration',
+                resolve: {
+                    joke: () => Promise.resolve('$ctrl.menuItems')
+                },
                 redirectTo: 'base.configuration.tabs.advanced.cluster'
             })
             .state('base.configuration.tabs.advanced.cluster', {

@@ -132,6 +132,7 @@ import bsSelectMenu from './components/bs-select-menu';
 import protectFromBsSelectRender from './components/protect-from-bs-select-render';
 import uiGridHovering from './components/ui-grid-hovering';
 import listEditable from './components/list-editable';
+import pageConfiguration from './components/page-configuration';
 
 import igniteServices from './services';
 
@@ -212,6 +213,7 @@ angular.module('ignite-console', [
     AngularStrapSelect.name,
     listEditable.name,
     servicesModule.name,
+    pageConfiguration.name,
     // Ignite modules.
     IgniteModules.name
 ])
