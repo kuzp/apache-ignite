@@ -177,6 +177,17 @@
                             </archive>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>main</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                            <finalName>${project.build.finalName}</finalName>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
