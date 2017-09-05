@@ -17,7 +17,6 @@
 
 package org.apache.ignite.ml.math;
 
-import com.github.fommil.netlib.BLAS;
 import java.util.Arrays;
 import java.util.function.BiPredicate;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
