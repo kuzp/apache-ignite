@@ -98,6 +98,22 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                 .then((spaceIds) => mongo.Igfs.findOne({space: {$in: spaceIds}, _id}).lean().exec());
         }
 
+        static upsert(igfs) {
+            if (_.isNil(igfs._id))
+                return Promise.reject(new errors.IllegalArgumentException('IGFS id can not be undefined or null'));
+
+            const query = _.pick(igfs, ['space', '_id']);
+
+            return mongo.Igfs.update(query, {$set: igfs}, {upsert: true}).exec()
+                .catch((err) => {
+                    if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                        throw new errors.DuplicateKeyException(`IGFS with name: "${igfs.name}" already exist.`);
+
+                    throw err;
+                })
+                .then((res) => _.pick(res, 'n'));
+        }
+
         /**
          * Create or update IGFS.
          *
