@@ -82,6 +82,11 @@ public class DenseLocalOffHeapVector extends AbstractVector {
         return new DenseLocalOffHeapMatrix(rows, cols);
     }
 
+    /** See IGNITE-5535 */
+    public long ptr() {
+        return ((DenseLocalOffHeapVectorStorage)getStorage()).ptr();
+    }
+
     /** {@inheritDoc} */
     @Override public boolean equals(Object o) {
         return o != null && getClass().equals(o.getClass()) && (getStorage().equals(((Vector)o).getStorage()));

@@ -126,6 +126,11 @@ public class DenseLocalOffHeapVectorStorage implements VectorStorage {
         GridUnsafe.freeMemory(ptr);
     }
 
+    /** See IGNITE-5535 */
+    public long ptr() {
+        return ptr;
+    }
+
     /** {@inheritDoc} */
     @Override public int hashCode() {
         int res = 1;

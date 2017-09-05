@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.function.BiPredicate;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.matrix.SparseLocalOnHeapMatrix;
+import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.apache.ignite.ml.math.impls.vector.SparseLocalVector;
 import org.junit.Assert;
@@ -33,6 +34,19 @@ public class BlasOffHeapTest {
     @Test
     public void testBlasOffHeap() {
         Assert.assertNotNull("Unexpected null BlasOffHeap instance.", BlasOffHeap.getInstance());
+    }
+
+    /** Test off-heap 'daxpy' operation for two array-based vectors. */
+    @Test
+    public void testDaxpyArrayArray() {
+        DenseLocalOffHeapVector y = new DenseLocalOffHeapVector(new double[] {1.0, 2.0});
+        double a = 2.0;
+        DenseLocalOffHeapVector x = new DenseLocalOffHeapVector(new double[] {1.0, 2.0});
+
+        Vector exp = x.times(a).plus(y);
+        BlasOffHeap.getInstance().daxpy(x.size(), a, x.ptr(), 1, y.ptr(), 1);
+
+        Assert.assertEquals(y, exp);
     }
 
     /** Test 'axpy' operation for two array-based vectors. */
