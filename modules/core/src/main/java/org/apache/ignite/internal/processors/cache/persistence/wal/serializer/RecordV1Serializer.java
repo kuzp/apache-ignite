@@ -667,14 +667,26 @@ public class RecordV1Serializer implements RecordSerializer {
     @Override public WALRecord readRecord(FileInput in0, WALPointer expPtr) throws  IOException, IgniteCheckedException {
         long startPos = -1;
 
-        try (FileInput.Crc32CheckingFileInput in = in0.startRead(skipCrc)) {
+        try  {
+            FileInput.Crc32CheckingFileInput in = in0.startRead(skipCrc);
+
             startPos = in0.position();
 
             WALRecord res = readRecord(in, expPtr);
 
             assert res != null;
 
-            res.size((int)(in0.position() - startPos + CRC_SIZE)); // Account for CRC which will be read afterwards.
+            int size = (int) (in0.position() - startPos + CRC_SIZE);
+
+            res.size(size); // Account for CRC which will be read afterwards.
+
+            if (expPtr instanceof FileWALPointer) {
+                FileWALPointer ptr = (FileWALPointer) expPtr;
+
+                res.position(new FileWALPointer(ptr.index(), ptr.fileOffset(), size));
+            }
+
+            in.close();
 
             return res;
         }

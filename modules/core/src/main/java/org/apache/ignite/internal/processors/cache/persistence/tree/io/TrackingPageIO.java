@@ -354,14 +354,14 @@ public class TrackingPageIO extends PageIO {
             .a("\n\t\tdata={");
 
         for (int i = 0; i < (countOfPageToTrack(pageSize) >> 3); i += 2)
-            sb.appendHex(GridUnsafe.getShort(BITMAP_OFFSET + i));
+            sb.appendHex(GridUnsafe.getShort(addr + BITMAP_OFFSET + i));
 
         sb.a("}\n\t},\n\trightHalf={")
-            .a("\n\t\tsize=").a(GridUnsafe.getShort(BITMAP_OFFSET + (countOfPageToTrack(pageSize) >> 3)))
+            .a("\n\t\tsize=").a(GridUnsafe.getShort(addr + BITMAP_OFFSET + (countOfPageToTrack(pageSize) >> 3)))
             .a("\n\t\tdata={");
 
         for (int i = 0; i < (countOfPageToTrack(pageSize) >> 3); i += 2)
-            sb.appendHex(GridUnsafe.getShort(BITMAP_OFFSET + (countOfPageToTrack(pageSize) >> 3)
+            sb.appendHex(GridUnsafe.getShort(addr + BITMAP_OFFSET + (countOfPageToTrack(pageSize) >> 3)
                  + SIZE_FIELD_SIZE + i));
 
         sb.a("}\n\t}\n]");

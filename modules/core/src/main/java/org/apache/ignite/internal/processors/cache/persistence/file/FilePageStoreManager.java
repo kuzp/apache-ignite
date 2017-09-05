@@ -460,6 +460,9 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
 
         PageStore store = getStore(grpId, partId);
 
+        if (grpId ==-1368047377 && partId == 17)
+            System.err.println("");
+
         long pageIdx = store.allocatePage();
 
         return PageIdUtils.pageId(partId, flags, (int)pageIdx);

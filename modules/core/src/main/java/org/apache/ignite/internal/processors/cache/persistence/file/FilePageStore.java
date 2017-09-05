@@ -33,6 +33,7 @@ import org.apache.ignite.internal.pagemem.store.PageStore;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.IgniteDataIntegrityViolationException;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
+import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.internal.util.typedef.internal.U;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_PDS_SKIP_CRC;
@@ -85,6 +86,11 @@ public class FilePageStore implements PageStore {
 
     /** */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /** Th. */
+    private volatile Throwable thAlloc;
+
+    private volatile Throwable thInit;
 
     /**
      * @param file File.
@@ -390,6 +396,8 @@ public class FilePageStore implements PageStore {
      * @throws IgniteCheckedException If failed to initialize store file.
      */
     private void init() throws IgniteCheckedException {
+        thInit = new Throwable("" + System.currentTimeMillis());
+
         if (!inited) {
             lock.writeLock().lock();
 
@@ -510,7 +518,13 @@ public class FilePageStore implements PageStore {
 
         long off = allocPage();
 
-        return (off - headerSize()) / pageSize;
+        long l = (off - headerSize()) / pageSize;
+
+        if (l == 1) {
+            this.thAlloc = new Throwable("" + System.currentTimeMillis());
+        }
+
+        return l;
     }
 
     /**

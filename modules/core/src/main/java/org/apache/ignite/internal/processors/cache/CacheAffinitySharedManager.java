@@ -971,6 +971,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
                         List<ClusterNode> nodes = toNodes(topVer, e.getValue());
 
+                        if (nodes.equals(assignment.get(part)))
                         assert !nodes.equals(assignment.get(part)) : "Assignment did not change " +
                             "[cacheGrp=" + aff.cacheOrGroupName() +
                             ", part=" + part +
