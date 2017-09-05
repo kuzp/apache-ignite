@@ -113,13 +113,13 @@ export default class Clusters {
         return Observable.fromPromise(this.removeCluster(cluster));
     }
 
-    saveBasic(cluster, caches) {
-        if (cluster.name === 'New cluster 1') return Promise.reject();
-        return this.$http.put('/api/v1/configuration/clusters/basic', {cluster, caches});
+    saveBasic(changedItems) {
+        if (changedItems.cluster.name === 'New cluster 1') return Promise.reject('Invalid name');
+        return this.$http.put('/api/v1/configuration/clusters/basic', changedItems);
     }
 
-    saveAdvanced(cluster, caches) {
-        return this.$http.put('/api/v1/configuration/clusters/', {cluster, caches});
+    saveAdvanced(changedItems) {
+        return this.$http.put('/api/v1/configuration/clusters/', changedItems);
     }
 
     getBlankCluster() {

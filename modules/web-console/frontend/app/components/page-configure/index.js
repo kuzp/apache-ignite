@@ -92,7 +92,7 @@ export default angular
             models: mapStoreReducerFactory(modelsActionTypes)(state.models, action),
             shortModels: mapStoreReducerFactory(shortModelsActionTypes)(state.shortModels, action),
             igfss: mapStoreReducerFactory(igfssActionTypes)(state.igfss, action),
-            shortIGFSs: mapStoreReducerFactory(shortIGFSsActionTypes)(state.shortIGFSs, action),
+            shortIgfss: mapCacheReducerFactory(shortIGFSsActionTypes)(state.shortIgfss, action),
             edit: editReducer2(state.edit, action)
         }));
     }])

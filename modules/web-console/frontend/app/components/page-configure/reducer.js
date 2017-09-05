@@ -208,9 +208,10 @@ export const mapCacheReducerFactory = (actionTypes) => {
     const mapStoreReducer = mapStoreReducerFactory(actionTypes);
     return (state = {value: mapStoreReducer(), pristine: true}, action) => {
         switch (action.type) {
+            case actionTypes.SET:
+                return action.state;
             case actionTypes.REMOVE:
             case actionTypes.UPSERT:
-            case actionTypes.SET:
                 return {
                     value: mapStoreReducer(state.value, action),
                     pristine: false
@@ -297,7 +298,10 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                 ...state,
                 changes: {
                     ...state.changes,
-                    cluster: {...state.changes.cluster, [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== item._id).concat(item._id)},
+                    cluster: {
+                        ...state.changes.cluster,
+                        [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== item._id).concat(item._id)
+                    },
                     [itemType]: state.changes[itemType].filter(({_id}) => _id !== item._id).concat(item)
                 }
             };
@@ -308,7 +312,10 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                 ...state,
                 changes: {
                     ...state.changes,
-                    cluster: {...state.changes.cluster, [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== itemID)},
+                    cluster: {
+                        ...state.changes.cluster,
+                        [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== itemID)
+                    },
                     [itemType]: state.changes[itemType].filter(({_id}) => _id !== itemID)
                 }
             };

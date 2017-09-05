@@ -18,6 +18,8 @@
 import {
     basicCachesActionTypes,
     clustersActionTypes,
+    igfssActionTypes,
+    shortIGFSsActionTypes,
     shortClustersActionTypes,
     shortCachesActionTypes,
     cachesActionTypes
@@ -35,19 +37,6 @@ export default class PageConfigureAdvanced {
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([action, state]) => {
-                // Updates
-                const cluster = {
-                    ...action.cluster,
-                    caches: [...action.caches.ids.values()]
-                };
-                const shortCluster = Clusters.toShortCluster(cluster);
-                const caches = [...action.caches.changedItems.values()]
-                    .filter((shortCache) => state.caches.has(shortCache._id))
-                    .map((shortCache) => ({...state.caches.get(shortCache._id), ...shortCache}));
-                const shortCaches = [...action.caches.changedItems.values()].map((cache) => ({
-                    ...cache, clusters: [action.cluster._id]
-                }));
-
                 // Backups
                 const clustersBak = state.clusters;
                 const shortClustersBak = state.shortClusters;
@@ -55,31 +44,44 @@ export default class PageConfigureAdvanced {
                 const shortCachesBak = state.shortCaches;
                 const basicCachesBak = state.basicCaches;
 
-                return Observable.of({
-                    type: clustersActionTypes.UPSERT,
-                    items: [cluster]
-                }, {
-                    type: shortClustersActionTypes.UPSERT,
-                    items: [shortCluster]
-                }, {
-                    type: cachesActionTypes.UPSERT,
-                    items: caches
-                }, {
-                    type: shortCachesActionTypes.UPSERT,
-                    items: shortCaches
-                })
+                return Observable.of(
+                    {
+                        type: igfssActionTypes.UPSERT,
+                        items: action.changedItems.igfss
+                    },
+                    {
+                        type: shortIGFSsActionTypes.UPSERT,
+                        items: action.changedItems.igfss
+                    },
+                    {
+                        type: cachesActionTypes.UPSERT,
+                        items: action.changedItems.caches
+                    },
+                    {
+                        type: shortCachesActionTypes.UPSERT,
+                        items: action.changedItems.caches
+                    },
+                    {
+                        type: clustersActionTypes.UPSERT,
+                        items: [action.changedItems.cluster]
+                    },
+                    {
+                        type: shortClustersActionTypes.UPSERT,
+                        items: [Clusters.toShortCluster(action.changedItems.cluster)]
+                    }
+                )
                 .merge(
-                    Observable.fromPromise(Clusters.saveAdvanced(cluster, shortCaches))
+                    Observable.fromPromise(Clusters.saveAdvanced(action.changedItems))
                     .switchMap((res) => {
                         return Observable.of({
                             type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK',
-                            cluster: {name: cluster.name, _id: cluster._id}
+                            changedItems: action.changedItems
                         });
                     })
                     .catch((res) => {
                         return Observable.of({
                             type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR',
-                            cluster: {name: cluster.name, _id: cluster._id},
+                            changedItems: action.changedItems,
                             error: res
                         }, {
                             type: clustersActionTypes.SET,
@@ -103,11 +105,11 @@ export default class PageConfigureAdvanced {
 
         this.saveOKMessages$ = this.ConfigureState.actions$
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'))
-            .do((action) => this.messages.showInfo(`Cluster ${action.cluster.name} saved.`));
+            .do((action) => this.messages.showInfo(`Cluster ${action.changedItems.cluster.name} saved.`));
 
         this.saveErrMessages$ = this.ConfigureState.actions$
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
-            .do((action) => this.messages.showError(`Failed to save cluster ${action.cluster.name}.`));
+            .do((action) => this.messages.showError(`Failed to save cluster ${action.changedItems.cluster.name}.`));
 
         Observable.merge(this.saveOKMessages$, this.saveErrMessages$).subscribe();
         this.saveCompleteConfiguration$.subscribe((a) => ConfigureState.dispatchAction(a));
