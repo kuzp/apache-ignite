@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import ObjectID from 'bson-objectid';
+
 export default class IGFSs {
     static $inject = ['$http'];
 
@@ -35,6 +37,7 @@ export default class IGFSs {
 
     getBlankIGFS() {
         return {
+            _id: ObjectID.generate(),
             ipcEndpointEnabled: true,
             fragmentizerEnabled: true,
             colocateMetadata: true,
