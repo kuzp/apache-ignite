@@ -71,23 +71,21 @@ export default angular
                 width: 95
             }];
             const clusterShortCaches$ = combineLatest(
-                this.cluster$.filter((v) => v).pluck('caches').distinctUntilChanged(),
                 this.ConfigureState.state$.pluck('edit', 'changes', 'caches').distinctUntilChanged(),
                 this.ConfigureState.state$.pluck('shortCaches', 'value').distinctUntilChanged()
             )
-                .map(([ids, changed, shortCaches]) => {
+                .map(([{ids, changedItems}, shortCaches]) => {
                     if (!ids.length || !shortCaches) return [];
-                    return ids.map((id) => changed.find(({_id}) => _id === id) || shortCaches.get(id));
+                    return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortCaches.get(id));
                 });
 
             const clusterShortIGFS$ = combineLatest(
-                this.cluster$.filter((v) => v).pluck('igfss').distinctUntilChanged(),
                 this.ConfigureState.state$.pluck('edit', 'changes', 'igfss').distinctUntilChanged(),
                 this.ConfigureState.state$.pluck('shortIgfss', 'value').distinctUntilChanged().do((v) => console.log('shortIgfss', v))
             )
-                .map(([ids, changed, shortItems]) => {
+                .map(([{ids, changedItems}, shortItems]) => {
                     if (!ids.length || !shortItems) return [];
-                    return ids.map((id) => changed.find(({_id}) => _id === id) || shortItems.get(id));
+                    return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortItems.get(id));
                 });
 
             this.clusterItems$ = combineLatest(
@@ -225,17 +223,27 @@ export default angular
             cluster
         });
     }
+    _applyChangedIDs = (changes) => ({
+        cluster: {
+            ...changes.cluster,
+            caches: changes.caches.ids,
+            igfss: changes.igfss.ids,
+            models: changes.models.ids
+        },
+        caches: changes.caches.changedItems,
+        igfss: changes.igfss.changedItems,
+        models: changes.models.changedItems
+    });
     saveBasic(changedItems) {
         this.ConfigureState.dispatchAction({
             type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
-            changedItems
+            changedItems: this._applyChangedIDs(changedItems)
         });
     }
     saveAdvanced(changedItems) {
-        console.log('advanced save', changedItems);
         this.ConfigureState.dispatchAction({
             type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
-            changedItems
+            changedItems: this._applyChangedIDs(changedItems)
         });
     }
 })

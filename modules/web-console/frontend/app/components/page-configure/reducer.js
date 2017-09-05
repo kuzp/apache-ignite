@@ -286,7 +286,13 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
             return {
                 ...state,
                 cluster: action.cluster,
-                changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: []}), {cluster: action.cluster})
+                changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({
+                    ...a,
+                    [t]: {
+                        ids: action.cluster[t],
+                        changedItems: []
+                    }
+                }), {cluster: action.cluster})
             };
         }
         case 'UPSERT_CLUSTER': {
@@ -298,11 +304,10 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                 ...state,
                 changes: {
                     ...state.changes,
-                    cluster: {
-                        ...state.changes.cluster,
-                        [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== item._id).concat(item._id)
-                    },
-                    [itemType]: state.changes[itemType].filter(({_id}) => _id !== item._id).concat(item)
+                    [itemType]: {
+                        ids: state.changes[itemType].ids.filter((_id) => _id !== item._id).concat(item._id),
+                        changedItems: state.changes[itemType].changedItems.filter(({_id}) => _id !== item._id).concat(item)
+                    }
                 }
             };
         }
@@ -312,11 +317,10 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                 ...state,
                 changes: {
                     ...state.changes,
-                    cluster: {
-                        ...state.changes.cluster,
-                        [itemType]: state.changes.cluster[itemType].filter((_id) => _id !== itemID)
-                    },
-                    [itemType]: state.changes[itemType].filter(({_id}) => _id !== itemID)
+                    [itemType]: {
+                        ids: state.changes[itemType].ids.filter((_id) => _id !== itemID),
+                        changedItems: state.changes[itemType].changedItems.filter(({_id}) => _id !== itemID)
+                    }
                 }
             };
         }
@@ -325,5 +329,5 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
 };
 editReducer2.getDefaults = () => ({
     cluster: null,
-    changes: ['caches', 'domains', 'igfss'].reduce((a, t) => ({...a, [t]: []}), {cluster: null})
+    changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
