@@ -70,8 +70,8 @@ public class IgniteWalConverter {
         }
 
         if (args.length >= 3) {
+            final File walArchiveDirWithConsistentId = new File(args[2]);
 
-        final File walArchiveDirWithConsistentId = new File(args[2]);
             try (WALIterator stIt = factory.iteratorArchiveDirectory(walArchiveDirWithConsistentId)) {
                 while (stIt.hasNextX()) {
                     IgniteBiTuple<WALPointer, WALRecord> next = stIt.nextX();
