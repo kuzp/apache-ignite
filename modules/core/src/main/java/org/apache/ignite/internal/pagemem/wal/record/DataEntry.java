@@ -44,6 +44,7 @@ public class DataEntry {
     protected GridCacheOperation op;
 
     /** */
+    @GridToStringInclude
     protected GridCacheVersion nearXidVer;
 
     /** */

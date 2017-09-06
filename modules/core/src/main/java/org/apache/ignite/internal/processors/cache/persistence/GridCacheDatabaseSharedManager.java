@@ -90,6 +90,7 @@ import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.MemoryRecoveryRecord;
 import org.apache.ignite.internal.pagemem.wal.record.PageSnapshot;
+import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PageDeltaRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionDestroyRecord;
@@ -1517,8 +1518,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                 WALRecord rec = next.get2();
 
-                if (!recPredicate.apply(next))
+                if (!recPredicate.apply(next)){
+                    System.out.println("Stop iteration " + next.get1() + " rec " + rec);
+
                     break;
+                }
 
                 switch (rec.type()) {
                     case DATA_RECORD:
@@ -1530,12 +1534,25 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
 
+                                System.out.println(
+                                    "Apply key:" + dataEntry.key().value(cacheCtx.cacheObjectContext(), true) +
+                                        " val:" + dataEntry.value().value(cacheCtx.cacheObjectContext(), true) +
+                                        " ver: " + dataEntry.nearXidVersion() +
+                                        " nodeId:" + cctx.localNodeId() + " ptr:" + next.get1());
+
                                 applyUpdate(cacheCtx, dataEntry);
 
                                 grpIds.add(cacheCtx.groupId());
                             }
                         }
 
+                        break;
+                    case TX_RECORD:
+                        TxRecord txRec = (TxRecord)rec;
+
+                        System.out.println("Apply tx:" + txRec.state() + " time:"
+                            + txRec.timestamp() + " ver:" + txRec.nearXidVersion()+
+                            " nodeId:" + cctx.localNodeId() + " ptr:" + next.get1());
                         break;
 
                     case PART_META_UPDATE_STATE:
@@ -1544,8 +1561,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                         if (grpIds.contains(metaStateRecord.groupId())){
                             partStates.put(
                                 new T2<>(metaStateRecord.groupId(), metaStateRecord.partitionId()),
-                                new T2<>((int)metaStateRecord.state(), metaStateRecord.updateCounter())
-                            );
+                                new T2<>((int)metaStateRecord.state(), metaStateRecord.updateCounter()));
                         }
 
                         break;
