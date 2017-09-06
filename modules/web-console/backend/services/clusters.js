@@ -200,7 +200,7 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
                             return Promise.all([cachesService.remove(cacheIds), igfssService.remove(igfsIds)]);
                         });
                 })
-                .then(() => Promise.all(_.map(caches, cachesService.upsert), _.map(igfss, igfssService.upsert)))
+                .then(() => Promise.all(_.concat(_.map(caches, cachesService.upsert), _.map(igfss, igfssService.upsert))))
                 .then(() => ({n: 1}));
         }
 

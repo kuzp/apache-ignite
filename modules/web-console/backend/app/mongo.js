@@ -388,7 +388,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         updateFileLengthOnFlush: Boolean
     });
 
-    IgfsSchema.index({name: 1, space: 1}, {unique: true});
+    IgfsSchema.index({name: 1, space: 1, clusters: 1}, {unique: true});
 
     // Define IGFS model.
     result.Igfs = mongoose.model('Igfs', IgfsSchema);
