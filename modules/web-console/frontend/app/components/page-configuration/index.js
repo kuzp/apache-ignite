@@ -11,6 +11,7 @@ import 'rxjs/add/operator/toPromise';
 import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 import camelCase from 'lodash/camelCase';
+import cloneDeep from 'lodash/cloneDeep';
 // import {Observable} from 'rxjs/observable';
 import angular from 'angular';
 import 'angular1-async-filter';
@@ -137,6 +138,9 @@ export default angular
         onItemRemove({type, item}) {
             this.conf.removeItem(type, item._id);
         }
+        goToItemCreation({type, item}) {
+            this.conf.goToItemCreation(type);
+        }
     },
     template: `
         <pc-items-table
@@ -171,7 +175,7 @@ export default angular
 .service('conf', class Conf {
     static $inject = ['ConfigureState', '$uiRouter', 'Clusters', '$state', 'PageConfigureBasic', 'Caches', 'IGFSs', 'PageConfigureAdvanced'];
     constructor(ConfigureState, {globals: {params$}}, Clusters, $state, PageConfigureBasic, Caches, IGFSs, PageConfigureAdvanced) {
-        Object.assign(this, {ConfigureState, Caches, IGFSs, params$});
+        Object.assign(this, {ConfigureState, Caches, IGFSs, params$, $state});
         const {state$, actions$} = ConfigureState;
 
         const basicRedirects$ = actions$
@@ -246,6 +250,9 @@ export default angular
             changedItems: this._applyChangedIDs(changedItems)
         });
     }
+    goToItemCreation(type) {
+        this.$state.go('conf.edit.item', {itemType: type, itemID: 'new'});
+    }
 })
 .component('confBasicForm', {
     template: `
@@ -276,7 +283,7 @@ export default angular
         }
         $onChanges(changes) {
             if ('cluster' in changes && changes.cluster.currentValue)
-                this.item = angular.copy(changes.cluster.currentValue);
+                this.item = cloneDeep(changes.cluster.currentValue);
         }
         addCache(cache) {
             this.onCacheAdd({$event: {item: cache, type: 'caches'}});
@@ -289,7 +296,7 @@ export default angular
         }
         save() {
             if (this.form.$invalid) return;
-            this.onClusterChange({$event: this.item});
+            this.onClusterChange({$event: cloneDeep(this.item)});
             this[this.saveMethod]();
         }
     },
@@ -309,56 +316,74 @@ export default angular
         <h1>Advanced</h1>
         <form ng-submit='$ctrl.save()' name='$ctrl.form'>
             <input type="text" name='name' ng-model='$ctrl.item.name' required/>
-            <h1>Caches</h1>
-            <pc-list-editable
-                ng-model='$ctrl.clusterItems.shortCaches'
-                pc-list-editable-one-way
-                on-item-change='$ctrl.changeItem($event, "caches")'
-                on-item-remove='$ctrl.removeCache($event, "caches")'
-            >
-                <pc-list-editable-item-view>
-                    {{ $parent.item.name }}
-                </pc-list-editable-item-view>
-                <pc-list-editable-item-edit>
-                    <input type="text" ng-model='$parent.item.name' name='name' required>
-                </pc-list-editable-item-edit>
-            </pc-list-editable>
-            <button type='button' ng-click='$ctrl.addItem("caches")'>Add cache</button>
-            <h1>IGFSS</h1>
-            <pc-list-editable
-                ng-model='$ctrl.clusterItems.shortIgfss'
-                pc-list-editable-one-way
-                on-item-change='$ctrl.changeItem($event, "igfss")'
-                on-item-remove='$ctrl.removeCache($event, "igfss")'
-            >
-                <pc-list-editable-item-view>
-                    {{ $parent.item.name }}
-                </pc-list-editable-item-view>
-                <pc-list-editable-item-edit>
-                    <input type="text" ng-model='$parent.item.name' name='name' required>
-                </pc-list-editable-item-edit>
-            </pc-list-editable>
-            <button type='button' ng-click='$ctrl.addItem("igfss")'>Add IGFS</button>
+            <details>
+                <summary>Caches</summary>
+                <ul>
+                    <li ng-repeat='sc in $ctrl.clusterItems.shortCaches track by sc._id'>
+                        <a ui-sref='conf.edit.item({itemID: sc._id, itemType: "caches"})'>{{sc.name}}</a>
+                    </li>
+                </ul>
+                <pc-list-editable
+                    hidden
+                    ng-model='$ctrl.clusterItems.shortCaches'
+                    pc-list-editable-one-way
+                    on-item-change='$ctrl.changeItem($event, "caches")'
+                    on-item-remove='$ctrl.removeCache($event, "caches")'
+                >
+                    <pc-list-editable-item-view>
+                        {{ $parent.item.name }}
+                    </pc-list-editable-item-view>
+                    <pc-list-editable-item-edit>
+                        <input type="text" ng-model='$parent.item.name' name='name' required>
+                    </pc-list-editable-item-edit>
+                </pc-list-editable>
+                <ui-view name='caches'></ui-view>
+                <a ui-sref='conf.edit.item({itemType: "caches", itemID: "new"})'>Add cache</a>
+            </details>
+            <details open>
+                <summary>IGFSS</summary>
+                <ul>
+                    <li ng-repeat='i in $ctrl.clusterItems.shortIgfss track by i._id'>
+                        <a ui-sref='conf.edit.item({itemID: i._id, itemType: "igfss"})'>{{i.name}}</a>
+                    </li>
+                </ul>
+                <pc-list-editable
+                    hidden
+                    ng-model='$ctrl.clusterItems.shortIgfss'
+                    pc-list-editable-one-way
+                    on-item-change='$ctrl.changeItem($event, "igfss")'
+                    on-item-remove='$ctrl.removeCache($event, "igfss")'
+                >
+                    <pc-list-editable-item-view>
+                        {{ $parent.item.name }}
+                    </pc-list-editable-item-view>
+                    <pc-list-editable-item-edit>
+                        <input type="text" ng-model='$parent.item.name' name='name' required>
+                    </pc-list-editable-item-edit>
+                </pc-list-editable>
+                <ui-view name='igfss'></ui-view>
+                <a ui-sref='conf.edit.item({itemType: "igfss", itemID: "new"})'>Add IGFS</a>
+            </details>
             <button type='submit'>Save</button>
         </form>
     `,
-    controller: class ConfBasicController {
+    controller: class ConfAdvancedController {
         $onChanges(changes) {
             if ('cluster' in changes && changes.cluster.currentValue)
-                this.item = angular.copy(changes.cluster.currentValue);
+                this.item = cloneDeep(changes.cluster.currentValue);
         }
         addItem(type) {
             this.onItemAdd({$event: {type}});
         }
-        removeItem(cache, type) {
-            this.onItemRemove({$event: {item: cache, type}});
+        removeItem(item, type) {
+            this.onItemRemove({$event: {item, type}});
         }
-        changeItem(cache, type) {
-            this.onItemChange({$event: {item: cache, type}});
+        changeItem(item, type) {
+            this.onItemChange({$event: {item, type}});
         }
         save() {
             if (this.form.$invalid) return;
-            this.onClusterChange({$event: this.item});
+            this.onClusterChange({$event: cloneDeep(this.item)});
             this.onSave();
         }
     },
@@ -372,10 +397,10 @@ export default angular
         onSave: '&?'
     }
 })
-.service('ConfigClusters', class ConfigClusters {
-    static $inject = ['Clusters', 'ConfigureState'];
-    constructor(Clusters, ConfigureState) {
-        Object.assign(this, {Clusters, ConfigureState});
+.service('ConfigResolvers', class ConfigResolvers {
+    static $inject = ['Clusters', 'ConfigureState', 'Caches', 'IGFSs'];
+    constructor(Clusters, ConfigureState, Caches, IGFSs) {
+        Object.assign(this, {Clusters, ConfigureState, Caches, IGFSs});
     }
     loadCluster$(id, shortClusters = []) {
         if (id === 'new') {
@@ -446,6 +471,101 @@ export default angular
                 });
             });
     }
+    resolveItem$(itemType, itemID) {
+        const load = {
+            caches: (...args) => this.Caches.getCache(...args),
+            igfss: (...args) => this.IGFSs.getIGFS(...args)
+        };
+        const make = {
+            caches: () => this.Caches.getBlankCache(),
+            igfss: () => this.IGFSs.getBlankIGFS()
+        };
+        const at = {
+            caches: cachesActionTypes,
+            igfss: igfssActionTypes
+        };
+        if (itemID === 'new') {
+            return of(make[itemType]())
+                .do((item) => {
+                    this.ConfigureState.dispatchAction({
+                        type: 'EDIT_CLUSTER_ITEM',
+                        itemType,
+                        item
+                    });
+                });
+        }
+        return this.ConfigureState.state$
+            .pluck(itemType)
+            .take(1)
+            .switchMap((items) => {
+                if (items && items.has(itemID)) return of(items.get(itemID));
+                return fromPromise(load[itemType](itemID))
+                    .pluck('data')
+                    .do((item) => {
+                        this.ConfigureState.dispatchAction({
+                            type: at[itemType].UPSERT,
+                            items: [item]
+                        });
+                        this.ConfigureState.dispatchAction({
+                            type: 'EDIT_CLUSTER_ITEM',
+                            itemType,
+                            item
+                        });
+                    });
+            });
+    }
+})
+.component('cacheForm', {
+    bindings: {
+        isNew: '<',
+        cache: '<',
+        onCacheChange: '&'
+    },
+    controller: class Controller {
+        $onChanges(changes) {
+            if ('cache' in changes && changes.cache.currentValue)
+                this.item = cloneDeep(changes.cache.currentValue);
+        }
+        save() {
+            if (this.form.$invalid) return;
+            this.onCacheChange({$event: cloneDeep(this.item)});
+        }
+    },
+    template: `
+        <h1>{{$ctrl.isNew ? 'Create' : 'Edit'}} cache {{$ctrl.cache.name}}</h1>
+        <div ng-form='$ctrl.form' name='$ctrl.form'>
+            <label for="name">Cache name</label>
+            <input type="text" ng-model='$ctrl.item.name' name='name' id='name' required/>
+            <button type='button' ng-click='$ctrl.save()' >Save cache</button>
+        </div>
+    `
+})
+.component('igfsForm', {
+    bindings: {
+        isNew: '<',
+        igfs: '<',
+        onIgfsChange: '&'
+    },
+    controller: class Controller {
+        $onChanges(changes) {
+            if ('igfs' in changes && changes.igfs.currentValue)
+                this.item = cloneDeep(changes.igfs.currentValue);
+        }
+        save() {
+            if (this.form.$invalid) return;
+            this.onIgfsChange({$event: cloneDeep(this.item)});
+        }
+    },
+    template: `
+        <h1>{{$ctrl.isNew ? 'Create' : 'Edit'}} IGFS {{$ctrl.igfs.name}}</h1>
+        <div ng-form='$ctrl.form' name='$ctrl.form'>
+            <label for="name">IGFS name</label>
+            <input type="text" ng-model='$ctrl.item.name' name='name' id='name' required/>
+            <label>ipcEndpointEnabled <input type="checkbox" name="ipcEndpointEnabled" id="ipcEndpointEnabled" ng-model="$ctrl.item.ipcEndpointEnabled"/></label>
+
+            <button type='button' ng-click='$ctrl.save()' >Save IGFS</button>
+        </div>
+    `
 })
 .config(['$stateProvider', ($stateProvider) => {
     $stateProvider
@@ -453,30 +573,30 @@ export default angular
         url: '/conf',
         component: 'pageConf',
         resolve: {
-            shortClusters: ['ConfigClusters', (ConfigClusters) => ConfigClusters.loadShortClusters$().toPromise()]
+            shortClusters: ['ConfigResolvers', (ConfigResolvers) => ConfigResolvers.loadShortClusters$().toPromise()]
         }
     })
     .state('conf.edit', {
-        url: '/{clusterID:string}?{mode:string}',
+        url: '/:clusterID/:mode',
         params: {
             mode: {
-                dynamic: true
+                value: 'advanced'
             }
         },
         resolve: {
-            cluster: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
+            cluster: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
                 return $transition$.injector().getAsync('shortClusters').then((shortClusters) => {
-                    return ConfigClusters.loadCluster$($transition$.params().clusterID, shortClusters).toPromise();
+                    return ConfigResolvers.loadCluster$($transition$.params().clusterID, shortClusters).toPromise();
                 });
             }],
-            shortCaches: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
+            shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
                 return $transition$.injector().getAsync('cluster').then((cluster) => {
-                    return ConfigClusters.loadShortItems$(cluster, 'caches').toPromise();
+                    return ConfigResolvers.loadShortItems$(cluster, 'caches').toPromise();
                 });
             }],
-            shortIgfss: ['ConfigClusters', '$transition$', (ConfigClusters, $transition$) => {
+            shortIgfss: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
                 return $transition$.injector().getAsync('cluster').then((cluster) => {
-                    return ConfigClusters.loadShortItems$(cluster, 'igfss').toPromise();
+                    return ConfigResolvers.loadShortItems$(cluster, 'igfss').toPromise();
                 });
             }]
         },
@@ -503,7 +623,6 @@ export default angular
                 cluster='($ctrl.cluster$|async:this)'
                 cluster-items='$ctrl.clusterItems$|async:this'
 
-                on-item-add='$ctrl.onItemAdd($event)'
                 on-item-change='$ctrl.onItemChange($event)'
                 on-item-remove='$ctrl.onItemRemove($event)'
                 on-cluster-change='$ctrl.onClusterChange($event)'
@@ -512,5 +631,36 @@ export default angular
             >
             </conf-advanced-form>
         `
+    })
+    .state('conf.edit.item', {
+        url: '/:itemType/:itemID',
+        resolve: {
+            item: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                const {itemType, itemID} = $transition$.params();
+                return ConfigResolvers.resolveItem$(itemType, itemID).toPromise();
+            }]
+        },
+        views: {
+            caches: {
+                template: `
+                    <cache-form
+                        cache='$resolve.item'
+                        is-new='$resolve.itemID === "new"'
+                        on-cache-change='$ctrl.changeItem($event, "caches")'
+                    ></cache-form>
+                    <pre>{{$resolve.item|json}}</pre>
+                `
+            },
+            igfss: {
+                template: `
+                    <igfs-form
+                        igfs='$resolve.item'
+                        is-new='$resolve.itemID === "new"'
+                        on-igfs-change='$ctrl.changeItem($event, "igfss")'
+                    ></igfs-form>
+                    <pre>{{$resolve.item|json}}</pre>
+                `
+            }
+        }
     });
 }]);
