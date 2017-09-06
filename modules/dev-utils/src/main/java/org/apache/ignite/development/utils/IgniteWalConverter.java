@@ -36,8 +36,7 @@ import org.apache.ignite.logger.NullLogger;
 /**
  * Print WAL log data in human-readable form.
  */
-public class IgniteWalReaderUtils {
-
+public class IgniteWalConverter {
     /**
      * @param args Args.
      */
