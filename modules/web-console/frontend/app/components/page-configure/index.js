@@ -68,7 +68,7 @@ export default angular
     ])
     .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
-        // $uiRouter.plugin(Visualizer);
+        $uiRouter.plugin(Visualizer);
         if (devTools) {
             devTools.subscribe((e) => {
                 if (e.type === 'DISPATCH' && e.state) ConfigureState.actions$.next(e);
