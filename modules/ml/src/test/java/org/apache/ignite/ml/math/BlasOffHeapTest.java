@@ -36,7 +36,7 @@ public class BlasOffHeapTest {
         Assert.assertNotNull("Unexpected null BlasOffHeap instance.", BlasOffHeap.getInstance());
     }
 
-    /** Test off-heap 'daxpy' operation for two array-based vectors. */
+    /** Test off-heap 'daxpy' operation for two vectors. */
     @Test
     public void testDaxpyArrayArray() {
         DenseLocalOffHeapVector y = new DenseLocalOffHeapVector(new double[] {1.0, 2.0});
@@ -47,6 +47,19 @@ public class BlasOffHeapTest {
         BlasOffHeap.getInstance().daxpy(x.size(), a, x.ptr(), 1, y.ptr(), 1);
 
         Assert.assertEquals(y, exp);
+    }
+
+    /** Test 'dscal' operation for a vector. */
+    @Test
+    public void testScal() {
+        double[] data = new double[] {1.0, 1.0};
+        double alpha = 2.0;
+
+        DenseLocalOffHeapVector v = new DenseLocalOffHeapVector(data);
+        Vector exp = new DenseLocalOnHeapVector(data, true).times(alpha);
+        BlasOffHeap.getInstance().dscal(v.size(), alpha, v.ptr(), 1);
+
+        Assert.assertEquals(new DenseLocalOnHeapVector(v.size()).assign(v), exp);
     }
 
     /** Test 'axpy' operation for two array-based vectors. */
