@@ -284,6 +284,8 @@ export const itemsEditReducerFactory = (actionTypes) => {
 
 export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
     switch (action.type) {
+        case 'SET_EDIT':
+            return action.state;
         case 'EDIT_CLUSTER': {
             return {
                 ...state,

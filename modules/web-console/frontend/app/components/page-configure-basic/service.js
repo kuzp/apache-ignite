@@ -65,6 +65,7 @@ export default class PageConfigureBasic {
                 const cachesBak = state.caches;
                 const shortCachesBak = state.shortCaches;
                 const basicCachesBak = state.basicCaches;
+                const editBak = state.edit;
 
                 return Observable.of(
                     {
@@ -82,6 +83,10 @@ export default class PageConfigureBasic {
                     {
                         type: shortClustersActionTypes.UPSERT,
                         items: [clusters.toShortCluster(action.changedItems.cluster)]
+                    },
+                    {
+                        type: 'EDIT_CLUSTER',
+                        cluster: action.changedItems.cluster
                     }
                 )
                 .merge(
@@ -97,6 +102,9 @@ export default class PageConfigureBasic {
                             type: 'BASIC_SAVE_CLUSTER_AND_CACHES_ERR',
                             changedItems: action.changedItems,
                             error: res
+                        }, {
+                            type: 'SET_EDIT',
+                            state: editBak
                         }, {
                             type: clustersActionTypes.SET,
                             state: clustersBak
