@@ -15,14 +15,14 @@
     limitations under the License.
 
 h1.pc-page-header
-    | {{ $ctrl.title }}
+    | {{ $ctrl.clusterName$|async:this }}
     version-picker
 div.pc-content-container
     ul.tabs.tabs--blue
         li(role='presentation' ui-sref-active='active')
-            a(ui-sref='base.configuration.edit.basic({clusterID: $ctrl.$state.params.clusterID})') Basic
+            a(ui-sref='base.configuration.edit.basic') Basic
         li(role='presentation' ui-sref-active='{active: "base.configuration.edit.advanced"}')
-            a(ui-sref='base.configuration.edit.advanced.cluster({clusterID: $ctrl.$state.params.clusterID})') Advanced
+            a(ui-sref='base.configuration.edit.advanced.cluster') Advanced
 
     label.pc-tooltips-toggle.switcher--ignite
         svg.icon-left(
