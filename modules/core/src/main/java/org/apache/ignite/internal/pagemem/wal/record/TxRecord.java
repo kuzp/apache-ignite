@@ -61,14 +61,13 @@ public class TxRecord extends WALRecord {
                     GridCacheVersion nearXidVer,
                     GridCacheVersion writeVer,
                     @Nullable Map<Object, Collection<Object>> participatingNodes,
-                    @Nullable Object primaryNode,
-                    long timestamp) {
+                    @Nullable Object primaryNode
+    ) {
         this.state = state;
         this.nearXidVer = nearXidVer;
         this.writeVer = writeVer;
         this.participatingNodes = participatingNodes;
         this.primaryNode = primaryNode;
-        this.timestamp = timestamp;
     }
 
     /** {@inheritDoc} */
@@ -151,5 +150,12 @@ public class TxRecord extends WALRecord {
      */
     public long timestamp() {
         return timestamp;
+    }
+
+    /**
+     *
+     */
+    public void timestamp(long time) {
+        timestamp = time;
     }
 }

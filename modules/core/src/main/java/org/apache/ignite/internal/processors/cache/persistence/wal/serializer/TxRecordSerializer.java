@@ -60,6 +60,8 @@ public class TxRecordSerializer {
      * @throws IgniteCheckedException In case of fail.
      */
     public void writeTxRecord(TxRecord record, ByteBuffer buf) throws IgniteCheckedException {
+        record.timestamp(System.currentTimeMillis());
+
         buf.put((byte)record.state().ordinal());
         putVersion(buf, record.nearXidVersion(), true);
         putVersion(buf, record.writeVersion(), true);
@@ -132,7 +134,11 @@ public class TxRecordSerializer {
 
         long timestamp = in.readLong();
 
-        return new TxRecord(state, nearXidVer, writeVer, participatingNodes, primaryNode, timestamp);
+        TxRecord rec = new TxRecord(state, nearXidVer, writeVer, participatingNodes, primaryNode);
+
+        rec.timestamp(timestamp);
+
+        return rec;
     }
 
     /**

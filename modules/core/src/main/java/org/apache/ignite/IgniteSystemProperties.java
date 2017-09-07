@@ -711,7 +711,7 @@ public final class IgniteSystemProperties {
      * Default value is {@code 4}.
      */
     public static final String IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD =
-            "IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD";
+        "IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD";
 
     /**
      * If the property is set {@link org.apache.ignite.internal.pagemem.wal.record.TxRecord} records

@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -89,6 +90,7 @@ import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.MemoryRecoveryRecord;
 import org.apache.ignite.internal.pagemem.wal.record.PageSnapshot;
+import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PageDeltaRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionDestroyRecord;
@@ -134,6 +136,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.internal.util.worker.GridWorker;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteOutClosure;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.mxbean.PersistenceMetricsMXBean;
 import org.apache.ignite.thread.IgniteThread;
 import org.apache.ignite.thread.IgniteThreadPoolExecutor;
@@ -1499,6 +1502,90 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /**
+     *
+     */
+    public void applyUpdatesOnRecovery(
+        WALPointer pnt,
+        IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
+        IgnitePredicate<DataEntry> entryPredicate
+    ) throws IgniteCheckedException {
+        cctx.kernalContext().query().skipFieldLookup(true);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("NodeId:" + cctx.localNodeId() + "\n");
+
+        try (WALIterator it = cctx.wal().replay(pnt)) {
+            Set<Integer> grpIds = new HashSet<>();
+
+            Map<T2<Integer, Integer>, T2<Integer, Long>> partStates = new HashMap<>();
+
+            while (it.hasNextX()) {
+                IgniteBiTuple<WALPointer, WALRecord> next = it.nextX();
+
+                WALRecord rec = next.get2();
+
+                if (!recPredicate.apply(next)){
+                    sb.append("Stop iteration " + next.get1() + " rec " + rec + "\n");
+
+                    break;
+                }
+
+                switch (rec.type()) {
+                    case DATA_RECORD:
+                        DataRecord dataRec = (DataRecord)rec;
+
+                        for (DataEntry dataEntry : dataRec.writeEntries()) {
+                            if (entryPredicate.apply(dataEntry)) {
+                                int cacheId = dataEntry.cacheId();
+
+                                GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
+
+                                sb.append(
+                                    "Apply " + dataEntry.value().value(cacheCtx.cacheObjectContext(), true) +
+                                        " " + dataEntry.nearXidVersion() +
+                                        " " + next.get1()+"\n");
+
+                                applyUpdate(cacheCtx, dataEntry);
+
+                                grpIds.add(cacheCtx.groupId());
+                            }
+                        }
+
+                        break;
+                    case TX_RECORD:
+                        TxRecord txRec = (TxRecord)rec;
+
+                        sb.append("Apply " + txRec.state() + " " +
+                            txRec.timestamp() + " " + txRec.nearXidVersion()+ " " + next.get1() + "\n");
+                        break;
+
+                    case PART_META_UPDATE_STATE:
+                        PartitionMetaStateRecord metaStateRecord = (PartitionMetaStateRecord)rec;
+
+                        if (grpIds.contains(metaStateRecord.groupId())){
+                            partStates.put(
+                                new T2<>(metaStateRecord.groupId(), metaStateRecord.partitionId()),
+                                new T2<>((int)metaStateRecord.state(), metaStateRecord.updateCounter()));
+                        }
+
+                        break;
+
+                    default:
+                        // Skip other records.
+                }
+            }
+
+            restorePartitionState(partStates);
+        }
+        finally {
+            cctx.kernalContext().query().skipFieldLookup(false);
+
+            System.err.println(sb.toString());
+        }
+    }
+
+    /**
      * @param status Last registered checkpoint status.
      * @throws IgniteCheckedException If failed to apply updates.
      * @throws StorageException If IO exception occurred while reading write-ahead log.
@@ -2198,9 +2285,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     cpRec.addCacheGroupState(grp.groupId(), state);
                 }
 
-                if (curr.nextSnapshot)
-                    snapshotMgr.onMarkCheckPointBegin(curr.snapshotOperation, map);
-
                 cpPagesTuple = beginAllCheckpoints();
 
                 hasPages = hasPageForWrite(cpPagesTuple.get1());
@@ -2211,6 +2295,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                     if (cpPtr == null)
                         cpPtr = CheckpointStatus.NULL_PTR;
+
+                    if (curr.nextSnapshot)
+                        snapshotMgr.onMarkCheckPointBegin(cpPtr, curr.snapshotOperation, map);
                 }
             }
             finally {

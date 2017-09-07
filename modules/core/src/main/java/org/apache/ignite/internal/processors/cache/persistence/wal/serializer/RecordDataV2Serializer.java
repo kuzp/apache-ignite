@@ -85,6 +85,8 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             case TX_RECORD:
                 txRecordSerializer.writeTxRecord((TxRecord)record, buf);
 
+                break;
+
             default:
                delegateSerializer.writeRecord(record, buf);
         }
