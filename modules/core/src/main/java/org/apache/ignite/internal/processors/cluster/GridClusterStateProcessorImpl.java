@@ -323,6 +323,15 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
     }
 
     /**
+     * @return true if local node is in baseline topology
+     */
+    public boolean isInBaseline(Object consistentId) {
+        BaselineTopology top = globalState.baselineTopology();
+
+        return top == null || top.consistentIds().contains(consistentId);
+    }
+
+    /**
      * @param msg State change message.
      * @return Local future for state change process.
      */

@@ -29,7 +29,10 @@ import java.util.Set;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.internal.cluster.DetachedClusterNode;
 import org.apache.ignite.internal.cluster.NodeOrderComparator;
+import org.apache.ignite.internal.util.typedef.internal.CU;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.traversal.NodeFilter;
 
 /**
  *
@@ -68,10 +71,18 @@ public class BaselineTopology implements Serializable {
      * @return Sorted list of baseline topology nodes.
      */
     public List<ClusterNode> createBaselineView(List<ClusterNode> aliveNodes) {
+        return createBaselineView(aliveNodes, null);
+    }
+
+    /**
+     * @param aliveNodes Sorted list of currently alive nodes.
+     * @return Sorted list of baseline topology nodes.
+     */
+    public List<ClusterNode> createBaselineView(List<ClusterNode> aliveNodes, IgnitePredicate<ClusterNode> nodeFilter)  {
         List<ClusterNode> res = new ArrayList<>(nodeMap.size());
 
         for (ClusterNode node : aliveNodes) {
-            if (nodeMap.containsKey(node.consistentId()))
+            if (nodeMap.containsKey(node.consistentId()) && (nodeFilter == null || CU.affinityNode(node, nodeFilter)))
                 res.add(node);
         }
 
@@ -83,7 +94,7 @@ public class BaselineTopology implements Serializable {
         Map<Object, ClusterNode> consIdMap = new HashMap<>();
 
         for (ClusterNode node : aliveNodes) {
-            if (nodeMap.containsKey(node.consistentId()))
+            if (nodeMap.containsKey(node.consistentId()) && (nodeFilter == null || CU.affinityNode(node, nodeFilter)))
                 consIdMap.put(node.consistentId(), node);
         }
 
@@ -93,7 +104,8 @@ public class BaselineTopology implements Serializable {
             if (!consIdMap.containsKey(consId)) {
                 DetachedClusterNode node = new DetachedClusterNode(consId, e.getValue());
 
-                consIdMap.put(consId, node);
+                if (nodeFilter == null || CU.affinityNode(node, nodeFilter))
+                    consIdMap.put(consId, node);
             }
         }
 
