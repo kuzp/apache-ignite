@@ -167,8 +167,6 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
      */
     private boolean saveStoreMetadata(CacheDataStore store, Context ctx, boolean saveMeta,
         boolean beforeDestroy) throws IgniteCheckedException {
-        System.err.println("");
-
         RowStore rowStore0 = store.rowStore();
 
         boolean needSnapshot = ctx != null && ctx.nextSnapshot() && ctx.needToSnapshot(grp.cacheOrGroupName());
@@ -191,8 +189,6 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                 GridDhtPartitionState state = null;
 
                 if (!grp.isLocal()) {
-                    GridDhtPartitionState state0 = null;
-
                     if (beforeDestroy)
                         state = GridDhtPartitionState.EVICTED;
                     else {
@@ -200,22 +196,13 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                         GridDhtLocalPartition part = grp.topology().localPartition(store.partId(),
                             AffinityTopologyVersion.NONE, false, true);
 
-                        if (part == null  && store.fullSize() != 0)
-                            System.err.println("");
-
-                        if (part != null)
-                            state0 = part.state();
-
                         if (part != null && part.state() != GridDhtPartitionState.EVICTED)
                             state = part.state();
                     }
 
                     // Do not save meta for evicted partitions on next checkpoints.
-                    if (state == null && store.fullSize() != 0) {
-                        System.err.println("!!!grpId=" + grp.groupId() + ", partId=" + store.partId() +
-                                ", state0=" + state0 +  ", fullSize=" + store.fullSize() +", nodeId=" + this.ctx.localNode().consistentId());
+                    if (state == null)
                         return false;
-                    }
                 }
 
                 int grpId = grp.groupId();
@@ -229,8 +216,6 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                         U.warn(log, "Failed to acquire write lock for meta page [metaPage=" + partMetaPage +
                             ", saveMeta=" + saveMeta + ", beforeDestroy=" + beforeDestroy + ", size=" + size +
                             ", updCntr=" + updCntr + ", state=" + state + ']');
-
-                        System.err.println("");
 
                         return false;
                     }
