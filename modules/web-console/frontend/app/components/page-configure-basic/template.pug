@@ -34,10 +34,10 @@ include mixins/pcb-form-field-size
 form(novalidate name=form)
     h2.pcb-section-header.pcb-inner-padding Step 1. Cluster Configuration
 
-    .pcb-section-notification.pcb-inner-padding(ng-if='!$ctrl.clusters.size')
+    .pcb-section-notification.pcb-inner-padding(ng-if='!$ctrl.clusterItems.shortClusters')
         | You have no clusters.
         | Let’s configure your first and associate it with caches.
-    .pcb-section-notification.pcb-inner-padding(ng-if='$ctrl.clusters.size')
+    .pcb-section-notification.pcb-inner-padding(ng-if='$ctrl.clusterItems.shortClusters')
         | Configure cluster properties and associate your cluster with caches.
 
     .pc-form-grid-row.pcb-form-grid-row
