@@ -75,7 +75,7 @@ export default angular.module('ignite-console.page-configure.validation', [])
                 this.$element = this.onAnimEnd = null;
             }
             notifyAboutError() {
-                this.$element.addClass(animName);
+                if (this.$element) this.$element.addClass(animName);
             }
         }
         return {
