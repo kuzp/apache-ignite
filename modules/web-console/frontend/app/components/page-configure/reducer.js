@@ -347,9 +347,11 @@ export const selectEditClusterShortCaches = (state$) => {
         .map(([{ids, changedItems}, shortCaches]) => {
             if (!ids.length || !shortCaches) return [];
             return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortCaches.get(id));
-        });
+        })
+        .map((v) => v.filter((v) => v));
 };
 export const selectEditClusterItems = (state$) => combineLatest(
     selectEditClusterShortCaches(state$),
-    (shortCaches) => ({shortCaches})
-).startWith({shortCaches: []});
+    selectShortClustersValue(state$),
+    (shortCaches, shortClusters) => ({shortCaches, shortClusters})
+).startWith({shortCaches: [], shortClusters: []});
