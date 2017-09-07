@@ -8,8 +8,9 @@ import {of} from 'rxjs/observable/of';
 import 'rxjs/add/operator/share';
 import 'rxjs/add/operator/publishReplay';
 import 'rxjs/add/operator/toPromise';
+import 'rxjs/add/operator/partition';
 import 'rxjs/add/operator/let';
-import {selectShortClusters, selectShortClustersValue} from 'app/components/page-configure/reducer';
+import {selectShortClusters, selectShortClustersValue, selectCluster} from 'app/components/page-configure/reducer';
 import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 import camelCase from 'lodash/camelCase';
@@ -468,44 +469,27 @@ export default angular
         Object.assign(this, {Clusters, ConfigureState, Caches, IGFSs});
     }
     loadCluster$(id) {
-        if (id === 'new') {
-            return this.ConfigureState.state$
-            .pluck('shortClusters', 'value')
-            .map((v) => [...v.values()])
-            .take(1)
-            .switchMap((shortClusters) => {
-                return of({
+        return (
+            id === 'new'
+                ? this.ConfigureState.state$.let(selectShortClustersValue).map((shortClusters) => ({
                     ...this.Clusters.getBlankCluster(),
                     name: uniqueName('New cluster', shortClusters)
-                })
-                .do((cluster) => {
-                    this.ConfigureState.dispatchAction({
-                        type: 'EDIT_CLUSTER',
-                        cluster
-                    });
-                });
-            });
-        }
-        return this.ConfigureState.state$
-            .pluck('clusters')
-            .take(1)
-            .map((c) => c && c.get(id))
-            .switchMap((c) => c
-                ? of(c)
-                : fromPromise(this.Clusters.getCluster(id)).pluck('data')
+                }))
+                : this.ConfigureState.state$.let(selectCluster(id))
                     .do((cluster) => {
-                        this.ConfigureState.dispatchAction({
-                            type: clustersActionTypes.UPSERT,
-                            items: [cluster]
-                        });
+                        if (!cluster) {
+                            this.Clusters.getCluster(id).then(({data}) => {
+                                this.ConfigureState.dispatchAction({
+                                    type: clustersActionTypes.UPSERT,
+                                    items: [data]
+                                });
+                            });
+                        }
                     })
-            )
-            .do((cluster) => {
-                this.ConfigureState.dispatchAction({
-                    type: 'EDIT_CLUSTER',
-                    cluster
-                });
-            });
+                    .filter((v) => v)
+        )
+        .take(1)
+        .do((cluster) => this.ConfigureState.dispatchAction({type: 'EDIT_CLUSTER', cluster}));
     }
     loadShortClusters$() {
         return this.ConfigureState.state$.let(selectShortClusters)

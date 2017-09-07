@@ -15,22 +15,14 @@
  * limitations under the License.
  */
 
-import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/map';
+import cloneDeep from 'lodash/cloneDeep';
 
 export default class PageConfigureBasicController {
-    static $inject = [
-        'Clusters',
-        'IgniteConfirm',
-        '$scope',
-        'PageConfigureBasic',
-        'ConfigurationDownload',
-        'IgniteVersion',
-        '$state',
-        '$element'
-    ];
+    static $inject = ['Clusters', 'Caches', 'IgniteVersion', '$element'];
 
-    constructor(Clusters, IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element) {
-        Object.assign(this, {Clusters, IgniteConfirm, $scope, pageService, ConfigurationDownload, Version, $state, $element});
+    constructor(Clusters, Caches, IgniteVersion, $element) {
+        Object.assign(this, {Clusters, Caches, IgniteVersion, $element});
     }
 
     $postLink() {
@@ -38,22 +30,18 @@ export default class PageConfigureBasicController {
     }
 
     $onInit() {
-        this.subscription = this.pageService.getObservable()
-            .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
-            .subscribe();
+        this.memorySizeInputVisible$ = this.IgniteVersion.currentSbj
+            .map((version) => this.IgniteVersion.since(version.ignite, '2.0.0'));
 
         // this.removeChangesGuard = this.ConfigurationChangesGuard.install({
         //     fromState: 'base.configuration.edit.basic',
         //     getItems: () => ([this.original])
         // })
 
-        this.discoveries = this.pageService.clusterDiscoveries;
-        this.minMemorySize = this.pageService.minMemoryPolicySize;
-
         this.formActionsMenu = [
             {
                 text: 'Save changes and download project',
-                click: () => this.saveAndDownload(),
+                click: () => this.save(true),
                 icon: 'download'
             },
             {
@@ -65,27 +53,30 @@ export default class PageConfigureBasicController {
     }
 
     $onDestroy() {
-        this.subscription.unsubscribe();
         // this.removeChangesGuard();
     }
 
     addCache() {
-        this.pageService.addCache(this.allClusterCaches);
+        this.onItemAdd({$event: {type: 'caches'}});
     }
 
     removeCache(cache) {
-        this.pageService.removeCache(cache);
+        this.onItemRemove({$event: {item: cache, type: 'caches'}});
     }
 
-    updateCache(cache) {
-        this.pageService.updateCache(cache);
+    changeCache(cache) {
+        this.onItemChange({$event: {item: cache, type: 'caches'}});
     }
 
-    save() {
-        this.pageService.save(this.clonedCluster);
+    save(andDownload = false) {
+        if (this.form.$invalid) return;
+        this.onBasicSave({$event: {andDownload, cluster: cloneDeep(this.clonedCluster)}});
     }
 
-    saveAndDownload() {
-        this.pageService.saveAndDownload(this.clonedCluster);
+    $onChanges(changes) {
+        if ('originalCluster' in changes) {
+            this.clonedCluster = cloneDeep(changes.originalCluster.currentValue);
+            this.defaultMemoryPolicy = this.Clusters.getDefaultClusterMemoryPolicy(this.clonedCluster);
+        }
     }
 }

@@ -20,30 +20,22 @@ import 'rxjs/add/observable/merge';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import {merge} from 'rxjs/observable/merge';
 import 'rxjs/add/operator/distinctUntilChanged';
+import {selectEditCluster, selectEditClusterItems} from 'app/components/page-configure/reducer';
 
 export default class PageConfigureController {
-    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading'];
+    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading', 'conf'];
 
-    constructor($uiRouter, ConfigureState, IgniteLoading) {
-        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading});
+    constructor($uiRouter, ConfigureState, IgniteLoading, conf) {
+        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading, conf});
     }
 
     $onInit() {
-        const clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID').filter((id) => id !== 'new').distinctUntilChanged();
-        const clusters$ = this.ConfigureState.state$.pluck('clusters');
-        const cluster$ = combineLatest(clusterID$, clusters$, (id, clusters) => clusters.get(id)).distinctUntilChanged();
-
-        const test = cluster$.do((c) => console.log('cluster', c));
-
+        this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
+        this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
         this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((v) => v === 'new');
-
-        this.clusterName$ = combineLatest(
-            this.ConfigureState.state$.pluck('clusterConfiguration', 'originalCluster').distinctUntilChanged(),
-            this.isNew$,
-            (cluster, isNew) => {
-                return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
-            }
-        );
+        this.clusterName$ = combineLatest(this.cluster$, this.isNew$, (cluster, isNew) => {
+            return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
+        });
 
         const loading = this.ConfigureState.state$
             .pluck('configurationLoading')
@@ -56,8 +48,24 @@ export default class PageConfigureController {
                     this.IgniteLoading.finish('configuration');
             });
 
-        this.subscription = merge(loading, test).subscribe();
+        this.subscription = merge(loading).subscribe();
         this.tooltipsVisible = true;
+    }
+
+    onBasicSave(e) {
+        this.conf.saveBasic(e);
+    }
+
+    onItemChange({type, item}) {
+        this.conf.changeItem(type, item);
+    }
+
+    onItemAdd({type}) {
+        this.conf.addItem(type);
+    }
+
+    onItemRemove({type, item}) {
+        this.conf.removeItem(type, item._id);
     }
 
     $onDestroy() {
