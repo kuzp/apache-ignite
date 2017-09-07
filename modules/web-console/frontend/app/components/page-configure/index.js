@@ -25,6 +25,8 @@ import component from './component';
 import ConfigureState from './services/ConfigureState';
 import PageConfigure from './services/PageConfigure';
 import ConfigurationDownload from './services/ConfigurationDownload';
+import ConfigChangesGuard from './services/ConfigChangesGuard';
+
 import projectStructurePreview from './components/pc-project-structure-preview';
 import itemsTable from './components/pc-items-table';
 import pcUiGridFilters from './components/pc-ui-grid-filters';
@@ -98,6 +100,7 @@ export default angular
     }])
     .component('pageConfigure', component)
     .directive(isInCollection.name, isInCollection)
+    .service('ConfigChangesGuard', ConfigChangesGuard)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)
     .service('ConfigurationDownload', ConfigurationDownload);
