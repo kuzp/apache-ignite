@@ -8,6 +8,8 @@ import {of} from 'rxjs/observable/of';
 import 'rxjs/add/operator/share';
 import 'rxjs/add/operator/publishReplay';
 import 'rxjs/add/operator/toPromise';
+import 'rxjs/add/operator/let';
+import {selectShortClusters, selectShortClustersValue} from 'app/components/page-configure/reducer';
 import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 import camelCase from 'lodash/camelCase';
@@ -506,12 +508,20 @@ export default angular
             });
     }
     loadShortClusters$() {
-        return fromPromise(this.Clusters.getClustersOverview())
-            .pluck('data')
-            .do((items) => this.ConfigureState.dispatchAction({
-                type: shortClustersActionTypes.UPSERT,
-                items
-            }));
+        return this.ConfigureState.state$.let(selectShortClusters)
+            .do((shortClusters) => {
+                if (!shortClusters || shortClusters.pristine) {
+                    this.Clusters.getClustersOverview().then(({data}) => {
+                        this.ConfigureState.dispatchAction({
+                            type: shortClustersActionTypes.UPSERT,
+                            items: data
+                        });
+                    });
+                }
+            })
+            .filter((shortClusters) => shortClusters && !shortClusters.pristine)
+            .switchMap(() => this.ConfigureState.state$.let(selectShortClustersValue))
+            .take(1);
     }
     loadShortItems$(cluster, itemType) {
         const load = {
@@ -693,8 +703,8 @@ export default angular
             <button type='submit'>Save IGFS</button>
         </form>
     `
-})
-.config(['$stateProvider', ($stateProvider) => {
+});
+({config() {}}).config(['$stateProvider', ($stateProvider) => {
     $stateProvider
     .state('conf', {
         url: '/conf',

@@ -331,3 +331,5 @@ editReducer2.getDefaults = () => ({
     cluster: null,
     changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
+export const selectShortClusters = (state$) => state$.pluck('shortClusters');
+export const selectShortClustersValue = (state$) => selectShortClusters(state$).filter((v) => v).pluck('value').map((v) => [...v.values()]);

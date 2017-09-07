@@ -26,12 +26,12 @@ h1.pc-page-header Configuration
     pc-items-table(
         table-title='::"My Cluster Configurations"'
         column-defs='$ctrl.clustersColumnDefs'
-        items='$ctrl.clusters'
+        items='$ctrl.shortClusters$|async:this'
         on-action='$ctrl.onClustersAction($event)'
         max-rows-to-show='10'
         one-way-selection='::false'
-        on-selection-change='$ctrl.onSelectionChange($event)'
-        actions-menu='$ctrl.clusterActions'
+        on-selection-change='$ctrl.selectedRows$.next($event)'
+        actions-menu='$ctrl.actions$|async:this'
     )
         footer-slot(ng-hide='$ctrl.clusters.length' style='font-style: italic')
             | You have no cluster configurations.
