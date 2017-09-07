@@ -30,7 +30,7 @@ include /app/helpers/jade/mixins
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
                 .settings-row
-                    +dropdown-multiple('<span>IGFS:</span><a ui-sref="base.configuration.tabs.advanced.igfs({linkId: linkId()})"> (add)</a>',
+                    +dropdown-multiple('<span>IGFS:</span><a ui-sref="base.configuration.edit.advanced.igfs({linkId: linkId()})"> (add)</a>',
                         `${model}.igfss`, '"igfss"', true, 'Choose IGFS', 'No IGFS configured', 'igfss',
                         'Select IGFS to start in cluster or add a new IGFS')
             .pca-form-column-6

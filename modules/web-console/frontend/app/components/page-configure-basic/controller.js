@@ -43,7 +43,7 @@ export default class PageConfigureBasicController {
             .subscribe();
 
         // this.removeChangesGuard = this.ConfigurationChangesGuard.install({
-        //     fromState: 'base.configuration.tabs.basic',
+        //     fromState: 'base.configuration.edit.basic',
         //     getItems: () => ([this.original])
         // })
 

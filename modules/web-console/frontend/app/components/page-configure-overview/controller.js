@@ -49,7 +49,7 @@ export default class PageConfigureOverviewController {
                 },
                 sort: {direction: 'asc', priority: 0},
                 sortingAlgorithm: naturalCompare,
-                cellTemplate: cellTemplate('base.configuration.tabs'),
+                cellTemplate: cellTemplate('base.configuration.edit'),
                 minWidth: 165
             },
             {
@@ -64,7 +64,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Caches',
                 field: 'cachesCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('base.configuration.tabs.advanced.caches'),
+                cellTemplate: cellTemplate('base.configuration.edit.advanced.caches'),
                 enableFiltering: false,
                 width: 95
             },
@@ -73,7 +73,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'Models',
                 field: 'modelsCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('base.configuration.tabs.advanced.models'),
+                cellTemplate: cellTemplate('base.configuration.edit.advanced.models'),
                 enableFiltering: false,
                 width: 95
             },
@@ -82,7 +82,7 @@ export default class PageConfigureOverviewController {
                 displayName: 'IGFS',
                 field: 'igfsCount',
                 cellClass: 'ui-grid-number-cell',
-                cellTemplate: cellTemplate('base.configuration.tabs.advanced.igfs'),
+                cellTemplate: cellTemplate('base.configuration.edit.advanced.igfs'),
                 enableFiltering: false,
                 width: 80
             }

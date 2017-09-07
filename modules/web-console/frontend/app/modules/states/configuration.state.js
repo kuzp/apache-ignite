@@ -185,7 +185,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     }]
                 }
             })
-            .state('base.configuration.tabs', {
+            .state('base.configuration.edit', {
                 url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
@@ -254,15 +254,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     const cluster = $transition$.injector().getAsync('cluster');
                     return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
                         return (clusters.length > 10 || cluster.caches.length > 5)
-                            ? 'base.configuration.tabs.advanced'
-                            : 'base.configuration.tabs.basic';
+                            ? 'base.configuration.edit.advanced'
+                            : 'base.configuration.edit.basic';
                     });
                 },
                 tfMetaTags: {
                     title: 'Configuration'
                 }
             })
-            .state('base.configuration.tabs.basic', {
+            .state('base.configuration.edit.basic', {
                 url: '/basic',
                 component: 'pageConfigureBasic',
                 permission: 'configuration',
@@ -289,7 +289,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Basic Configuration'
                 }
             })
-            .state('base.configuration.tabs.advanced', {
+            .state('base.configuration.edit.advanced', {
                 url: '/advanced',
                 template: '<page-configure-advanced joke="{{$resolve.joke}}"></page-configure-advanced>',
                 // component: 'pageConfigureAdvanced',
@@ -297,9 +297,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     joke: () => Promise.resolve('$ctrl.menuItems')
                 },
-                redirectTo: 'base.configuration.tabs.advanced.cluster'
+                redirectTo: 'base.configuration.edit.advanced.cluster'
             })
-            .state('base.configuration.tabs.advanced.cluster', {
+            .state('base.configuration.edit.advanced.cluster', {
                 url: '/cluster',
                 component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
@@ -313,7 +313,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure Cluster'
                 }
             })
-            .state('base.configuration.tabs.advanced.caches', {
+            .state('base.configuration.edit.advanced.caches', {
                 url: '/caches?selectedCaches',
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
@@ -334,7 +334,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 },
                 ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
                 redirectTo: ($transition$) => {
-                    const cacheStateName = 'base.configuration.tabs.advanced.caches.cache';
+                    const cacheStateName = 'base.configuration.edit.advanced.caches.cache';
                     const fromState = $transition$.from();
                     const toState = $transition$.to();
                     const params = $transition$.params();
@@ -365,7 +365,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     }
                     if (
                         !params.cacheID && !params.selectedCaches.length
-                        && fromState.name !== 'base.configuration.tabs.advanced.caches'
+                        && fromState.name !== 'base.configuration.edit.advanced.caches'
                     ) {
                         return caches.then((caches) => {
                             if (caches.length) {
@@ -394,7 +394,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure Caches'
                 }
             })
-            .state('base.configuration.tabs.advanced.caches.cache', {
+            .state('base.configuration.edit.advanced.caches.cache', {
                 url: '/{cacheID:string}',
                 permission: 'configuration',
                 resolve: {
@@ -429,7 +429,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ConfigureState.dispatchAction({
                                 type: HIDE_CONFIG_LOADING
                             });
-                            $transition$.router.stateService.go('base.configuration.tabs.advanced.caches', null, {
+                            $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
                                 location: 'replace'
                             });
                             IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
@@ -444,7 +444,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure Caches'
                 }
             })
-            .state('base.configuration.tabs.advanced.models', {
+            .state('base.configuration.edit.advanced.models', {
                 url: '/models',
                 component: pageConfigureAdvancedModelsComponent.name,
                 permission: 'configuration',
@@ -457,7 +457,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 },
                 ...resetFormItemToNull({actionType: RECEIVE_MODEL_EDIT, actionKey: 'model'}),
                 redirectTo: ($transition$) => {
-                    const modelStateName = 'base.configuration.tabs.advanced.models.model';
+                    const modelStateName = 'base.configuration.edit.advanced.models.model';
                     const fromState = $transition$.from();
                     const toState = $transition$.to();
                     return fromState.name === modelStateName
@@ -478,7 +478,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure SQL Schemes'
                 }
             })
-            .state('base.configuration.tabs.advanced.models.model', {
+            .state('base.configuration.edit.advanced.models.model', {
                 url: '/{modelID:string}',
                 resolve: {
                     model: ['IgniteMessages', 'Models', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Models, Clusters, $transition$, ConfigureState) => {
@@ -510,7 +510,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ConfigureState.dispatchAction({
                                 type: HIDE_CONFIG_LOADING
                             });
-                            $transition$.router.stateService.go('base.configuration.tabs.advanced.models', null, {
+                            $transition$.router.stateService.go('base.configuration.edit.advanced.models', null, {
                                 location: 'replace'
                             });
                             IgniteMessages.showError(`Failed to load domain model ${modelID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
@@ -523,7 +523,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     async: 'NOWAIT'
                 }
             })
-            .state('base.configuration.tabs.advanced.igfs', {
+            .state('base.configuration.edit.advanced.igfs', {
                 url: '/igfs',
                 component: pageConfigureAdvancedIGFSComponent.name,
                 permission: 'configuration',
@@ -534,7 +534,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     async: 'NOWAIT'
                 },
                 redirectTo: ($transition$) => {
-                    const igfsStateName = 'base.configuration.tabs.advanced.igfs.igfs';
+                    const igfsStateName = 'base.configuration.edit.advanced.igfs.igfs';
                     const fromState = $transition$.from();
                     const toState = $transition$.to();
                     return fromState.name === igfsStateName
@@ -555,7 +555,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configure IGFS'
                 }
             })
-            .state('base.configuration.tabs.advanced.igfs.igfs', {
+            .state('base.configuration.edit.advanced.igfs.igfs', {
                 url: '/{igfsID:string}',
                 permission: 'configuration',
                 resolve: {
@@ -591,7 +591,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             ConfigureState.dispatchAction({
                                 type: HIDE_CONFIG_LOADING
                             });
-                            $transition$.router.stateService.go('base.configuration.tabs.advanced.igfs', null, {
+                            $transition$.router.stateService.go('base.configuration.edit.advanced.igfs', null, {
                                 location: 'replace'
                             });
                             IgniteMessages.showError(`Failed to load IGFS ${igfsID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
