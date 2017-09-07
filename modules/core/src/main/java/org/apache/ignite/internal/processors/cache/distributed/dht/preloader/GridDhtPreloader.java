@@ -599,7 +599,8 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                                 }
                                 catch (Throwable ex) {
                                     if (ctx.kernalContext().isStopping()) {
-                                        LT.warn(log, ex, "Partition eviction failed (current node is stopping).",
+                                        LT.warn(log, ex, "Partition (grp="+ grp.groupId() +", id=" + part.id() +
+                                                        ") eviction failed (current node is stopping).",
                                             false,
                                             true);
 
@@ -608,7 +609,8 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                                         return true;
                                     }
                                     else
-                                        LT.error(log, ex, "Partition eviction failed, this can cause grid hang.");
+                                        LT.error(log, ex, "Partition (grp="+ grp.groupId() +", id=" + part.id() +
+                                                ") eviction failed, this can cause grid hang.");
                                 }
                             }
                         }

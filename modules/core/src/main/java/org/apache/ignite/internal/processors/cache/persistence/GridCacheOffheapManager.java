@@ -167,6 +167,8 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
      */
     private boolean saveStoreMetadata(CacheDataStore store, Context ctx, boolean saveMeta,
         boolean beforeDestroy) throws IgniteCheckedException {
+        System.err.println("");
+
         RowStore rowStore0 = store.rowStore();
 
         boolean needSnapshot = ctx != null && ctx.nextSnapshot() && ctx.needToSnapshot(grp.cacheOrGroupName());
@@ -189,20 +191,31 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                 GridDhtPartitionState state = null;
 
                 if (!grp.isLocal()) {
+                    GridDhtPartitionState state0 = null;
+
                     if (beforeDestroy)
                         state = GridDhtPartitionState.EVICTED;
                     else {
                         // localPartition will not acquire writeLock here because create=false.
                         GridDhtLocalPartition part = grp.topology().localPartition(store.partId(),
-                            AffinityTopologyVersion.NONE, false);
+                            AffinityTopologyVersion.NONE, false, true);
+
+                        if (part == null  && store.fullSize() != 0)
+                            System.err.println("");
+
+                        if (part != null)
+                            state0 = part.state();
 
                         if (part != null && part.state() != GridDhtPartitionState.EVICTED)
                             state = part.state();
                     }
 
                     // Do not save meta for evicted partitions on next checkpoints.
-                    if (state == null)
+                    if (state == null && store.fullSize() != 0) {
+                        System.err.println("!!!grpId=" + grp.groupId() + ", partId=" + store.partId() +
+                                ", state0=" + state0 +  ", fullSize=" + store.fullSize() +", nodeId=" + this.ctx.localNode().consistentId());
                         return false;
+                    }
                 }
 
                 int grpId = grp.groupId();
@@ -216,6 +229,8 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                         U.warn(log, "Failed to acquire write lock for meta page [metaPage=" + partMetaPage +
                             ", saveMeta=" + saveMeta + ", beforeDestroy=" + beforeDestroy + ", size=" + size +
                             ", updCntr=" + updCntr + ", state=" + state + ']');
+
+                        System.err.println("");
 
                         return false;
                     }
@@ -307,39 +322,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                             io.setCandidatePageCount(partMetaPageAddr, pageCnt);
 
                             if (saveMeta) {
-                                long metaPageId = pageMem.metaPageId(grpId);
-                                long metaPage = pageMem.acquirePage(grpId, metaPageId);
-
-                                try {
-                                    long metaPageAddr = pageMem.writeLock(grpId, metaPageId, metaPage);
-
-                                    try {
-                                        PageMetaIO metaIo = PageMetaIO.getPageIO(metaPageAddr);
-
-                                        long nextSnapshotTag = metaIo.getNextSnapshotTag(metaPageAddr);
-
-                                        metaIo.setNextSnapshotTag(metaPageAddr, nextSnapshotTag + 1);
-
-                                        if (log != null && log.isDebugEnabled())
-                                            log.debug("Save next snapshot before checkpoint start for grId = " + grpId
-                                                + ", nextSnapshotTag = " + nextSnapshotTag);
-
-                                        if (PageHandler.isWalDeltaRecordNeeded(pageMem, grpId, metaPageId,
-                                            metaPage, wal, null))
-                                            wal.log(new MetaPageUpdateNextSnapshotId(grpId, metaPageId,
-                                                nextSnapshotTag + 1));
-
-                                        if (state == GridDhtPartitionState.OWNING)
-                                            addPartition(ctx.partitionStatMap(), metaPageAddr, metaIo, grpId, PageIdAllocator.INDEX_PARTITION,
-                                                    this.ctx.kernalContext().cache().context().pageStore().pages(grpId, PageIdAllocator.INDEX_PARTITION));
-                                    }
-                                    finally {
-                                        pageMem.writeUnlock(grpId, metaPageId, metaPage, null, true);
-                                    }
-                                }
-                                finally {
-                                    pageMem.releasePage(grpId, metaPageId, metaPage);
-                                }
+                                updateMetaPage(grp, state, ctx, pageMem, wal);
 
                                 wasSaveToMeta = true;
                             }
@@ -348,7 +331,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
 
                             if (partMap.containsKey(store.partId()) &&
                                 partMap.get(store.partId()) == GridDhtPartitionState.OWNING)
-                                addPartition(ctx.partitionStatMap(), partMetaPageAddr, io, grpId, store.partId(),
+                                addPartition(ctx.partitionStatMap(), partMetaPageAddr, io, grp, store.partId(),
                                     this.ctx.pageStore().pages(grpId, store.partId()));
 
                             changed = true;
@@ -382,6 +365,52 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
     }
 
     /**
+     * @param state State.
+     * @param ctx Context.
+     * @param pageMem Page mem.
+     * @param wal Wal.
+     */
+    private void updateMetaPage(
+            CacheGroupContext grp, GridDhtPartitionState state, Context ctx,
+            PageMemoryEx pageMem,
+            IgniteWriteAheadLogManager wal
+    ) throws IgniteCheckedException {
+        long metaPageId = pageMem.metaPageId(grp.groupId());
+        long metaPage = pageMem.acquirePage(grp.groupId(), metaPageId);
+
+        try {
+            long metaPageAddr = pageMem.writeLock(grp.groupId(), metaPageId, metaPage);
+
+            try {
+                PageMetaIO metaIo = PageMetaIO.getPageIO(metaPageAddr);
+
+                long nextSnapshotTag = metaIo.getNextSnapshotTag(metaPageAddr);
+
+                metaIo.setNextSnapshotTag(metaPageAddr, nextSnapshotTag + 1);
+
+                if (log != null && log.isDebugEnabled())
+                    log.debug("Save next snapshot before checkpoint start for grId = " + grp
+                        + ", nextSnapshotTag = " + nextSnapshotTag);
+
+                if (PageHandler.isWalDeltaRecordNeeded(pageMem, grp.groupId(), metaPageId,
+                    metaPage, wal, null))
+                    wal.log(new MetaPageUpdateNextSnapshotId(grp.groupId(), metaPageId,
+                        nextSnapshotTag + 1));
+
+                if (state == GridDhtPartitionState.OWNING)
+                    addPartition(ctx.partitionStatMap(), metaPageAddr, metaIo, grp, PageIdAllocator.INDEX_PARTITION,
+                            this.ctx.kernalContext().cache().context().pageStore().pages(grp.groupId(), PageIdAllocator.INDEX_PARTITION));
+            }
+            finally {
+                pageMem.writeUnlock(grp.groupId(), metaPageId, metaPage, null, true);
+            }
+        }
+        finally {
+            pageMem.releasePage(grp.groupId(), metaPageId, metaPage);
+        }
+    }
+
+    /**
      * @param cacheSizes Cache sizes.
      * @return Serialized cache sizes
      */
@@ -402,7 +431,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
      * @param map Map to add values to.
      * @param metaPageAddr Meta page address
      * @param io Page Meta IO
-     * @param cacheId Cache ID.
+     * @param grp Cache ID.
      * @param partId Partition ID. Or {@link PageIdAllocator#INDEX_PARTITION} for index partition
      * @param currAllocatedPageCnt total number of pages allocated for partition <code>[partition, cacheId]</code>
      */
@@ -410,7 +439,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
         final PartitionAllocationMap map,
         final long metaPageAddr,
         final PageMetaIO io,
-        final int cacheId,
+        final CacheGroupContext grp,
         final int partId,
         final int currAllocatedPageCnt
     ) {
@@ -420,9 +449,13 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
         assert PageIO.getPageId(metaPageAddr) != 0;
 
         int lastAllocatedPageCnt = io.getLastAllocatedPageCount(metaPageAddr);
+
         map.put(
-            new GroupPartitionId(cacheId, partId),
+            new GroupPartitionId(grp.groupId(), partId),
             new PagesAllocationRange(lastAllocatedPageCnt, currAllocatedPageCnt));
+
+        if (partId != PageIdAllocator.INDEX_PARTITION)
+            grp.topology().localPartition(partId, AffinityTopologyVersion.NONE, false).reserve();
     }
 
     /** {@inheritDoc} */

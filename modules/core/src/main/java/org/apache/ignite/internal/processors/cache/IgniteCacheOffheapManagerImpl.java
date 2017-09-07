@@ -1074,12 +1074,12 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             this.rowStore = rowStore;
             this.dataTree = dataTree;
 
-            try {
-                System.err.println("CnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
-            }
-            catch (IgniteCheckedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                System.err.println("CnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+//            }
+//            catch (IgniteCheckedException e) {
+//                e.printStackTrace();
+//            }
         }
 
         /**
@@ -1088,12 +1088,12 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         void incrementSize(int cacheId) {
             storageSize.incrementAndGet();
 
-            try {
-                System.err.println("+nodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
-            }
-            catch (IgniteCheckedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                System.err.println("+nodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+//            }
+//            catch (IgniteCheckedException e) {
+//                e.printStackTrace();
+//            }
 
             if (grp.sharedGroup()) {
                 AtomicLong size = cacheSizes.get(cacheId);
@@ -1115,12 +1115,12 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         void decrementSize(int cacheId) {
             long s = storageSize.decrementAndGet();
 
-            try {
-                System.err.println("DnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
-            }
-            catch (IgniteCheckedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                System.err.println("DnodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get() + ", dataTree.size = " + dataTree.size());
+//            }
+//            catch (IgniteCheckedException e) {
+//                e.printStackTrace();
+//            }
 
             if (s < 0)
             assert s >= 0;
@@ -1266,8 +1266,6 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                     default:
                         assert false : c.operationType();
                 }
-
-                assert storageSize.get() == dataTree.size();
             }
             finally {
                 busyLock.leaveBusy();
@@ -1465,7 +1463,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
                 assert storageSize.get() == dataTree.size();
 
-                System.out.println(size);
+//                System.out.println(size);
             }
             finally {
                 busyLock.leaveBusy();
@@ -1665,7 +1663,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             storageSize.set(size);
 
             try {
-                System.err.println("InodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get()+ ", dataTree.size = " + dataTree.size());
+//                System.err.println("InodeId" + ctx.localNodeId() + ", grp=" + grp.groupId() + ", partId=" + partId + ", name = " + name + ", storageSize=" + storageSize.get()+ ", dataTree.size = " + dataTree.size());
 
                 if (size != dataTree.size())
                     System.err.println("");
@@ -1673,6 +1671,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             catch (IgniteCheckedException e) {
                 e.printStackTrace();
             }
+
             cntr.set(updCntr);
 
             if (cacheSizes != null) {

@@ -396,8 +396,7 @@ public class FilePageStore implements PageStore {
      * @throws IgniteCheckedException If failed to initialize store file.
      */
     private void init() throws IgniteCheckedException {
-        thInit = new Throwable("" + System.currentTimeMillis());
-
+        boolean b = false;
         if (!inited) {
             lock.writeLock().lock();
 
@@ -410,8 +409,10 @@ public class FilePageStore implements PageStore {
                     try {
                         this.fileIO = fileIO = ioFactory.create(cfgFile, "rw");
 
-                        if (cfgFile.length() == 0)
+                        if (cfgFile.length() == 0) {
+                            b = true;
                             allocated.set(initFile());
+                        }
                         else
                             allocated.set(checkFile());
 
@@ -434,6 +435,8 @@ public class FilePageStore implements PageStore {
             finally {
                 lock.writeLock().unlock();
             }
+
+            thInit = new Throwable("" + System.currentTimeMillis() + ", fromScratch=" + b, thInit);
         }
     }
 
@@ -520,9 +523,8 @@ public class FilePageStore implements PageStore {
 
         long l = (off - headerSize()) / pageSize;
 
-        if (l == 1) {
+        if (l == 1)
             this.thAlloc = new Throwable("" + System.currentTimeMillis());
-        }
 
         return l;
     }

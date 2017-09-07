@@ -1458,7 +1458,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             grpValidRes = m;
         }
 
-        tryToPerformLocalSnapshotOperation();
+        tryToPerformLocalSnapshotOperation(); //will wait for checkpoint start if it's needed
 
         cctx.cache().onExchangeDone(initialVersion(), exchActions, err);
 
