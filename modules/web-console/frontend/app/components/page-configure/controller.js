@@ -68,6 +68,10 @@ export default class PageConfigureController {
         this.conf.removeItem(type, item._id);
     }
 
+    onEditCancel() {
+        this.conf.onEditCancel();
+    }
+
     $onDestroy() {
         this.subscription.unsubscribe();
     }
