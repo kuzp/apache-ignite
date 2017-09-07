@@ -42,7 +42,20 @@ form(novalidate name=form)
 
     .pc-form-grid-row.pcb-form-grid-row
         .pc-form-grid-col-60
-            +text('Name:', `${model}.name`, '"clusterName"', 'true', 'Input name', 'Grid name allows to indicate to what grid this particular grid instance belongs to')
+            +sane-ignite-form-field-text({
+                label: 'Name:',
+                model: `${model}.name`,
+                name: '"clusterName"',
+                disabled: 'false',
+                placeholder: 'Input name',
+                required: true,
+                tip: 'Instance name allows to indicate to what grid this particular grid instance belongs to'
+            })(
+                ignite-unique='$ctrl.clusterItems.shortClusters'
+                ignite-unique-property='name'
+                ignite-unique-skip=`["_id", ${model}]`
+            )
+                +unique-feedback(`${model}.name`, 'Cluster name should be unique.')
 
         .pc-form-grid__break
         .pc-form-grid-col-60
