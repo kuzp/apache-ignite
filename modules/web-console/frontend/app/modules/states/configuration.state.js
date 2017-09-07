@@ -180,7 +180,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     title: 'Configuration'
                 },
                 resolve: {
-                    clustersTable: clustersTableResolve
+                    _shortClusters: ['ConfigResolvers', (ConfigResolvers) => {
+                        return ConfigResolvers.loadShortClusters$().toPromise();
+                    }]
                 }
             })
             .state('base.configuration.tabs', {

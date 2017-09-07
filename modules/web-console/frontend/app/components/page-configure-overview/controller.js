@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import 'rxjs/add/operator/do';
+import {Subject} from 'rxjs/Subject';
+import naturalCompare from 'natural-compare-lite';
 
 const cellTemplate = (state) => `
     <div class="ui-grid-cell-contents">
@@ -28,20 +29,14 @@ const cellTemplate = (state) => `
 `;
 
 export default class PageConfigureOverviewController {
-    static $inject = ['PageConfigureOverviewService', '$scope'];
+    static $inject = ['PageConfigureOverviewService', 'Clusters'];
 
-    constructor(pageService, $scope) {
-        Object.assign(this, {pageService, $scope});
-    }
-
-    $onDestroy() {
-        this.subscription.unsubscribe();
+    constructor(pageService, Clusters) {
+        Object.assign(this, {pageService, Clusters});
     }
 
     $onInit() {
-        this.subscription = this.pageService.getObservable()
-            .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
-            .subscribe();
+        this.shortClusters$ = this.pageService.shortClusters$;
 
         this.clustersColumnDefs = [
             {
@@ -53,6 +48,7 @@ export default class PageConfigureOverviewController {
                     placeholder: 'Filter by name…'
                 },
                 sort: {direction: 'asc', priority: 0},
+                sortingAlgorithm: naturalCompare,
                 cellTemplate: cellTemplate('base.configuration.tabs'),
                 minWidth: 165
             },
@@ -60,7 +56,7 @@ export default class PageConfigureOverviewController {
                 name: 'discovery',
                 displayName: 'Discovery',
                 field: 'discovery',
-                multiselectFilterOptions: this.pageService.clusterDiscoveries,
+                multiselectFilterOptions: this.Clusters.discoveries,
                 width: 150
             },
             {
@@ -91,14 +87,10 @@ export default class PageConfigureOverviewController {
                 width: 80
             }
         ];
-    }
 
-    onSelectionChange(selectedClusters) {
-        return this.clusterActions = this.makeClusterActions(selectedClusters);
-    }
+        this.selectedRows$ = new Subject();
 
-    makeClusterActions(selectedClusters) {
-        return [
+        this.actions$ = this.selectedRows$.map((selectedClusters) => [
             {
                 action: 'Edit',
                 click: () => this.pageService.editCluster(selectedClusters[0]),
@@ -114,6 +106,6 @@ export default class PageConfigureOverviewController {
                 click: () => this.pageService.removeClusters(selectedClusters),
                 available: true
             }
-        ];
+        ]);
     }
 }
