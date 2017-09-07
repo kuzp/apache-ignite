@@ -16,16 +16,16 @@
  */
 
 import get from 'lodash/get';
-import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/merge';
 import {combineLatest} from 'rxjs/observable/combineLatest';
+import {merge} from 'rxjs/observable/merge';
 import 'rxjs/add/operator/distinctUntilChanged';
 
 export default class PageConfigureController {
-    static $inject = ['$uiRouter', '$state', 'ConfigureState', 'IgniteLoading'];
+    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading'];
 
-    constructor($uiRouter, $state, ConfigureState, IgniteLoading) {
-        Object.assign(this, {$uiRouter, $state, ConfigureState, IgniteLoading});
+    constructor($uiRouter, ConfigureState, IgniteLoading) {
+        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading});
     }
 
     $onInit() {
@@ -35,13 +35,15 @@ export default class PageConfigureController {
 
         const test = cluster$.do((c) => console.log('cluster', c));
 
-        const clusterName = this.ConfigureState.state$
-            .pluck('clusterConfiguration', 'originalCluster')
-            .distinctUntilChanged()
-            .do((cluster) => {
-                const isNew = this.$state.params.clusterID === 'new';
-                this.title = `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
-            });
+        this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((v) => v === 'new');
+
+        this.clusterName$ = combineLatest(
+            this.ConfigureState.state$.pluck('clusterConfiguration', 'originalCluster').distinctUntilChanged(),
+            this.isNew$,
+            (cluster, isNew) => {
+                return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
+            }
+        );
 
         const loading = this.ConfigureState.state$
             .pluck('configurationLoading')
@@ -54,7 +56,7 @@ export default class PageConfigureController {
                     this.IgniteLoading.finish('configuration');
             });
 
-        this.subscription = Observable.merge(clusterName, loading, test).subscribe();
+        this.subscription = merge(loading, test).subscribe();
         this.tooltipsVisible = true;
     }
 
