@@ -244,35 +244,4 @@ export default class PageConfigureBasic {
             items: [item]
         });
     }
-
-    getObservable() {
-        const {state$} = this.ConfigureState;
-
-        const cluster = state$
-            .pluck('clusterConfiguration', 'originalCluster')
-            .distinctUntilChanged()
-            .map((cluster) => {
-                const clonedCluster = cloneDeep(cluster);
-                return {
-                    originalCluster: cluster,
-                    clonedCluster,
-                    defaultMemoryPolicy: this.clusters.getDefaultClusterMemoryPolicy(clonedCluster)
-                };
-            });
-
-        const caches = Observable.combineLatest(
-            state$.pluck('basicCaches', 'ids').distinctUntilChanged().map((ids) => [...ids.values()]),
-            state$.pluck('basicCaches', 'changedItems').distinctUntilChanged(),
-            state$.pluck('shortCaches').distinctUntilChanged(),
-            (ids, changedCaches, oldCaches) => ({
-                allClusterCaches: ids.map((id) => changedCaches.get(id) || oldCaches.get(id)).filter((v) => v)
-            })
-        );
-
-        const memorySizeInput = this.IgniteVersion.currentSbj.map((version) => ({
-            memorySizeInputVisible: this.IgniteVersion.since(version.ignite, '2.0.0')
-        }));
-
-        return Observable.combineLatest(cluster, caches, memorySizeInput, (...values) => Object.assign({}, ...values));
-    }
 }

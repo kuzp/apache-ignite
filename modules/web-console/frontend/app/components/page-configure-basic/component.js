@@ -23,6 +23,12 @@ export default {
     template,
     controller,
     bindings: {
-        originalCluster: '<'
+        originalCluster: '<cluster',
+        clusterItems: '<',
+        isNew: '<',
+        onBasicSave: '&',
+        onItemAdd: '&',
+        onItemChange: '&',
+        onItemRemove: '&'
     }
 };

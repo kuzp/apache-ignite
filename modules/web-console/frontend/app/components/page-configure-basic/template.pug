@@ -46,7 +46,7 @@ form(novalidate name=form)
 
         .pc-form-grid__break
         .pc-form-grid-col-60
-            +dropdown('Discovery:', modelDiscoveryKind, '"discovery"', 'true', 'Choose discovery', '$ctrl.discoveries',
+            +dropdown('Discovery:', modelDiscoveryKind, '"discovery"', 'true', 'Choose discovery', '$ctrl.Clusters.discoveries',
             'Discovery allows to discover remote nodes in grid\
             <ul>\
                 <li>Static IPs - IP Finder which works only with pre configured list of IP addresses specified</li>\
@@ -73,13 +73,14 @@ form(novalidate name=form)
 
     h2.pcb-section-header.pcb-inner-padding(style='margin-top:30px') Step 2. Caches Configuration
 
-    .settings-row.pcb-inner-padding(ng-show='!$ctrl.allClusterCaches.length').pcb-section-notification
+    .settings-row.pcb-inner-padding(ng-show='!$ctrl.clusterItems.shortCaches.length').pcb-section-notification
         | You have no caches. Let’s create a new one.
 
-    .pcb-form-grid-row.pc-form-grid-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible')
+    .pcb-form-grid-row.pc-form-grid-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible$|async:this')
         .pc-form-grid-col-60
             pc-form-field-size(
                 ng-model='$ctrl.defaultMemoryPolicy.maxSize'
+                ng-model-options='{allowInvalid: true}'
                 id='memory'
                 name='memory'
                 label='Total Off-heap Size:'
@@ -92,7 +93,7 @@ form(novalidate name=form)
             )
                 +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
 
-    .pcb-caches-list__header.pc-form-grid-row(ng-show='$ctrl.allClusterCaches.length')
+    .pcb-caches-list__header.pc-form-grid-row(ng-show='$ctrl.clusterItems.shortCaches.length')
         .pc-form-grid-col-10
             span.ignite-form-field__label Name:
         .pc-form-grid-col-10
@@ -102,9 +103,9 @@ form(novalidate name=form)
         .pc-form-grid-col-10
             span.ignite-form-field__label Backups:
     pc-list-editable.pcb-caches-list(
-        ng-model='$ctrl.allClusterCaches'
+        ng-model='$ctrl.clusterItems.shortCaches'
         pc-list-editable-one-way
-        on-item-change='$ctrl.updateCache($event)'
+        on-item-change='$ctrl.changeCache($event)'
         on-item-remove='$ctrl.removeCache($event)'
     )
         pc-list-editable-item-view.pc-form-grid-row
@@ -119,23 +120,27 @@ form(novalidate name=form)
         pc-list-editable-item-edit.pc-form-grid-row
             .pc-form-grid-col-10
                 +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
-                    ignite-unique='$ctrl.allClusterCaches'
+                    ignite-unique='$ctrl.clusterItems.shortCaches'
                     ignite-unique-property='name'
                 )
                     +unique-feedback('"name"', 'Cache name should be unqiue')
             .pc-form-grid-col-10
                 +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
             .pc-form-grid-col-10
-                +dropdown('Atomicity:', '$parent.item.atomicityMode', '"atomicityMode"', 'true', 'ATOMIC',
-                    '[\
-                        {value: "ATOMIC", label: "ATOMIC"},\
-                        {value: "TRANSACTIONAL", label: "TRANSACTIONAL"}\
-                    ]',
-                    'Atomicity:\
-                    <ul>\
-                        <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>\
-                        <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>\
-                    </ul>')
+                +sane-ignite-form-field-dropdown({
+                    label: 'Atomicity:',
+                    model: '$parent.item.atomicityMode',
+                    name: '"atomicityMode"',
+                    placeholder: 'ATOMIC',
+                    options: '::$ctrl.Caches.atomicityModes',
+                    tip: `
+                        Atomicity:
+                        <ul>
+                            <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>
+                            <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>
+                        </ul>
+                    `
+                })
             .pc-form-grid-col-10(ng-show='$parent.item.cacheMode === "PARTITIONED"')
                 +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
 
@@ -146,10 +151,7 @@ form(novalidate name=form)
             | + Add one more cache
         
     .pc-form-actions-panel
-        pc-project-structure-preview(
-            cluster=model
-            ng-if=`!$ctrl.pageService.isNewItem(${model})`
-        )
+        pc-project-structure-preview(ng-if='!$ctrl.isNew' cluster=model)
         .pc-form-actions-panel__right-after
         button.btn-ignite.btn-ignite--link-success(
             type='button'

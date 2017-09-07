@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import {combineLatest} from 'rxjs/observable/combineLatest';
+
 export const LOAD_LIST = Symbol('LOAD_LIST');
 export const ADD_CLUSTER = Symbol('ADD_CLUSTER');
 export const ADD_CLUSTERS = Symbol('ADD_CLUSTERS');
@@ -332,4 +334,20 @@ editReducer2.getDefaults = () => ({
     changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
 export const selectShortClusters = (state$) => state$.pluck('shortClusters');
-export const selectShortClustersValue = (state$) => selectShortClusters(state$).filter((v) => v).pluck('value').map((v) => [...v.values()]);
+export const selectShortClustersValue = (state$) => selectShortClusters(state$).pluck('value').map((v) => v && [...v.values()]);
+export const selectCluster = (id) => (state$) => state$.pluck('clusters').map((v) => v && v.get(id));
+export const selectEditCluster = (state$) => state$.pluck('edit', 'changes', 'cluster').filter((v) => v);
+export const selectEditClusterShortCaches = (state$) => {
+    return combineLatest(
+        state$.pluck('edit', 'changes', 'caches').distinctUntilChanged(),
+        state$.pluck('shortCaches', 'value').distinctUntilChanged()
+    )
+        .map(([{ids, changedItems}, shortCaches]) => {
+            if (!ids.length || !shortCaches) return [];
+            return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortCaches.get(id));
+        });
+};
+export const selectEditClusterItems = (state$) => combineLatest(
+    selectEditClusterShortCaches(state$),
+    (shortCaches) => ({shortCaches})
+).startWith({shortCaches: []});
