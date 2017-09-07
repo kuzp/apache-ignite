@@ -40,19 +40,11 @@ module.exports.factory = function(Express, configure, routes) {
             routes.register(app);
 
             // Catch 404 and forward to error handler.
-            app.use((req, res, next) => {
-                const err = new Error('Not Found: ' + req.originalUrl);
+            app.use((req, res) => {
+                if (req.xhr)
+                    return res.status(404).send({ error: 'Not Found: ' + req.originalUrl });
 
-                err.status = 404;
-
-                next(err);
-            });
-
-            // Production error handler: no stacktraces leaked to user.
-            app.use((err, req, res) => {
-                res.status(err.status || 500);
-
-                res.send(err.message);
+                return res.sendStatus(404);
             });
 
             srv.addListener('request', app);
