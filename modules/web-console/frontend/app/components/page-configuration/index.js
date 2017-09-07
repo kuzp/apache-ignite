@@ -10,7 +10,7 @@ import 'rxjs/add/operator/publishReplay';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/partition';
 import 'rxjs/add/operator/let';
-import {selectShortClusters, selectShortClustersValue, selectCluster} from 'app/components/page-configure/reducer';
+import {selectShortClusters, selectShortClustersValue, selectCluster, selectEditCluster} from 'app/components/page-configure/reducer';
 import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 import camelCase from 'lodash/camelCase';
@@ -280,6 +280,14 @@ export default angular
     }
     confirmExit(itemType, original, changed) {
         return isMatch(original, changed) || this.$window.confirm(`You have unsaved ${itemType}, wanna leave?`);
+    }
+    onEditCancel() {
+        this.ConfigureState.state$.let(selectEditCluster).take(1).do((cluster) => {
+            this.ConfigureState.dispatchAction({
+                type: 'EDIT_CLUSTER',
+                cluster: {...cluster}
+            });
+        }).subscribe();
     }
 })
 .component('confEditBasic', {

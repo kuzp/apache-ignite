@@ -29,6 +29,7 @@ export default {
         onBasicSave: '&',
         onItemAdd: '&',
         onItemChange: '&',
-        onItemRemove: '&'
+        onItemRemove: '&',
+        onEditCancel: '&?'
     }
 };

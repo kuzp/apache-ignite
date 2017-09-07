@@ -168,7 +168,7 @@ form(novalidate name=form)
         .pc-form-actions-panel__right-after
         button.btn-ignite.btn-ignite--link-success(
             type='button'
-            ui-sref='base.configuration.overview'
+            ng-click='$ctrl.onEditCancel()'
         )
             | Cancel
         .btn-ignite-group
