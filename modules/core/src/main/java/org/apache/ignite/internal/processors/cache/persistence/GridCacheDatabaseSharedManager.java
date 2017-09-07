@@ -932,6 +932,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 }
             }, false));
         }
+
         for (IgniteInternalFuture<Void> clearFut : clearFuts) {
             try {
                 clearFut.get();
