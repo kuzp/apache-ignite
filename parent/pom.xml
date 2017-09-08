@@ -109,6 +109,7 @@
         <zkclient.version>0.5</zkclient.version>
         <zookeeper.version>3.4.6</zookeeper.version>
         <javassist.version>3.20.0-GA</javassist.version>
+        <antlr.version>4.7</antlr.version>
 
         <!-- OSGI Manifest generation default property values -->
         <osgi.import.package>*</osgi.import.package>
