@@ -1548,7 +1548,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 GridCacheVersion ver = dataEntry.nearXidVersion();
 
-                                sb.append(dataEntry.value().value(cacheCtx.cacheObjectContext(), true))
+                                sb.append((Object)dataEntry.value().value(cacheCtx.cacheObjectContext(), true))
                                     .append(" topVer=").append(ver.topologyVersion())
                                     .append(" order=").append(ver.order())
                                     .append(" nodeOrder=").append(ver.nodeOrder())
