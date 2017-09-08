@@ -90,7 +90,7 @@ public class BlasOffHeapTest {
 
     /** Tests 'gemm' operation for dense matrix A, dense matrix B and dense matrix C. */
     @Test
-    //@Ignore("todo remove this (reference test after debugging completed")
+    //@Ignore("todo remove this (reference) test after debugging completed")
     public void testGemmOnHeap() {
         // C := alpha * A * B + beta * C
         double alpha = 1.0;
