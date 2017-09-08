@@ -22,6 +22,7 @@ import org.apache.ignite.ml.math.BlasOffHeap;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,6 +32,17 @@ import static org.junit.Assert.assertTrue;
 public class BlasOffHeapBenchmark {
     /** */
     private static final BlasOffHeap blasOffHeap = BlasOffHeap.getInstance();
+
+    /** Test Blas availability necessary for this benchmark. */
+    @Test
+    @Ignore("Benchmark tests are intended only for manual execution")
+    public void testBlasOffHeap() throws ClassNotFoundException {
+        Assert.assertNotNull("Unexpected null BlasOffHeap instance.", BlasOffHeap.getInstance());
+
+        Assert.assertNotNull("unexpected native netlib Blas instance.",
+            Class.forName("com.github.fommil.netlib.NativeSystemBLAS"));
+    }
+
 
     /** */
     @Test

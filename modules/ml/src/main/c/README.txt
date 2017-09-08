@@ -10,4 +10,8 @@ Prerequisites:
 
 How to build:
 
-cd <ignite-root>/modules/ml; mvn clean package -Dmaven.javadoc.skip=true -Dtest=BlasOffHeapTest -U -Pjava8 -Pml
+cd <ignite-root>/modules/ml; mvn clean package -Dmaven.javadoc.skip=true -Dtest=BlasOffHeapTest -U -Pjava8 -Pml -Plgpl
+
+How to benchmark:
+
+cd <ignite-root>/modules/ml; mvn clean package -Dmaven.javadoc.skip=true -Dtest=BlasOffHeapBenchmark -U -Pjava8 -Pml -Plgpl
