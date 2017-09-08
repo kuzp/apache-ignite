@@ -167,6 +167,11 @@ public class DenseOffHeapMatrixStorage implements MatrixStorage {
         GridUnsafe.freeMemory(ptr);
     }
 
+    /** See IGNITE-5535 */
+    public long ptr() {
+        return ptr;
+    }
+
     /** */
     private long pointerOffset(int x, int y) {
         return ptr + x * cols * Double.BYTES + y * Double.BYTES;

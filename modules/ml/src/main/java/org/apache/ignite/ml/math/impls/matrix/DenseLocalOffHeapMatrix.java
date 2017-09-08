@@ -111,4 +111,9 @@ public class DenseLocalOffHeapMatrix extends AbstractMatrix {
 
         return res;
     }
+
+    /** See IGNITE-5535 */
+    public long ptr() {
+        return ((DenseOffHeapMatrixStorage)getStorage()).ptr();
+    }
 }

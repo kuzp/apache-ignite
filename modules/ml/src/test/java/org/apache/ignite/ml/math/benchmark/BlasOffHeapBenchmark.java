@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-/** */
+/** Todo add calls for destroy() where needed. */
 public class BlasOffHeapBenchmark {
     /** */
     private static final BlasOffHeap blasOffHeap = BlasOffHeap.getInstance();

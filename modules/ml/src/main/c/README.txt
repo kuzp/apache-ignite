@@ -15,3 +15,5 @@ cd <ignite-root>/modules/ml; mvn clean package -Dmaven.javadoc.skip=true -Dtest=
 How to benchmark:
 
 cd <ignite-root>/modules/ml; mvn clean package -Dmaven.javadoc.skip=true -Dtest=BlasOffHeapBenchmark -U -Pjava8 -Pml -Plgpl
+
+Note: -Plgpl is necessary to pick up native parts of netlib

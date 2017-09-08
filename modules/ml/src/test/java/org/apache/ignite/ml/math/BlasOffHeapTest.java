@@ -19,6 +19,7 @@ package org.apache.ignite.ml.math;
 
 import java.util.Arrays;
 import java.util.function.BiPredicate;
+import org.apache.ignite.ml.math.impls.matrix.DenseLocalOffHeapMatrix;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.matrix.SparseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
@@ -28,7 +29,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-/** Tests for BLAS operations (all operations are only available for local matrices and vectors). */
+/** Tests for BLAS off-heap operations. Todo add calls for destroy() where needed. */
 public class BlasOffHeapTest {
     /** Test off-heap blas availability. Todo remove later or make it OS-independent. */
     @Test
@@ -60,6 +61,49 @@ public class BlasOffHeapTest {
         BlasOffHeap.getInstance().dscal(v.size(), alpha, v.ptr(), 1);
 
         Assert.assertEquals(new DenseLocalOnHeapVector(v.size()).assign(v), exp);
+    }
+
+    /** Tests 'gemm' operation for off-heap matrices. */
+    @Test
+    @Ignore("todo recover unit tests after debugging completed")
+    public void testGemm() {
+        // C := alpha * A * B + beta * C
+        double alpha = 1.0;
+        DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(new double[][] {{10.0, 11.0}, {0.0, 1.0}});
+        DenseLocalOffHeapMatrix b = new DenseLocalOffHeapMatrix(new double[][] {{1.0, 0.3}, {0.0, 1.0}});
+        double beta = 0.0;
+        DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(new double[][] {{1.0, 2.0}, {2.0, 3.0}});
+
+        Matrix tmp = a.times(b);//.times(alpha).plus(c.times(beta));
+        DenseLocalOnHeapMatrix exp
+            = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(tmp.rowSize(), tmp.columnSize()).assign(tmp));
+
+        //Blas.gemm(alpha, a, b, beta, c);
+        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), alpha,
+            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), beta, c.ptr(), c.rowSize());
+
+        DenseLocalOnHeapMatrix obtained
+            = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(c.rowSize(), c.columnSize()).assign(c));
+
+        Assert.assertEquals(exp, obtained);
+    }
+
+    /** Tests 'gemm' operation for dense matrix A, dense matrix B and dense matrix C. */
+    @Test
+    //@Ignore("todo remove this (reference test after debugging completed")
+    public void testGemmOnHeap() {
+        // C := alpha * A * B + beta * C
+        double alpha = 1.0;
+        DenseLocalOnHeapMatrix a = new DenseLocalOnHeapMatrix(new double[][] {{10.0, 11.0}, {0.0, 1.0}});
+        DenseLocalOnHeapMatrix b = new DenseLocalOnHeapMatrix(new double[][] {{1.0, 0.3}, {0.0, 1.0}});
+        double beta = 0.0;
+        DenseLocalOnHeapMatrix c = new DenseLocalOnHeapMatrix(new double[][] {{1.0, 2.0}, {2.0, 3.0}});
+
+        DenseLocalOnHeapMatrix exp = (DenseLocalOnHeapMatrix)a.times(b);//.times(alpha).plus(c.times(beta));
+
+        Blas.gemm(alpha, a, b, beta, c);
+
+        Assert.assertEquals(exp, c);
     }
 
     /** Test 'axpy' operation for two array-based vectors. */
