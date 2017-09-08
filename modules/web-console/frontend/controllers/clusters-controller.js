@@ -18,6 +18,7 @@
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import matches from 'lodash/fp/matches';
+import cloneDeep from 'lodash/cloneDeep';
 
 // Controller for Clusters screen.
 export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
@@ -28,23 +29,29 @@ export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'Config
             return this.Version.available(...args);
         };
 
-        this.$onInit = function() {
-            const redirects = this.ConfigureState.actions$
-                .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
-                .do(() => {
-                    this.$state.go('.', {
-                        clusterID: this.clonedCluster._id
-                    }, {
-                        location: 'replace'
-                    });
-                });
+        this.$onChanges = function(changes) {
+            if ('originalCluster' in changes)
+                this.clonedCluster = cloneDeep(changes.originalCluster.currentValue);
 
-            this.subscription = this.pageService.getObservable()
-                .do((state) => this.$scope.$applyAsync(() => {
-                    Object.assign(this, state);
-                }))
-                .merge(redirects)
-                .subscribe();
+        };
+
+        this.$onInit = function() {
+            // const redirects = this.ConfigureState.actions$
+            //     .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
+            //     .do(() => {
+            //         this.$state.go('.', {
+            //             clusterID: this.clonedCluster._id
+            //         }, {
+            //             location: 'replace'
+            //         });
+            //     });
+
+            // this.subscription = this.pageService.getObservable()
+            //     .do((state) => this.$scope.$applyAsync(() => {
+            //         Object.assign(this, state);
+            //     }))
+            //     .merge(redirects)
+            //     .subscribe();
 
             let __original_value;
 
@@ -104,23 +111,28 @@ export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'Config
         };
 
         this.$onDestroy = function() {
-            this.subscription.unsubscribe();
+            // this.subscription.unsubscribe();
             this.versionSubscription.unsubscribe();
         };
 
-        this.uiCanExit = function() {
-            // TODO Refactor this
-            const items = [this.originalCluster, this.clonedCluster].map((c) => this.IgniteModelNormalizer.normalize(c));
-            return isEqual(...items)
-                ? true
-                : this.Confirm.confirm('You have unsaved changes. Are you sure want to discard them?');
+        this.save = function() {
+            if (this.$scope.ui.inputForm.$invalid)
+                return this.IgniteFormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
+            this.onAdvancedSave({$event: {cluster: cloneDeep(this.clonedCluster)}});
         };
 
-        this.cancelEdit = () => this.pageService.cancelEdit();
-        this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
-        this.save = function(cluster = this.clonedCluster) {
-            this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-            if (this.$scope.ui.inputForm.$valid) this.pageService.save(this.clonedCluster);
-        };
+        // this.uiCanExit = function() {
+        //     const items = [this.originalCluster, this.clonedCluster].map((c) => this.IgniteModelNormalizer.normalize(c));
+        //     return isEqual(...items)
+        //         ? true
+        //         : this.Confirm.confirm('You have unsaved changes. Are you sure want to discard them?');
+        // };
+
+        // this.cancelEdit = () => this.pageService.cancelEdit();
+        // this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
+        // this.save = function(cluster = this.clonedCluster) {
+        //     this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
+        //     if (this.$scope.ui.inputForm.$valid) this.pageService.save(this.clonedCluster);
+        // };
     }
 ];

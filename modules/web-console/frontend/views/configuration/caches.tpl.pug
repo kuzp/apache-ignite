@@ -17,14 +17,14 @@
 pc-items-table(
     table-title='::"My caches"'
     column-defs='$ctrl.cachesColumnDefs'
-    items='$ctrl.shortCaches'
-    actions-menu='$ctrl.tableActions'
-    selected-row-id='$ctrl.selectedItemIDs'
+    items='$ctrl.clusterItems.shortCaches'
+    actions-menu='$ctrl.tableActions$|async:this'
+    selected-row-id='$ctrl.selectedItemIDs$|async:this'
     one-way-selection='::true'
     on-selection-change='$ctrl.selectionHook($event)'
 )
     footer-slot
-        div(style='font-style: italic' ng-hide='$ctrl.shortCaches.length')
+        div(style='font-style: italic' ng-hide='$ctrl.clusterItems.shortCaches.length')
             | You have no caches.
             a.link-success(
                 ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
@@ -33,7 +33,7 @@ pc-items-table(
         a.link-success(
             ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
             ui-sref-opts='{location: "replace"}'
-            ng-show='$ctrl.shortCaches.length'
+            ng-show='$ctrl.clusterItems.shortCaches.length'
         ) + Add new cache
 
 h2.pc-page-header(ng-if='!($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)')

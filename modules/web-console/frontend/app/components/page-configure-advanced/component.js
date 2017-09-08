@@ -23,6 +23,13 @@ export default {
     template,
     controller,
     bindings: {
-        joke: '@'
+        cluster: '<',
+        clusterItems: '<',
+        isNew: '<',
+        onAdvancedSave: '&',
+        onItemAdd: '&',
+        onItemChange: '&',
+        onItemRemove: '&',
+        onEditCancel: '&?'
     }
 };

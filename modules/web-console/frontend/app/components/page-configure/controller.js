@@ -37,23 +37,28 @@ export default class PageConfigureController {
             return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
         });
 
-        const loading = this.ConfigureState.state$
-            .pluck('configurationLoading')
-            .distinctUntilChanged()
-            .do(({loadingText, isLoading}) => {
-                this.loadingText = loadingText;
-                if (isLoading)
-                    this.IgniteLoading.start('configuration');
-                else
-                    this.IgniteLoading.finish('configuration');
-            });
+        // const loading = this.ConfigureState.state$
+        //     .pluck('configurationLoading')
+        //     .distinctUntilChanged()
+        //     .do(({loadingText, isLoading}) => {
+        //         this.loadingText = loadingText;
+        //         if (isLoading)
+        //             this.IgniteLoading.start('configuration');
+        //         else
+        //             this.IgniteLoading.finish('configuration');
+        //     });
 
-        this.subscription = merge(loading).subscribe();
+        // this.subscription = merge(loading).subscribe();
         this.tooltipsVisible = true;
     }
 
     onBasicSave(e) {
         this.conf.saveBasic(e);
+    }
+
+    onAdvancedSave(e) {
+        console.log('onAdvancedSave', e);
+        this.conf.saveAdvanced(e);
     }
 
     onItemChange({type, item}) {
@@ -73,6 +78,6 @@ export default class PageConfigureController {
     }
 
     $onDestroy() {
-        this.subscription.unsubscribe();
+        // this.subscription.unsubscribe();
     }
 }

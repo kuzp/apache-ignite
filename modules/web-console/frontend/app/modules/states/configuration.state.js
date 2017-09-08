@@ -166,6 +166,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration', {
                 abstract: true,
                 permission: 'configuration',
+                onEnter: ['ConfigureState', (ConfigureState) => ConfigureState.dispatchAction({type: 'PRELOAD_STATE', state: {}})],
                 views: {
                     '@': {
                         template: base2
@@ -183,15 +184,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     _shortClusters: ['ConfigResolvers', (ConfigResolvers) => {
                         return ConfigResolvers.loadShortClusters$().toPromise();
                     }]
+                },
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 }
             })
             .state('base.configuration.edit', {
                 url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
-                params: {
-                    clusterID: 'string'
-                },
                 resolve: {
                     _shortClusters: ['ConfigResolvers', (ConfigResolvers) => {
                         return ConfigResolvers.loadShortClusters$().toPromise();
@@ -277,21 +278,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: 'pageConfigureBasic',
                 permission: 'configuration',
                 resolve: {
-                    caches: cachesResolve
-                },
-                onEnter: ['ConfigureState', '$transition$', (ConfigureState, $transition$) => {
-                    const caches = $transition$.injector().getAsync('caches');
-                    const cluster = $transition$.injector().getAsync('_cluster');
-                    ConfigureState.dispatchAction({
-                        type: basicCachesActionTypes.RESET
-                    });
-                    Promise.all([caches, cluster]).then(([caches, cluster]) => {
-                        ConfigureState.dispatchAction({
-                            type: basicCachesActionTypes.LOAD,
-                            items: caches
+                    _shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                        return $transition$.injector().getAsync('_cluster').then((cluster) => {
+                            return ConfigResolvers.loadShortItems$(cluster, 'caches').toPromise();
                         });
-                    });
-                }],
+                    }]
+                },
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
@@ -301,12 +293,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.edit.advanced', {
                 url: '/advanced',
-                template: '<page-configure-advanced joke="{{$resolve.joke}}"></page-configure-advanced>',
-                // component: 'pageConfigureAdvanced',
+                component: 'pageConfigureAdvanced',
                 permission: 'configuration',
-                resolve: {
-                    joke: () => Promise.resolve('$ctrl.menuItems')
-                },
                 redirectTo: 'base.configuration.edit.advanced.cluster'
             })
             .state('base.configuration.edit.advanced.cluster', {
@@ -314,7 +302,11 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    caches: cachesResolve
+                    _shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                        return $transition$.injector().getAsync('_cluster').then((cluster) => {
+                            return ConfigResolvers.loadShortItems$(cluster, 'caches').toPromise();
+                        });
+                    }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -328,9 +320,19 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
-                    caches: cachesResolve,
-                    models: modelsResolve
+                    _shortCachesAndModels: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                        return $transition$.injector().getAsync('_cluster').then((cluster) => {
+                            return Promise.all([
+                                ConfigResolvers.loadShortItems$(cluster, 'caches').toPromise()
+                                // ConfigResolvers.loadShortItems$(cluster, 'models').toPromise()
+                            ]);
+                        });
+                    }]
                 },
+                // resolve: {
+                //     caches: cachesResolve,
+                //     models: modelsResolve
+                // },
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
@@ -342,64 +344,64 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         dynamic: true
                     }
                 },
-                ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
-                redirectTo: ($transition$) => {
-                    const cacheStateName = 'base.configuration.edit.advanced.caches.cache';
-                    const fromState = $transition$.from();
-                    const toState = $transition$.to();
-                    const params = $transition$.params();
-                    const caches = $transition$.injector().getAsync('caches');
-                    if (fromState.name === cacheStateName) return;
-                    if (params.cacheID === 'new') {
-                        return {
-                            state: toState.name,
-                            params: {
-                                ...params,
-                                selectedCaches: []
-                            }
-                        };
-                    }
-                    if (params.selectedCaches.length) {
-                        return caches.then((caches) => {
-                            const exists = ({_id}) => params.selectedCaches.includes(_id);
-                            if (!caches.some(exists)) {
-                                return {
-                                    state: toState.name,
-                                    params: {
-                                        ...params,
-                                        selectedCaches: params.selectedCaches.filter(exists)
-                                    }
-                                };
-                            }
-                        });
-                    }
-                    if (
-                        !params.cacheID && !params.selectedCaches.length
-                        && fromState.name !== 'base.configuration.edit.advanced.caches'
-                    ) {
-                        return caches.then((caches) => {
-                            if (caches.length) {
-                                return {
-                                    state: cacheStateName,
-                                    params: {
-                                        cacheID: caches[0]._id,
-                                        selectedCaches: [caches[0]._id],
-                                        clusterID: $transition$.params().clusterID
-                                    }
-                                };
-                            }
-                        });
-                    }
-                    if (params.cacheID && !params.selectedCaches.length) {
-                        return {
-                            state: toState.name,
-                            params: {
-                                ...params,
-                                selectedCaches: [params.cacheID]
-                            }
-                        };
-                    }
-                },
+                // ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
+                // redirectTo: ($transition$) => {
+                //     const cacheStateName = 'base.configuration.edit.advanced.caches.cache';
+                //     const fromState = $transition$.from();
+                //     const toState = $transition$.to();
+                //     const params = $transition$.params();
+                //     const caches = $transition$.injector().getAsync('caches');
+                //     if (fromState.name === cacheStateName) return;
+                //     if (params.cacheID === 'new') {
+                //         return {
+                //             state: toState.name,
+                //             params: {
+                //                 ...params,
+                //                 selectedCaches: []
+                //             }
+                //         };
+                //     }
+                //     if (params.selectedCaches.length) {
+                //         return caches.then((caches) => {
+                //             const exists = ({_id}) => params.selectedCaches.includes(_id);
+                //             if (!caches.some(exists)) {
+                //                 return {
+                //                     state: toState.name,
+                //                     params: {
+                //                         ...params,
+                //                         selectedCaches: params.selectedCaches.filter(exists)
+                //                     }
+                //                 };
+                //             }
+                //         });
+                //     }
+                //     if (
+                //         !params.cacheID && !params.selectedCaches.length
+                //         && fromState.name !== 'base.configuration.edit.advanced.caches'
+                //     ) {
+                //         return caches.then((caches) => {
+                //             if (caches.length) {
+                //                 return {
+                //                     state: cacheStateName,
+                //                     params: {
+                //                         cacheID: caches[0]._id,
+                //                         selectedCaches: [caches[0]._id],
+                //                         clusterID: $transition$.params().clusterID
+                //                     }
+                //                 };
+                //             }
+                //         });
+                //     }
+                //     if (params.cacheID && !params.selectedCaches.length) {
+                //         return {
+                //             state: toState.name,
+                //             params: {
+                //                 ...params,
+                //                 selectedCaches: [params.cacheID]
+                //             }
+                //         };
+                //     }
+                // },
                 tfMetaTags: {
                     title: 'Configure Caches'
                 }
@@ -408,44 +410,47 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{cacheID:string}',
                 permission: 'configuration',
                 resolve: {
-                    cache: ['IgniteMessages', 'Caches', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Caches, Clusters, $transition$, ConfigureState) => {
-                        const cluster = $transition$.injector().getAsync('_cluster');
-                        const caches = $transition$.injector().getAsync('caches');
-                        const {cacheID, clusterID} = $transition$.params();
-                        const cachedValue = get(ConfigureState.state$.value, 'caches', new Map()).get(cacheID);
-
-                        const cache = cachedValue
-                            ? Promise.resolve(cachedValue)
-                            : cacheID === 'new'
-                                ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
-                                    name: uniqueName('New cache', caches)
-                                }))
-                                : Caches.getCache(cacheID).then(({data}) => {
-                                    ConfigureState.dispatchAction({
-                                        type: cachesActionTypes.UPSERT,
-                                        items: [data]
-                                    });
-                                    return data;
-                                });
-
-                        return cache.then((cache) => {
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_CACHE_EDIT,
-                                cache
-                            });
-                            return cache;
-                        })
-                        .catch((e) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
-                            $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
-                                location: 'replace'
-                            });
-                            IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
-                            return Promise.reject(e);
-                        });
+                    cache: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                        return ConfigResolvers.resolveItem$('caches', $transition$.params().cacheID).toPromise();
                     }]
+                    // cache: ['IgniteMessages', 'Caches', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Caches, Clusters, $transition$, ConfigureState) => {
+                    //     const cluster = $transition$.injector().getAsync('_cluster');
+                    //     const caches = $transition$.injector().getAsync('caches');
+                    //     const {cacheID, clusterID} = $transition$.params();
+                    //     const cachedValue = get(ConfigureState.state$.value, 'caches', new Map()).get(cacheID);
+
+                    //     const cache = cachedValue
+                    //         ? Promise.resolve(cachedValue)
+                    //         : cacheID === 'new'
+                    //             ? Promise.all([cluster, caches]).then(([cluster, caches]) => Object.assign(Caches.getBlankCache(), {
+                    //                 name: uniqueName('New cache', caches)
+                    //             }))
+                    //             : Caches.getCache(cacheID).then(({data}) => {
+                    //                 ConfigureState.dispatchAction({
+                    //                     type: cachesActionTypes.UPSERT,
+                    //                     items: [data]
+                    //                 });
+                    //                 return data;
+                    //             });
+
+                    //     return cache.then((cache) => {
+                    //         ConfigureState.dispatchAction({
+                    //             type: RECEIVE_CACHE_EDIT,
+                    //             cache
+                    //         });
+                    //         return cache;
+                    //     })
+                    //     .catch((e) => {
+                    //         ConfigureState.dispatchAction({
+                    //             type: HIDE_CONFIG_LOADING
+                    //         });
+                    //         $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
+                    //             location: 'replace'
+                    //         });
+                    //         IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                    //         return Promise.reject(e);
+                    //     });
+                    // }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'

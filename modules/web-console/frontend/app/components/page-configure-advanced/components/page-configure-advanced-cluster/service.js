@@ -40,7 +40,7 @@ export default class PageConfigureAdvancedClusterService {
         this.ConfigureState.dispatchAction(confirmCancelEditAction);
     }
 
-    getObservable() {
+/*    getObservable() {
         const {state$, actions$} = this.ConfigureState;
 
         const cluster = state$
@@ -84,5 +84,5 @@ export default class PageConfigureAdvancedClusterService {
             cachesMenu,
             (...values) => Object.assign({}, ...values)
         );
-    }
+    }*/
 }
