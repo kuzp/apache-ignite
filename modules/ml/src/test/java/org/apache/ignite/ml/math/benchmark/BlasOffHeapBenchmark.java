@@ -48,26 +48,28 @@ public class BlasOffHeapBenchmark {
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testOnHeap() throws Exception {
-        benchmarkOnHeap(1_000, 100_000);
-        benchmarkOnHeap(10_000, 10_000);
-        benchmarkOnHeap(100_000, 1_000);
-        benchmarkOnHeap(1000_000, 1_00);
-        benchmarkOnHeap(10000_000, 1_00);
+        benchmarkScalOnHeap(100, 100_000);
+        benchmarkScalOnHeap(1_000, 100_000);
+        benchmarkScalOnHeap(10_000, 10_000);
+        benchmarkScalOnHeap(100_000, 1_000);
+        benchmarkScalOnHeap(1000_000, 1_00);
+        benchmarkScalOnHeap(10000_000, 1_00);
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testOffHeap() throws Exception {
-        benchmarkOffHeap(1_000, 100_000);
-        benchmarkOffHeap(10_000, 10_000);
-        benchmarkOffHeap(100_000, 1_000);
-        benchmarkOffHeap(1000_000, 1_00);
-        benchmarkOffHeap(10000_000, 1_00);
+        benchmarkScalOffHeap(100, 100_000);
+        benchmarkScalOffHeap(1_000, 100_000);
+        benchmarkScalOffHeap(10_000, 10_000);
+        benchmarkScalOffHeap(100_000, 1_000);
+        benchmarkScalOffHeap(1000_000, 1_00);
+        benchmarkScalOffHeap(10000_000, 1_00);
     }
 
     /** */
-    private void benchmarkOnHeap(int size, int numRuns) throws Exception {
+    private void benchmarkScalOnHeap(int size, int numRuns) throws Exception {
         Vector v = new DenseLocalOnHeapVector(size);
         VectorContent vc = new VectorContent(v);
 
@@ -83,7 +85,7 @@ public class BlasOffHeapBenchmark {
     }
 
     /** */
-    private void benchmarkOffHeap(int size, int numRuns) throws Exception {
+    private void benchmarkScalOffHeap(int size, int numRuns) throws Exception {
         DenseLocalOffHeapVector v = new DenseLocalOffHeapVector(size);
         VectorContent vc = new VectorContent(v);
 
