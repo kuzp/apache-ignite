@@ -4,5 +4,15 @@ import controller from 'Controllers/clusters-controller';
 export default {
     name: 'pageConfigureAdvancedCluster',
     templateUrl,
-    controller
+    controller,
+    bindings: {
+        originalCluster: '<cluster',
+        clusterItems: '<',
+        isNew: '<',
+        onAdvancedSave: '&',
+        onItemAdd: '&',
+        onItemChange: '&',
+        onItemRemove: '&',
+        onEditCancel: '&'
+    }
 };

@@ -4,5 +4,15 @@ import controller from 'Controllers/caches-controller';
 export default {
     name: 'pageConfigureAdvancedCaches',
     templateUrl,
-    controller
+    controller,
+    bindings: {
+        originalCache: '<cache',
+        clusterItems: '<',
+        isNew: '<',
+        onAdvancedSave: '&',
+        onItemAdd: '&',
+        onItemChange: '&',
+        onItemRemove: '&',
+        onEditCancel: '&'
+    }
 };

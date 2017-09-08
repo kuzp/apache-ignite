@@ -335,14 +335,14 @@ editReducer2.getDefaults = () => ({
     cluster: null,
     changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
-export const selectShortClusters = (state$) => state$.pluck('shortClusters');
-export const selectShortClustersValue = (state$) => selectShortClusters(state$).pluck('value').map((v) => v && [...v.values()]);
+export const selectShortClusters = (state$) => state$.pluck('shortClusters').filter((v) => v);
+export const selectShortClustersValue = (state$) => selectShortClusters(state$).map((v) => v && [...v.value.values()]);
 export const selectCluster = (id) => (state$) => state$.pluck('clusters').map((v) => v && v.get(id));
 export const selectEditCluster = (state$) => state$.pluck('edit', 'changes', 'cluster').filter((v) => v);
 export const selectEditClusterShortCaches = (state$) => {
     return combineLatest(
-        state$.pluck('edit', 'changes', 'caches').distinctUntilChanged(),
-        state$.pluck('shortCaches', 'value').distinctUntilChanged()
+        state$.pluck('edit', 'changes', 'caches').filter((v) => v).distinctUntilChanged(),
+        state$.pluck('shortCaches', 'value').filter((v) => v).distinctUntilChanged()
     )
         .map(([{ids, changedItems}, shortCaches]) => {
             if (!ids.length || !shortCaches) return [];

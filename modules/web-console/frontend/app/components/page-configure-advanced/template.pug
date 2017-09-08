@@ -14,7 +14,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-h1 {{$ctrl.joke}}
 nav.pca-menu
     ul
         li(ng-repeat='item in $ctrl.menuItems')
@@ -22,4 +21,15 @@ nav.pca-menu
                 svg(ng-if='::item.icon' ignite-icon='{{::item.icon}}').icon-left
                 |{{::item.text}}
 
-ui-view
+ui-view(
+    is-new='$ctrl.isNew'
+    cluster='$ctrl.cluster'
+    cluster-items='$ctrl.clusterItems'
+
+    on-item-add='$ctrl.onItemAdd($event)'
+    on-item-change='$ctrl.onItemChange($event)'
+    on-item-remove='$ctrl.onItemRemove($event)'
+    on-edit-cancel='$ctrl.onEditCancel()'
+
+    on-advanced-save='$ctrl.onAdvancedSave({$event: $event})'
+)

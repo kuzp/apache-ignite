@@ -25,47 +25,63 @@ import angular from 'angular';
 import naturalCompare from 'natural-compare-lite';
 
 // Controller for Caches screen.
-export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
-    function(pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
+export default ['$uiRouter', 'PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
+    function($uiRouter, pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+        Object.assign(this, {$uiRouter, pageService, PageConfigureAdvanced, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.$onInit = function() {
-            const redirects = this.ConfigureState.actions$
-                .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
-                .do(() => {
-                    this.$state.go('.', {
-                        cacheID: this.clonedCache._id,
-                        selectedCaches: [this.clonedCache._id]
-                    });
-                });
+            // const redirects = this.ConfigureState.actions$
+            //     .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
+            //     .do(() => {
+            //         this.$state.go('.', {
+            //             cacheID: this.clonedCache._id,
+            //             selectedCaches: [this.clonedCache._id]
+            //         });
+            //     });
 
-            this.subscription = this.pageService.getObservable()
-                .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
-                .merge(redirects)
-                .subscribe();
+            // this.subscription = this.pageService.getObservable()
+            //     .do((state) => this.$scope.$applyAsync(() => Object.assign(this, state)))
+            //     .merge(redirects)
+            //     .subscribe();
 
-            this.tableActions = this.makeTableActions(this.selectedItemIDs);
+            // this.tableActions$ = this.makeTableActions(this.selectedItemIDs);
+
+            this.selectedItemIDs$ = this.$uiRouter.globals.params$.pluck('selectedCaches');
+            this.tableActions$ = this.selectedItemIDs$.map(function(selectedItems) {
+                return [
+                    {
+                        action: 'Clone',
+                        click: () => this.clone(selectedItems),
+                        available: true
+                    },
+                    {
+                        action: 'Delete',
+                        click: () => this.remove(selectedItems),
+                        available: true
+                    }
+                ];
+            });
         };
 
-        this.uiOnParamsChanged = function(params) {
-            this.tableActions = this.makeTableActions(params.selectedCaches);
-        };
+        // this.uiOnParamsChanged = function(params) {
+        //     this.tableActions = this.makeTableActions(params.selectedCaches);
+        // };
 
-        Object.defineProperty(this, 'selectedItemIDs', {
-            get() {
-                return this.$state.params.selectedCaches;
-            }
-        });
+        // Object.defineProperty(this, 'selectedItemIDs', {
+        //     get() {
+        //         return this.$state.params.selectedCaches;
+        //     }
+        // });
 
-        Object.defineProperty(this, 'isNew', {
-            get() {
-                return this.$state.params.cacheID === 'new';
-            }
-        });
+        // Object.defineProperty(this, 'isNew', {
+        //     get() {
+        //         return this.$state.params.cacheID === 'new';
+        //     }
+        // });
 
-        this.$onDestroy = function() {
-            this.subscription.unsubscribe();
-        };
+        // this.$onDestroy = function() {
+        //     this.subscription.unsubscribe();
+        // };
 
         this.cachesColumnDefs = [
             {
@@ -103,35 +119,35 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
             }
         ];
 
-        this.makeTableActions = function(selectedItems) {
-            return [
-                {
-                    action: 'Clone',
-                    click: () => this.clone(selectedItems),
-                    available: true
-                },
-                {
-                    action: 'Delete',
-                    click: () => this.remove(selectedItems),
-                    available: true
-                }
-            ];
-        };
+        // this.makeTableActions = function(selectedItems) {
+        //     return [
+        //         {
+        //             action: 'Clone',
+        //             click: () => this.clone(selectedItems),
+        //             available: true
+        //         },
+        //         {
+        //             action: 'Delete',
+        //             click: () => this.remove(selectedItems),
+        //             available: true
+        //         }
+        //     ];
+        // };
 
-        this.remove = function(items) {
-            this.pageService.remove(items, this.originalCluster);
-        };
+        // this.remove = function(items) {
+        //     this.pageService.remove(items, this.originalCluster);
+        // };
 
         this.selectionHook = function(selected) {
             const selectedItemIDs = selected.map((r) => r._id);
             return selectedItemIDs.length === 1
-                ? this.$state.go('base.configuration.tabs.advanced.caches.cache', {
+                ? this.$state.go('base.configuration.edit.advanced.caches.cache', {
                     cacheID: selectedItemIDs[0],
                     selectedCaches: selectedItemIDs
                 }, {
                     location: 'replace'
                 })
-                : this.$state.go('base.configuration.tabs.advanced.caches', {
+                : this.$state.go('base.configuration.edit.advanced.caches', {
                     selectedCaches: selectedItemIDs
                 }, {
                     location: 'replace'
@@ -253,10 +269,10 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
 
         // Save cache in database.
 
-        this.save = function(item) {
-            // _.merge(item, LegacyUtils.autoCacheStoreConfiguration(item, cacheDomains(item)));
-            this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-            if (this.$scope.ui.inputForm.$valid) this.pageService.save(item, this.originalCluster);
+        this.save = function() {
+            if (this.$scope.ui.inputForm.$invalid)
+                return this.IgniteFormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
+            this.onAdvancedSave();
         };
 
         function _cacheNames() {
@@ -264,9 +280,9 @@ export default ['PageConfigureAdvancedCaches', 'PageConfigureAdvanced', '$transi
         }
 
         // Clone cache with new name.
-        this.clone = function(items) {
-            this.pageService.clone(items);
-        };
+        // this.clone = function(items) {
+        //     this.pageService.clone(items);
+        // };
 
         $scope.resetAll = function() {
             Confirm.confirm('Are you sure you want to undo all changes for current cache?')

@@ -189,7 +189,7 @@ export default angular
 
         const basicRedirects$ = actions$
             .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
-            .do((a) => $state.go('conf.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace'}));
+            .do((a) => $state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace'}));
 
         const advancedRedirects$ = actions$.filter((a) => a.type === 'UPSERT_CLUSTER_ITEM')
             .switchMap((u) => {
@@ -261,7 +261,7 @@ export default angular
         models: changes.models.changedItems
     });
     saveBasic({download, cluster}) {
-        this.upsertCluster(cluster);
+        if (cluster) this.upsertCluster(cluster);
         this.ConfigureState.state$.pluck('edit', 'changes').take(1).do((changes) => {
             this.ConfigureState.dispatchAction({
                 type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
@@ -269,11 +269,14 @@ export default angular
             });
         }).subscribe();
     }
-    saveAdvanced(changedItems) {
-        this.ConfigureState.dispatchAction({
-            type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
-            changedItems: this._applyChangedIDs(changedItems)
-        });
+    saveAdvanced({cluster}) {
+        if (cluster) this.upsertCluster(cluster);
+        this.ConfigureState.state$.pluck('edit', 'changes').take(1).do((changes) => {
+            this.ConfigureState.dispatchAction({
+                type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+                changedItems: this._applyChangedIDs(changes)
+            });
+        }).subscribe();
     }
     goToItemCreation(type) {
         this.$state.go('conf.edit.item', {itemType: type, itemID: 'new'});
