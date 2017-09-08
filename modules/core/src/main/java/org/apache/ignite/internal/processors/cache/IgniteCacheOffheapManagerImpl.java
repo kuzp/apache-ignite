@@ -1641,7 +1641,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             initCntr = updCntr;
             storageSize.set(size);
 
-`            cntr.set(updCntr);
+            cntr.set(updCntr);
 
             if (cacheSizes != null) {
                 for (Map.Entry<Integer, Long> e : cacheSizes.entrySet())
