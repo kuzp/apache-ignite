@@ -17,6 +17,9 @@
 
 package org.apache.ignite.internal.processors.cluster;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,6 +91,9 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
     @GridToStringExclude
     private GridCacheSharedContext<?, ?> sharedCtx;
 
+    /** */
+    private File workDir;
+
     /** Listener. */
     private final GridLocalEventListener lsr = new GridLocalEventListener() {
         @Override public void onEvent(Event evt) {
@@ -147,7 +153,22 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         globalState = DiscoveryDataClusterState.createState(activeOnStart);
 
         ctx.event().addLocalEventListener(lsr, EVT_NODE_LEFT, EVT_NODE_FAILED);
+
+        String consId = U.maskForFileName(ctx.discovery().consistentId().toString());
+
+        workDir = new File(U.resolveWorkDirectory(
+            ctx.config().getWorkDirectory(),
+            "blt",
+            false
+        ),
+            consId);
+
+        U.ensureDirectory(workDir, "directory for serialized baseline topology", log);
+
+        blt = restoreBaselineTopology();
     }
+
+    private volatile BaselineTopologyImpl blt;
 
     /** {@inheritDoc} */
     @Override public void onKernalStop(boolean cancel) {
@@ -164,6 +185,35 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
      * @return If transition is in progress returns future which is completed when transition finishes.
      */
     @Nullable public IgniteInternalFuture<Boolean> onLocalJoin(DiscoCache discoCache) {
+        if (blt != null) {
+            //The main idea here: when node starts up (see start method) it tries to
+            //find BLT locally.
+            //When node joins the grid, this method is called. If joined node is the last node from BLT,
+            //it sends ChangeGlobalState message, and grid is activated automatically.
+            if (blt.isSatisfied(discoCache.aliveServerNodes())) {
+                List<StoredCacheData> cacheCfgs = null;
+
+                if (ctx.config().isPersistentStoreEnabled()) {
+                    try {
+                        cacheCfgs = collectStoredCacheConfigurations();
+                    }
+                    catch (Exception e) {
+                        //TODO: print out warning or error
+                    }
+                }
+
+                ChangeGlobalStateMessage msg = new ChangeGlobalStateMessage(UUID.randomUUID(),
+                    ctx.localNodeId(), cacheCfgs, true);
+
+                try {
+                    ctx.discovery().sendCustomEvent(msg);
+                }
+                catch (IgniteCheckedException e) {
+                    //TODO: print out warning or error
+                }
+            }
+        }
+
         if (globalState.transition()) {
             joinFut = new TransitionOnJoinWaitFuture(globalState, discoCache);
 
@@ -204,6 +254,9 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         if (msg.requestId().equals(globalState.transitionRequestId())) {
             log.info("Received state change finish message: " + msg.clusterActive());
 
+            if (msg.clusterActive())
+                saveBaselineTopology(new BaselineTopologyImpl(ctx.discovery().topology(ctx.discovery().topologyVersion())));
+
             globalState = DiscoveryDataClusterState.createState(msg.clusterActive());
 
             ctx.cache().onStateChangeFinish(msg);
@@ -215,6 +268,38 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         }
         else
             U.warn(log, "Received state finish message with unexpected ID: " + msg);
+    }
+
+    @Nullable private BaselineTopologyImpl restoreBaselineTopology() {
+        File file = new File(workDir, "blt.bin");
+
+        BaselineTopologyImpl blt = null;
+
+        try (FileInputStream in = new FileInputStream(file)) {
+            blt = U.unmarshal(ctx.config().getMarshaller(), in, U.resolveClassLoader(ctx.config()));
+        }
+        catch (Exception e) {
+            U.warn(log, "Failed to restore BaselineTopology from file: " + file.getName() +
+                "; exception was thrown: " + e.getMessage());
+        }
+
+        return blt;
+    }
+
+    private void saveBaselineTopology(BaselineTopologyImpl blt) {
+        try {
+            File file = new File(workDir, "blt.bin");
+
+            try (FileOutputStream out = new FileOutputStream(file, false)) {
+                byte[] bltBin = U.marshal(ctx, blt);
+
+                out.write(bltBin);
+            }
+        }
+        catch (Exception e) {
+            U.warn(log, "Failed to save BaselineTopology");
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -455,10 +540,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
         if (activate && sharedCtx.database().persistenceEnabled()) {
             try {
-                Map<String, StoredCacheData> cfgs = ctx.cache().context().pageStore().readCacheConfigurations();
-
-                if (!F.isEmpty(cfgs))
-                    storedCfgs = new ArrayList<>(cfgs.values());
+                storedCfgs = collectStoredCacheConfigurations();
             }
             catch (IgniteCheckedException e) {
                 U.error(log, "Failed to read stored cache configurations: " + e, e);
@@ -488,6 +570,18 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         }
 
         return startedFut;
+    }
+
+    /**
+     *
+     */
+    private List<StoredCacheData> collectStoredCacheConfigurations() throws IgniteCheckedException {
+        Map<String, StoredCacheData> cfgs = ctx.cache().context().pageStore().readCacheConfigurations();
+
+        if (!F.isEmpty(cfgs))
+            return new ArrayList<>(cfgs.values());
+        else
+            return null;
     }
 
     /**

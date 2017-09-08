@@ -538,6 +538,8 @@ public abstract class GridAbstractTest extends TestCase {
         // Will clean and re-create marshaller directory from scratch.
         U.resolveWorkDirectory(U.defaultWorkDirectory(), "marshaller", true);
         U.resolveWorkDirectory(U.defaultWorkDirectory(), "binary_meta", true);
+        //TODO IGNITE-6182 remove when BLT functionality is integrated with meta_store
+        U.resolveWorkDirectory(U.defaultWorkDirectory(), "blt", true);
     }
 
     /**
