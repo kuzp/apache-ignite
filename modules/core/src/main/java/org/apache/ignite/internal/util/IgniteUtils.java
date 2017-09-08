@@ -10092,16 +10092,22 @@ public abstract class IgniteUtils {
         return (int)y;
     }
 
-    public static String timeToUTC(long time) {
-        return timeToString(time, "UTC");
-    }
+    /** */
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
 
     /**
      * @param time Time.
      */
-    public static String timeToString(long time, String timeZone) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+    public static String timeToUTC(long time) {
+        return timeToString(time, "UTC", sdf);
+    }
 
+    /**
+     * @param time Time.
+     * @param timeZone Time zone.
+     * @param sdf Date format.
+     */
+    public static String timeToString(long time, String timeZone, SimpleDateFormat sdf) {
         sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
 
         return sdf.format(new Date(time));

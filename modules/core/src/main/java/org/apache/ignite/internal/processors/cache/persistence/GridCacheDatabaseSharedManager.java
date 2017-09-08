@@ -116,10 +116,12 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PagePartitionMetaIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWALPointer;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
+import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.port.GridPortRecord;
 import org.apache.ignite.internal.util.GridConcurrentHashSet;
 import org.apache.ignite.internal.util.GridMultiCollectionWrapper;
 import org.apache.ignite.internal.util.GridUnsafe;
+import org.apache.ignite.internal.util.IgniteUtils;
 import org.apache.ignite.internal.util.future.CountDownFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridInClosure3X;
@@ -145,6 +147,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_PDS_SKIP_CRC;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_PDS_WAL_REBALANCE_THRESHOLD;
+import static org.apache.ignite.internal.util.IgniteUtils.timeToUTC;
 
 /**
  *
@@ -1513,7 +1516,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("NodeId:" + cctx.localNodeId() + "\n");
+        sb.append("NodeId:").append(cctx.localNodeId()).append("\n");
 
         try (WALIterator it = cctx.wal().replay(pnt)) {
             Set<Integer> grpIds = new HashSet<>();
@@ -1526,10 +1529,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 WALRecord rec = next.get2();
 
                 if (!recPredicate.apply(next)){
-                    sb.append("Stop iteration " + next.get1() + " rec " + rec + "\n");
+                    sb.append("Stop iteration ").append(next.get1()).append(" rec ").append(rec).append("\n");
 
                     break;
                 }
+
+                FileWALPointer p = (FileWALPointer)next.get1();
 
                 switch (rec.type()) {
                     case DATA_RECORD:
@@ -1541,10 +1546,16 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
 
-                                sb.append(
-                                    "Apply " + dataEntry.value().value(cacheCtx.cacheObjectContext(), true) +
-                                        " " + dataEntry.nearXidVersion() +
-                                        " " + next.get1()+"\n");
+                                GridCacheVersion ver = dataEntry.nearXidVersion();
+
+                                sb.append(dataEntry.value().value(cacheCtx.cacheObjectContext(), true))
+                                    .append(" topVer=").append(ver.topologyVersion())
+                                    .append(" order=").append(ver.order())
+                                    .append(" nodeOrder=").append(ver.nodeOrder())
+                                    .append(" idx=").append(p.index())
+                                    .append(" offset=").append(p.fileOffset())
+                                    .append(" len=").append(p.length())
+                                    .append("\n");
 
                                 applyUpdate(cacheCtx, dataEntry);
 
@@ -1556,8 +1567,18 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     case TX_RECORD:
                         TxRecord txRec = (TxRecord)rec;
 
-                        sb.append("Apply " + txRec.state() + " " +
-                            txRec.timestamp() + " " + txRec.nearXidVersion()+ " " + next.get1() + "\n");
+                        GridCacheVersion ver = txRec.nearXidVersion();
+
+                        sb.append(txRec.state())
+                            .append(" ").append(timeToUTC(txRec.timestamp()))
+                            .append(" topVer=").append(ver.topologyVersion())
+                            .append(" order=").append(ver.order())
+                            .append(" nodeOrder=").append(ver.nodeOrder())
+                            .append(" idx=").append(p.index())
+                            .append(" offset=").append(p.fileOffset())
+                            .append(" len=").append(p.length())
+                            .append("\n");
+
                         break;
 
                     case PART_META_UPDATE_STATE:
