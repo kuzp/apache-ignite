@@ -63,7 +63,7 @@ public class DenseOffHeapMatrixStorage implements MatrixStorage {
     public DenseOffHeapMatrixStorage(double[][] data) {
         assert data != null;
 
-        assert rows > 0;
+        assert data.length > 0; // IMPL NOTE this also asserts rows > 0
         assert data[0] != null;
 
         this.rows = data.length;
