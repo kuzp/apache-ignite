@@ -39,7 +39,7 @@ public class BlasOffHeapBenchmark {
     public void testBlasOffHeap() throws ClassNotFoundException {
         Assert.assertNotNull("Unexpected null BlasOffHeap instance.", BlasOffHeap.getInstance());
 
-        Assert.assertNotNull("unexpected native netlib Blas instance.",
+        Assert.assertNotNull("Unexpected null native netlib Blas instance.",
             Class.forName("com.github.fommil.netlib.NativeSystemBLAS"));
     }
 
@@ -47,7 +47,7 @@ public class BlasOffHeapBenchmark {
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
-    public void testOnHeap() throws Exception {
+    public void testScalOnHeap() throws Exception {
         benchmarkScalOnHeap(100, 100_000);
         benchmarkScalOnHeap(1_000, 100_000);
         benchmarkScalOnHeap(10_000, 10_000);
@@ -59,7 +59,7 @@ public class BlasOffHeapBenchmark {
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
-    public void testOffHeap() throws Exception {
+    public void testScalOffHeap() throws Exception {
         benchmarkScalOffHeap(100, 100_000);
         benchmarkScalOffHeap(1_000, 100_000);
         benchmarkScalOffHeap(10_000, 10_000);
