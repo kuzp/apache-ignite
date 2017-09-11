@@ -110,8 +110,7 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                         throw new errors.DuplicateKeyException(`IGFS with name: "${igfs.name}" already exist.`);
 
                     throw err;
-                })
-                .then((res) => _.pick(res, 'n'));
+                });
         }
 
         /**

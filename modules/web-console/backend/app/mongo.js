@@ -102,6 +102,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
     // Define Domain model schema.
     const DomainModelSchema = new Schema({
         space: {type: ObjectId, ref: 'Space', index: true, required: true},
+        clusters: [{type: ObjectId, ref: 'Cluster'}],
         caches: [{type: ObjectId, ref: 'Cache'}],
         queryMetadata: {type: String, enum: ['Annotations', 'Configuration']},
         kind: {type: String, enum: ['query', 'store', 'both']},
@@ -135,7 +136,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         generatePojo: Boolean
     });
 
-    DomainModelSchema.index({valueType: 1, space: 1}, {unique: true});
+    DomainModelSchema.index({valueType: 1, clusters: 1, space: 1}, {unique: true});
 
     // Define model of Domain models.
     result.DomainModel = mongoose.model('DomainModel', DomainModelSchema);
@@ -582,6 +583,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
             compactFooter: Boolean
         },
         caches: [{type: ObjectId, ref: 'Cache'}],
+        models: [{type: ObjectId, ref: 'DomainModel'}],
         clockSyncSamples: Number,
         clockSyncFrequency: Number,
         deploymentMode: {type: String, enum: ['PRIVATE', 'ISOLATED', 'SHARED', 'CONTINUOUS']},

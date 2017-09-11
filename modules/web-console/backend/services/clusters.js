@@ -21,7 +21,7 @@
 
 module.exports = {
     implements: 'services/clusters',
-    inject: ['require(lodash)', 'mongo', 'services/spaces', 'services/caches', 'services/igfss', 'errors']
+    inject: ['require(lodash)', 'mongo', 'services/spaces', 'services/caches', 'services/domains', 'services/igfss', 'errors']
 };
 
 /**
@@ -29,11 +29,12 @@ module.exports = {
  * @param mongo
  * @param {SpacesService} spacesService
  * @param {CachesService} cachesService
+ * @param {DomainsService} modelsService
  * @param {IgfssService} igfssService
  * @param errors
  * @returns {ClustersService}
  */
-module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, errors) => {
+module.exports.factory = (_, mongo, spacesService, cachesService, modelsService, igfssService, errors) => {
     /**
      * Convert remove status operation to own presentation.
      *
@@ -96,30 +97,15 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
     class ClustersService {
         static shortList(userId, demo) {
             return spacesService.spaceIds(userId, demo)
-                .then((spaceIds) => Promise.all([
-                    mongo.Cluster.find({space: {$in: spaceIds}}).select('name discovery.kind caches igfss').sort('name').lean().exec(),
-                    mongo.Cache.find({space: {$in: spaceIds}}).select('domains').lean().exec()
-                ])
-                .then(([clusters, caches]) => {
-                    const cmap = _.keyBy(caches, '_id');
-
-                    return _.map(clusters, (cluster) => {
-                        const models = _.reduce(cluster.caches, (acc, cacheId) => {
-                            _.forEach(_.get(cmap[cacheId], 'domains'), (modelId) => acc.add(modelId.toString()));
-
-                            return acc;
-                        }, new Set());
-
-                        return {
-                            _id: cluster._id,
-                            name: cluster.name,
-                            discovery: cluster.discovery.kind,
-                            cachesCount: _.size(cluster.caches),
-                            modelsCount: models.size,
-                            igfsCount: _.size(cluster.igfss)
-                        };
-                    });
-                }));
+                .then((spaceIds) => mongo.Cluster.find({space: {$in: spaceIds}}).select('name discovery.kind caches models igfss').lean().exec())
+                .then((clusters) => _.map(clusters, (cluster) => ({
+                    _id: cluster._id,
+                    name: cluster.name,
+                    discovery: cluster.discovery.kind,
+                    cachesCount: _.size(cluster.caches),
+                    modelsCount: _.size(cluster.models),
+                    igfsCount: _.size(cluster.igfss)
+                })));
         }
 
         static get(userId, demo, _id) {
@@ -173,16 +159,16 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
                         });
                 })
                 .then(() => _.map(caches, cachesService.upsertBasic))
-                .then(() => ({n: 1}));
+                .then(() => ({rowsAffected: 1}));
         }
 
-        static upsert(userId, demo, {cluster, caches, igfss}) {
+        static upsert(userId, demo, {cluster, caches, models, igfss}) {
             if (_.isNil(cluster._id))
                 return Promise.reject(new errors.IllegalArgumentException('Cluster id can not be undefined or null'));
 
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
-                    this.normalize(_.head(spaceIds), cluster, caches, igfss);
+                    this.normalize(_.head(spaceIds), cluster, caches, models, igfss);
 
                     const query = _.pick(cluster, ['space', '_id']);
 
@@ -194,14 +180,15 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
                             throw err;
                         })
                         .then((oldCluster) => {
+                            const modelIds = this.removedInCluster(oldCluster, cluster, 'models');
                             const cacheIds = this.removedInCluster(oldCluster, cluster, 'caches');
                             const igfsIds = this.removedInCluster(oldCluster, cluster, 'igfss');
 
-                            return Promise.all([cachesService.remove(cacheIds), igfssService.remove(igfsIds)]);
+                            return Promise.all([modelsService.remove(modelIds), cachesService.remove(cacheIds), igfssService.remove(igfsIds)]);
                         });
                 })
-                .then(() => Promise.all(_.concat(_.map(caches, cachesService.upsert), _.map(igfss, igfssService.upsert))))
-                .then(() => ({n: 1}));
+                .then(() => Promise.all(_.concat(_.map(models, modelsService.upsert), _.map(caches, cachesService.upsert), _.map(igfss, igfssService.upsert))))
+                .then(() => ({rowsAffected: 1}));
         }
 
         /**
@@ -242,10 +229,17 @@ module.exports.factory = (_, mongo, spacesService, cachesService, igfssService, 
 
             ids = _.castArray(ids);
 
-            return mongo.Cache.remove({clusters: {$in: ids}}).exec()
-                .then(() => mongo.Igfs.remove({clusters: {$in: ids}}).exec())
-                .then(() => mongo.Cluster.remove({_id: {$in: ids}}).exec())
-                .then(convertRemoveStatus);
+            return Promise.all(_.map(ids, (id) => {
+                return mongo.Cluster.findByIdAndRemove(id).exec()
+                    .then((cluster) => {
+                        return Promise.all([
+                            mongo.DomainModel.remove({_id: {$in: cluster.models}}).exec(),
+                            mongo.Cache.remove({_id: {$in: cluster.caches}}).exec(),
+                            mongo.Igfs.remove({_id: {$in: cluster.igfss}}).exec()
+                        ]);
+                    });
+            }))
+                .then(() => ({rowsAffected: ids.length}));
         }
 
         /**

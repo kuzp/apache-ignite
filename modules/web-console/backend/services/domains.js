@@ -156,6 +156,42 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                 .then((spaceIds) => mongo.DomainModel.findOne({space: {$in: spaceIds}, _id}).lean().exec());
         }
 
+        static upsert(model) {
+            if (_.isNil(model._id))
+                return Promise.reject(new errors.IllegalArgumentException('Model id can not be undefined or null'));
+
+            const query = _.pick(model, ['space', '_id']);
+
+            return mongo.DomainModel.update(query, {$set: model}, {upsert: true}).exec()
+                .catch((err) => {
+                    if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
+                        throw new errors.DuplicateKeyException(`Model with value type: "${model.valueType}" already exist.`);
+
+                    throw err;
+                });
+        }
+
+        /**
+         * Remove model.
+         *
+         * @param {mongo.ObjectId|String} ids - The model id for remove.
+         * @returns {Promise.<{rowsAffected}>} - The number of affected rows.
+         */
+        static remove(ids) {
+            if (_.isNil(ids))
+                return Promise.reject(new errors.IllegalArgumentException('Model id can not be undefined or null'));
+
+            ids = _.castArray(ids);
+
+            if (_.isEmpty(ids))
+                return Promise.resolve({rowsAffected: 0});
+
+            return mongo.Cache.update({domains: {$in: ids}}, {$pull: {domains: ids}}, {multi: true}).exec()
+                .then(() => mongo.Cluster.update({models: {$in: ids}}, {$pull: {models: ids}}, {multi: true}).exec())
+                .then(() => mongo.DomainModel.remove({_id: {$in: ids}}).exec())
+                .then(convertRemoveStatus);
+        }
+
         /**
          * Batch merging domains.
          *
@@ -173,21 +209,6 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
          */
         static listBySpaces(spaceIds) {
             return mongo.DomainModel.find({space: {$in: spaceIds}}).sort('valueType').lean().exec();
-        }
-
-        /**
-         * Remove domain.
-         *
-         * @param {mongo.ObjectId|String} domainId - The domain id for remove.
-         * @returns {Promise.<{rowsAffected}>} - The number of affected rows.
-         */
-        static remove(domainId) {
-            if (_.isNil(domainId))
-                return Promise.reject(new errors.IllegalArgumentException('Domain id can not be undefined or null'));
-
-            return mongo.Cache.update({domains: {$in: [domainId]}}, {$pull: {domains: domainId}}, {multi: true}).exec()
-                .then(() => mongo.DomainModel.remove({_id: domainId}).exec())
-                .then(convertRemoveStatus);
         }
 
         /**

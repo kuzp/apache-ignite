@@ -125,8 +125,7 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                         return mongo.Cache.update(query, {$set: cache}, {upsert: true}).exec();
 
                     return updated;
-                })
-                .then((res) => _.pick(res, 'n'));
+                });
         }
 
         static upsert(cache) {
@@ -141,8 +140,7 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
                         throw new errors.DuplicateKeyException(`Cache with name: "${cache.name}" already exist.`);
 
                     throw err;
-                })
-                .then((res) => _.pick(res, 'n'));
+                });
         }
 
         /**
