@@ -175,7 +175,7 @@ public class DenseOffHeapMatrixStorage implements MatrixStorage {
 
     /** */
     private long pointerOffset(int x, int y) {
-        return ptr + x * cols * Double.BYTES + y * Double.BYTES;
+        return ptr + x * Double.BYTES + y * rows * Double.BYTES;
     }
 
     /** {@inheritDoc} */

@@ -65,7 +65,6 @@ public class BlasOffHeapTest {
 
     /** Tests 'gemm' operation for off-heap matrices. */
     @Test
-    @Ignore("todo recover unit tests after debugging completed")
     public void testGemm() {
         // C := alpha * A * B + beta * C
         double alpha = 1.0;
