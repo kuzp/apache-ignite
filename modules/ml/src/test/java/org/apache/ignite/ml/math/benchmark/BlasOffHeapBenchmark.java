@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-/** Todo add calls for destroy() where needed. */
+/** */
 public class BlasOffHeapBenchmark {
     /** */
     private static final BlasOffHeap blasOffHeap = BlasOffHeap.getInstance();
@@ -75,47 +75,88 @@ public class BlasOffHeapBenchmark {
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOnHeap() throws Exception {
-        benchmarkGemmOnHeap(8, 100_000);
-        benchmarkGemmOnHeap(32, 100_000);
-        benchmarkGemmOnHeap(128, 10_000);
-        benchmarkGemmOnHeap(512, 10_000);
-        benchmarkGemmOnHeap(2_048, 1_00);
+        benchmarkGemmOnHeap(16, 4_000);
+        benchmarkGemmOnHeap(32, 4_000);
+        benchmarkGemmOnHeap(64, 400);
+        benchmarkGemmOnHeap(128, 400);
+        benchmarkGemmOnHeap(256, 400);
+        benchmarkGemmOnHeap(512, 40);
+        benchmarkGemmOnHeap(1024, 40);
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOffHeap() throws Exception {
-        benchmarkGemmOffHeap(8, 100_000);
-        benchmarkGemmOffHeap(32, 100_000);
-        benchmarkGemmOffHeap(128, 10_000);
-        benchmarkGemmOffHeap(512, 10_000);
-        benchmarkGemmOffHeap(2_048, 1_00);
+        benchmarkGemmOffHeap(16, 4_000);
+        benchmarkGemmOffHeap(32, 4_000);
+        benchmarkGemmOffHeap(64, 400);
+        benchmarkGemmOffHeap(128, 400);
+        benchmarkGemmOffHeap(256, 400);
+        benchmarkGemmOffHeap(512, 40);
+        benchmarkGemmOffHeap(1024, 40);
     }
 
     /** */
     private void benchmarkGemmOnHeap(int size, int numRuns) throws Exception {
+        if (size > 1024)
+            return; // larger sizes took too long in trial runs
+
         DenseLocalOnHeapMatrix m = new DenseLocalOnHeapMatrix(size, size);
         init(m);
 
         DenseLocalOnHeapMatrix inv = (DenseLocalOnHeapMatrix)new DenseLocalOnHeapMatrix(size, size).assign(m.inverse());
 
-        Assert.assertNotNull(inv);
+        DenseLocalOnHeapMatrix tmp = new DenseLocalOnHeapMatrix(size, size);
+        DenseLocalOnHeapMatrix c = new DenseLocalOnHeapMatrix(size, size);
 
-        // todo add benchmark after smoke test for above passes
+        double alpha = 1.0, beta = 0.0;
+
+        new MathBenchmark("On heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+            .execute(() -> {
+                Blas.gemm(alpha, m, inv, beta, c);
+                Blas.gemm(alpha, m, c, beta, tmp);
+            });
+
+        Assert.assertNotNull(tmp.inverse());
     }
 
     /** */
     private void benchmarkGemmOffHeap(int size, int numRuns) throws Exception {
+        if (size > 1024)
+            return; // larger sizes took too long in trial runs
+
         DenseLocalOffHeapMatrix m = new DenseLocalOffHeapMatrix(size, size);
         init(m);
 
         DenseLocalOffHeapMatrix inv = (DenseLocalOffHeapMatrix)new DenseLocalOffHeapMatrix(size, size)
             .assign(m.inverse());
 
-        Assert.assertNotNull(inv);
+        DenseLocalOffHeapMatrix tmp = new DenseLocalOffHeapMatrix(size, size);
+        DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(size, size);
 
-        // todo add benchmark after smoke test for above passes
+        double alpha = 1.0, beta = 0.0;
+
+        new MathBenchmark("Off heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+            .execute(() -> {
+                gemmOffHeap(alpha, m, inv, beta, c);
+                gemmOffHeap(alpha, m, c, beta, tmp);
+            });
+
+        Assert.assertNotNull(tmp.inverse());
+
+        m.destroy();
+        inv.destroy();
+        tmp.destroy();
+        c.destroy();
+    }
+
+    /** */
+    private void gemmOffHeap(double alpha, DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b, double beta,
+        DenseLocalOffHeapMatrix c) {
+        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), alpha,
+            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), beta, c.ptr(), c.rowSize());
+
     }
 
     /** */
@@ -154,6 +195,8 @@ public class BlasOffHeapBenchmark {
             });
 
         assertTrue(vc.verify());
+
+        v.destroy();
     }
 
     /** */
