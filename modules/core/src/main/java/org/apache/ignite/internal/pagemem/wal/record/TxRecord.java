@@ -158,4 +158,16 @@ public class TxRecord extends WALRecord {
     public void timestamp(long time) {
         timestamp = time;
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return "TxRecord{" +
+            "state=" + state +
+            ", nearXidVer=" + nearXidVer +
+            ", writeVer=" + writeVer +
+            ", participatingNodes=" + participatingNodes +
+            ", primaryNode=" + primaryNode +
+            ", timestamp=" + timestamp +
+            '}';
+    }
 }
