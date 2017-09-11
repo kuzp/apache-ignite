@@ -24,7 +24,7 @@ import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.junit.Assert;
 import org.junit.Test;
 
-/** Tests for BLAS off-heap operations. Todo add calls for destroy() where needed. */
+/** Tests for BLAS off-heap operations. */
 public class BlasOffHeapTest {
     /** Test off-heap blas availability. Todo remove later or make it OS-independent. */
     @Test
@@ -43,6 +43,9 @@ public class BlasOffHeapTest {
         BlasOffHeap.getInstance().daxpy(x.size(), a, x.ptr(), 1, y.ptr(), 1);
 
         Assert.assertEquals(y, exp);
+
+        x.destroy();
+        y.destroy();
     }
 
     /** Test 'dscal' operation for a vector. */
@@ -56,6 +59,8 @@ public class BlasOffHeapTest {
         BlasOffHeap.getInstance().dscal(v.size(), alpha, v.ptr(), 1);
 
         Assert.assertEquals(new DenseLocalOnHeapVector(v.size()).assign(v), exp);
+
+        v.destroy();
     }
 
     /** Tests 'gemm' operation for off-heap matrices. */
@@ -80,4 +85,9 @@ public class BlasOffHeapTest {
             = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(c.rowSize(), c.columnSize()).assign(c));
 
         Assert.assertEquals(exp, obtained);
-    }}
+
+        a.destroy();
+        b.destroy();
+        c.destroy();
+    }
+}
