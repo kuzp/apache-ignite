@@ -17,9 +17,13 @@
 
 package org.apache.ignite.ml.math.benchmark;
 
+import java.util.Objects;
 import org.apache.ignite.ml.math.Blas;
 import org.apache.ignite.ml.math.BlasOffHeap;
+import org.apache.ignite.ml.math.Matrix;
 import org.apache.ignite.ml.math.Vector;
+import org.apache.ignite.ml.math.impls.matrix.DenseLocalOffHeapMatrix;
+import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.junit.Assert;
@@ -43,7 +47,6 @@ public class BlasOffHeapBenchmark {
             Class.forName("com.github.fommil.netlib.NativeSystemBLAS"));
     }
 
-
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
@@ -52,8 +55,8 @@ public class BlasOffHeapBenchmark {
         benchmarkScalOnHeap(1_000, 100_000);
         benchmarkScalOnHeap(10_000, 10_000);
         benchmarkScalOnHeap(100_000, 1_000);
-        benchmarkScalOnHeap(1000_000, 1_00);
-        benchmarkScalOnHeap(10000_000, 1_00);
+        benchmarkScalOnHeap(1_000_000, 1_00);
+        benchmarkScalOnHeap(10_000_000, 1_00);
     }
 
     /** */
@@ -64,8 +67,61 @@ public class BlasOffHeapBenchmark {
         benchmarkScalOffHeap(1_000, 100_000);
         benchmarkScalOffHeap(10_000, 10_000);
         benchmarkScalOffHeap(100_000, 1_000);
-        benchmarkScalOffHeap(1000_000, 1_00);
-        benchmarkScalOffHeap(10000_000, 1_00);
+        benchmarkScalOffHeap(1_000_000, 1_00);
+        benchmarkScalOffHeap(10_000_000, 1_00);
+    }
+
+    /** */
+    @Test
+    @Ignore("Benchmark tests are intended only for manual execution")
+    public void testGemmOnHeap() throws Exception {
+        benchmarkGemmOnHeap(8, 100_000);
+        benchmarkGemmOnHeap(32, 100_000);
+        benchmarkGemmOnHeap(128, 10_000);
+        benchmarkGemmOnHeap(512, 10_000);
+        benchmarkGemmOnHeap(2_048, 1_00);
+    }
+
+    /** */
+    @Test
+    @Ignore("Benchmark tests are intended only for manual execution")
+    public void testGemmOffHeap() throws Exception {
+        benchmarkGemmOffHeap(8, 100_000);
+        benchmarkGemmOffHeap(32, 100_000);
+        benchmarkGemmOffHeap(128, 10_000);
+        benchmarkGemmOffHeap(512, 10_000);
+        benchmarkGemmOffHeap(2_048, 1_00);
+    }
+
+    /** */
+    private void benchmarkGemmOnHeap(int size, int numRuns) throws Exception {
+        DenseLocalOnHeapMatrix m = new DenseLocalOnHeapMatrix(size, size);
+        init(m);
+
+        DenseLocalOnHeapMatrix inv = (DenseLocalOnHeapMatrix)new DenseLocalOnHeapMatrix(size, size).assign(m.inverse());
+
+        Assert.assertNotNull(inv);
+
+        // todo add benchmark after smoke test for above passes
+    }
+
+    /** */
+    private void benchmarkGemmOffHeap(int size, int numRuns) throws Exception {
+        DenseLocalOffHeapMatrix m = new DenseLocalOffHeapMatrix(size, size);
+        init(m);
+
+        DenseLocalOffHeapMatrix inv = (DenseLocalOffHeapMatrix)new DenseLocalOffHeapMatrix(size, size)
+            .assign(m.inverse());
+
+        Assert.assertNotNull(inv);
+
+        // todo add benchmark after smoke test for above passes
+    }
+
+    /** */
+    private void init(Matrix m) {
+        m.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
+            + (Objects.equals(i, j) ? 20.0 : 0));
     }
 
     /** */
