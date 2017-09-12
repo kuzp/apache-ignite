@@ -711,7 +711,7 @@ public final class IgniteSystemProperties {
      * Default value is {@code 4}.
      */
     public static final String IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD =
-            "IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD";
+        "IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD";
 
     /**
      * If the property is set {@link org.apache.ignite.internal.pagemem.wal.record.TxRecord} records
@@ -720,6 +720,11 @@ public final class IgniteSystemProperties {
      * Default value is {@code false}.
      */
     public static final String IGNITE_WAL_LOG_TX_RECORDS = "IGNITE_WAL_LOG_TX_RECORDS";
+
+    /**
+     *
+     */
+    public static final String IGNITE_WAL_DEBUG_LOG_ON_RECOVERY = "IGNITE_WAL_DEBUG_LOG_ON_RECOVERY";
 
     /**
      * Enforces singleton.

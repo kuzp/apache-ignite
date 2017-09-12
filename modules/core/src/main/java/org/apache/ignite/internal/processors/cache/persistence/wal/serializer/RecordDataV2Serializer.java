@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.cache.persistence.wal.serializer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.internal.pagemem.wal.record.SnapshotRecord;
 import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
@@ -57,6 +58,9 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             case TX_RECORD:
                 return txRecordSerializer.sizeOfTxRecord((TxRecord)record);
 
+            case SNAPSHOT:
+                return /*snapshotId*/8 + /*full or incremental*/1;
+
             default:
                 return delegateSerializer.size(record);
         }
@@ -71,6 +75,12 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             case TX_RECORD:
                 return txRecordSerializer.readTxRecord(in);
 
+            case SNAPSHOT:
+                long snpId = in.readLong();
+                boolean isFull = in.readByte() == 1;
+
+                return new SnapshotRecord(snpId, isFull);
+
             default:
                 return delegateSerializer.readRecord(type, in);
         }
@@ -84,6 +94,16 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
         switch (record.type()) {
             case TX_RECORD:
                 txRecordSerializer.writeTxRecord((TxRecord)record, buf);
+
+                break;
+
+            case SNAPSHOT:
+                SnapshotRecord rec = (SnapshotRecord)record;
+
+                buf.putLong(rec.getSnapshotId());
+                buf.put((byte)(rec.isFull() ? 1 : 0));
+
+               break;
 
             default:
                delegateSerializer.writeRecord(record, buf);
