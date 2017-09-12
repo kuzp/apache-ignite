@@ -69,7 +69,6 @@ public class IgniteCacheSnapshotManager<T extends SnapshotOperation> extends Gri
      * @return {@code true} if next operation must be snapshot, {@code false} if checkpoint must be executed.
      */
     public boolean onMarkCheckPointBegin(
-        WALPointer pnt,
         T snapshotOperation,
         PartitionAllocationMap map
     ) throws IgniteCheckedException {

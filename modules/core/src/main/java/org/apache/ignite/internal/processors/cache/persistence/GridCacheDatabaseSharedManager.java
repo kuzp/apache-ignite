@@ -2326,6 +2326,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     cpRec.addCacheGroupState(grp.groupId(), state);
                 }
 
+                if (curr.nextSnapshot)
+                    snapshotMgr.onMarkCheckPointBegin(curr.snapshotOperation, map);
+
                 cpPagesTuple = beginAllCheckpoints();
 
                 hasPages = hasPageForWrite(cpPagesTuple.get1());
@@ -2336,9 +2339,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                     if (cpPtr == null)
                         cpPtr = CheckpointStatus.NULL_PTR;
-
-                    if (curr.nextSnapshot)
-                        snapshotMgr.onMarkCheckPointBegin(cpPtr, curr.snapshotOperation, map);
                 }
             }
             finally {
@@ -2584,9 +2584,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             long writeAddr = GridUnsafe.bufferAddress(tmpWriteBuf);
 
-            snapshotMgr.beforeCheckpointPageWritten();
-
             try {
+                snapshotMgr.beforeCheckpointPageWritten();
+
                 for (FullPageId fullId : writePageIds) {
                     if (checkpointer.shutdownNow)
                         break;
