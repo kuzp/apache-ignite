@@ -1510,13 +1510,15 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     public void applyUpdatesOnRecovery(
         WALPointer pnt,
         IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
-        IgnitePredicate<DataEntry> entryPredicate
+        IgnitePredicate<DataEntry> entryPredicate,
+        boolean debug
     ) throws IgniteCheckedException {
         cctx.kernalContext().query().skipFieldLookup(true);
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("NodeId:").append(cctx.localNodeId()).append("\n");
+        if (debug)
+            sb.append("NodeId:").append(cctx.localNodeId()).append("\n");
 
         try (WALIterator it = cctx.wal().replay(pnt)) {
             Set<Integer> grpIds = new HashSet<>();
@@ -1529,7 +1531,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 WALRecord rec = next.get2();
 
                 if (!recPredicate.apply(next)){
-                    sb.append("Stop iteration ").append(next.get1()).append(" rec ").append(rec).append("\n");
+                    if (debug)
+                        sb.append("Stop iteration ")
+                            .append(next.get1())
+                            .append(" rec ")
+                            .append(rec)
+                            .append("\n");
 
                     break;
                 }
@@ -1546,16 +1553,26 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
 
-                                GridCacheVersion ver = dataEntry.nearXidVersion();
+                                assert cacheCtx != null;
 
-                                sb.append((Object)dataEntry.value().value(cacheCtx.cacheObjectContext(), true))
-                                    .append(" topVer=").append(ver.topologyVersion())
-                                    .append(" order=").append(ver.order())
-                                    .append(" nodeOrder=").append(ver.nodeOrder())
-                                    .append(" idx=").append(p.index())
-                                    .append(" offset=").append(p.fileOffset())
-                                    .append(" len=").append(p.length())
-                                    .append("\n");
+                                if (debug) {
+                                    GridCacheVersion ver = dataEntry.nearXidVersion();
+
+                                    String entry = "null";
+
+                                    if (dataEntry.value() != null)
+                                        entry = dataEntry.value()
+                                            .value(cacheCtx.cacheObjectContext(), true).toString();
+
+                                    sb.append(entry)
+                                        .append(" topVer=").append(ver.topologyVersion())
+                                        .append(" order=").append(ver.order())
+                                        .append(" nodeOrder=").append(ver.nodeOrder())
+                                        .append(" idx=").append(p.index())
+                                        .append(" offset=").append(p.fileOffset())
+                                        .append(" len=").append(p.length())
+                                        .append("\n");
+                                }
 
                                 applyUpdate(cacheCtx, dataEntry);
 
@@ -1567,17 +1584,19 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     case TX_RECORD:
                         TxRecord txRec = (TxRecord)rec;
 
-                        GridCacheVersion ver = txRec.nearXidVersion();
+                        if (debug){
+                            GridCacheVersion ver = txRec.nearXidVersion();
 
-                        sb.append(txRec.state())
-                            .append(" ").append(timeToUTC(txRec.timestamp()))
-                            .append(" topVer=").append(ver.topologyVersion())
-                            .append(" order=").append(ver.order())
-                            .append(" nodeOrder=").append(ver.nodeOrder())
-                            .append(" idx=").append(p.index())
-                            .append(" offset=").append(p.fileOffset())
-                            .append(" len=").append(p.length())
-                            .append("\n");
+                            sb.append(txRec.state())
+                                .append(" ").append(timeToUTC(txRec.timestamp()))
+                                .append(" topVer=").append(ver.topologyVersion())
+                                .append(" order=").append(ver.order())
+                                .append(" nodeOrder=").append(ver.nodeOrder())
+                                .append(" idx=").append(p.index())
+                                .append(" offset=").append(p.fileOffset())
+                                .append(" len=").append(p.length())
+                                .append("\n");
+                        }
 
                         break;
 
@@ -1602,7 +1621,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         finally {
             cctx.kernalContext().query().skipFieldLookup(false);
 
-            System.err.println(sb.toString());
+            if (debug)
+                log.debug(sb.toString());
         }
     }
 

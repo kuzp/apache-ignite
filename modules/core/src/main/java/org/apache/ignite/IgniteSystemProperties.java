@@ -722,6 +722,11 @@ public final class IgniteSystemProperties {
     public static final String IGNITE_WAL_LOG_TX_RECORDS = "IGNITE_WAL_LOG_TX_RECORDS";
 
     /**
+     *
+     */
+    public static final String IGNITE_WAL_DEBUG_LOG_ON_RECOVERY = "IGNITE_WAL_DEBUG_LOG_ON_RECOVERY";
+
+    /**
      * Enforces singleton.
      */
     private IgniteSystemProperties() {
