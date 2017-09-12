@@ -267,7 +267,7 @@ class VisorAlertCommand extends VisorConsoleCommand {
                 var script: Option[String] = None
                 val conditions = mutable.ArrayBuffer.empty[VisorAlertCondition]
                 var freq = DFLT_FREQ
-                var interval = 0
+                var interval = 0L
 
                 try {
                     args.foreach(arg => {
