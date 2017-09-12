@@ -17,9 +17,11 @@
 
 package org.apache.ignite.ml.math.benchmark;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import org.apache.ignite.ml.math.Blas;
 import org.apache.ignite.ml.math.BlasOffHeap;
 import org.apache.ignite.ml.math.Matrix;
@@ -39,6 +41,27 @@ public class BlasOffHeapBenchmark {
     /** */
     private static final BlasOffHeap blasOffHeap = BlasOffHeap.getInstance();
 
+    /** */
+    private static final Map<Integer, Integer> scalRunParams = new HashMap<Integer, Integer>() {{
+        put(100,  100_000);
+        put(1_000, 100_000);
+        put(10_000, 10_000);
+        put(100_000, 1_000);
+        put(1_000_000, 1_00);
+        put(10_000_000, 1_00);
+    }};
+
+    /** */
+    private static final Map<Integer, Integer> gemmRunParams = new HashMap<Integer, Integer>() {{
+        put(16, 16_000);
+        put(32, 16_000);
+        put(64, 1600);
+        put(128, 1600);
+        put(256, 1600);
+        put(512, 160);
+        put(1024, 160);
+    }};
+
     /** Test Blas availability necessary for this benchmark. */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
@@ -53,63 +76,41 @@ public class BlasOffHeapBenchmark {
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testScalOnHeap() throws Exception {
-        benchmarkScalOnHeap(100, 100_000);
-        benchmarkScalOnHeap(1_000, 100_000);
-        benchmarkScalOnHeap(10_000, 10_000);
-        benchmarkScalOnHeap(100_000, 1_000);
-        benchmarkScalOnHeap(1_000_000, 1_00);
-        benchmarkScalOnHeap(10_000_000, 1_00);
+        scalRunParams.forEach(this::benchmarkScalOnHeap);
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testScalOffHeap() throws Exception {
-        benchmarkScalOffHeap(100, 100_000);
-        benchmarkScalOffHeap(1_000, 100_000);
-        benchmarkScalOffHeap(10_000, 10_000);
-        benchmarkScalOffHeap(100_000, 1_000);
-        benchmarkScalOffHeap(1_000_000, 1_00);
-        benchmarkScalOffHeap(10_000_000, 1_00);
+        scalRunParams.forEach(this::benchmarkScalOffHeap);
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOnHeap() throws Exception {
-        benchmarkGemmOnHeap(16, 16_000);
-        benchmarkGemmOnHeap(32, 16_000);
-        benchmarkGemmOnHeap(64, 1600);
-        benchmarkGemmOnHeap(128, 1600);
-        benchmarkGemmOnHeap(256, 1600);
-        benchmarkGemmOnHeap(512, 160);
-        benchmarkGemmOnHeap(1024, 160);
+        gemmRunParams.forEach(this::benchmarkGemmOnHeap);
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOffHeap() throws Exception {
-        benchmarkGemmOffHeap(16, 16_000);
-        benchmarkGemmOffHeap(32, 16_000);
-        benchmarkGemmOffHeap(64, 1600);
-        benchmarkGemmOffHeap(128, 1600);
-        benchmarkGemmOffHeap(256, 1600);
-        benchmarkGemmOffHeap(512, 160);
-        benchmarkGemmOffHeap(1024, 160);
+        gemmRunParams.forEach(this::benchmarkGemmOffHeap);
     }
 
     /** */
-    private void benchmarkGemmOnHeap(int size, int numRuns) throws Exception {
-        benchmarkGemm(size, numRuns, "On heap",
-            sz -> new DenseLocalOnHeapMatrix(sz, sz),
+    private void benchmarkGemmOnHeap(int size, int numRuns) {
+        benchmarkGemmSquare(size, numRuns, "On heap",
+            DenseLocalOnHeapMatrix::new,
             (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c));
     }
 
     /** */
-    private void benchmarkGemmOffHeap(int size, int numRuns) throws Exception {
-        benchmarkGemm(size, numRuns, "Off heap",
-            sz -> new DenseLocalOffHeapMatrix(sz, sz),
+    private void benchmarkGemmOffHeap(int size, int numRuns) {
+        benchmarkGemmSquare(size, numRuns, "Off heap",
+            DenseLocalOffHeapMatrix::new,
             this::gemmOffHeap);
     }
 
@@ -121,26 +122,32 @@ public class BlasOffHeapBenchmark {
 
     /** */
     @SuppressWarnings("unchecked")
-    private<T extends Matrix> void benchmarkGemm(int size, int numRuns, String tag, Function<Integer, T> newMtx,
-        GemmConsumer<T> gemm) throws Exception {
+    private<T extends Matrix> void benchmarkGemmSquare(int size, int numRuns, String tag,
+        BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
+        // todo add benchmark and unit tests for rectangle matrices
         if (size > 1024)
             return; // larger sizes took too long in trial runs
 
-        T a = newMtx.apply(size);
+        T a = newMtx.apply(size, size);
         a.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
             + (Objects.equals(i, j) ? 20.0 : 0)); // IMPL NOTE non-singular
 
-        T b = (T)newMtx.apply(size).assign(a.inverse());
+        T b = (T)newMtx.apply(size, size).assign(a.inverse());
 
-        T c = newMtx.apply(size);
+        T c = newMtx.apply(size, size);
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-            .execute(() -> {
-                gemm.accept(a, b, c);
-                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
-            });
+        try {
+            new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+                .execute(() -> {
+                    gemm.accept(a, b, c);
+                    sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
+                });
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         Assert.assertNotNull(c.inverse());
 
@@ -159,33 +166,43 @@ public class BlasOffHeapBenchmark {
     }
 
     /** */
-    private void benchmarkScalOnHeap(int size, int numRuns) throws Exception {
+    private void benchmarkScalOnHeap(int size, int numRuns) {
         Vector v = new DenseLocalOnHeapVector(size);
         VectorContent vc = new VectorContent(v);
 
         vc.init();
 
-        new MathBenchmark("On heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-            .execute(() -> {
-                Blas.scal(0.5, v);
-                Blas.scal(2.0, v);
-            });
+        try {
+            new MathBenchmark("On heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+                .execute(() -> {
+                    Blas.scal(0.5, v);
+                    Blas.scal(2.0, v);
+                });
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         assertTrue(vc.verify());
     }
 
     /** */
-    private void benchmarkScalOffHeap(int size, int numRuns) throws Exception {
+    private void benchmarkScalOffHeap(int size, int numRuns) {
         DenseLocalOffHeapVector v = new DenseLocalOffHeapVector(size);
         VectorContent vc = new VectorContent(v);
 
         vc.init();
 
-        new MathBenchmark("Off heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-            .execute(() -> {
-                blasOffHeap.dscal(v.size(), 0.5, v.ptr(), 1);
-                blasOffHeap.dscal(v.size(), 2.0, v.ptr(), 1);
-            });
+        try {
+            new MathBenchmark("Off heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+                .execute(() -> {
+                    blasOffHeap.dscal(v.size(), 0.5, v.ptr(), 1);
+                    blasOffHeap.dscal(v.size(), 2.0, v.ptr(), 1);
+                });
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         assertTrue(vc.verify());
 
