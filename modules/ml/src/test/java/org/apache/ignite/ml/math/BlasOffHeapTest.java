@@ -77,7 +77,6 @@ public class BlasOffHeapTest {
         DenseLocalOnHeapMatrix exp
             = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(tmp.rowSize(), tmp.columnSize()).assign(tmp));
 
-        //Blas.gemm(alpha, a, b, beta, c);
         BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), alpha,
             a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), beta, c.ptr(), c.rowSize());
 
