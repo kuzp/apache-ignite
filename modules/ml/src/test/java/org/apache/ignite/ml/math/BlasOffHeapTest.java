@@ -63,7 +63,7 @@ public class BlasOffHeapTest {
         v.destroy();
     }
 
-    /** Tests 'gemm' operation for off-heap matrices. */
+    /** Tests 'gemm' operation for off-heap square matrices. Todo add test for non-square matrices. */
     @Test
     public void testGemm() {
         // C := alpha * A * B + beta * C

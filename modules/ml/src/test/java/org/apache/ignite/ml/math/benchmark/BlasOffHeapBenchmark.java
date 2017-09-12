@@ -199,7 +199,6 @@ public class BlasOffHeapBenchmark {
     private void gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b, DenseLocalOffHeapMatrix c) {
         BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
             a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
-
     }
 
     /** */
