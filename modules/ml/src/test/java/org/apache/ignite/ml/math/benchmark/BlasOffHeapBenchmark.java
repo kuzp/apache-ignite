@@ -90,28 +90,16 @@ public class BlasOffHeapBenchmark {
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOnHeap() throws Exception {
-        gemmRunParams.forEach(this::benchmarkGemmOnHeap);
+        gemmRunParams.forEach((size, numRuns) -> benchmarkGemmSquare(size, numRuns, "On heap",
+            DenseLocalOnHeapMatrix::new, (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c)));
     }
 
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOffHeap() throws Exception {
-        gemmRunParams.forEach(this::benchmarkGemmOffHeap);
-    }
-
-    /** */
-    private void benchmarkGemmOnHeap(int size, int numRuns) {
-        benchmarkGemmSquare(size, numRuns, "On heap",
-            DenseLocalOnHeapMatrix::new,
-            (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c));
-    }
-
-    /** */
-    private void benchmarkGemmOffHeap(int size, int numRuns) {
-        benchmarkGemmSquare(size, numRuns, "Off heap",
-            DenseLocalOffHeapMatrix::new,
-            this::gemmOffHeap);
+        gemmRunParams.forEach((size, numRuns) -> benchmarkGemmSquare(size, numRuns, "Off heap",
+            DenseLocalOffHeapMatrix::new, this::gemmOffHeap));
     }
 
     /** */
