@@ -106,6 +106,24 @@ public class BlasOffHeapTest {
         c.destroy();
     }
 
+    /** Tests (reference) 'gemm' operation for dense matrix A, dense matrix B and dense matrix C. */
+    @Test
+    public void testGemmDenseDenseDenseRect() {
+        // C := alpha * A * B + beta * C
+        double alpha = 1.0;
+        DenseLocalOnHeapMatrix a = new DenseLocalOnHeapMatrix(new double[][] {{10.0, 11.0}, {0.0, 1.0}, {0.0, 1.0}});
+        DenseLocalOnHeapMatrix b = new DenseLocalOnHeapMatrix(new double[][] {{1.0, 0.3, 1.0}, {0.0, 1.0, 1.0}});
+        double beta = 0.0;
+        DenseLocalOnHeapMatrix c = new DenseLocalOnHeapMatrix(new double[][] {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.0}});
+
+        DenseLocalOnHeapMatrix exp = (DenseLocalOnHeapMatrix)a.times(b);//.times(alpha).plus(c.times(beta));
+
+        Blas.gemm(alpha, a, b, beta, c);
+
+        Assert.assertEquals(exp, c);
+    }
+
     /** */
     private DenseLocalOnHeapMatrix gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b,
         DenseLocalOffHeapMatrix c) {
