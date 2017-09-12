@@ -19,8 +19,8 @@ public class IgniteQueryTestRunner implements QueryTestRunner {
     }
 
     @Override public void beforeTest(QueryTypeConfiguration cfg) {
-        String cfgPath = F.isEmpty(cfg.getProperties()) ? "ignite-localhost-config.xml" :
-                (String) cfg.getProperties().get("igniteCfgPath");
+        String cfgPath = F.isEmpty((String) cfg.getIgniteCfgPath()) ? "ignite-localhost-config.xml" :
+                (String) cfg.getIgniteCfgPath();
 
         ignite = Ignition.start(cfgPath);
     }

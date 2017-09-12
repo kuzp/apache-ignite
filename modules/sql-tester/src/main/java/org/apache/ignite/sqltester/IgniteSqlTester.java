@@ -157,7 +157,7 @@ public class IgniteSqlTester {
 
                 String st = (String)entry.get(runCtx.runner.getType());
 
-                long queryStartTime = System.currentTimeMillis();
+                long queryStartTime = System.nanoTime(); //System.currentTimeMillis();
 
                 //if(runCtx.runner.getType().equals("ignite"))
                     //Thread.sleep(100);
@@ -169,27 +169,35 @@ public class IgniteSqlTester {
                     e.printStackTrace();
                 }
 
-                long queryFinishTime = System.currentTimeMillis();
-
+                runCtx.executionTime = System.nanoTime() - queryStartTime;
                 runCtx.res = stmt.getResultSet();
-
-                runCtx.time = queryFinishTime - queryStartTime;
             }
 
             try {
-                long[] timeRes = getExecTime(runners);
-
                 String result = "OK";
+                Boolean compareOutput = true;
 
-                if (!compareSets(runners)) {
+                try {
+                    if (entry.get("compare_output") != null)
+                        compareOutput = (Boolean) entry.get("compare_output");
+                }
+                catch (Exception e) {
+                    System.out.println("Cannot convert compare_output to Boolean");
+                    e.printStackTrace();
+                }
+
+                if (!compareSets(runners, compareOutput)) {
                     failedOPS++;
                     result = "fail";
                 }
                 else
                     passedOPS++;
 
+                long[] timeRes = getExecFetchTime(runners);
                 writer.println("---------------------------------------------------------------------------");
-                writer.println("Statement ID = " + operID + "; Ignite time = " + timeRes[0] + "; other base time = " + timeRes[1] + "; result = " + result + ";");
+                writer.println("Statement ID = " + operID + "; Ignite exec time = " + timeRes[0] +
+                        "; Ignite fetch time = " + timeRes[1] + "; other base exec time = " + timeRes[2] +
+                        "; other base fetch time = " + timeRes[3] + "; result = " + result + ";");
                 writer.println("===========================================================================");
 
             }
@@ -197,6 +205,16 @@ public class IgniteSqlTester {
                 e.printStackTrace();
             }
             // ...do cleanup...
+            for (RunContext runCtx : runners) {
+                if (runCtx.res != null) {
+                    try {
+                        runCtx.res.close();
+                    } catch (Exception e) {
+                        System.out.println("Couldn't close statement");
+                        e.printStackTrace();
+                    }
+                }
+            }
             operID++;
 
             if ((startTime + (msgInterval * 1000L)) < System.currentTimeMillis())
@@ -213,11 +231,34 @@ public class IgniteSqlTester {
 
     }
 
-    private static boolean compareSets(List<RunContext> runners) throws Exception {
+    private static void fetchResult(ResultSet result) throws Exception {
+
+        if (result != null) {
+
+                LinkedList<ArrayList<String>> resultTbl = new LinkedList<>();
+                ArrayList<String> columnNames = new ArrayList<>();
+
+            int colsCnt = result.getMetaData().getColumnCount();
+
+            long ct = 0;
+            while (result.next()) {
+
+                for (int i = 1; i <= colsCnt; i++) {
+                    Object colVal = result.getObject(i);
+                    //System.out.println(colVal.toString());
+
+                }
+                ct +=1;
+            }
+            System.out.println("Fetched " + ct + " rows.");
+        }
+    }
+
+    private static boolean compareSets(List<RunContext> runners, Boolean compareOutput) throws Exception {
         for (RunContext runCtx : runners) {
 
             if (runCtx.res != null) {
-
+                long fetchStartTime = System.nanoTime();
                 LinkedList<ArrayList<String>> resultTbl = new LinkedList<>();
                 ArrayList<String> columnNames = new ArrayList<>();
 
@@ -240,6 +281,8 @@ public class IgniteSqlTester {
 
                 }
 
+                runCtx.fetchTime = System.nanoTime() - fetchStartTime;
+
                 Collections.sort(resultTbl, new Comparator<ArrayList<String>>() {
                     @Override public int compare(ArrayList<String> o1, ArrayList<String> o2) {
                         for (int i = 0; i < o1.size(); i++) {
@@ -256,7 +299,10 @@ public class IgniteSqlTester {
                 runCtx.colNames = columnNames;
             }
         }
-        return compareResTbls(runners);
+        if (compareOutput)
+            return compareResTbls(runners);
+        else
+            return true;
 
     }
 
@@ -384,14 +430,18 @@ public class IgniteSqlTester {
 
     }
 
-    private static long[] getExecTime(List<RunContext> runners){
-        long[] res = new long[2];
+    private static long[] getExecFetchTime(List<RunContext> runners){
+        long[] res = new long[4];
 
         for (RunContext runner : runners){
-            if (runner.runner.getType().equals("ignite"))
-                res[0] = runner.time;
-            else
-                res[1] = runner.time;
+            if (runner.runner.getType().equals("ignite")) {
+                res[0] = runner.executionTime;
+                res[1] = runner.fetchTime;
+            }
+            else {
+                res[2] = runner.executionTime;
+                res[3] = runner.fetchTime;
+            }
         }
             return res;
     }
@@ -403,7 +453,8 @@ public class IgniteSqlTester {
 
         ResultSet res;
 
-        long time;
+        long executionTime;
+        long fetchTime;
 
         LinkedList<ArrayList<String>> resultTbl;
         ArrayList<String> colNames;
