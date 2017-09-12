@@ -19,6 +19,7 @@ package org.apache.ignite.ml.math.benchmark;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import org.apache.ignite.ml.math.Blas;
 import org.apache.ignite.ml.math.BlasOffHeap;
 import org.apache.ignite.ml.math.Matrix;
@@ -100,55 +101,46 @@ public class BlasOffHeapBenchmark {
 
     /** */
     private void benchmarkGemmOnHeap(int size, int numRuns) throws Exception {
-        if (size > 1024)
-            return; // larger sizes took too long in trial runs
-
-        DenseLocalOnHeapMatrix m = new DenseLocalOnHeapMatrix(size, size);
-        init(m);
-
-        DenseLocalOnHeapMatrix inv = (DenseLocalOnHeapMatrix)new DenseLocalOnHeapMatrix(size, size).assign(m.inverse());
-
-        DenseLocalOnHeapMatrix tmp = new DenseLocalOnHeapMatrix(size, size);
-        DenseLocalOnHeapMatrix c = new DenseLocalOnHeapMatrix(size, size);
-
-        double alpha = 1.0, beta = 0.0;
-
-        AtomicReference<Double> sum = new AtomicReference<>(0.0);
-
-        new MathBenchmark("On heap+ " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-            .execute(() -> {
-                Blas.gemm(alpha, m, inv, beta, tmp);
-                Blas.gemm(alpha, m, tmp, beta, c);
-                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
-            });
-
-        Assert.assertNotNull(tmp.inverse());
-
-        System.out.println("------- " + sum.get());
+        benchmarkGemm(size, numRuns, "On heap",
+            sz -> new DenseLocalOnHeapMatrix(sz, sz),
+            (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c));
     }
 
     /** */
     private void benchmarkGemmOffHeap(int size, int numRuns) throws Exception {
+        benchmarkGemm(size, numRuns, "Off heap",
+            sz -> new DenseLocalOffHeapMatrix(sz, sz),
+            this::gemmOffHeap);
+    }
+
+    /** */
+    private interface GemmConsumer<T extends Matrix> {
+        /** */
+        void accept(T a, T b, T c);
+    }
+
+    /** */
+    @SuppressWarnings("unchecked")
+    private<T extends Matrix> void benchmarkGemm(int size, int numRuns, String tag, Function<Integer, T> newMtx,
+        GemmConsumer<T> gemm) throws Exception {
         if (size > 1024)
             return; // larger sizes took too long in trial runs
 
-        DenseLocalOffHeapMatrix m = new DenseLocalOffHeapMatrix(size, size);
-        init(m);
+        T m = newMtx.apply(size);
+        m.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
+            + (Objects.equals(i, j) ? 20.0 : 0)); // IMPL NOTE non-singular
 
-        DenseLocalOffHeapMatrix inv = (DenseLocalOffHeapMatrix)new DenseLocalOffHeapMatrix(size, size)
-            .assign(m.inverse());
+        T inv = (T)newMtx.apply(size).assign(m.inverse());
 
-        DenseLocalOffHeapMatrix tmp = new DenseLocalOffHeapMatrix(size, size);
-        DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(size, size);
+        T tmp = newMtx.apply(size);
+        T c = newMtx.apply(size);
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        double alpha = 1.0, beta = 0.0;
-
-        new MathBenchmark("Off heap+ " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+        new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
             .execute(() -> {
-                gemmOffHeap(alpha, m, inv, beta, tmp);
-                gemmOffHeap(alpha, m, tmp, beta, c);
+                gemm.accept(m, inv, tmp);
+                gemm.accept(tmp, m, c);
                 sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
             });
 
@@ -163,17 +155,10 @@ public class BlasOffHeapBenchmark {
     }
 
     /** */
-    private void gemmOffHeap(double alpha, DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b, double beta,
-        DenseLocalOffHeapMatrix c) {
-        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), alpha,
-            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), beta, c.ptr(), c.rowSize());
+    private void gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b, DenseLocalOffHeapMatrix c) {
+        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
+            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
 
-    }
-
-    /** */
-    private void init(Matrix m) {
-        m.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
-            + (Objects.equals(i, j) ? 20.0 : 0));
     }
 
     /** */
