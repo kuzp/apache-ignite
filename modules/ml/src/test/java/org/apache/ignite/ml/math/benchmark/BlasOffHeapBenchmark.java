@@ -126,31 +126,28 @@ public class BlasOffHeapBenchmark {
         if (size > 1024)
             return; // larger sizes took too long in trial runs
 
-        T m = newMtx.apply(size);
-        m.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
+        T a = newMtx.apply(size);
+        a.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
             + (Objects.equals(i, j) ? 20.0 : 0)); // IMPL NOTE non-singular
 
-        T inv = (T)newMtx.apply(size).assign(m.inverse());
+        T b = (T)newMtx.apply(size).assign(a.inverse());
 
-        T tmp = newMtx.apply(size);
         T c = newMtx.apply(size);
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+        new MathBenchmark(tag + "-- " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
             .execute(() -> {
-                gemm.accept(m, inv, tmp);
-                gemm.accept(tmp, m, c);
+                gemm.accept(a, b, c);
                 sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
             });
 
-        Assert.assertNotNull(tmp.inverse());
+        Assert.assertNotNull(c.inverse());
 
         System.out.println("------- " + sum.get());
 
-        m.destroy();
-        inv.destroy();
-        tmp.destroy();
+        a.destroy();
+        b.destroy();
         c.destroy();
     }
 
