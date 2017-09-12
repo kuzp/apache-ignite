@@ -75,7 +75,7 @@ public class BlasOffHeapBenchmark {
 
     /** */
     @Test
-    //@Ignore("Benchmark tests are intended only for manual execution")
+    @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOnHeap() throws Exception {
         benchmarkGemmOnHeap(16, 16_000);
         benchmarkGemmOnHeap(32, 16_000);
@@ -88,7 +88,7 @@ public class BlasOffHeapBenchmark {
 
     /** */
     @Test
-    //@Ignore("Benchmark tests are intended only for manual execution")
+    @Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOffHeap() throws Exception {
         benchmarkGemmOffHeap(16, 16_000);
         benchmarkGemmOffHeap(32, 16_000);
@@ -136,7 +136,7 @@ public class BlasOffHeapBenchmark {
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        new MathBenchmark(tag + "-- " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+        new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
             .execute(() -> {
                 gemm.accept(a, b, c);
                 sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
