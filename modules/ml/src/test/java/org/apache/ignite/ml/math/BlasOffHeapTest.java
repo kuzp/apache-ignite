@@ -63,30 +63,55 @@ public class BlasOffHeapTest {
         v.destroy();
     }
 
-    /** Tests 'gemm' operation for off-heap square matrices. Todo add test for non-square matrices. */
+    /** Tests 'gemm' operation for off-heap square matrices. */
     @Test
-    public void testGemm() {
-        // C := alpha * A * B + beta * C
-        double alpha = 1.0;
+    public void testGemmSquare() {
+        // C := alpha (1.0) * A * B + beta (0.0) * C
         DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(new double[][] {{10.0, 11.0}, {0.0, 1.0}});
         DenseLocalOffHeapMatrix b = new DenseLocalOffHeapMatrix(new double[][] {{1.0, 0.3}, {0.0, 1.0}});
-        double beta = 0.0;
         DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(new double[][] {{1.0, 2.0}, {2.0, 3.0}});
 
         Matrix tmp = a.times(b);//.times(alpha).plus(c.times(beta));
         DenseLocalOnHeapMatrix exp
             = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(tmp.rowSize(), tmp.columnSize()).assign(tmp));
 
-        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), alpha,
-            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), beta, c.ptr(), c.rowSize());
-
-        DenseLocalOnHeapMatrix obtained
-            = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(c.rowSize(), c.columnSize()).assign(c));
+        DenseLocalOnHeapMatrix obtained = gemmOffHeap(a, b, c);
 
         Assert.assertEquals(exp, obtained);
 
         a.destroy();
         b.destroy();
         c.destroy();
+    }
+
+    /** Tests 'gemm' operation for off-heap non-square matrices. */
+    @Test
+    public void testGemmRect() {
+        // C := alpha (1.0) * A * B + beta (0.0) * C
+        DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(new double[][] {{10.0, 11.0}, {0.0, 1.0}, {0.0, 1.0}});
+        DenseLocalOffHeapMatrix b = new DenseLocalOffHeapMatrix(new double[][] {{1.0, 0.3, 1.0}, {0.0, 1.0, 1.0}});
+        DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(new double[][] {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.0}});
+
+        Matrix tmp = a.times(b);//.times(alpha).plus(c.times(beta));
+        DenseLocalOnHeapMatrix exp
+            = (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(tmp.rowSize(), tmp.columnSize()).assign(tmp));
+
+        DenseLocalOnHeapMatrix obtained = gemmOffHeap(a, b, c);
+
+        Assert.assertEquals(exp, obtained);
+
+        a.destroy();
+        b.destroy();
+        c.destroy();
+    }
+
+    /** */
+    private DenseLocalOnHeapMatrix gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b,
+        DenseLocalOffHeapMatrix c) {
+        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
+            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
+
+        return (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(c.rowSize(), c.columnSize()).assign(c));
     }
 }
