@@ -89,7 +89,7 @@ public class BlasOffHeapBenchmark {
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
-    public void testGemmOnHeap() throws Exception {
+    public void testGemmOnHeapSquare() throws Exception {
         gemmRunParams.forEach((size, numRuns) -> benchmarkGemmSquare(size, numRuns, "On heap",
             DenseLocalOnHeapMatrix::new, (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c)));
     }
@@ -97,7 +97,7 @@ public class BlasOffHeapBenchmark {
     /** */
     @Test
     @Ignore("Benchmark tests are intended only for manual execution")
-    public void testGemmOffHeap() throws Exception {
+    public void testGemmOffHeapSquare() throws Exception {
         gemmRunParams.forEach((size, numRuns) -> benchmarkGemmSquare(size, numRuns, "Off heap",
             DenseLocalOffHeapMatrix::new, this::gemmOffHeap));
     }
@@ -126,16 +126,10 @@ public class BlasOffHeapBenchmark {
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        try {
-            new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-                .execute(() -> {
-                    gemm.accept(a, b, c);
-                    sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
-                });
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        runBenchmarkCode(tag + " " + size, numRuns, () -> {
+            gemm.accept(a, b, c);
+            sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
+        });
 
         Assert.assertNotNull(c.inverse());
 
@@ -160,16 +154,10 @@ public class BlasOffHeapBenchmark {
 
         vc.init();
 
-        try {
-            new MathBenchmark("On heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-                .execute(() -> {
-                    Blas.scal(0.5, v);
-                    Blas.scal(2.0, v);
-                });
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        runBenchmarkCode("On heap " + size, numRuns, () -> {
+            Blas.scal(0.5, v);
+            Blas.scal(2.0, v);
+        });
 
         assertTrue(vc.verify());
     }
@@ -181,20 +169,24 @@ public class BlasOffHeapBenchmark {
 
         vc.init();
 
-        try {
-            new MathBenchmark("Off heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
-                .execute(() -> {
-                    blasOffHeap.dscal(v.size(), 0.5, v.ptr(), 1);
-                    blasOffHeap.dscal(v.size(), 2.0, v.ptr(), 1);
-                });
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        runBenchmarkCode("Off heap " + size, numRuns, () -> {
+            blasOffHeap.dscal(v.size(), 0.5, v.ptr(), 1);
+            blasOffHeap.dscal(v.size(), 2.0, v.ptr(), 1);
+        });
 
         assertTrue(vc.verify());
 
         v.destroy();
+    }
+
+    /** */
+    private void runBenchmarkCode(String benchmarkName, int numRuns, MathBenchmark.BenchmarkCode code) {
+        try {
+            new MathBenchmark(benchmarkName).outputToConsole().measurementTimes(numRuns).warmUpTimes(1).execute(code);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** */
