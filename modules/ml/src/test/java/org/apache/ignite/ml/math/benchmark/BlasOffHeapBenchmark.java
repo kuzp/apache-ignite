@@ -18,6 +18,7 @@
 package org.apache.ignite.ml.math.benchmark;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.ignite.ml.math.Blas;
 import org.apache.ignite.ml.math.BlasOffHeap;
 import org.apache.ignite.ml.math.Matrix;
@@ -73,28 +74,28 @@ public class BlasOffHeapBenchmark {
 
     /** */
     @Test
-    @Ignore("Benchmark tests are intended only for manual execution")
+    //@Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOnHeap() throws Exception {
-        benchmarkGemmOnHeap(16, 4_000);
-        benchmarkGemmOnHeap(32, 4_000);
-        benchmarkGemmOnHeap(64, 400);
-        benchmarkGemmOnHeap(128, 400);
-        benchmarkGemmOnHeap(256, 400);
-        benchmarkGemmOnHeap(512, 40);
-        benchmarkGemmOnHeap(1024, 40);
+        benchmarkGemmOnHeap(16, 16_000);
+        benchmarkGemmOnHeap(32, 16_000);
+        benchmarkGemmOnHeap(64, 1600);
+        benchmarkGemmOnHeap(128, 1600);
+        benchmarkGemmOnHeap(256, 1600);
+        benchmarkGemmOnHeap(512, 160);
+        benchmarkGemmOnHeap(1024, 160);
     }
 
     /** */
     @Test
-    @Ignore("Benchmark tests are intended only for manual execution")
+    //@Ignore("Benchmark tests are intended only for manual execution")
     public void testGemmOffHeap() throws Exception {
-        benchmarkGemmOffHeap(16, 4_000);
-        benchmarkGemmOffHeap(32, 4_000);
-        benchmarkGemmOffHeap(64, 400);
-        benchmarkGemmOffHeap(128, 400);
-        benchmarkGemmOffHeap(256, 400);
-        benchmarkGemmOffHeap(512, 40);
-        benchmarkGemmOffHeap(1024, 40);
+        benchmarkGemmOffHeap(16, 16_000);
+        benchmarkGemmOffHeap(32, 16_000);
+        benchmarkGemmOffHeap(64, 1600);
+        benchmarkGemmOffHeap(128, 1600);
+        benchmarkGemmOffHeap(256, 1600);
+        benchmarkGemmOffHeap(512, 160);
+        benchmarkGemmOffHeap(1024, 160);
     }
 
     /** */
@@ -112,13 +113,18 @@ public class BlasOffHeapBenchmark {
 
         double alpha = 1.0, beta = 0.0;
 
-        new MathBenchmark("On heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+        AtomicReference<Double> sum = new AtomicReference<>(0.0);
+
+        new MathBenchmark("On heap+ " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
             .execute(() -> {
-                Blas.gemm(alpha, m, inv, beta, c);
-                Blas.gemm(alpha, m, c, beta, tmp);
+                Blas.gemm(alpha, m, inv, beta, tmp);
+                Blas.gemm(alpha, m, tmp, beta, c);
+                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
             });
 
         Assert.assertNotNull(tmp.inverse());
+
+        System.out.println("------- " + sum.get());
     }
 
     /** */
@@ -135,15 +141,20 @@ public class BlasOffHeapBenchmark {
         DenseLocalOffHeapMatrix tmp = new DenseLocalOffHeapMatrix(size, size);
         DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(size, size);
 
+        AtomicReference<Double> sum = new AtomicReference<>(0.0);
+
         double alpha = 1.0, beta = 0.0;
 
-        new MathBenchmark("Off heap " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
+        new MathBenchmark("Off heap+ " + size).outputToConsole().measurementTimes(numRuns).warmUpTimes(1)
             .execute(() -> {
-                gemmOffHeap(alpha, m, inv, beta, c);
-                gemmOffHeap(alpha, m, c, beta, tmp);
+                gemmOffHeap(alpha, m, inv, beta, tmp);
+                gemmOffHeap(alpha, m, tmp, beta, c);
+                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
             });
 
         Assert.assertNotNull(tmp.inverse());
+
+        System.out.println("------- " + sum.get());
 
         m.destroy();
         inv.destroy();
