@@ -42,6 +42,9 @@ public class BlasOffHeapBenchmark {
     private static final BlasOffHeap blasOffHeap = BlasOffHeap.getInstance();
 
     /** */
+    private static final int MTX_SIZE_LIMIT = 1024 * 1024;
+
+    /** */
     private static final Map<Integer, Integer> scalRunParams = new HashMap<Integer, Integer>() {{
         put(100,  100_000);
         put(1_000, 100_000);
@@ -53,13 +56,13 @@ public class BlasOffHeapBenchmark {
 
     /** */
     private static final Map<Integer, Integer> gemmRunParams = new HashMap<Integer, Integer>() {{
-        put(16, 16_000);
-        put(32, 16_000);
-        put(64, 1600);
-        put(128, 1600);
-        put(256, 1600);
-        put(512, 160);
-        put(1024, 160);
+        put(256, 1);
+        put(512, 1);
+        put(1024, 1);
+        put(1536, 1);
+        put(2048, 1);
+        put(3072, 1);
+        put(4096, 1);
     }};
 
     /** Test Blas availability necessary for this benchmark. */
@@ -196,7 +199,7 @@ public class BlasOffHeapBenchmark {
     @SuppressWarnings("unchecked")
     private<T extends Matrix> void benchmarkGemmSquare(int size, int numRuns, String tag,
         BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
-        if (size > 1024)
+        if (size > MTX_SIZE_LIMIT)
             return; // larger sizes took too long in trial runs
 
         T a = newMtx.apply(size, size);
@@ -227,7 +230,7 @@ public class BlasOffHeapBenchmark {
     @SuppressWarnings("unchecked")
     private<T extends Matrix> void benchmarkGemmRect(int size, int numRuns, String tag,
         BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
-        if (size > 1024)
+        if (size > MTX_SIZE_LIMIT)
             return; // larger sizes took too long in trial runs
 
         T a1 = newMtx.apply(size, size);
@@ -244,12 +247,16 @@ public class BlasOffHeapBenchmark {
         T b = newMtx.apply(half, size);
         b.assign(b::get);
 
+        final double expLast = a.times(b).get(size - 1, size -1);
+
         T c = newMtx.apply(size, size);
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
         runBenchmarkCode(tag + " " + size, numRuns,() -> {
             gemm.accept(a, b, c);
+            Assert.assertEquals("Diff at last element for size " + size,
+                expLast, c.get(size - 1, size - 1), 0.0);
             sum.accumulateAndGet(checkValues(c), (prev, x) -> prev + x);
         });
 
@@ -308,7 +315,7 @@ public class BlasOffHeapBenchmark {
     /** */
     private void runBenchmarkCode(String benchmarkName, int numRuns, MathBenchmark.BenchmarkCode code) {
         try {
-            new MathBenchmark(benchmarkName).outputToConsole().measurementTimes(numRuns).warmUpTimes(1).execute(code);
+            new MathBenchmark(benchmarkName).outputToConsole().measurementTimes(numRuns).execute(code);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
