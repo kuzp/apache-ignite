@@ -23,7 +23,7 @@ import naturalCompare from 'natural-compare-lite';
 
 // Controller for Caches screen.
 export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
-    function(ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+    function Controller(ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
         Object.assign(this, {ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.visibleRows$ = new Subject();
@@ -67,13 +67,22 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
         this.$onInit = function() {
             const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID');
 
-            this.originalCache$ = cacheID$.switchMap((id) => {
-                return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
-            })
-            .do((original) => {
-                this.originalCache = original;
-                this.clonedCache = cloneDeep(original);
-            });
+            this.originalCache$ = cacheID$
+                .distinctUntilChanged()
+                .switchMap((id) => {
+                    return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
+                })
+                .do((original) => {
+                    this.originalCache = original;
+                })
+                .distinctUntilChanged((a, b) => a && b && a._id === b._id)
+                .do((original) => {
+                    this.clonedCache = cloneDeep(original);
+                    if (this.$scope.ui.inputForm) {
+                        this.$scope.ui.inputForm.$setPristine();
+                        this.$scope.ui.inputForm.$setUntouched();
+                    }
+                });
 
             this.isNew$ = cacheID$.map((id) => id === 'new');
             this.selectionManager = this.configSelectionManager({
@@ -117,7 +126,9 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
             this.selectedRows$.unsubscribe();
         };
 
-        this.edit = (cacheID) => this.$state.go('base.configuration.edit.advanced.caches.cache', {cacheID});
+        this.edit = (cacheID) => {
+            this.$state.go('base.configuration.edit.advanced.caches.cache', {cacheID});
+        };
 
         // this.remove = function(items) {
         //     this.pageService.remove(items, this.originalCluster);
@@ -138,26 +149,6 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
                     location: 'replace'
                 });
         };*/
-
-        this.$onChanges = function(changes) {
-            if ('itemToEdit' in changes) {
-                // if (
-                //     this.clonedCache &&
-                //     changes.itemToEdit.currentValue.caches &&
-                //     this.clonedCache._id === changes.itemToEdit.currentValue.caches._id
-                // ) return;
-                // if (this.$scope.ui.inputForm) {
-                //     this.$scope.ui.inputForm.$setPristine();
-                //     this.$scope.ui.inputForm.$setUntouched();
-                // }
-                // if (
-                //     this.$state.is('base.configuration.edit.advanced.caches.cache') &&
-                //     !changes.itemToEdit.currentValue.caches
-                // ) return;
-                // this.originalCache = changes.itemToEdit.currentValue.caches;
-                // this.clonedCache = cloneDeep(this.originalCache);
-            }
-        };
 
         this.available = Version.available.bind(Version);
 
@@ -270,9 +261,8 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
         };
 
         this.resetAll = function() {
-            this.onEditCancel();
-            // return this.Confirm.confirm('Are you sure you want to undo all changes for current cache?')
-            // .then(() => this.clonedCache = cloneDeep(this.originalCache));
+            return this.Confirm.confirm('Are you sure you want to undo all changes for current cache?')
+            .then(() => this.clonedCache = cloneDeep(this.originalCache));
         };
     }
 ];

@@ -1,5 +1,6 @@
 import {uniqueName} from 'app/utils/uniqueName';
 import {of} from 'rxjs/observable/of';
+import {empty} from 'rxjs/observable/empty';
 
 export default class ConfigSelectors {
     static $inject = ['Caches'];
@@ -11,10 +12,15 @@ export default class ConfigSelectors {
     selectShortCachesValue = () => (state$) => this.selectShortCaches()(state$).map((v) => v && [...v.value.values()]);
     selectCacheToEdit = (cacheID) => (state$) => state$
         .let(this.selectCache(cacheID))
+        .distinctUntilChanged()
         .switchMap((cache) => {
             if (cache) return of(cache);
-            return state$.let(this.selectShortCachesValue).map((shortCaches) => Object.assign(
-                this.Caches.getBlankCache(), {name: uniqueName('New cache', shortCaches)}
-            ));
+            if (cacheID === 'new') {
+                return state$.let(this.selectShortCachesValue()).map((shortCaches) => Object.assign(
+                    this.Caches.getBlankCache(), {name: uniqueName('New cache', shortCaches)}
+                ));
+            }
+            if (!cacheID) return of(null);
+            return empty();
         });
 }

@@ -448,12 +448,12 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
-                onExit: ['ConfigureState', (ConfigureState) => {
-                    ConfigureState.dispatchAction({
-                        type: 'CANCEL_CLUSTER_ITEM_EDIT',
-                        itemType: 'caches'
-                    });
-                }],
+                // onExit: ['ConfigureState', (ConfigureState) => {
+                //     ConfigureState.dispatchAction({
+                //         type: 'CANCEL_CLUSTER_ITEM_EDIT',
+                //         itemType: 'caches'
+                //     });
+                // }],
                 r_edirectTo: ($transition$) => {
                     const cacheStateName = 'base.configuration.edit.advanced.caches.cache';
                     const fromState = $transition$.from();
