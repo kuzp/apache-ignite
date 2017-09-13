@@ -22,6 +22,7 @@ import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** Tests for BLAS off-heap operations. */
@@ -78,6 +79,25 @@ public class BlasOffHeapTest {
         DenseLocalOnHeapMatrix obtained = gemmOffHeap(a, b, c);
 
         Assert.assertEquals(exp, obtained);
+
+        a.destroy();
+        b.destroy();
+        c.destroy();
+    }
+
+    /** Tests 'gemm' operation for off-heap square matrices. */
+    @Test
+    @Ignore("If needed manually run this stress test")
+    public void testGemmSquareLarge() {
+        // C := alpha (1.0) * A * B + beta (0.0) * C
+        int largeSize = 23_000;
+        DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(largeSize, largeSize);
+        DenseLocalOffHeapMatrix b = new DenseLocalOffHeapMatrix(largeSize, largeSize);
+        DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(largeSize, largeSize);
+
+        a.assign((row, col) -> row.equals(col) ? 2.0 : 0.0);
+
+        Assert.assertEquals(4, c.get(largeSize - 1, largeSize - 1), 0.0);
 
         a.destroy();
         b.destroy();
