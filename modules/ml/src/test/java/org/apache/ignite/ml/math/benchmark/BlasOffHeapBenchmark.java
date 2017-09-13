@@ -175,7 +175,7 @@ public class BlasOffHeapBenchmark {
 
         Assert.assertNotNull(sum.get());
 
-        System.out.println("------- " + sum.get());
+        System.out.println(tag + " ------- " + sum.get());
 
         a1.destroy();
         b1.destroy();
@@ -201,7 +201,7 @@ public class BlasOffHeapBenchmark {
 
         runBenchmarkCode(tag + " " + size, numRuns, () -> {
             gemm.accept(a, b, c);
-            sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
+            sum.accumulateAndGet(checkValues(c), (prev, x) -> prev + x);
         });
 
         Assert.assertNotNull(c.inverse());
@@ -240,7 +240,7 @@ public class BlasOffHeapBenchmark {
 
         runBenchmarkCode(tag + " " + size, numRuns,() -> {
             gemm.accept(a, b, c);
-            sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1), (prev, x) -> prev + x);
+            sum.accumulateAndGet(checkValues(c), (prev, x) -> prev + x);
         });
 
         Assert.assertNotNull(sum.get());
@@ -256,6 +256,11 @@ public class BlasOffHeapBenchmark {
     private void gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b, DenseLocalOffHeapMatrix c) {
         BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
             a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
+    }
+
+    /** */
+    private double checkValues(Matrix c) {
+        return c.get(0, 0) + c.get(c.rowSize() - 1, c.columnSize() - 1);
     }
 
     /** */
