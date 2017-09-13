@@ -484,9 +484,9 @@ export default angular
     }
 })
 .service('ConfigResolvers', class ConfigResolvers {
-    static $inject = ['Clusters', 'ConfigureState', 'Caches', 'IGFSs'];
-    constructor(Clusters, ConfigureState, Caches, IGFSs) {
-        Object.assign(this, {Clusters, ConfigureState, Caches, IGFSs});
+    static $inject = ['ConfigSelectors', 'Clusters', 'ConfigureState', 'Caches', 'IGFSs'];
+    constructor(ConfigSelectors, Clusters, ConfigureState, Caches, IGFSs) {
+        Object.assign(this, {ConfigSelectors, Clusters, ConfigureState, Caches, IGFSs});
         this.loadAndEditClusterEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_AND_EDIT_CLUSTER')
             .exhaustMap((a) => {
@@ -552,17 +552,20 @@ export default angular
                     .catch((error) => of({type: 'LOAD_SHORT_CACHES_ERR', error, action: a}));
             });
 
-        this.loadCacheEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_CACHE')
-            .exhaustMap((a) => {
-                return this.ConfigureState.state$.let(selectCache(a.cacheID)).take(1)
-                    .switchMap((cache) => {
-                        if (cache) return of({type: 'LOAD_AND_EDIT_CACHE_OK'});
-                        return fromPromise(this.Caches.getCache(a.cacheID))
-                        .switchMap(({data}) => of({type: cachesActionTypes.UPSERT, items: [data]}));
-                    })
-                    .catch((error) => of({type: 'LOAD_AND_EDIT_CACHE_ERR', error}));
-            });
+        // this.loadCacheEffect$ = ConfigureState.actions$
+        //     .filter((a) => a.type === 'LOAD_CACHE')
+        //     .exhaustMap((a) => {
+        //         return this.ConfigureState.state$.let(selectCache(a.cacheID)).take(1)
+        //             .switchMap((cache) => {
+        //                 if (cache) return of({type: `${a.type}_OK`});
+        //                 return fromPromise(this.Caches.getCache(a.cacheID))
+        //                 .switchMap(({data}) => of(
+        //                     {type: cachesActionTypes.UPSERT, items: [data]},
+        //                     {type: `${a.type}_OK`}
+        //                 ));
+        //             })
+        //             .catch((error) => of({type: `${a.type}_ERR`, error}));
+        //     });
 
         this.loadAndEditCacheItemEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_AND_EDIT_CACHE')
@@ -600,7 +603,7 @@ export default angular
             });
 
         this.loadAndEditClusterEffect$
-        .merge(this.loadUserClustersEffect$, this.loadShortCachesEffect$, this.loadAndEditCacheItemEffect$, this.loadCacheEffect$)
+        .merge(this.loadUserClustersEffect$, this.loadShortCachesEffect$, this.loadAndEditCacheItemEffect$)
         .do((a) => ConfigureState.dispatchAction(a)).subscribe();
     }
     _effectToPromise({startAction, okAction, errAction, selector}) {
@@ -618,6 +621,21 @@ export default angular
             .switchMap(() => this.ConfigureState.state$.let(selector).take(1))
             .toPromise();
         };
+    }
+    _etp(action, params) {
+        const ok = `${action}_OK`;
+        const err = `${action}_ERR`;
+        setTimeout(() => this.ConfigureState.dispatchAction({type: action, ...params}));
+        return this.ConfigureState.actions$
+            .filter((a) => a.type === ok || a.type === err)
+            .take(1)
+            .map((a) => {
+                if (a.type === err)
+                    throw a;
+                else
+                    return a;
+            })
+            .toPromise();
     }
     // loadCache = this._effectToPromise({
     //     startAction: 'LOAD_CACHE',

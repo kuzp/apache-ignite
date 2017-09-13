@@ -362,6 +362,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
                     _shortCachesAndModels: ['ConfigResolvers', '$transition$', '$q', (ConfigResolvers, $transition$, $q) => {
+                        // const {clusterID} = $transition$.params()
+                        // return Promise.all([])
                         return $transition$.injector().getAsync('_cluster').then((cluster) => {
                             return $q.all({
                                 caches: ConfigResolvers.resoleShortCaches({
@@ -388,49 +390,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         dynamic: true
                     }
                 },
-                // ...resetFormItemToNull({actionType: RECEIVE_CACHE_EDIT, actionKey: 'cache'}),
-                r_edirectTo: ($transition$) => {
-                    const cacheStateName = 'base.configuration.edit.advanced.caches.cache';
-                    const fromState = $transition$.from();
-                    const toState = $transition$.to();
-                    const params = $transition$.params();
-                    const caches = $transition$.injector().getAsync('_shortCachesAndModels').then(({caches}) => [...caches.value.values()]);
-                    if (fromState.name === cacheStateName) return;
-                    // Remove invalid ids from selection
-                    if (params.selectedCaches.length) {
-                        return caches.then((caches) => {
-                            const exists = ({_id}) => params.selectedCaches.includes(_id);
-                            if (!caches.some(exists)) {
-                                return {
-                                    state: toState.name,
-                                    params: {
-                                        ...params,
-                                        selectedCaches: params.selectedCaches.filter(exists)
-                                    }
-                                };
-                            }
-                        });
-                    }
-                    // Choose first item by default
-                    if (
-                        toState.name === 'base.configuration.edit.advanced.caches'
-                        && !params.selectedCaches.length
-                        && fromState.name !== 'base.configuration.edit.advanced.caches'
-                    ) {
-                        return caches.then((caches) => {
-                            if (caches.length) {
-                                return {
-                                    state: cacheStateName,
-                                    params: {
-                                        cacheID: caches[0]._id,
-                                        selectedCaches: [caches[0]._id],
-                                        clusterID: $transition$.params().clusterID
-                                    }
-                                };
-                            }
-                        });
-                    }
-                },
                 tfMetaTags: {
                     title: 'Configure Caches'
                 }
@@ -439,10 +398,11 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{cacheID:string}',
                 permission: 'configuration',
                 resolve: {
-                    cache: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                        return ConfigResolvers.resolveCache({
-                            cacheID: $transition$.params().cacheID
-                        });
+                    _cache: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                        return ConfigResolvers._etp('LOAD_CACHE', {cacheID: $transition$.params().cacheID});
+                        // return ConfigResolvers.resolveCache({
+                        //     cacheID: $transition$.params().cacheID
+                        // });
                         // return ConfigResolvers.resolveItem$('caches', $transition$.params().cacheID).toPromise();
                     }]
 
