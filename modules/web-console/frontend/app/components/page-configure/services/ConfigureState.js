@@ -48,5 +48,6 @@ export default class ConfigureState {
             return action((a) => this.actions$.next(a), () => this.state$.getValue());
 
         this.actions$.next(action);
+        return action;
     }
 }

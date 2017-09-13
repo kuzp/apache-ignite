@@ -27,7 +27,10 @@ export default {
     },
     bindings: {
         items: '<',
+        onVisibleRowsChange: '&?',
+        onSortChanged: '&?',
         onFilterChanged: '&?',
+
         columnDefs: '<',
         tableTitle: '<',
         selectedRowId: '<?',

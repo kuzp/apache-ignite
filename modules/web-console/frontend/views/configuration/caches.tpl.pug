@@ -19,29 +19,33 @@ pc-items-table(
     column-defs='$ctrl.cachesColumnDefs'
     items='$ctrl.clusterItems.shortCaches'
     actions-menu='$ctrl.tableActions$|async:this'
-    selected-row-id='$ctrl.selectedItemIDs$|async:this'
+    selected-row-id='$ctrl.selectionManager.selectedItemIDs$|async:this'
     one-way-selection='::true'
-    on-selection-change='$ctrl.selectionHook($event)'
+    on-selection-change='$ctrl.selectedRows$.next($event)'
+    on-filter-changed='$ctrl.filterChanges$.next($event)'
+    o_n-selection-change='$ctrl.selectionHook($event)'
+    on-visible-rows-change='$ctrl.visibleRows$.next($event)'
+    o_n-visible-rows-change='$ctrl.log($event)'
 )
     footer-slot
         div(style='font-style: italic' ng-hide='$ctrl.clusterItems.shortCaches.length')
             | You have no caches.
             a.link-success(
-                ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+                ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
                 ui-sref-opts='{location: "replace"}'
             ) Create one?           
         a.link-success(
-            ui-sref='base.configuration.tabs.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+            ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
             ui-sref-opts='{location: "replace"}'
             ng-show='$ctrl.clusterItems.shortCaches.length'
         ) + Add new cache
 
-h2.pc-page-header(ng-if='!($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)')
-    | {{ $ctrl.selectedItemIDs.length ? 'Multiple' : 'No' }} caches selected
+h2.pc-page-header(ng-if='!($ctrl.isBlocked$|async:this)')
+    | {{ ($ctrl.selectionManager.selectedItemIDs$|async:this).length ? 'Multiple' : 'No' }} caches selected
     span.pc-page-header-sub Select only one cache to see settings and edit it
 
-h2.pc-page-header(ng-if='$ctrl.selectedItemIDs.length === 1 || $ctrl.isNew')
-    | {{ $ctrl.isNew ? 'Create' : 'Edit' }} cache {{ $ctrl.originalCache.name ? '‘'+$ctrl.originalCache.name+'’' : '' }}
+h2.pc-page-header(ng-if='$ctrl.isBlocked$|async:this')
+    | {{ ($ctrl.isNew$|async:this) ? 'Create' : 'Edit' }} cache {{ $ctrl.originalCache.name ? '‘'+$ctrl.originalCache.name+'’' : '' }}
 
 form(
     name='ui.inputForm'
@@ -49,7 +53,7 @@ form(
     novalidate
     bs-collapse=''
     data-allow-multiple='true'
-    ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}'
+    ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}'
     ng-submit='$ctrl.save($ctrl.clonedCache)'
 )
     include /app/modules/states/configuration/caches/general
@@ -65,11 +69,12 @@ form(
     include /app/modules/states/configuration/caches/rebalance
     include /app/modules/states/configuration/caches/statistics
 
-.pc-form-actions-panel(ng-class='{"pca-form-blocked": !($ctrl.selectedItemIDs.length === 1 || $ctrl.isNew)}')
+.pc-form-actions-panel(ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}')
     .pc-form-actions-panel__right-after
     button.btn-ignite.btn-ignite--link-success(
         type='button'
-        ng-click='ui.inputForm.$dirty && resetAll()'
+        ng-click='$ctrl.resetAll()'
+        n_g-click='ui.inputForm.$dirty && resetAll()'
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(

@@ -36,9 +36,10 @@ div.pc-content-container
         div
 
     ui-view.theme--ignite(
-        is-new='$ctrl.isNew$|async:this'
+        i_s-new='$ctrl.isNew$|async:this'
         cluster='$ctrl.cluster$|async:this'
         cluster-items='$ctrl.clusterItems$|async:this'
+        item-to-edit='$ctrl.itemToEdit$|async:this'
 
         on-item-add='$ctrl.onItemAdd($event)'
         on-item-change='$ctrl.onItemChange($event)'

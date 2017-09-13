@@ -32,6 +32,7 @@ const defaults = {clusters: new Map(), caches: new Map(), spaces: new Map()};
 const mapByID = (items) => {
     return Array.isArray(items) ? new Map(items.map((item) => [item._id, item])) : new Map(items);
 };
+import cloneDeep from 'lodash/cloneDeep';
 
 export const uniqueName = (name, items, fn = ({name, i}) => `${name} (${i})`) => {
     let i = 0;
@@ -289,18 +290,56 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
         case 'EDIT_CLUSTER': {
             return {
                 ...state,
-                cluster: action.cluster,
+                itemToEdit: {
+                    ...state.itemToEdit,
+                    cluster: action.cluster
+                },
                 changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({
                     ...a,
                     [t]: {
-                        ids: action.cluster[t],
+                        ids: action.cluster ? action.cluster[t] : [],
                         changedItems: []
                     }
-                }), {cluster: action.cluster})
+                }), state.changes)
+            };
+        }
+        case 'RESET_ITEMS_TO_EDIT': {
+            return {
+                ...state,
+                itemToEdit: {...state.itemToEdit}
+                // itemToEdit: cloneDeep(state.itemToEdit)
+            };
+        }
+        case 'EDIT_CLUSTER_ITEM': {
+            return {
+                ...state,
+                itemToEdit: {
+                    ...state.itemToEdit,
+                    [action.itemType]: action.item
+                }
+            };
+        }
+        case 'CANCEL_CLUSTER_ITEM_EDIT': {
+            return {
+                ...state,
+                itemToEdit: {
+                    ...state.itemToEdit,
+                    [action.itemType]: null
+                }
             };
         }
         case 'UPSERT_CLUSTER': {
-            return {...state, changes: {...state.changes, cluster: action.cluster}};
+            return {
+                ...state,
+                changes: {
+                    ...state.changes,
+                    cluster: action.cluster
+                }
+                // itemToEdit: {
+                //     ...state.itemToEdit,
+                //     cluster: null
+                // }
+            };
         }
         case 'UPSERT_CLUSTER_ITEM': {
             const {itemType, item} = action;
@@ -313,17 +352,21 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                         changedItems: state.changes[itemType].changedItems.filter(({_id}) => _id !== item._id).concat(item)
                     }
                 }
+                // itemToEdit: {
+                //     ...state.itemToEdit,
+                //     [itemType]: null
+                // }
             };
         }
-        case 'REMOVE_CLUSTER_ITEM': {
-            const {itemType, itemID} = action;
+        case 'REMOVE_CLUSTER_ITEMS': {
+            const {itemType, itemIDs} = action;
             return {
                 ...state,
                 changes: {
                     ...state.changes,
                     [itemType]: {
-                        ids: state.changes[itemType].ids.filter((_id) => _id !== itemID),
-                        changedItems: state.changes[itemType].changedItems.filter(({_id}) => _id !== itemID)
+                        ids: state.changes[itemType].ids.filter((_id) => !itemIDs.includes(_id)),
+                        changedItems: state.changes[itemType].changedItems.filter(({_id}) => !itemIDs.includes(_id))
                     }
                 }
             };
@@ -333,12 +376,17 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
 };
 editReducer2.getDefaults = () => ({
     cluster: null,
-    changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
+    changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null}),
+    itemToEdit: {cluster: null, caches: null, models: null, igfss: null}
 });
 export const selectShortClusters = (state$) => state$.pluck('shortClusters').filter((v) => v);
 export const selectShortClustersValue = (state$) => selectShortClusters(state$).map((v) => v && [...v.value.values()]);
+export const selectShortCaches = (state$) => state$.pluck('shortCaches').filter((v) => v);
+export const selectShortCachesValue = (state$) => selectShortCaches(state$).map((v) => v && [...v.value.values()]);
 export const selectCluster = (id) => (state$) => state$.pluck('clusters').map((v) => v && v.get(id));
-export const selectEditCluster = (state$) => state$.pluck('edit', 'changes', 'cluster').filter((v) => v);
+export const selectCache = (id) => (state$) => state$.pluck('caches').map((v) => v && v.get(id));
+export const selectEditCluster = (state$) => state$.pluck('edit', 'itemToEdit', 'cluster');
+export const selectEditCache = (state$) => state$.pluck('edit', 'itemToEdit', 'caches');
 export const selectEditClusterShortCaches = (state$) => {
     return combineLatest(
         state$.pluck('edit', 'changes', 'caches').filter((v) => v).distinctUntilChanged(),
@@ -346,7 +394,8 @@ export const selectEditClusterShortCaches = (state$) => {
     )
         .map(([{ids, changedItems}, shortCaches]) => {
             if (!ids.length || !shortCaches) return [];
-            return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortCaches.get(id));
+            // return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortCaches.get(id));
+            return ids.map((id) => shortCaches.get(id) || changedItems.find(({_id}) => _id === id));
         })
         .map((v) => v.filter((v) => v));
 };

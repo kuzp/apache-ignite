@@ -31,9 +31,10 @@ export default class PageConfigureController {
 
     $onInit() {
         this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
+        this.itemToEdit$ = this.ConfigureState.state$.pluck('edit', 'itemToEdit')/* .do((v) => console.log('ed', v))*/;
         this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
-        this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((v) => v === 'new');
-        this.clusterName$ = combineLatest(this.cluster$, this.isNew$, (cluster, isNew) => {
+        this.isNewCluster$ = this.$uiRouter.globals.params$.pluck('clusterID').map((v) => v === 'new');
+        this.clusterName$ = combineLatest(this.cluster$, this.isNewCluster$, (cluster, isNew) => {
             return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
         });
 
@@ -69,8 +70,8 @@ export default class PageConfigureController {
         this.conf.addItem(type);
     }
 
-    onItemRemove({type, item}) {
-        this.conf.removeItem(type, item._id);
+    onItemRemove(e) {
+        this.conf.removeItem(e);
     }
 
     onEditCancel() {

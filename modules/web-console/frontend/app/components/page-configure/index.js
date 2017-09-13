@@ -26,6 +26,7 @@ import ConfigureState from './services/ConfigureState';
 import PageConfigure from './services/PageConfigure';
 import ConfigurationDownload from './services/ConfigurationDownload';
 import ConfigChangesGuard from './services/ConfigChangesGuard';
+import configSelectionManager from './services/configSelectionManager';
 
 import projectStructurePreview from './components/pc-project-structure-preview';
 import itemsTable from './components/pc-items-table';
@@ -37,6 +38,11 @@ import pcValidation from './components/pcValidation';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
+
+import {Observable} from 'rxjs/Observable';
+Observable.prototype.debug = function(l) {
+    return this.do((v) => console.log(l, v), (e) => console.error(l, e), () => console.log(l, 'completed'));
+};
 
 import {
     editReducer2,
@@ -68,7 +74,7 @@ export default angular
         itemsTable.name,
         pcValidation.name
     ])
-    .run(['ConfigureState', '$uiRouter', (ConfigureState, $uiRouter) => {
+    .run(['ConfigureState', '$uiRouter', 'ConfigResolvers', (ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
         // $uiRouter.plugin(Visualizer);
         if (devTools) {
@@ -97,9 +103,35 @@ export default angular
             shortIgfss: mapCacheReducerFactory(shortIGFSsActionTypes)(state.shortIgfss, action),
             edit: editReducer2(state.edit, action)
         }));
+        ConfigureState.addReducer((state, action) => {
+            switch (action.type) {
+                case 'APPLY_ACTIONS_UNDO':
+                    return action.state;
+                default:
+                    return state;
+            }
+        });
+        const la = ConfigureState.actions$.scan((acc, action) => [...acc, action], []);
+
+        // const ls = ConfigureState.state$.withLatestFrom(ConfigureState.actions$)
+        // .scan((acc, action) => [...acc, action].slice(-10), [])
+        // .map((s) => s[0]);
+
+        ConfigureState.actions$
+            .filter((a) => a.type === 'UNDO_ACTIONS')
+            .withLatestFrom(la, ({actions}, actionsWindow, initialState) => {
+                return {
+                    type: 'APPLY_ACTIONS_UNDO',
+                    state: actionsWindow.filter((a) => !actions.includes(a)).reduce(ConfigureState._combinedReducer, {})
+                };
+            })
+            .debug('UNDOED')
+            .do((a) => ConfigureState.dispatchAction(a))
+            .subscribe();
     }])
     .component('pageConfigure', component)
     .directive(isInCollection.name, isInCollection)
+    .factory('configSelectionManager', configSelectionManager)
     .service('ConfigChangesGuard', ConfigChangesGuard)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)
