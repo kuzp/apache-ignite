@@ -97,6 +97,8 @@ public class BlasOffHeapTest {
 
         a.assign((row, col) -> row.equals(col) ? 2.0 : 0.0);
 
+        dgemmOffHeap(a, b, c);
+
         Assert.assertEquals(4, c.get(largeSize - 1, largeSize - 1), 0.0);
 
         a.destroy();
@@ -147,9 +149,15 @@ public class BlasOffHeapTest {
     /** */
     private DenseLocalOnHeapMatrix gemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b,
         DenseLocalOffHeapMatrix c) {
-        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
-            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
+        dgemmOffHeap(a, b, c);
 
         return (DenseLocalOnHeapMatrix)(new DenseLocalOnHeapMatrix(c.rowSize(), c.columnSize()).assign(c));
+    }
+
+    /** */
+    private void dgemmOffHeap(DenseLocalOffHeapMatrix a, DenseLocalOffHeapMatrix b,
+        DenseLocalOffHeapMatrix c) {
+        BlasOffHeap.getInstance().dgemm("N", "N", a.rowSize(), b.columnSize(), a.columnSize(), 1.0,
+            a.ptr(), a.rowSize(), b.ptr(), b.rowSize(), 0.0, c.ptr(), c.rowSize());
     }
 }
