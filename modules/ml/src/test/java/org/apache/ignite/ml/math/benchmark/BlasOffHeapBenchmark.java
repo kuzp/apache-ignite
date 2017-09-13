@@ -158,6 +158,8 @@ public class BlasOffHeapBenchmark {
         T b = newMtx.apply(half, size);
         b.assign(b::get);
 
+        Matrix exp = a.times(b);
+
         T c = newMtx.apply(size, size);
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
@@ -174,11 +176,22 @@ public class BlasOffHeapBenchmark {
 
         Assert.assertNotNull(sum.get());
 
+        assertCloseEnough(exp, c);
+
         System.out.println(tag + " ------- " + sum.get());
 
         a1.destroy();
         b1.destroy();
         c.destroy();
+    }
+
+    /** */
+    private void assertCloseEnough(Matrix exp, Matrix actual) {
+        // IMPL note assuming col-based layout
+        for (int col = 0; col < exp.columnSize(); col++)
+            for (int row = 0; row < exp.rowSize(); row++)
+                Assert.assertEquals("Diff at row " + row + " col " + col,
+                    exp.get(row, col), actual.get(row, col), 0.0);
     }
 
     /** */
