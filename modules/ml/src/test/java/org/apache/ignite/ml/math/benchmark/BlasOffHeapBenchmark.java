@@ -122,14 +122,14 @@ public class BlasOffHeapBenchmark {
     @Test
     // todo convert this into regular unit tests
     public void testGemmOnHeapRectSanity() throws Exception {
-        benchmarkGemmRect(16, 1, "On heap sanity",
+        sanityGemmRect("On heap",
             DenseLocalOnHeapMatrix::new, (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c));
     }
 
     /** */
     @Test
     public void testGemmOffHeapRectSanity() throws Exception {
-        benchmarkGemmRect(16, 1, "Off heap sanity",
+        sanityGemmRect("Off heap",
             DenseLocalOffHeapMatrix::new, this::gemmOffHeap);
     }
 
@@ -137,6 +137,49 @@ public class BlasOffHeapBenchmark {
     private interface GemmConsumer<T extends Matrix> {
         /** */
         void accept(T a, T b, T c);
+    }
+
+    /** */
+    @SuppressWarnings("unchecked")
+    private<T extends Matrix> void sanityGemmRect(String tag, BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
+        int size = 16;
+
+        T a1 = newMtx.apply(size, size);
+        a1.assign((i, j) -> i < j - 1 ?  0.0 : (double) (((i % 20) + 1 ) * ((j % 20) + 1)) / 400.0
+            + (Objects.equals(i, j) ? 20.0 : 0)); // IMPL NOTE non-singular
+
+        T b1 = (T)newMtx.apply(size, size).assign(a1.inverse());
+
+        int half = size / 2;
+
+        T a = newMtx.apply(size, half);
+        a.assign(a1::get);
+
+        T b = newMtx.apply(half, size);
+        b.assign(b::get);
+
+        T c = newMtx.apply(size, size);
+
+        AtomicReference<Double> sum = new AtomicReference<>(0.0);
+
+        try {
+            new MathBenchmark(tag + " sanity " + size).outputToConsole().measurementTimes(1).execute(() -> {
+                gemm.accept(a, b, c);
+                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1),
+                    (prev, x) -> prev + x);
+            });
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        Assert.assertNotNull(sum.get());
+
+        System.out.println("------- " + sum.get());
+
+        a1.destroy();
+        b1.destroy();
+        c.destroy();
     }
 
     /** */
