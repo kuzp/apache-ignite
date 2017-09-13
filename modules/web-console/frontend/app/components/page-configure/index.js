@@ -27,6 +27,8 @@ import PageConfigure from './services/PageConfigure';
 import ConfigurationDownload from './services/ConfigurationDownload';
 import ConfigChangesGuard from './services/ConfigChangesGuard';
 import configSelectionManager from './services/configSelectionManager';
+import selectors from './store/selectors';
+import effects from './store/effects';
 
 import projectStructurePreview from './components/pc-project-structure-preview';
 import itemsTable from './components/pc-items-table';
@@ -74,7 +76,7 @@ export default angular
         itemsTable.name,
         pcValidation.name
     ])
-    .run(['ConfigureState', '$uiRouter', 'ConfigResolvers', (ConfigureState, $uiRouter) => {
+    .run(['ConfigEffects', 'ConfigureState', '$uiRouter', 'ConfigResolvers', (ConfigEffects, ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
         // $uiRouter.plugin(Visualizer);
         if (devTools) {
@@ -128,10 +130,13 @@ export default angular
             .debug('UNDOED')
             .do((a) => ConfigureState.dispatchAction(a))
             .subscribe();
+        ConfigEffects.connect();
     }])
     .component('pageConfigure', component)
     .directive(isInCollection.name, isInCollection)
     .factory('configSelectionManager', configSelectionManager)
+    .service('ConfigSelectors', selectors)
+    .service('ConfigEffects', effects)
     .service('ConfigChangesGuard', ConfigChangesGuard)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)

@@ -22,9 +22,9 @@ import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
 
 // Controller for Caches screen.
-export default ['configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
-    function(configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
+export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
+    function(ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+        Object.assign(this, {ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
@@ -67,6 +67,14 @@ export default ['configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCac
         this.$onInit = function() {
             const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID');
 
+            this.originalCache$ = cacheID$.switchMap((id) => {
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
+            })
+            .do((original) => {
+                this.originalCache = original;
+                this.clonedCache = cloneDeep(original);
+            });
+
             this.isNew$ = cacheID$.map((id) => id === 'new');
             this.selectionManager = this.configSelectionManager({
                 itemID$: cacheID$,
@@ -76,6 +84,7 @@ export default ['configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCac
             });
 
             this.subscription = merge(
+                this.originalCache$,
                 this.selectionManager.editGoes$.do((id) => this.edit(id)),
                 this.selectionManager.editLeaves$.do(() => this.$state.go('base.configuration.edit.advanced.caches'))
             ).subscribe();
@@ -145,8 +154,8 @@ export default ['configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCac
                 //     this.$state.is('base.configuration.edit.advanced.caches.cache') &&
                 //     !changes.itemToEdit.currentValue.caches
                 // ) return;
-                this.originalCache = changes.itemToEdit.currentValue.caches;
-                this.clonedCache = cloneDeep(this.originalCache);
+                // this.originalCache = changes.itemToEdit.currentValue.caches;
+                // this.clonedCache = cloneDeep(this.originalCache);
             }
         };
 

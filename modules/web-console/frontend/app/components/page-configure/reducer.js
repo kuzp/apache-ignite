@@ -306,8 +306,8 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
         case 'RESET_ITEMS_TO_EDIT': {
             return {
                 ...state,
-                itemToEdit: {...state.itemToEdit}
-                // itemToEdit: cloneDeep(state.itemToEdit)
+                // itemToEdit: {...state.itemToEdit}
+                itemToEdit: cloneDeep(state.itemToEdit)
             };
         }
         case 'EDIT_CLUSTER_ITEM': {
