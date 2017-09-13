@@ -128,7 +128,7 @@ public class BlasOffHeapBenchmark {
     @SuppressWarnings("unchecked")
     private<T extends Matrix> void benchmarkGemmSquare(int size, int numRuns, String tag,
         BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
-        // todo add benchmark and unit tests for rectangle matrices
+        // todo add unit tests for rectangle matrices reproducing benchmark here
         if (size > 1024)
             return; // larger sizes took too long in trial runs
 
