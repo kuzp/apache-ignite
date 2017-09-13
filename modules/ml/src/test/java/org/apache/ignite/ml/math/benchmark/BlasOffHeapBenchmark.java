@@ -119,6 +119,21 @@ public class BlasOffHeapBenchmark {
     }
 
     /** */
+    @Test
+    // todo convert this into regular unit tests
+    public void testGemmOnHeapRectSanity() throws Exception {
+        benchmarkGemmRect(16, 1, "On heap sanity",
+            DenseLocalOnHeapMatrix::new, (a, b, c) -> Blas.gemm(1.0, a, b, 0.0, c));
+    }
+
+    /** */
+    @Test
+    public void testGemmOffHeapRectSanity() throws Exception {
+        benchmarkGemmRect(16, 1, "Off heap sanity",
+            DenseLocalOffHeapMatrix::new, this::gemmOffHeap);
+    }
+
+    /** */
     private interface GemmConsumer<T extends Matrix> {
         /** */
         void accept(T a, T b, T c);
@@ -128,7 +143,6 @@ public class BlasOffHeapBenchmark {
     @SuppressWarnings("unchecked")
     private<T extends Matrix> void benchmarkGemmSquare(int size, int numRuns, String tag,
         BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
-        // todo add unit tests for rectangle matrices reproducing benchmark here
         if (size > 1024)
             return; // larger sizes took too long in trial runs
 
