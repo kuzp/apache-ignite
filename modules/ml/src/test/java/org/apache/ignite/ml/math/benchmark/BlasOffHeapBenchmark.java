@@ -165,8 +165,7 @@ public class BlasOffHeapBenchmark {
         try {
             new MathBenchmark(tag + " sanity " + size).outputToConsole().measurementTimes(1).execute(() -> {
                 gemm.accept(a, b, c);
-                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1),
-                    (prev, x) -> prev + x);
+                sum.accumulateAndGet(checkValues(c), (prev, x) -> prev + x);
             });
         }
         catch (Exception e) {
