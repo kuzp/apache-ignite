@@ -141,7 +141,8 @@ public class BlasOffHeapBenchmark {
 
     /** */
     @SuppressWarnings("unchecked")
-    private<T extends Matrix> void sanityGemmRect(String tag, BiFunction<Integer, Integer, T> newMtx, GemmConsumer<T> gemm) {
+    private<T extends Matrix> void sanityGemmRect(String tag, BiFunction<Integer, Integer, T> newMtx,
+        GemmConsumer<T> gemm) throws Exception {
         int size = 16;
 
         T a1 = newMtx.apply(size, size);
@@ -162,20 +163,15 @@ public class BlasOffHeapBenchmark {
 
         AtomicReference<Double> sum = new AtomicReference<>(0.0);
 
-        try {
-            new MathBenchmark(tag + " sanity " + size).outputToConsole().measurementTimes(1).execute(() -> {
-                gemm.accept(a, b, c);
-                sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1),
-                    (prev, x) -> prev + x);
-            });
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        new MathBenchmark(tag + " " + size).outputToConsole().measurementTimes(1).execute(() -> {
+            gemm.accept(a, b, c);
+            sum.accumulateAndGet(c.get(0, 0) + c.get(size - 1, size - 1),
+                (prev, x) -> prev + x);
+        });
 
         Assert.assertNotNull(sum.get());
 
-        System.out.println("------- " + sum.get());
+        System.out.println("sanity ------- " + sum.get());
 
         a1.destroy();
         b1.destroy();
