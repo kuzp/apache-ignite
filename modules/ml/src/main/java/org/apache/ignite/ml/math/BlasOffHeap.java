@@ -74,10 +74,10 @@ public abstract class BlasOffHeap {
             return null;
 
         Object inst = klass.newInstance();
-        log.warning("Result object instance class is not null: " + (inst != null));
+        log.warning("Result object instance is not null: " + (inst != null));
 
         BlasOffHeap res = (BlasOffHeap)inst;
-        log.warning("Result class instance class is not null: " + (res != null));
+        log.warning("Result class instance is not null: " + (res != null));
 
         return res;
     }
