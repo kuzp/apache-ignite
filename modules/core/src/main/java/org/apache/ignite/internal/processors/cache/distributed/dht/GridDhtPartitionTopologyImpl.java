@@ -55,6 +55,7 @@ import org.apache.ignite.internal.util.GridPartitionStateMap;
 import org.apache.ignite.internal.util.StripedCompositeReadWriteLock;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.LT;
@@ -670,7 +671,8 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                         if (locPart != null) {
                             GridDhtPartitionState state = locPart.state();
 
-                            if (state == MOVING) {
+                            // TODO: ask Alexey G why we didn't evict OWNING parts.
+                            if (state == MOVING || state == OWNING) {
                                 locPart.rent(false);
 
                                 updateSeq = updateLocal(p, locPart.state(), updateSeq, topVer);
@@ -678,11 +680,11 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                                 changed = true;
 
                                 if (log.isDebugEnabled())
-                                    log.debug("Evicting moving partition (it does not belong to affinity): " + locPart);
+                                    log.debug("Evicting " + state + " partition (it does not belong to affinity): " + locPart);
                             }
-                        }
                     }
                 }
+            }
 
                 AffinityAssignment aff = grp.affinity().readyAffinity(topVer);
 
@@ -2305,6 +2307,11 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
         finally {
             lock.readLock().unlock();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public T2<Long, Long> updateCounter(int part) {
+        return new T2<>(cntrMap.initialUpdateCounter(part), cntrMap.updateCounter(part));
     }
 
     /** {@inheritDoc} */
