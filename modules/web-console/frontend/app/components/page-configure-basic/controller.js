@@ -31,13 +31,13 @@ export default class PageConfigureBasicController {
         this.$element.addClass('panel--ignite');
     }
 
-    uiCanExit() {
-        if (this.form.$invalid) {
-            this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
-            return false;
-        }
-        return this.ConfigChangesGuard.guard({cluster: this.clonedCluster});
-    }
+    // uiCanExit() {
+    //     if (this.form.$invalid) {
+    //         this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
+    //         return false;
+    //     }
+    //     return this.ConfigChangesGuard.guard({cluster: this.clonedCluster});
+    // }
 
     $onInit() {
         this.memorySizeInputVisible$ = this.IgniteVersion.currentSbj

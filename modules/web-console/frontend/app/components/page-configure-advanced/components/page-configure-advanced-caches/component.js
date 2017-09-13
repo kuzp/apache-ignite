@@ -8,6 +8,7 @@ export default {
     bindings: {
         originalCache: '<cache',
         clusterItems: '<',
+        itemToEdit: '<',
         isNew: '<',
         onAdvancedSave: '&',
         onItemAdd: '&',

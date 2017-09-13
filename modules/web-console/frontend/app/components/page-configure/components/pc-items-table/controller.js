@@ -52,10 +52,15 @@ export default class ItemsTableController {
                 });
                 api.core.on.rowsVisibleChanged(this.$scope, () => {
                     const visibleRows = api.core.getVisibleRows();
-                    if (this.onFilterChanged) this.onFilterChanged({$event: visibleRows});
+                    if (this.onVisibleRowsChange) this.onVisibleRowsChange({$event: visibleRows});
                     this.adjustHeight(api, visibleRows.length);
                     this.showFilterNotification = this.grid.data.length && visibleRows.length === 0;
                 });
+                if (this.onFilterChanged) {
+                    api.core.on.filterChanged(this.$scope, () => {
+                        this.onFilterChanged();
+                    });
+                }
             }
         };
         this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);

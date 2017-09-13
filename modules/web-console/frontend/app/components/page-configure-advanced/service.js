@@ -28,23 +28,16 @@ const ofType = (type) => (action) => action.type === type;
 import {Observable} from 'rxjs/Observable';
 
 export default class PageConfigureAdvanced {
-    static $inject = ['ConfigureState', 'Clusters', 'IgniteMessages'];
+    static $inject = ['ConfigureState', 'Clusters', 'Caches', 'IgniteMessages'];
 
-    constructor(ConfigureState, Clusters, messages) {
-        Object.assign(this, {ConfigureState, Clusters, messages});
+    constructor(ConfigureState, Clusters, Caches, messages) {
+        Object.assign(this, {ConfigureState, Clusters, Caches, messages});
 
         this.saveCompleteConfiguration$ = this.ConfigureState.actions$
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([action, state]) => {
-                // Backups
-                const clustersBak = state.clusters;
-                const shortClustersBak = state.shortClusters;
-                const cachesBak = state.caches;
-                const shortCachesBak = state.shortCaches;
-                const basicCachesBak = state.basicCaches;
-
-                return Observable.of(
+                const actions = [
                     {
                         type: igfssActionTypes.UPSERT,
                         items: action.changedItems.igfss
@@ -59,7 +52,7 @@ export default class PageConfigureAdvanced {
                     },
                     {
                         type: shortCachesActionTypes.UPSERT,
-                        items: action.changedItems.caches
+                        items: action.changedItems.caches.map(Caches.toShortCache)
                     },
                     {
                         type: clustersActionTypes.UPSERT,
@@ -69,7 +62,9 @@ export default class PageConfigureAdvanced {
                         type: shortClustersActionTypes.UPSERT,
                         items: [Clusters.toShortCluster(action.changedItems.cluster)]
                     }
-                )
+                ];
+
+                return Observable.of(...actions)
                 .merge(
                     Observable.fromPromise(Clusters.saveAdvanced(action.changedItems))
                     .switchMap((res) => {
@@ -84,20 +79,9 @@ export default class PageConfigureAdvanced {
                             changedItems: action.changedItems,
                             error: res
                         }, {
-                            type: clustersActionTypes.SET,
-                            state: clustersBak
-                        }, {
-                            type: shortClustersActionTypes.SET,
-                            state: shortClustersBak
-                        }, {
-                            type: cachesActionTypes.SET,
-                            state: cachesBak
-                        }, {
-                            type: shortCachesActionTypes.SET,
-                            state: shortCachesBak
-                        }, {
-                            type: basicCachesActionTypes.SET,
-                            state: basicCachesBak
+                            type: 'UNDO_ACTIONS',
+                            actions
+                            // actions: action.prevActions.concat(actions)
                         });
                     })
                 );

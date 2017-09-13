@@ -31,6 +31,8 @@ export default class Caches {
         {value: 'TRANSACTIONAL', label: 'TRANSACTIONAL'}
     ];
 
+    // defaultSorter = new this.ConfigDataSorter({field: 'name'});
+
     constructor($http) {
         Object.assign(this, {$http});
     }
@@ -67,6 +69,16 @@ export default class Caches {
             nearConfiguration: {},
             sqlFunctionClasses: [],
             domains: []
+        };
+    }
+
+    toShortCache(cache) {
+        return {
+            _id: cache._id,
+            name: cache.name,
+            backups: cache.backups,
+            cacheMode: cache.cacheMode,
+            atomicityMode: cache.atomicityMode
         };
     }
 

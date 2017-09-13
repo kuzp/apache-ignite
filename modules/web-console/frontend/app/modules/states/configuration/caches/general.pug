@@ -38,9 +38,9 @@ include /app/helpers/jade/mixins
                         placeholder: 'Input name',
                         required: true
                     })(
-                        ignite-unique='$ctrl.shortCaches'
-                        ignite-unique-property='name'
-                        ignite-unique-skip=`["_id", ${model}]`
+                        i_gnite-unique='$ctrl.clusterItems.shortCaches'
+                        i_gnite-unique-property='name'
+                        i_gnite-unique-skip=`["_id", ${model}]`
                     )
                         +unique-feedback(`${model}.name`, 'Cache name should be unique')
                 .pc-form-grid-col-30(ng-if='$ctrl.available("2.1.0")')
@@ -72,7 +72,7 @@ include /app/helpers/jade/mixins
                             <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>\
                             <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>\
                         </ul>')
-                .pc-form-grid-col-30(ng-show=`${model}.cacheMode === 'PARTITIONED'`)
+                .pc-form-grid-col-30(ng-is=`${model}.cacheMode === 'PARTITIONED'`)
                     +number('Backups:', `${model}.backups`, '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
                 //- Since ignite 2.0
                 .pc-form-grid-col-30(ng-if='$ctrl.available("2.0.0")')
