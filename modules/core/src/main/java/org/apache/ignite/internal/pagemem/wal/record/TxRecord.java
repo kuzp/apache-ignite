@@ -58,16 +58,33 @@ public class TxRecord extends WALRecord {
      * @param participatingNodes Primary -> Backup nodes participating in transaction.
      */
     public TxRecord(TransactionState state,
-                    GridCacheVersion nearXidVer,
-                    GridCacheVersion writeVer,
-                    @Nullable Map<Object, Collection<Object>> participatingNodes,
-                    @Nullable Object primaryNode
+        GridCacheVersion nearXidVer,
+        GridCacheVersion writeVer,
+        @Nullable Map<Object, Collection<Object>> participatingNodes,
+        @Nullable Object primaryNode,
+        long timestamp
     ) {
         this.state = state;
         this.nearXidVer = nearXidVer;
         this.writeVer = writeVer;
         this.participatingNodes = participatingNodes;
         this.primaryNode = primaryNode;
+        this.timestamp = timestamp;
+    }
+    /**
+     *
+     * @param state Transaction state.
+     * @param nearXidVer Transaction id.
+     * @param writeVer Transaction entries write topology version.
+     * @param participatingNodes Primary -> Backup nodes participating in transaction.
+     */
+    public TxRecord(TransactionState state,
+                    GridCacheVersion nearXidVer,
+                    GridCacheVersion writeVer,
+                    @Nullable Map<Object, Collection<Object>> participatingNodes,
+                    @Nullable Object primaryNode
+    ) {
+        this(state, nearXidVer, writeVer, participatingNodes, primaryNode, -1L);
     }
 
     /** {@inheritDoc} */
