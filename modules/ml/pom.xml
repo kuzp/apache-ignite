@@ -36,6 +36,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netlibjava.version>1.1.2</netlibjava.version>
+        <dl4j-integration.folder>src/main/java</dl4j-integration.folder>
+        <dl4j-integration.test.folder>src/test/java</dl4j-integration.test.folder>
     </properties>
 
     <dependencies>
@@ -120,10 +122,65 @@
                 </dependency>
             </dependencies>
         </profile>
+
+        <profile>
+            <id>dl4j-integration</id>
+
+            <properties>
+                <dl4j-integration.folder>src/main/dl4j</dl4j-integration.folder>
+                <dl4j-integration.test.folder>src/test/dl4j</dl4j-integration.test.folder>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.deeplearning4j</groupId>
+                    <artifactId>deeplearning4j-core</artifactId>
+                    <version>0.9.1</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.nd4j</groupId>
+                    <artifactId>nd4j-native</artifactId>
+                    <version>0.9.1</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
     </profiles>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${dl4j-integration.folder}</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>add-tests</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${dl4j-integration.test.folder}</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
