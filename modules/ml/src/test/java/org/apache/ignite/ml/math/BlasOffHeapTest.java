@@ -85,12 +85,12 @@ public class BlasOffHeapTest {
         c.destroy();
     }
 
-    /** Tests 'gemm' operation for off-heap square matrices. */
+    /** Tests 'gemm' operation for large off-heap square matrices that won't fit into JVM memory. */
     @Test
     @Ignore("If needed manually run this stress test")
     public void testGemmSquareLarge() {
         // C := alpha (1.0) * A * B + beta (0.0) * C
-        int largeSize = 23_000;
+        int largeSize = 23_000; // IMPL NOTE use smaller values for smoke testing, like 10, 100, 1000
         DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(largeSize, largeSize);
         DenseLocalOffHeapMatrix b = new DenseLocalOffHeapMatrix(largeSize, largeSize);
         DenseLocalOffHeapMatrix c = new DenseLocalOffHeapMatrix(largeSize, largeSize);
