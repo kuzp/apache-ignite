@@ -129,6 +129,7 @@ import bsSelectMenu from './components/bs-select-menu';
 import protectFromBsSelectRender from './components/protect-from-bs-select-render';
 import uiGridHovering from './components/ui-grid-hovering';
 import igniteServices from './services';
+import clusterSelector from './components/cluster-selector';
 
 // Inject external modules.
 import IgniteModules from 'IgniteModules/index';
@@ -202,6 +203,7 @@ angular.module('ignite-console', [
     protectFromBsSelectRender.name,
     AngularStrapTooltip.name,
     AngularStrapSelect.name,
+    clusterSelector.name,
     // Ignite modules.
     IgniteModules.name
 ])
