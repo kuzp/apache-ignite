@@ -215,6 +215,8 @@
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/${cblas.jni.lib.name}.jar</additionalClasspathElement>
                     </additionalClasspathElements>
+                    <!-- MaxDirectMemorySize is set for BlasOffHeapTest.testGemmSquareLarge -->
+                    <argLine>-XX:MaxDirectMemorySize=1000g</argLine>
                 </configuration>
             </plugin>
             <plugin>
