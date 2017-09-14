@@ -23,13 +23,15 @@ import cluster from './components/page-configure-advanced-cluster';
 import models from './components/page-configure-advanced-models';
 import caches from './components/page-configure-advanced-caches';
 import igfs from './components/page-configure-advanced-igfs';
+import cacheEditForm from './components/cache-edit-form';
 
 export default angular
     .module('ignite-console.page-configure-advanced', [
         cluster.name,
         models.name,
         caches.name,
-        igfs.name
+        igfs.name,
+        cacheEditForm.name
     ])
     .component('pageConfigureAdvanced', component)
     .service('PageConfigureAdvanced', service);

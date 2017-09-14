@@ -9,7 +9,7 @@ export default class ConfigChangesGuard {
         Object.assign(this, {ConfigureState, IgniteConfirm, IgniteModelNormalizer});
     }
 
-    _hasChanges({cluster}, edit) {
+    __hasChanges({cluster}, edit) {
         return cluster
             && !isMatch(
                 this.IgniteModelNormalizer.normalize(cluster),
@@ -21,6 +21,10 @@ export default class ConfigChangesGuard {
             });
     }
 
+    _hasChanges(a, b) {
+        return !isMatch(a, b);
+    }
+
     _confirm(changes) {
         return this.IgniteConfirm.confirm(`
             You have unsaved changes.
@@ -28,11 +32,15 @@ export default class ConfigChangesGuard {
         `);
     }
 
-    guard({cluster}) {
-        return this.ConfigureState.state$.pluck('edit')
-        .take(1)
-        .map((edit) => this._hasChanges({cluster}, edit))
+    guard(a, b) {
+        return of(this._hasChanges(a, b))
         .switchMap((changes) => changes ? this._confirm(changes) : of(true))
+        .catch(() => of(false))
         .toPromise();
+        // return this.ConfigureState.state$.pluck('edit')
+        // .take(1)
+        // .map((edit) => this._hasChanges({cluster}, edit))
+        // .switchMap((changes) => changes ? this._confirm(changes) : of(true))
+        // .toPromise();
     }
 }
