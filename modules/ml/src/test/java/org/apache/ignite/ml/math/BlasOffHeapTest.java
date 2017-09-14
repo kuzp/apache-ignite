@@ -97,6 +97,8 @@ public class BlasOffHeapTest {
 
         a.assign((row, col) -> row.equals(col) ? 2.0 : 0.0);
 
+        b.assign((row, col) -> row.equals(col) ? 2.0 : 0.0);
+
         dgemmOffHeap(a, b, c);
 
         Assert.assertEquals(4, c.get(largeSize - 1, largeSize - 1), 0.0);
