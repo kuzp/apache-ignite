@@ -45,39 +45,12 @@ h2.pc-page-header(ng-if='!($ctrl.isBlocked$|async:this)')
     span.pc-page-header-sub Select only one cache to see settings and edit it
 
 h2.pc-page-header(ng-if='$ctrl.isBlocked$|async:this')
-    | {{ ($ctrl.isNew$|async:this) ? 'Create' : 'Edit' }} cache {{ $ctrl.originalCache.name ? '‘'+$ctrl.originalCache.name+'’' : '' }}
+    | {{ $ctrl.itemEditTitle$|async:this }}
 
-form(
-    name='ui.inputForm'
-    id='cache'
-    novalidate
-    bs-collapse=''
-    data-allow-multiple='true'
+cache-edit-form(
+    cache='$ctrl.originalCache$|async:this'
+    caches='$ctrl.clusterItems.shortCaches'
+    models='$ctrl.clusterItems.shortModels'
+    on-save='$ctrl.save($event)'
     ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}'
-    ng-submit='$ctrl.save($ctrl.clonedCache)'
 )
-    include /app/modules/states/configuration/caches/general
-    include /app/modules/states/configuration/caches/memory
-    include /app/modules/states/configuration/caches/query
-    include /app/modules/states/configuration/caches/store
-
-    include /app/modules/states/configuration/caches/affinity
-    include /app/modules/states/configuration/caches/concurrency
-    include /app/modules/states/configuration/caches/near-cache-client
-    include /app/modules/states/configuration/caches/near-cache-server
-    include /app/modules/states/configuration/caches/node-filter
-    include /app/modules/states/configuration/caches/rebalance
-    include /app/modules/states/configuration/caches/statistics
-
-.pc-form-actions-panel(ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}')
-    .pc-form-actions-panel__right-after
-    button.btn-ignite.btn-ignite--link-success(
-        type='button'
-        ng-click='$ctrl.resetAll()'
-        n_g-click='ui.inputForm.$dirty && resetAll()'
-    )
-        | Cancel
-    button.btn-ignite.btn-ignite--success(
-        form='cache'
-        type='submit'
-    ) Save

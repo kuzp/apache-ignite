@@ -16,10 +16,12 @@
  */
 
 import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs';
 import {merge} from 'rxjs/observable/merge';
 import get from 'lodash/get';
 import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
+import {combineLatest} from 'rxjs/observable/combineLatest';
 
 // Controller for Caches screen.
 export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
@@ -71,20 +73,12 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
                 .distinctUntilChanged()
                 .switchMap((id) => {
                     return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
-                })
-                .do((original) => {
-                    this.originalCache = original;
-                })
-                .distinctUntilChanged((a, b) => a && b && a._id === b._id)
-                .do((original) => {
-                    this.clonedCache = cloneDeep(original);
-                    if (this.$scope.ui.inputForm) {
-                        this.$scope.ui.inputForm.$setPristine();
-                        this.$scope.ui.inputForm.$setUntouched();
-                    }
                 });
 
             this.isNew$ = cacheID$.map((id) => id === 'new');
+            this.itemEditTitle$ = combineLatest(this.isNew$, this.originalCache$, (isNew, cache) => {
+                return `${isNew ? 'Create' : 'Edit'} cache ${cache.name ? `‘${cache.name}’` : ''}`;
+            });
             this.selectionManager = this.configSelectionManager({
                 itemID$: cacheID$,
                 selectedItemRows$: this.selectedRows$,
@@ -104,7 +98,7 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
                 {
                     action: 'Clone',
                     click: () => this.clone(selectedItems),
-                    available: true
+                    available: false
                 },
                 {
                     action: 'Delete',
@@ -130,65 +124,9 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
             this.$state.go('base.configuration.edit.advanced.caches.cache', {cacheID});
         };
 
-        // this.remove = function(items) {
-        //     this.pageService.remove(items, this.originalCluster);
-        // };
-
-        /*        this.selectionHook = function(selected) {
-            const selectedItemIDs = selected.map((r) => r._id);
-            return selectedItemIDs.length === 1
-                ? this.$state.go('base.configuration.edit.advanced.caches.cache', {
-                    cacheID: selectedItemIDs[0],
-                    selectedCaches: selectedItemIDs
-                }, {
-                    location: 'replace'
-                })
-                : this.$state.go('base.configuration.edit.advanced.caches', {
-                    selectedCaches: selectedItemIDs
-                }, {
-                    location: 'replace'
-                });
-        };*/
-
-        this.available = Version.available.bind(Version);
-
-        const rebuildDropdowns = () => {
-            $scope.affinityFunction = [
-                {value: 'Rendezvous', label: 'Rendezvous'},
-                {value: 'Custom', label: 'Custom'},
-                {value: null, label: 'Default'}
-            ];
-
-            if (this.available(['1.0.0', '2.0.0']))
-                $scope.affinityFunction.splice(1, 0, {value: 'Fair', label: 'Fair'});
+        this.save = function(cache) {
+            this.onAdvancedSave({$event: {cache}});
         };
-
-        rebuildDropdowns();
-
-        const filterModel = () => {
-            if ($scope.backupItem) {
-                if (this.available('2.0.0')) {
-                    if (_.get($scope.backupItem, 'affinity.kind') === 'Fair')
-                        $scope.backupItem.affinity.kind = null;
-                }
-            }
-        };
-
-        Version.currentSbj.subscribe({
-            next: () => {
-                rebuildDropdowns();
-
-                filterModel();
-            }
-        });
-
-        // UnsavedChangesGuard.install($scope);
-
-        $scope.ui = FormUtils.formUI();
-        $scope.ui.activePanels = [0];
-        $scope.ui.topPanels = [0, 1, 2, 3];
-
-        // Loading.start('loadingCachesScreen');
 
         // When landing on the page, get caches and show them.
         // Resource.read()
@@ -253,16 +191,5 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
 
         //         Loading.finish('loadingCachesScreen');
         //     });
-
-        this.save = function() {
-            if (this.$scope.ui.inputForm.$invalid)
-                return this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-            this.onAdvancedSave({$event: {cache: cloneDeep(this.clonedCache)}});
-        };
-
-        this.resetAll = function() {
-            return this.Confirm.confirm('Are you sure you want to undo all changes for current cache?')
-            .then(() => this.clonedCache = cloneDeep(this.originalCache));
-        };
     }
 ];
