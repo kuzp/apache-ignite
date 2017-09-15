@@ -15,33 +15,63 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import cloneDeep from 'lodash/cloneDeep';
 
 export default class PageConfigureBasicController {
     static $inject = [
-        'Clusters', 'Caches', 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
+        'IgniteConfirm', '$uiRouter', 'ConfigureState', 'ConfigSelectors', 'conf', 'Clusters', 'Caches', 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
     ];
 
-    constructor(Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope});
+    constructor(IgniteConfirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
+        Object.assign(this, {IgniteConfirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope});
+    }
+
+    $onDestroy() {
+        this.subscription.unsubscribe();
     }
 
     $postLink() {
         this.$element.addClass('panel--ignite');
     }
 
-    // uiCanExit() {
-    //     if (this.form.$invalid) {
-    //         this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
-    //         return false;
-    //     }
-    //     return this.ConfigChangesGuard.guard({cluster: this.clonedCluster});
-    // }
+    uiCanExit() {
+        return this.ConfigureState.state$.pluck('edit', 'changes').take(1).toPromise().then((changes) => {
+            return this.ConfigChangesGuard.guard(
+                {
+                    cluster: this.Clusters.normalize(this.originalCluster),
+                    caches: []
+                },
+                {
+                    cluster: {...this.Clusters.normalize(this.clonedCluster), caches: changes.caches.ids},
+                    caches: changes.caches.changedItems.map(this.Caches.normalize)
+                }
+            );
+        });
+    }
 
     $onInit() {
         this.memorySizeInputVisible$ = this.IgniteVersion.currentSbj
             .map((version) => this.IgniteVersion.since(version.ignite, '2.0.0'));
+
+        const clusterID$ = this.$uiRouter.globals.params$.take(1).pluck('clusterID').filter((v) => v).take(1).debug('clusterID$');
+
+        this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
+        this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
+        this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
+            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id)).debug('clusterToEdit');
+        }).debug('originalCluster$');
+
+        this.subscription = Observable.merge(
+            this.shortCaches$.do((v) => this.shortCaches = v),
+            this.shortClusters$.do((v) => this.shortClusters = v),
+            this.originalCluster$.do((v) => {
+                this.originalCluster = v;
+                this.clonedCluster = cloneDeep(v);
+                this.defaultMemoryPolicy = this.Clusters.getDefaultClusterMemoryPolicy(this.clonedCluster);
+            })
+        ).subscribe();
 
         this.formActionsMenu = [
             {
@@ -58,26 +88,25 @@ export default class PageConfigureBasicController {
     }
 
     addCache() {
-        this.onItemAdd({$event: {type: 'caches'}});
+        this.conf.addItem('caches');
     }
 
     removeCache(cache) {
-        this.onItemRemove({$event: {item: cache, type: 'caches'}});
+        this.conf.removeItem({type: 'caches', itemIDs: [cache._id]});
+        // this.conf.removeItem('caches', cache._id);
     }
 
     changeCache(cache) {
-        this.onItemChange({$event: {item: cache, type: 'caches'}});
+        this.conf.changeItem('caches', cache);
     }
 
     save(andDownload = false) {
         if (this.form.$invalid) return this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
-        this.onBasicSave({$event: {andDownload, cluster: cloneDeep(this.clonedCluster)}});
+        this.conf.saveBasic({andDownload, cluster: cloneDeep(this.clonedCluster)});
     }
 
-    $onChanges(changes) {
-        if ('originalCluster' in changes) {
-            this.clonedCluster = cloneDeep(changes.originalCluster.currentValue);
-            this.defaultMemoryPolicy = this.Clusters.getDefaultClusterMemoryPolicy(this.clonedCluster);
-        }
+    resetAll() {
+        return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cluster?')
+        .then(() => this.conf.onEditCancel());
     }
 }

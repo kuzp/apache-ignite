@@ -59,43 +59,37 @@ export default class PageConfigureBasic {
             .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES'))
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([action, state]) => {
-                // Backups
-                const clustersBak = state.clusters;
-                const shortClustersBak = state.shortClusters;
-                const cachesBak = state.caches;
-                const shortCachesBak = state.shortCaches;
-                const basicCachesBak = state.basicCaches;
-                const editBak = state.edit;
+                const actions = [{
+                    type: cachesActionTypes.UPSERT,
+                    items: action.changedItems.caches
+                },
+                {
+                    type: shortCachesActionTypes.UPSERT,
+                    items: action.changedItems.caches
+                },
+                {
+                    type: clustersActionTypes.UPSERT,
+                    items: [action.changedItems.cluster]
+                },
+                {
+                    type: shortClustersActionTypes.UPSERT,
+                    items: [clusters.toShortCluster(action.changedItems.cluster)]
+                },
+                {
+                    type: 'EDIT_CLUSTER',
+                    cluster: action.changedItems.cluster
+                }
+                ];
 
-                return Observable.of(
-                    {
-                        type: cachesActionTypes.UPSERT,
-                        items: action.changedItems.caches
-                    },
-                    {
-                        type: shortCachesActionTypes.UPSERT,
-                        items: action.changedItems.caches
-                    },
-                    {
-                        type: clustersActionTypes.UPSERT,
-                        items: [action.changedItems.cluster]
-                    },
-                    {
-                        type: shortClustersActionTypes.UPSERT,
-                        items: [clusters.toShortCluster(action.changedItems.cluster)]
-                    },
-                    {
-                        type: 'EDIT_CLUSTER',
-                        cluster: action.changedItems.cluster
-                    }
-                )
+
+                return Observable.of(...actions)
                 .merge(
                     Observable.fromPromise(this.clusters.saveBasic(action.changedItems))
                     .switchMap((res) => {
-                        return Observable.of({
-                            type: 'BASIC_SAVE_CLUSTER_AND_CACHES_OK',
-                            changedItems: action.changedItems
-                        });
+                        return Observable.of(
+                            {type: 'EDIT_CLUSTER', cluster: action.changedItems.cluster},
+                            {type: 'BASIC_SAVE_CLUSTER_AND_CACHES_OK', changedItems: action.changedItems}
+                        );
                     })
                     .catch((res) => {
                         return Observable.of({
@@ -103,23 +97,8 @@ export default class PageConfigureBasic {
                             changedItems: action.changedItems,
                             error: res
                         }, {
-                            type: 'SET_EDIT',
-                            state: editBak
-                        }, {
-                            type: clustersActionTypes.SET,
-                            state: clustersBak
-                        }, {
-                            type: shortClustersActionTypes.SET,
-                            state: shortClustersBak
-                        }, {
-                            type: cachesActionTypes.SET,
-                            state: cachesBak
-                        }, {
-                            type: shortCachesActionTypes.SET,
-                            state: shortCachesBak
-                        }, {
-                            type: basicCachesActionTypes.SET,
-                            state: basicCachesBak
+                            type: 'UNDO_ACTIONS',
+                            actions: action.prevActions.concat(actions)
                         });
                     })
                 );
