@@ -13,6 +13,17 @@ const selectItemToEdit = ({items, itemFactory, defaultName, itemID}) => (s) => s
     if (!itemID) return of(null);
     return empty();
 });
+const currentShortItems = ({changesKey, shortKey}) => (state$) => {
+    return Observable.combineLatest(
+        state$.pluck('edit', 'changes', changesKey).let(isDefined).distinctUntilChanged(),
+        state$.pluck(shortKey, 'value').let(isDefined).distinctUntilChanged()
+    )
+        .map(([{ids, changedItems}, shortItems]) => {
+            if (!ids.length || !shortItems) return [];
+            return ids.map((id) => shortItems.get(id) || changedItems.find(({_id}) => _id === id));
+        })
+        .map((v) => v.filter((v) => v));
+};
 
 export default class ConfigSelectors {
     static $inject = ['Caches', 'Clusters'];
@@ -43,10 +54,7 @@ export default class ConfigSelectors {
             defaultName: 'New cluster',
             itemID: clusterID
         }));
-    selectClusterChanges = (clusterID) => (state$) => Observable.race(
-        state$.let(this.selectClusterToEdit(clusterID)),
-        state$.pluck('edit', 'cluster').let(isDefined),
-    );
+    selectCurrentShortCaches = currentShortItems({changesKey: 'caches', shortKey: 'shortCaches'});
     selectShortModels = () => selectItems('shortModels');
     selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
 }

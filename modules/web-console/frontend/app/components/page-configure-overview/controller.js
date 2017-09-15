@@ -29,14 +29,14 @@ const cellTemplate = (state) => `
 `;
 
 export default class PageConfigureOverviewController {
-    static $inject = ['PageConfigureOverviewService', 'Clusters'];
+    static $inject = ['PageConfigureOverviewService', 'Clusters', 'ConfigureState', 'ConfigSelectors'];
 
-    constructor(pageService, Clusters) {
-        Object.assign(this, {pageService, Clusters});
+    constructor(pageService, Clusters, ConfigureState, ConfigSelectors) {
+        Object.assign(this, {pageService, Clusters, ConfigureState, ConfigSelectors});
     }
 
     $onInit() {
-        this.shortClusters$ = this.pageService.shortClusters$;
+        this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
 
         this.clustersColumnDefs = [
             {
