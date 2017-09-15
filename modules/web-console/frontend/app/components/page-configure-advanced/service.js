@@ -68,10 +68,11 @@ export default class PageConfigureAdvanced {
                 .merge(
                     Observable.fromPromise(Clusters.saveAdvanced(action.changedItems))
                     .switchMap((res) => {
-                        return Observable.of({
-                            type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK',
-                            changedItems: action.changedItems
-                        });
+                        return Observable.of(
+                            {type: 'EDIT_CLUSTER', cluster: action.changedItems.cluster},
+                            // {type: 'RESET_EDIT_CHANGES'},
+                            {type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}
+                        );
                     })
                     .catch((res) => {
                         return Observable.of({
@@ -80,22 +81,22 @@ export default class PageConfigureAdvanced {
                             error: res
                         }, {
                             type: 'UNDO_ACTIONS',
-                            actions
-                            // actions: action.prevActions.concat(actions)
+                            // actions
+                            actions: action.prevActions.concat(actions)
                         });
                     })
                 );
             });
 
-        this.saveOKMessages$ = this.ConfigureState.actions$
-            .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'))
-            .do((action) => this.messages.showInfo(`Cluster ${action.changedItems.cluster.name} saved.`));
+        // this.saveOKMessages$ = this.ConfigureState.actions$
+        //     .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'))
+        //     .do((action) => this.messages.showInfo(`Cluster ${action.changedItems.cluster.name} saved.`));
 
         this.saveErrMessages$ = this.ConfigureState.actions$
             .filter(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
             .do((action) => this.messages.showError(`Failed to save cluster ${action.changedItems.cluster.name}.`));
 
-        Observable.merge(this.saveOKMessages$, this.saveErrMessages$).subscribe();
+        Observable.merge(this.saveErrMessages$).subscribe();
         this.saveCompleteConfiguration$.subscribe((a) => ConfigureState.dispatchAction(a));
     }
 }

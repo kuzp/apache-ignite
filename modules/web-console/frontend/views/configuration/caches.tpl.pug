@@ -17,27 +17,25 @@
 pc-items-table(
     table-title='::"My caches"'
     column-defs='$ctrl.cachesColumnDefs'
-    items='$ctrl.clusterItems.shortCaches'
+    items='$ctrl.shortCaches$|async:this'
     actions-menu='$ctrl.tableActions$|async:this'
     selected-row-id='$ctrl.selectionManager.selectedItemIDs$|async:this'
     one-way-selection='::true'
     on-selection-change='$ctrl.selectedRows$.next($event)'
     on-filter-changed='$ctrl.filterChanges$.next($event)'
-    o_n-selection-change='$ctrl.selectionHook($event)'
     on-visible-rows-change='$ctrl.visibleRows$.next($event)'
-    o_n-visible-rows-change='$ctrl.log($event)'
 )
     footer-slot
-        div(style='font-style: italic' ng-hide='$ctrl.clusterItems.shortCaches.length')
+        div(style='font-style: italic' ng-hide='($ctrl.shortCaches$|async:this).length')
             | You have no caches.
             a.link-success(
-                ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+                ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new"})'
                 ui-sref-opts='{location: "replace"}'
             ) Create one?           
         a.link-success(
-            ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new", selectedCaches: []})'
+            ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new"})'
             ui-sref-opts='{location: "replace"}'
-            ng-show='$ctrl.clusterItems.shortCaches.length'
+            ng-show='($ctrl.shortCaches$|async:this).length'
         ) + Add new cache
 
 h2.pc-page-header(ng-if='!($ctrl.isBlocked$|async:this)')
@@ -49,8 +47,8 @@ h2.pc-page-header(ng-if='$ctrl.isBlocked$|async:this')
 
 cache-edit-form(
     cache='$ctrl.originalCache$|async:this'
-    caches='$ctrl.clusterItems.shortCaches'
-    models='$ctrl.clusterItems.shortModels'
+    caches='$ctrl.shortCaches$|async:this'
+    models='$ctrl.shortModels$|async:this'
     on-save='$ctrl.save($event)'
     ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}'
 )

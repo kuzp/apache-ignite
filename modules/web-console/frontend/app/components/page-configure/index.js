@@ -76,9 +76,9 @@ export default angular
         itemsTable.name,
         pcValidation.name
     ])
-    .run(['ConfigEffects', 'ConfigureState', '$uiRouter', 'ConfigResolvers', (ConfigEffects, ConfigureState, $uiRouter) => {
+    .run(['ConfigEffects', 'ConfigureState', '$uiRouter', (ConfigEffects, ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
-        $uiRouter.plugin(Visualizer);
+        // $uiRouter.plugin(Visualizer);
         if (devTools) {
             devTools.subscribe((e) => {
                 if (e.type === 'DISPATCH' && e.state) ConfigureState.actions$.next(e);
@@ -100,7 +100,7 @@ export default angular
             caches: mapStoreReducerFactory(cachesActionTypes)(state.caches, action),
             shortCaches: mapCacheReducerFactory(shortCachesActionTypes)(state.shortCaches, action),
             models: mapStoreReducerFactory(modelsActionTypes)(state.models, action),
-            shortModels: mapStoreReducerFactory(shortModelsActionTypes)(state.shortModels, action),
+            shortModels: mapCacheReducerFactory(shortModelsActionTypes)(state.shortModels, action),
             igfss: mapStoreReducerFactory(igfssActionTypes)(state.igfss, action),
             shortIgfss: mapCacheReducerFactory(shortIGFSsActionTypes)(state.shortIgfss, action),
             edit: editReducer2(state.edit, action)

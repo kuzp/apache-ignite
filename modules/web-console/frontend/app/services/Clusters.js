@@ -20,6 +20,7 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
 import ObjectID from 'bson-objectid';
 import {uniqueName} from 'app/utils/uniqueName';
+import omit from 'lodash/fp/omit';
 
 const uniqueNameValidator = (defaultName = '') => (a, items = []) => {
     return !items.some((b) => b._id !== a._id && (a.name || defaultName) === (b.name || defaultName));
@@ -432,4 +433,6 @@ export default class Clusters {
         {value: 'Custom', label: 'Custom'},
         {value: null, label: 'Default'}
     ];
+
+    normalize = omit(['__v', 'space']);
 }

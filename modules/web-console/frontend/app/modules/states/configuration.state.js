@@ -59,7 +59,7 @@ import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/race';
 
-const getErrorMessage = (e) => e.message || e.data || e;
+const getErrorMessage = (e) => get(e, 'error.data', e);
 
 const makeClusterItemsResolver = ({
     feedbackName,
@@ -188,17 +188,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 metaTags: {
                     title: 'Configuration'
                 },
-                // resolve: {
-                //     shortClusters$: ['ConfigResolvers', (ConfigResolvers) => {
-                //         return ConfigResolvers.resolveShortClusters$();
-                //     }]
-                // },
-                // resolvePolicy: {
-                //     async: 'RXWAIT'
-                // }
                 resolve: {
-                    _shortClusters: ['ConfigResolvers', (ConfigResolvers) => {
-                        return ConfigResolvers.resolveShortClusters();
+                    _shortClusters: ['ConfigEffects', ({etp}) => {
+                        return etp('LOAD_USER_CLUSTERS');
                     }]
                 },
                 resolvePolicy: {
@@ -209,35 +201,17 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
-                onError: (e) => console.log(e),
-                // resolve: {
-                //     shortClusters$: ['ConfigResolvers', (ConfigResolvers) => {
-                //         return ConfigResolvers.resolveShortClusters$();
-                //     }],
-                //     cluster$: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                //         return ConfigResolvers.resolveCluster$($transition$.params().clusterID);
-                //     }]
-                // },
-                // resolvePolicy: {
-                //     async: 'RXWAIT'
-                // },
-
                 resolve: {
-                    _shortClusters: ['ConfigResolvers', (ConfigResolvers) => {
-                        return ConfigResolvers.resolveShortClusters();
+                    _shortClusters: ['ConfigEffects', ({etp}) => {
+                        return etp('LOAD_USER_CLUSTERS');
                     }],
-                    _cluster: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                        return $transition$.injector().getAsync('_shortClusters').then(() => {
-                            return ConfigResolvers.resolveCluster({
-                                clusterID: $transition$.params().clusterID
-                            });
-                        });
+                    _cluster: ['ConfigEffects', '$transition$', ({etp}, $transition$) => {
+                        return etp('LOAD_AND_EDIT_CLUSTER', {clusterID: $transition$.params().clusterID});
                     }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
                 },
-
                 // resolve: {
                 //     clustersTable: clustersTableResolve,
                 //     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
@@ -292,16 +266,32 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 //         });
                 //     }]
                 // },
+                // redirectTo: ($transition$) => {
+                //     const cluster = $transition$.injector().getAsync('_cluster');
+                //     const clusters = $transition$.injector().getAsync('_shortClusters');
+                //     return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
+                //         return (clusters.value.size > 10 || cluster.caches.length > 5)
+                //             ? 'base.configuration.edit.advanced'
+                //             : 'base.configuration.edit.basic';
+                //     });
+                // },
+                // redirectTo: 'base.configuration.edit.advanced',
                 redirectTo: ($transition$) => {
-                    const cluster = $transition$.injector().getAsync('_cluster');
-                    const clusters = $transition$.injector().getAsync('_shortClusters');
-                    return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
+                    const [ConfigureState, ConfigSelectors] = ['ConfigureState', 'ConfigSelectors'].map((t) => $transition$.injector().get(t));
+                    const waitFor = ['_cluster', '_shortClusters'].map((t) => $transition$.injector().getAsync(t));
+                    return Observable.fromPromise(Promise.all(waitFor)).switchMap(() => {
+                        return Observable.combineLatest(
+                            ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1),
+                            ConfigureState.state$.let(ConfigSelectors.selectShortCaches()).take(1)
+                        );
+                    })
+                    .map(([cluster = {caches: []}, clusters]) => {
                         return (clusters.value.size > 10 || cluster.caches.length > 5)
                             ? 'base.configuration.edit.advanced'
                             : 'base.configuration.edit.basic';
-                    });
+                    })
+                    .toPromise();
                 },
-                // redirectTo: 'base.configuration.edit.advanced',
                 tfMetaTags: {
                     title: 'Configuration'
                 }
@@ -311,15 +301,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: 'pageConfigureBasic',
                 permission: 'configuration',
                 resolve: {
-                    _shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                        return $transition$.injector().getAsync('_cluster').then((cluster) => {
-                            return ConfigResolvers.resoleShortCaches({
-                                ids: cluster.caches,
-                                clusterID: cluster._id
-                            });
-                        });
-                    }],
-                    isNew: ['$transition$', ($transition$) => $transition$.params().clusterID === 'new']
+                    // _shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
+                    //     return $transition$.injector().getAsync('_cluster').then((cluster) => {
+                    //         return ConfigResolvers.resoleShortCaches({
+                    //             ids: cluster.caches,
+                    //             clusterID: cluster._id
+                    //         });
+                    //     });
+                    // }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -339,56 +328,41 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    isNew: ['$transition$', ($transition$) => $transition$.params().clusterID === 'new']
+                    _shortCaches: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
+                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
+                        .switchMap((cluster) => {
+                            return etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id});
+                        })
+                        .toPromise();
+                    }]
                 },
-                // resolve: {
-                //     _shortCaches: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                //         return $transition$.injector().getAsync('_cluster').then((cluster) => {
-                //             return ConfigResolvers.loadShortItems$(cluster, 'caches').toPromise();
-                //         });
-                //     }]
-                // },
-                // resolvePolicy: {
-                //     async: 'NOWAIT'
-                // },
+                resolvePolicy: {
+                    async: 'NOWAIT'
+                },
                 tfMetaTags: {
                     title: 'Configure Cluster'
                 }
             })
             .state('base.configuration.edit.advanced.caches', {
                 url: '/caches',
-                u_rl: '/caches?selectedCaches',
                 permission: 'configuration',
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
-                    _shortCachesAndModels: ['ConfigResolvers', '$transition$', '$q', (ConfigResolvers, $transition$, $q) => {
-                        // const {clusterID} = $transition$.params()
-                        // return Promise.all([])
-                        return $transition$.injector().getAsync('_cluster').then((cluster) => {
-                            return $q.all({
-                                caches: ConfigResolvers.resoleShortCaches({
-                                    ids: cluster.caches,
-                                    clusterID: cluster._id
-                                })
-                            });
-                        });
+                    _shortCachesAndModels: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
+                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
+                        .map((cluster) => {
+                            return Promise.all([
+                                etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id}),
+                                etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id})
+                            ]);
+                        })
+                        .toPromise();
                     }]
-                    // isNew: ['$transition$', ($transition$) => $transition$.params().cacheID === 'new']
                 },
-                // resolve: {
-                //     caches: cachesResolve,
-                //     models: modelsResolve
-                // },
-                // resolvePolicy: {
-                //     async: 'NOWAIT'
-                // },
-                p_arams: {
-                    selectedCaches: {
-                        array: true,
-                        value: [],
-                        type: 'string',
-                        dynamic: true
-                    }
+                resolvePolicy: {
+                    async: 'NOWAIT'
                 },
                 tfMetaTags: {
                     title: 'Configure Caches'
@@ -398,12 +372,16 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{cacheID:string}',
                 permission: 'configuration',
                 resolve: {
-                    _cache: ['ConfigResolvers', '$transition$', (ConfigResolvers, $transition$) => {
-                        return ConfigResolvers._etp('LOAD_CACHE', {cacheID: $transition$.params().cacheID});
-                        // return ConfigResolvers.resolveCache({
-                        //     cacheID: $transition$.params().cacheID
-                        // });
-                        // return ConfigResolvers.resolveItem$('caches', $transition$.params().cacheID).toPromise();
+                    _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                        const {clusterID, cacheID} = $transition$.params();
+                        return etp('LOAD_CACHE', {cacheID})
+                        .catch((e) => {
+                            $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
+                                location: 'replace'
+                            });
+                            IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            return Promise.reject(e);
+                        });
                     }]
 
                     // cache: ['IgniteMessages', 'Caches', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Caches, Clusters, $transition$, ConfigureState) => {

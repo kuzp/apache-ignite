@@ -1,18 +1,8 @@
-import templateUrl from 'views/configuration/clusters.tpl.pug';
-import controller from 'Controllers/clusters-controller';
+import template from './template.pug';
+import controller from './controller';
 
 export default {
     name: 'pageConfigureAdvancedCluster',
-    templateUrl,
-    controller,
-    bindings: {
-        originalCluster: '<cluster',
-        clusterItems: '<',
-        isNew: '<',
-        onAdvancedSave: '&',
-        onItemAdd: '&',
-        onItemChange: '&',
-        onItemRemove: '&',
-        onEditCancel: '&'
-    }
+    template,
+    controller
 };

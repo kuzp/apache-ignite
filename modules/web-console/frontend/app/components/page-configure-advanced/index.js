@@ -24,6 +24,7 @@ import models from './components/page-configure-advanced-models';
 import caches from './components/page-configure-advanced-caches';
 import igfs from './components/page-configure-advanced-igfs';
 import cacheEditForm from './components/cache-edit-form';
+import clusterEditForm from './components/cluster-edit-form';
 
 export default angular
     .module('ignite-console.page-configure-advanced', [
@@ -31,7 +32,8 @@ export default angular
         models.name,
         caches.name,
         igfs.name,
-        cacheEditForm.name
+        cacheEditForm.name,
+        clusterEditForm.name
     ])
     .component('pageConfigureAdvanced', component)
     .service('PageConfigureAdvanced', service);

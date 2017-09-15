@@ -15,124 +15,28 @@
  * limitations under the License.
  */
 
-import get from 'lodash/get';
-import isEqual from 'lodash/isEqual';
-import matches from 'lodash/fp/matches';
-import cloneDeep from 'lodash/cloneDeep';
+// import get from 'lodash/get';
+// import isEqual from 'lodash/isEqual';
+// import matches from 'lodash/fp/matches';
+// import cloneDeep from 'lodash/cloneDeep';
 
 // Controller for Clusters screen.
-export default ['IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
-    function(IgniteModelNormalizer, pageService, ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
-        Object.assign(this, {IgniteModelNormalizer, $state, pageService, ConfigureState, Clusters, $scope, Confirm, FormUtils, Version});
-
-        this.available = function(...args) {
-            return this.Version.available(...args);
-        };
-
-        this.$onChanges = function(changes) {
-            if ('originalCluster' in changes)
-                this.clonedCluster = cloneDeep(changes.originalCluster.currentValue);
-
-        };
+export default ['ConfigSelectors', 'IgniteModelNormalizer', 'PageConfigureAdvancedCluster', 'ConfigureState', '$rootScope', '$scope', '$http', '$state', '$timeout', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteEventGroups', 'DemoInfo', 'IgniteLegacyTable', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteVersion', 'Clusters', 'ConfigurationDownload', '$q',
+    function(ConfigSelectors, IgniteModelNormalizer, pageService, ConfigureState, $root, $scope, $http, $state, $timeout, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, igniteEventGroups, DemoInfo, LegacyTable, Resource, ErrorPopover, FormUtils, Version, Clusters, ConfigurationDownload, $q) {
+        Object.assign(this, {ConfigSelectors, IgniteModelNormalizer, $state, pageService, ConfigureState, Clusters, $scope, Confirm, FormUtils, Version});
 
         this.$onInit = function() {
-            // const redirects = this.ConfigureState.actions$
-            //     .filter(matches({type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}))
-            //     .do(() => {
-            //         this.$state.go('.', {
-            //             clusterID: this.clonedCluster._id
-            //         }, {
-            //             location: 'replace'
-            //         });
-            //     });
-
-            // this.subscription = this.pageService.getObservable()
-            //     .do((state) => this.$scope.$applyAsync(() => {
-            //         Object.assign(this, state);
-            //     }))
-            //     .merge(redirects)
-            //     .subscribe();
-
-            let __original_value;
-
-            const rebuildDropdowns = () => {
-                this.eventStorage = [
-                    {value: 'Memory', label: 'Memory'},
-                    {value: 'Custom', label: 'Custom'}
-                ];
-
-                this.marshallerVariant = [
-                    {value: 'JdkMarshaller', label: 'JdkMarshaller'},
-                    {value: null, label: 'Default'}
-                ];
-
-                if (this.available('2.0.0')) {
-                    this.eventStorage.push({value: null, label: 'Disabled'});
-
-                    this.eventGroups = _.filter(igniteEventGroups, ({value}) => value !== 'EVTS_SWAPSPACE');
-                }
-                else {
-                    this.eventGroups = igniteEventGroups;
-
-                    this.marshallerVariant.splice(0, 0, {value: 'OptimizedMarshaller', label: 'OptimizedMarshaller'});
-                }
-            };
-
-            rebuildDropdowns();
-
-            const filterModel = (cluster) => {
-                if (cluster) {
-                    if (this.available('2.0.0')) {
-                        const evtGrps = _.map(this.eventGroups, 'value');
-
-                        // _.remove(__original_value, (evtGrp) => !_.includes(evtGrps, evtGrp));
-                        _.remove(cluster.includeEventTypes, (evtGrp) => !_.includes(evtGrps, evtGrp));
-
-                        if (_.get(cluster, 'marshaller.kind') === 'OptimizedMarshaller')
-                            cluster.marshaller.kind = null;
-                    }
-                    else if (cluster && !_.get(cluster, 'eventStorage.kind'))
-                        _.set(cluster, 'eventStorage.kind', 'Memory');
-                }
-            };
-
-            this.versionSubscription = this.Version.currentSbj.subscribe({
-                next: () => {
-                    rebuildDropdowns();
-                    filterModel(this.clonedCluster);
-                }
+            const clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID');
+            this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue());
+            this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id));
             });
-            this.supportedJdbcTypes = LegacyUtils.mkOptions(LegacyUtils.SUPPORTED_JDBC_TYPES);
-
-            $scope.ui = FormUtils.formUI();
-            $scope.ui.loadedPanels = ['checkpoint', 'serviceConfiguration', 'odbcConfiguration'];
-            $scope.ui.activePanels = [0];
-            $scope.ui.topPanels = [0];
+            this.isNew$ = clusterID$.map((id) => id === 'new');
+            this.isBlocked$ = clusterID$;
         };
 
-        this.$onDestroy = function() {
-            // this.subscription.unsubscribe();
-            this.versionSubscription.unsubscribe();
+        this.save = function(cache) {
+            this.conf.saveAdvanced({cache});
         };
-
-        this.save = function() {
-            if (this.$scope.ui.inputForm.$invalid)
-                return this.IgniteFormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-            this.onAdvancedSave({$event: {cluster: cloneDeep(this.clonedCluster)}});
-        };
-
-        // this.uiCanExit = function() {
-        //     const items = [this.originalCluster, this.clonedCluster].map((c) => this.IgniteModelNormalizer.normalize(c));
-        //     return isEqual(...items)
-        //         ? true
-        //         : this.Confirm.confirm('You have unsaved changes. Are you sure want to discard them?');
-        // };
-
-        // this.cancelEdit = () => this.pageService.cancelEdit();
-        // this.downloadConfiguration = (cluster) => ConfigurationDownload.downloadClusterConfiguration(cluster);
-        // this.save = function(cluster = this.clonedCluster) {
-        //     this.FormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
-        //     if (this.$scope.ui.inputForm.$valid) this.pageService.save(this.clonedCluster);
-        // };
     }
 ];

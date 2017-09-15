@@ -16,6 +16,7 @@
  */
 
 import ObjectID from 'bson-objectid';
+import omit from 'lodash/fp/omit';
 
 export default class Caches {
     static $inject = ['$http'];
@@ -30,8 +31,6 @@ export default class Caches {
         {value: 'ATOMIC', label: 'ATOMIC'},
         {value: 'TRANSACTIONAL', label: 'TRANSACTIONAL'}
     ];
-
-    // defaultSorter = new this.ConfigDataSorter({field: 'name'});
 
     constructor($http) {
         Object.assign(this, {$http});
@@ -81,6 +80,8 @@ export default class Caches {
             atomicityMode: cache.atomicityMode
         };
     }
+
+    normalize = omit(['__v', 'space', 'clusters']);
 
     nodeFilterKinds = [
         {value: 'IGFS', label: 'IGFS nodes'},

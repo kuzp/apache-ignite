@@ -47,10 +47,8 @@ export default class CacheEditFormController {
     }
     $onChanges(changes) {
         if (
-            'cache' in changes && get(changes.cache.currentValue, '_id') !== get(changes.cache.previousValue, '_id')
-        // a && b && a._id === b._id
+            'cache' in changes && get(this.clonedCache, '_id') !== get(this.cache, '_id')
         ) {
-            this.originalCache = changes.cache.currentValue;
             this.clonedCache = cloneDeep(changes.cache.currentValue);
             if (this.$scope.ui && this.$scope.ui.inputForm) {
                 this.$scope.ui.inputForm.$setPristine();
@@ -59,7 +57,7 @@ export default class CacheEditFormController {
         }
     }
     uiCanExit($transition$) {
-        return this.ConfigChangesGuard.guard(this.originalCache, this.clonedCache);
+        return this.ConfigChangesGuard.guard(...[this.cache, this.clonedCache].map(this.Caches.normalize));
     }
     save() {
         if (this.$scope.ui.inputForm.$invalid)
@@ -68,6 +66,6 @@ export default class CacheEditFormController {
     }
     resetAll() {
         return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cache?')
-        .then(() => this.clonedCache = cloneDeep(this.originalCache));
+        .then(() => this.clonedCache = cloneDeep(this.cache));
     }
 }

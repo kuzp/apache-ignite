@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
-    form(id='cluster' name='ui.inputForm' novalidate ng-submit='$ctrl.save($ctrl.clonedCluster)')
+    form(id='cluster' name='ui.inputForm' novalidate ng-submit='$ctrl.save()')
         .panel-group
             include /app/modules/states/configuration/clusters/general
 
@@ -66,11 +66,10 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
             include /app/modules/states/configuration/clusters/attributes
 
 .pc-form-actions-panel(n_g-show='$ctrl.$scope.selectedItem')
-    pc-project-structure-preview(cluster='$ctrl.clonedCluster' n_g-if='backupItem._id')
+    pc-project-structure-preview(cluster='$ctrl.clonedCluster')
     button.btn-ignite.btn-ignite--success(
         type='button'
-        n_g-if='backupItem._id'
-        ng-click='$ctrl.downloadConfiguration(backupItem)'
+        ng-click='$ctrl.downloadConfiguration($ctrl.cluster)'
     )
         svg(ignite-icon='download').icon-left
         | Download project
@@ -79,7 +78,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
 
     button.btn-ignite.btn-ignite--link-success(
         type='button'
-        ng-click='$ctrl.onEditCancel()'
+        ng-click='$ctrl.resetAll()'
     )
         | Cancel
     button.btn-ignite.btn-ignite--success(
