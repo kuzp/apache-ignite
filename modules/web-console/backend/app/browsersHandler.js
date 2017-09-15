@@ -223,6 +223,7 @@ module.exports.factory = (_, socketio, configure, errors, mongo) => {
             this.registerVisorTask('queryClose', internalVisor('query.VisorQueryCleanupTask'), 'java.util.Map', 'java.util.UUID', 'java.util.Set');
             this.registerVisorTask('queryCloseX2', internalVisor('query.VisorQueryCleanupTask'), internalVisor('query.VisorQueryCleanupTaskArg'));
 
+            this.registerVisorTask('toggleClusterState', internalVisor('misc.VisorChangeGridActiveStateTask'), internalVisor('misc.VisorChangeGridActiveStateTaskArg'));
 
             // Return command result from grid to browser.
             sock.on('node:visor', (clusterId, taskId, nids, ...args) => {

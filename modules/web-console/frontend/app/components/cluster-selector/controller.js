@@ -65,7 +65,7 @@ export default class {
 
     toggle() {
         const changeState = () => {
-            this.agentMgr.changeClusterActiveState(null, this.cluster.active);
+            this.agentMgr.toggleClusterState(this.cluster);
         };
 
         if (!this.cluster.active) {

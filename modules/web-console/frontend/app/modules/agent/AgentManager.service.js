@@ -152,6 +152,7 @@ export default class IgniteAgentManager {
     saveToStorage(cluster = this.connectionSbj.getValue().cluster) {
         try {
             localStorage.cluster = JSON.stringify(cluster);
+            this.connectionSbj = new BehaviorSubject(new ConnectionState(cluster));
         } catch (ignore) {
             // No-op.
         }
@@ -621,7 +622,6 @@ export default class IgniteAgentManager {
     }
 
     /**
-     /**
      * @param {String} nid Node id.
      * @param {String} cacheName Cache name.
      * @param {String} filter Filter text.
@@ -652,4 +652,16 @@ export default class IgniteAgentManager {
         return this.queryScan(nid, cacheName, filter, regEx, caseSensitive, near, local, pageSz)
             .then(fetchResult);
     }
+
+    /**
+     * Change cluster active state.
+     *
+     * @param {String} nid Node ID.
+     * @param {Boolean} state Activation state of cluster.
+     * @returns {Promise}
+     */
+    toggleClusterState({ active }) {
+        this.visorTask('toggleClusterState', null, active);
+    }
+
 }
