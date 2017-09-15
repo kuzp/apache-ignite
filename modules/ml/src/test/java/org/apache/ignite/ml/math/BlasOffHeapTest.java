@@ -86,6 +86,22 @@ public class BlasOffHeapTest {
     }
 
     /**
+     * Tests that it's possible to allocate off-heap matrix larger than 4Gb, see IGNITE-6394.
+     */
+    @Test
+    @Ignore("If needed manually run this stress test")
+    public void testLargeOffHeapMatrix() {
+        int largeSize = 23_000; // IMPL NOTE use smaller values for smoke testing, like 10, 100, 1000
+        DenseLocalOffHeapMatrix a = new DenseLocalOffHeapMatrix(largeSize, largeSize);
+
+        a.set(largeSize - 1, largeSize - 1, 1.0);
+
+        Assert.assertEquals(1.0, a.get(largeSize - 1, largeSize - 1), 0.0);
+
+        a.destroy();
+    }
+
+    /**
      * Tests 'gemm' operation for large off-heap square matrices that won't fit into JVM memory.
      * For the reference, this test passed with largeSize parameter set to 16_000 at machine with 16 Gb RAM
      * (it took about an hour to calculate with i7-4710HQ CPU @ 2.50GHz).
