@@ -312,7 +312,8 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                             ids: state.changes.cluster ? state.changes.cluster[t] : [],
                             changedItems: []
                         }
-                    }), state.changes)
+                    }), state.changes),
+                    cluster: {...state.changes.cluster}
                 }
             };
         }

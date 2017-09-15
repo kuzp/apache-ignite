@@ -21,15 +21,5 @@ import controller from './controller';
 
 export default {
     template,
-    controller,
-    bindings: {
-        originalCluster: '<cluster',
-        clusterItems: '<',
-        isNew: '<',
-        onBasicSave: '&',
-        onItemAdd: '&',
-        onItemChange: '&',
-        onItemRemove: '&',
-        onEditCancel: '&?'
-    }
+    controller
 };

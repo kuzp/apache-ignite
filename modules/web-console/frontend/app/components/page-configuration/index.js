@@ -266,11 +266,13 @@ export default angular
         models: edit.changes.models.changedItems
     });
     saveBasic({download, cluster}) {
-        if (cluster) this.upsertCluster(cluster);
-        this.ConfigureState.state$.pluck('edit', 'changes').take(1).do((changes) => {
+        const prevActions = [];
+        if (cluster) prevActions.push(this.upsertCluster(cluster));
+        this.ConfigureState.state$.pluck('edit').take(1).do((edit) => {
             this.ConfigureState.dispatchAction({
                 type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
-                changedItems: this._applyChangedIDs(changes)
+                changedItems: this._applyChangedIDs(edit),
+                prevActions
             });
         }).subscribe();
     }
@@ -294,7 +296,7 @@ export default angular
     }
     onEditCancel() {
         this.ConfigureState.dispatchAction({
-            type: 'RESET_ITEMS_TO_EDIT'
+            type: 'RESET_EDIT_CHANGES'
         });
         // this.ConfigureState.state$.let(selectEditCluster).take(1).do((cluster) => {
         //     this.ConfigureState.dispatchAction({

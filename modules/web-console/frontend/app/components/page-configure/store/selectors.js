@@ -20,7 +20,8 @@ const currentShortItems = ({changesKey, shortKey}) => (state$) => {
     )
         .map(([{ids, changedItems}, shortItems]) => {
             if (!ids.length || !shortItems) return [];
-            return ids.map((id) => shortItems.get(id) || changedItems.find(({_id}) => _id === id));
+            return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortItems.get(id));
+            // return ids.map((id) => shortItems.get(id) || changedItems.find(({_id}) => _id === id));
         })
         .map((v) => v.filter((v) => v));
 };
@@ -46,7 +47,7 @@ export default class ConfigSelectors {
             itemID: cacheID
         }));
     selectClusterToEdit = (clusterID) => (state$) => state$
-        .let(this.selectCluster(clusterID))
+        .pluck('edit', 'changes', 'cluster')
         .distinctUntilChanged()
         .let(selectItemToEdit({
             items: state$.let(this.selectShortClustersValue()),
