@@ -55,6 +55,8 @@ import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cluster.ClusterMetrics;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.MemoryConfiguration;
+import org.apache.ignite.configuration.MemoryPolicyConfiguration;
 import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.events.Event;
 import org.apache.ignite.internal.ClusterMetricsSnapshot;
@@ -64,7 +66,6 @@ import org.apache.ignite.internal.GridNodeOrderComparator;
 import org.apache.ignite.internal.IgniteClientDisconnectedCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
-import org.apache.ignite.internal.IgniteNodeAttributes;
 import org.apache.ignite.internal.events.DiscoveryCustomEvent;
 import org.apache.ignite.internal.managers.GridManagerAdapter;
 import org.apache.ignite.internal.managers.communication.GridIoManager;
@@ -76,6 +77,7 @@ import org.apache.ignite.internal.processors.cache.DynamicCacheChangeRequest;
 import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.GridCacheAdapter;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
+import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMessage;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
@@ -140,7 +142,9 @@ import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_LATE_AFFINITY
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_MACS;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_MARSHALLER_USE_BINARY_STRING_SER_VER_2;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_MARSHALLER_USE_DFLT_SUID;
+import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_OFFHEAP_SIZE;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_PEER_CLASSLOADING;
+import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_PHY_RAM;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_SECURITY_COMPATIBILITY_MODE;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_SERVICES_COMPATIBILITY_MODE;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_USER_NAME;
@@ -191,6 +195,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             return CU.clientNode(n);
         }
     };
+
+    /** */
+    private final Object discoEvtMux = new Object();
 
     /** Discovery event worker. */
     private final DiscoveryWorker discoWrk = new DiscoveryWorker();
@@ -481,7 +488,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             // No-op.
         }
 
-        ctx.addNodeAttribute(IgniteNodeAttributes.ATTR_PHY_RAM, totSysMemory);
+        ctx.addNodeAttribute(ATTR_PHY_RAM, totSysMemory);
+        ctx.addNodeAttribute(ATTR_OFFHEAP_SIZE, requiredOffheap());
 
         DiscoverySpi spi = getSpi();
 
@@ -546,6 +554,26 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             }
 
             @Override public void onDiscovery(
+                final int type,
+                final long topVer,
+                final ClusterNode node,
+                final Collection<ClusterNode> topSnapshot,
+                final Map<Long, Collection<ClusterNode>> snapshots,
+                @Nullable DiscoverySpiCustomMessage spiCustomMsg) {
+                synchronized (discoEvtMux) {
+                    onDiscovery0(type, topVer, node, topSnapshot, snapshots, spiCustomMsg);
+                }
+            }
+
+            /**
+             * @param type Event type.
+             * @param topVer Event topology version.
+             * @param node Event node.
+             * @param topSnapshot Topology snapsjot.
+             * @param snapshots Topology snapshots history.
+             * @param spiCustomMsg Custom event.
+             */
+            private void onDiscovery0(
                 final int type,
                 final long topVer,
                 final ClusterNode node,
@@ -1497,6 +1525,46 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
     }
 
     /**
+     * @return Required offheap memory in bytes.
+     */
+    private long requiredOffheap() {
+        if(ctx.config().isClientMode())
+            return 0;
+
+        MemoryConfiguration memCfg = ctx.config().getMemoryConfiguration();
+
+        assert memCfg != null;
+
+        long res = memCfg.getSystemCacheMaxSize();
+
+        // Add memory policies.
+        MemoryPolicyConfiguration[] memPlcCfgs = memCfg.getMemoryPolicies();
+
+        if (memPlcCfgs != null) {
+            String dfltMemPlcName = memCfg.getDefaultMemoryPolicyName();
+
+            boolean customDflt = false;
+
+            for (MemoryPolicyConfiguration memPlcCfg : memPlcCfgs) {
+                if(F.eq(dfltMemPlcName, memPlcCfg.getName()))
+                    customDflt = true;
+
+                res += memPlcCfg.getMaxSize();
+            }
+
+            if(!customDflt)
+                res += memCfg.getDefaultMemoryPolicySize();
+        }
+        else
+            res += memCfg.getDefaultMemoryPolicySize();
+
+        // Add persistence (if any).
+        res += GridCacheDatabaseSharedManager.checkpointBufferSize(ctx.config());
+
+        return res;
+    }
+
+    /**
      * @param topVer Topology version.
      * @param srvNodesNum Server nodes number.
      * @param clientNodesNum Client nodes number.
@@ -2082,12 +2150,15 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
     public void clientCacheStartEvent(UUID reqId,
         @Nullable Map<String, DynamicCacheChangeRequest> startReqs,
         @Nullable Set<String> cachesToClose) {
-        discoWrk.addEvent(EVT_DISCOVERY_CUSTOM_EVT,
-            AffinityTopologyVersion.NONE,
-            localNode(),
-            null,
-            Collections.<ClusterNode>emptyList(),
-            new ClientCacheChangeDummyDiscoveryMessage(reqId, startReqs, cachesToClose));
+        // Prevent race when discovery message was processed, but was passed to discoWrk.
+        synchronized (discoEvtMux) {
+            discoWrk.addEvent(EVT_DISCOVERY_CUSTOM_EVT,
+                AffinityTopologyVersion.NONE,
+                localNode(),
+                null,
+                Collections.<ClusterNode>emptyList(),
+                new ClientCacheChangeDummyDiscoveryMessage(reqId, startReqs, cachesToClose));
+        }
     }
 
     /**
