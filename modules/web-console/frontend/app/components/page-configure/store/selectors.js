@@ -9,7 +9,7 @@ const selectValues = (s) => s.map((v) => v && [...v.value.values()]);
 const selectMapItem = (mapPath, key) => (s) => s.pluck(mapPath).map((v) => v && v.get(key));
 const selectItemToEdit = ({items, itemFactory, defaultName, itemID}) => (s) => s.switchMap((item) => {
     if (item) return of(item);
-    if (itemID === 'new') return items.map((items) => Object.assign(itemFactory(), {name: uniqueName(defaultName, items)}));
+    if (itemID === 'new') return items.take(1).map((items) => Object.assign(itemFactory(), {name: uniqueName(defaultName, items)}));
     if (!itemID) return of(null);
     return empty();
 });
@@ -47,8 +47,9 @@ export default class ConfigSelectors {
             itemID: cacheID
         }));
     selectClusterToEdit = (clusterID) => (state$) => state$
-        .pluck('edit', 'changes', 'cluster')
+        .let(this.selectCluster(clusterID))
         .distinctUntilChanged()
+        .debug('what')
         .let(selectItemToEdit({
             items: state$.let(this.selectShortClustersValue()),
             itemFactory: () => this.Clusters.getBlankCluster(),

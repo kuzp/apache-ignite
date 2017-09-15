@@ -61,7 +61,7 @@ export default class PageConfigureBasicController {
         this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id)).debug('clusterToEdit');
-        }).debug('originalCluster$');
+        }).take(1).debug('originalCluster$');
 
         this.subscription = Observable.merge(
             this.shortCaches$.do((v) => this.shortCaches = v),
@@ -93,7 +93,6 @@ export default class PageConfigureBasicController {
 
     removeCache(cache) {
         this.conf.removeItem({type: 'caches', itemIDs: [cache._id]});
-        // this.conf.removeItem('caches', cache._id);
     }
 
     changeCache(cache) {
