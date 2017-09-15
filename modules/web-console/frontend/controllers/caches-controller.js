@@ -69,7 +69,7 @@ export default ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter'
         this.$onInit = function() {
             const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID');
 
-            this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue());
+            this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
             this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue());
             this.originalCache$ = cacheID$.distinctUntilChanged().switchMap((id) => {
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
