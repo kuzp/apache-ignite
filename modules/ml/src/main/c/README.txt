@@ -8,8 +8,8 @@ Prerequisites:
 - cblas
   Same as for netlib being able to use native BLAS implementation:
   https://github.com/fommil/netlib-java/blob/master/native_system/xbuilds/linux-x86_64/pom.xml
-  -- in particular, there should be header file:
-     /usr/include/cblas.h
+  -- in particular, there should be header file in /usr/include/cblas.h
+     https://github.com/fommil/netlib-java/blob/master/netlib/CBLAS/cblas.h
 
 How to build:
 
