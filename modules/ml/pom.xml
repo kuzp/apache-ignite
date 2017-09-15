@@ -142,6 +142,11 @@
                     <artifactId>nd4j-native</artifactId>
                     <version>0.9.1</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.deeplearning4j</groupId>
+                    <artifactId>deeplearning4j-nn</artifactId>
+                    <version>0.9.1</version>
+                </dependency>
             </dependencies>
         </profile>
 
