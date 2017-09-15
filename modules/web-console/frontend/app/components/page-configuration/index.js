@@ -194,19 +194,21 @@ export default angular
             .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
             .do((a) => $state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace'}));
 
-        const advancedRedirects$ = actions$
-            .filter((a) => a.type === 'UPSERT_CLUSTER_ITEM')
-            .exhaustMap(({itemType, item: {_id}}) => {
-                return actions$.filter((a) => a.type === 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK')
-                .takeUntil(actions$.filter((a) => a.type === 'UPSERT_CLUSTER_ITEM').take(1))
-                .mapTo({itemType, _id});
-            })
-            .debug('adv redirect')
-            .do(({itemType, _id}) => {
-                if (itemType === 'caches') return $state.go('base.configuration.edit.advanced.caches.cache', {cacheID: _id}, {location: 'replace'});
-            });
+        // const advancedRedirects$ = actions$
+        //     .filter((a) => a.type === 'UPSERT_CLUSTER_ITEM')
+        //     .exhaustMap(({itemType, item: {_id}}) => {
+        //         return actions$.filter((a) => a.type === 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK')
+        //         .takeUntil(actions$.filter((a) => a.type === 'UPSERT_CLUSTER_ITEM').take(1))
+        //         .mapTo({itemType, _id});
+        //     })
+        //     .debug('adv redirect')
+        //     .do(({itemType, _id}) => {
+        //         if (itemType === 'caches' && $state.params.cacheID !== _id)
+        //             return $state.go('base.configuration.edit.advanced.caches.cache', {cacheID: _id}, {location: 'replace'});
 
-        merge(basicRedirects$, advancedRedirects$, params$).subscribe();
+        //     });
+
+        merge(basicRedirects$, /* advancedRedirects$,*/ params$).subscribe();
 
         const shortClusters$ = state$
             .pluck('shortClusters')
@@ -254,7 +256,7 @@ export default angular
     }
     _applyChangedIDs = (edit) => ({
         cluster: {
-            ...edit.itemToEdit.cluster,
+            ...edit.changes.cluster,
             caches: edit.changes.caches.ids,
             igfss: edit.changes.igfss.ids,
             models: edit.changes.models.ids
@@ -482,298 +484,6 @@ export default angular
         onItemRemove: '&?',
         onAdvancedSave: '&?'
     }
-})
-.service('ConfigResolvers', class ConfigResolvers {
-    static $inject = ['ConfigSelectors', 'Clusters', 'ConfigureState', 'Caches', 'IGFSs'];
-    constructor(ConfigSelectors, Clusters, ConfigureState, Caches, IGFSs) {
-        Object.assign(this, {ConfigSelectors, Clusters, ConfigureState, Caches, IGFSs});
-        this.loadAndEditClusterEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_AND_EDIT_CLUSTER')
-            .exhaustMap((a) => {
-                if (a.clusterID === 'new') {
-                    return this.ConfigureState.state$.let(selectShortClustersValue).take(1)
-                        .switchMap((shortClusters) => of(
-                            {type: 'EDIT_CLUSTER', cluster: {
-                                ...this.Clusters.getBlankCluster(),
-                                name: uniqueName('New cluster', shortClusters)
-                            }},
-                            {type: 'LOAD_AND_EDIT_CLUSTER_OK'}
-                        ));
-                }
-                return this.ConfigureState.state$.let(selectCluster(a.clusterID)).take(1)
-                    .switchMap((cluster) => {
-                        if (cluster) {
-                            return of(
-                                {type: 'EDIT_CLUSTER', cluster},
-                                {type: 'LOAD_AND_EDIT_CLUSTER_OK'}
-                            );
-                        }
-                        return fromPromise(this.Clusters.getCluster(a.clusterID))
-                        .switchMap(({data}) => of(
-                            {type: clustersActionTypes.UPSERT, items: [data]},
-                            {type: 'EDIT_CLUSTER', cluster: data},
-                            {type: 'LOAD_AND_EDIT_CLUSTER_OK'}
-                        ))
-                        .catch((error) => of({type: 'EDIT_CLUSTER_ERR', error}));
-                    });
-            });
-
-        this.loadUserClustersEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
-            .exhaustMap((a) => {
-                return ConfigureState.state$.let(selectShortClusters).take(1)
-                .switchMap((shortClusters) => {
-                    if (shortClusters.pristine) {
-                        return fromPromise(this.Clusters.getClustersOverview())
-                        .switchMap(({data}) => of(
-                            {type: shortClustersActionTypes.UPSERT, items: data},
-                            {type: 'LOAD_USER_CLUSTERS_OK'}
-                        ));
-                    } return of({type: 'LOAD_USER_CLUSTERS_OK'});
-                })
-                .catch((error) => of({type: 'LOAD_USER_CLUSTERS_ERR', error, action: a}));
-            });
-
-        this.loadShortCachesEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_SHORT_CACHES')
-            .exhaustMap((a) => {
-                if (!a.ids.length) return of({type: 'LOAD_SHORT_CACHES_OK'});
-                return this.ConfigureState.state$.let(selectShortCaches).take(1)
-                    .switchMap((shortCaches) => {
-                        if (!shortCaches.pristine && a.ids && a.ids.every((_id) => shortCaches.value.has(_id)))
-                            return of({type: 'LOAD_SHORT_CACHES_OK'});
-
-                        return fromPromise(this.Clusters.getClusterCaches(a.clusterID))
-                            .switchMap(({data}) => of(
-                                {type: shortCachesActionTypes.UPSERT, items: data},
-                                {type: 'LOAD_SHORT_CACHES_OK'}
-                            ));
-                    })
-                    .catch((error) => of({type: 'LOAD_SHORT_CACHES_ERR', error, action: a}));
-            });
-
-        // this.loadCacheEffect$ = ConfigureState.actions$
-        //     .filter((a) => a.type === 'LOAD_CACHE')
-        //     .exhaustMap((a) => {
-        //         return this.ConfigureState.state$.let(selectCache(a.cacheID)).take(1)
-        //             .switchMap((cache) => {
-        //                 if (cache) return of({type: `${a.type}_OK`});
-        //                 return fromPromise(this.Caches.getCache(a.cacheID))
-        //                 .switchMap(({data}) => of(
-        //                     {type: cachesActionTypes.UPSERT, items: [data]},
-        //                     {type: `${a.type}_OK`}
-        //                 ));
-        //             })
-        //             .catch((error) => of({type: `${a.type}_ERR`, error}));
-        //     });
-
-        this.loadAndEditCacheItemEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_AND_EDIT_CACHE')
-            .exhaustMap((a) => {
-                if (a.cacheID === 'new') {
-                    return this.ConfigureState.state$.let(selectShortCachesValue).take(1)
-                        .switchMap((shortCaches) => of(
-                            {
-                                type: 'EDIT_CLUSTER_ITEM',
-                                itemType: 'caches',
-                                item: {
-                                    ...this.Caches.getBlankCache(),
-                                    name: uniqueName('New cache', shortCaches)
-                                }
-                            },
-                            {type: 'LOAD_AND_EDIT_CACHE_OK'}
-                        ));
-                }
-                return this.ConfigureState.state$.let(selectCache(a.cacheID)).take(1)
-                    .switchMap((cache) => {
-                        if (cache) {
-                            return of(
-                                {type: 'EDIT_CLUSTER_ITEM', itemType: 'caches', item: cache},
-                                {type: 'LOAD_AND_EDIT_CACHE_OK'}
-                            );
-                        }
-                        return fromPromise(this.Caches.getCache(a.cacheID))
-                        .switchMap(({data}) => of(
-                            {type: cachesActionTypes.UPSERT, items: [data]},
-                            {type: 'EDIT_CLUSTER_ITEM', itemType: 'caches', item: data},
-                            {type: 'LOAD_AND_EDIT_CACHE_OK'}
-                        ))
-                        .catch((error) => of({type: 'LOAD_AND_EDIT_CACHE_ERR', error}));
-                    });
-            });
-
-        this.loadAndEditClusterEffect$
-        .merge(this.loadUserClustersEffect$, this.loadShortCachesEffect$, this.loadAndEditCacheItemEffect$)
-        .do((a) => ConfigureState.dispatchAction(a)).subscribe();
-    }
-    _effectToPromise({startAction, okAction, errAction, selector}) {
-        return (startArgs) => {
-            setTimeout(() => this.ConfigureState.dispatchAction({type: startAction, ...startArgs}));
-            return this.ConfigureState.actions$
-            .filter((a) => a.type === okAction || a.type === errAction)
-            .take(1)
-            .map((a) => {
-                if (a.type === errAction)
-                    throw a;
-                else
-                    return a;
-            })
-            .switchMap(() => this.ConfigureState.state$.let(selector).take(1))
-            .toPromise();
-        };
-    }
-    _etp(action, params) {
-        const ok = `${action}_OK`;
-        const err = `${action}_ERR`;
-        setTimeout(() => this.ConfigureState.dispatchAction({type: action, ...params}));
-        return this.ConfigureState.actions$
-            .filter((a) => a.type === ok || a.type === err)
-            .take(1)
-            .map((a) => {
-                if (a.type === err)
-                    throw a;
-                else
-                    return a;
-            })
-            .toPromise();
-    }
-    // loadCache = this._effectToPromise({
-    //     startAction: 'LOAD_CACHE',
-    //     selector: 
-    // })
-    resolveShortClusters = this._effectToPromise({
-        startAction: 'LOAD_USER_CLUSTERS',
-        okAction: 'LOAD_USER_CLUSTERS_OK',
-        errAction: 'LOAD_AND_EDIT_CLUSTER_ERR',
-        selector: selectShortClusters
-    });
-    resolveCluster = this._effectToPromise({
-        startAction: 'LOAD_AND_EDIT_CLUSTER',
-        okAction: 'LOAD_AND_EDIT_CLUSTER_OK',
-        errAction: 'LOAD_AND_EDIT_CLUSTER_ERR',
-        selector: selectEditCluster
-    });
-    resoleShortCaches = this._effectToPromise({
-        startAction: 'LOAD_SHORT_CACHES',
-        okAction: 'LOAD_SHORT_CACHES_OK',
-        errAction: 'LOAD_SHORT_CACHES_ERR',
-        selector: selectShortCaches
-    });
-    resolveCache = this._effectToPromise({
-        startAction: 'LOAD_AND_EDIT_CACHE',
-        okAction: 'LOAD_AND_EDIT_CACHE_OK',
-        errAction: 'LOAD_AND_EDIT_CACHE_ERR',
-        selector: selectEditCache
-    });
-    // loadCluster$(id) {
-    //     return (
-    //         id === 'new'
-    //             ? this.ConfigureState.state$.let(selectShortClustersValue).map((shortClusters) => ({
-    //                 ...this.Clusters.getBlankCluster(),
-    //                 name: uniqueName('New cluster', shortClusters)
-    //             }))
-    //             : this.ConfigureState.state$.let(selectCluster(id))
-    //                 .do((cluster) => {
-    //                     if (!cluster) {
-    //                         this.Clusters.getCluster(id).then(({data}) => {
-    //                             this.ConfigureState.dispatchAction({
-    //                                 type: clustersActionTypes.UPSERT,
-    //                                 items: [data]
-    //                             });
-    //                         });
-    //                     }
-    //                 })
-    //                 .filter((v) => v)
-    //     )
-    //     .take(1)
-    //     .do((cluster) => this.ConfigureState.dispatchAction({type: 'EDIT_CLUSTER', cluster}));
-    // }
-    // loadShortClusters$() {
-    //     return this.ConfigureState.state$.let(selectShortClusters)
-    //         .do((shortClusters) => {
-    //             if (!shortClusters || shortClusters.pristine) {
-    //                 this.Clusters.getClustersOverview().then(({data}) => {
-    //                     this.ConfigureState.dispatchAction({
-    //                         type: shortClustersActionTypes.UPSERT,
-    //                         items: data
-    //                     });
-    //                 });
-    //             }
-    //         })
-    //         .filter((shortClusters) => shortClusters && !shortClusters.pristine)
-    //         .switchMap(() => this.ConfigureState.state$.let(selectShortClustersValue))
-    //         .take(1);
-    // }
-    // loadShortItems$(cluster, itemType) {
-    //     const load = {
-    //         caches: (...args) => this.Clusters.getClusterCaches(...args),
-    //         igfss: (...args) => this.Clusters.getClusterIGFSs(...args)
-    //     };
-    //     const at = {
-    //         caches: shortCachesActionTypes,
-    //         igfss: shortIGFSsActionTypes
-    //     };
-    //     if (!cluster[itemType].length) return of([]);
-    //     return this.ConfigureState.state$
-    //         .pluck(camelCase(`short ${itemType}`), 'value')
-    //         .take(1)
-    //         .switchMap((shortItems) => {
-    //             if (shortItems && cluster[itemType].every((_id) => shortItems.has(_id)))
-    //                 return of(cluster[itemType].map((_id) => shortItems.get(_id)));
-
-    //             return fromPromise(load[itemType](cluster._id))
-    //             .pluck('data')
-    //             .do((items) => {
-    //                 this.ConfigureState.dispatchAction({
-    //                     type: at[itemType].UPSERT,
-    //                     items
-    //                 });
-    //             });
-    //         });
-    // }
-    // resolveItem$(itemType, itemID) {
-    //     const load = {
-    //         caches: (...args) => this.Caches.getCache(...args),
-    //         igfss: (...args) => this.IGFSs.getIGFS(...args)
-    //     };
-    //     const make = {
-    //         caches: () => this.Caches.getBlankCache(),
-    //         igfss: () => this.IGFSs.getBlankIGFS()
-    //     };
-    //     const at = {
-    //         caches: cachesActionTypes,
-    //         igfss: igfssActionTypes
-    //     };
-    //     if (itemID === 'new') {
-    //         return of(make[itemType]())
-    //             .do((item) => {
-    //                 this.ConfigureState.dispatchAction({
-    //                     type: 'EDIT_CLUSTER_ITEM',
-    //                     itemType,
-    //                     item
-    //                 });
-    //             });
-    //     }
-    //     return this.ConfigureState.state$
-    //         .pluck(itemType)
-    //         .take(1)
-    //         .switchMap((items) => {
-    //             if (items && items.has(itemID)) return of(items.get(itemID));
-    //             return fromPromise(load[itemType](itemID))
-    //                 .pluck('data')
-    //                 .do((item) => {
-    //                     this.ConfigureState.dispatchAction({
-    //                         type: at[itemType].UPSERT,
-    //                         items: [item]
-    //                     });
-    //                     this.ConfigureState.dispatchAction({
-    //                         type: 'EDIT_CLUSTER_ITEM',
-    //                         itemType,
-    //                         item
-    //                     });
-    //                 });
-    //         });
-    // }
 })
 .component('cachesList', {
     bindings: {

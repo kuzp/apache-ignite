@@ -6,22 +6,21 @@ import clone from 'lodash/clone';
 import {RejectType} from '@uirouter/angularjs';
 
 export default function configSelectionManager($transitions) {
-    return ({itemID$, selectedItemRows$, visibleRows$, getLoadedLength}) => {
+    return ({itemID$, selectedItemRows$, visibleRows$, loadedItems$}) => {
         const abortedTransitions$ = Observable.create((observer) => {
             return $transitions.onError({}, (t) => observer.next(t));
         })
         .filter((t) => t.error().type === RejectType.ABORTED)
         .debug('abortedTransitions');
 
-        const firstItemID$ = visibleRows$.withLatestFrom(itemID$)
-            .filter(([rows, id]) => rows && rows.length === getLoadedLength())
-            .filter(([rows, id]) => !id)
+        const firstItemID$ = visibleRows$.withLatestFrom(itemID$, loadedItems$)
+            .filter(([rows, id, items]) => !id && rows && rows.length === items.length)
             .pluck('0', '0', 'entity', '_id');
 
         const singleSelectionEdit$ = selectedItemRows$.filter((r) => r && r.length === 1).pluck('0', '_id');
         const selectedMultipleOrNone$ = selectedItemRows$.filter((r) => r.length > 1 || r.length === 0);
 
-        const editGoes$ = merge(firstItemID$, singleSelectionEdit$).debug('go');
+        const editGoes$ = merge(firstItemID$, singleSelectionEdit$).filter((v) => v).debug('go');
         const editLeaves$ = merge(selectedMultipleOrNone$).debug('leave');
 
         const selectedItemIDs$ = combineLatest(

@@ -1,6 +1,7 @@
 import isMatch from 'lodash/isMatch';
 import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
+// import {diff} from 'jsondiffpatch';
 
 export default class ConfigChangesGuard {
     static $inject = ['ConfigureState', 'IgniteConfirm', 'IgniteModelNormalizer'];
@@ -9,19 +10,8 @@ export default class ConfigChangesGuard {
         Object.assign(this, {ConfigureState, IgniteConfirm, IgniteModelNormalizer});
     }
 
-    __hasChanges({cluster}, edit) {
-        return cluster
-            && !isMatch(
-                this.IgniteModelNormalizer.normalize(cluster),
-                this.IgniteModelNormalizer.normalize(edit.cluster)
-            )
-            || ['caches', 'igfss', 'models'].some((type) => {
-                return edit.changes[type].changedItems.length
-                    || !isMatch(edit.changes[type].ids, edit.cluster[type]);
-            });
-    }
-
     _hasChanges(a, b) {
+        // return diff(a, b)
         return !isMatch(a, b);
     }
 
@@ -33,14 +23,10 @@ export default class ConfigChangesGuard {
     }
 
     guard(a, b) {
+        if (!a && !b) return Promise.resolve(true);
         return of(this._hasChanges(a, b))
         .switchMap((changes) => changes ? this._confirm(changes) : of(true))
         .catch(() => of(false))
         .toPromise();
-        // return this.ConfigureState.state$.pluck('edit')
-        // .take(1)
-        // .map((edit) => this._hasChanges({cluster}, edit))
-        // .switchMap((changes) => changes ? this._confirm(changes) : of(true))
-        // .toPromise();
     }
 }

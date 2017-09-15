@@ -24,9 +24,9 @@ import naturalCompare from 'natural-compare-lite';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 
 // Controller for Caches screen.
-export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
-    function Controller(ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
+export default ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches',
+    function Controller(conf, ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+        Object.assign(this, {conf, ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
@@ -69,11 +69,11 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
         this.$onInit = function() {
             const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID');
 
-            this.originalCache$ = cacheID$
-                .distinctUntilChanged()
-                .switchMap((id) => {
-                    return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
-                });
+            this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue());
+            this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue());
+            this.originalCache$ = cacheID$.distinctUntilChanged().switchMap((id) => {
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
+            });
 
             this.isNew$ = cacheID$.map((id) => id === 'new');
             this.itemEditTitle$ = combineLatest(this.isNew$, this.originalCache$, (isNew, cache) => {
@@ -83,7 +83,7 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
                 itemID$: cacheID$,
                 selectedItemRows$: this.selectedRows$,
                 visibleRows$: this.visibleRows$,
-                getLoadedLength: () => get(this, 'clusterItems.shortCaches.length')
+                loadedItems$: this.shortCaches$
             });
 
             this.subscription = merge(
@@ -111,7 +111,7 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
         };
 
         this.remove = function(itemIDs) {
-            this.onItemRemove({$event: {itemIDs, type: 'caches', andSave: true}});
+            this.conf.removeItem({itemIDs, type: 'caches', andSave: true});
         };
 
         this.$onDestroy = function() {
@@ -125,7 +125,7 @@ export default ['ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageC
         };
 
         this.save = function(cache) {
-            this.onAdvancedSave({$event: {cache}});
+            this.conf.saveAdvanced({cache});
         };
 
         // When landing on the page, get caches and show them.

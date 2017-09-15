@@ -20,21 +20,23 @@ import 'rxjs/add/observable/merge';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import {merge} from 'rxjs/observable/merge';
 import 'rxjs/add/operator/distinctUntilChanged';
-import {selectEditCluster, selectEditClusterItems} from 'app/components/page-configure/reducer';
+// import {selectEditCluster, selectEditClusterItems} from 'app/components/page-configure/reducer';
 
 export default class PageConfigureController {
-    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading', 'conf'];
+    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading', 'conf', 'ConfigSelectors'];
 
-    constructor($uiRouter, ConfigureState, IgniteLoading, conf) {
-        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading, conf});
+    constructor($uiRouter, ConfigureState, IgniteLoading, conf, ConfigSelectors) {
+        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading, conf, ConfigSelectors});
     }
 
     $onInit() {
-        this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
-        this.itemToEdit$ = this.ConfigureState.state$.pluck('edit', 'itemToEdit')/* .do((v) => console.log('ed', v))*/;
-        this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
-        this.isNewCluster$ = this.$uiRouter.globals.params$.pluck('clusterID').map((v) => v === 'new');
-        this.clusterName$ = combineLatest(this.cluster$, this.isNewCluster$, (cluster, isNew) => {
+        const clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID');
+        const cluster$ = clusterID$.switchMap((id) => this.ConfigureState.state$.let(this.ConfigSelectors.selectCluster(id)));
+        // this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
+        // this.itemToEdit$ = this.ConfigureState.state$.pluck('edit', 'itemToEdit')/* .do((v) => console.log('ed', v))*/;
+        // this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
+        const isNew$ = clusterID$.map((v) => v === 'new');
+        this.clusterName$ = combineLatest(cluster$, isNew$, (cluster, isNew) => {
             return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
         });
 
@@ -51,31 +53,6 @@ export default class PageConfigureController {
 
         // this.subscription = merge(loading).subscribe();
         this.tooltipsVisible = true;
-    }
-
-    onBasicSave(e) {
-        this.conf.saveBasic(e);
-    }
-
-    onAdvancedSave(e) {
-        console.log('onAdvancedSave', e);
-        this.conf.saveAdvanced(e);
-    }
-
-    onItemChange({type, item}) {
-        this.conf.changeItem(type, item);
-    }
-
-    onItemAdd({type}) {
-        this.conf.addItem(type);
-    }
-
-    onItemRemove(e) {
-        this.conf.removeItem(e);
-    }
-
-    onEditCancel() {
-        this.conf.onEditCancel();
     }
 
     $onDestroy() {

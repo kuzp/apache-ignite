@@ -36,19 +36,6 @@ div.pc-content-container
         div
 
     ui-view.theme--ignite(
-        i_s-new='$ctrl.isNew$|async:this'
-        cluster='$ctrl.cluster$|async:this'
-        cluster-items='$ctrl.clusterItems$|async:this'
-        item-to-edit='$ctrl.itemToEdit$|async:this'
-
-        on-item-add='$ctrl.onItemAdd($event)'
-        on-item-change='$ctrl.onItemChange($event)'
-        on-item-remove='$ctrl.onItemRemove($event)'
-        on-edit-cancel='$ctrl.onEditCancel()'
-
-        on-basic-save='$ctrl.onBasicSave($event)'
-        on-advanced-save='$ctrl.onAdvancedSave($event)'
-
         ignite-loading='configuration'
         ignite-loading-text='{{ $ctrl.loadingText }}'
         ignite-loading-position='top'
