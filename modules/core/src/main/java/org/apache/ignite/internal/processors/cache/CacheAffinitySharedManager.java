@@ -67,6 +67,7 @@ import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.IgniteInClosureX;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
+import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiInClosure;
 import org.apache.ignite.lang.IgniteClosure;
@@ -369,8 +370,17 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
         for (DynamicCacheChangeRequest startReq : startReqs.values()) {
             DynamicCacheDescriptor desc = caches.cache(CU.cacheId(startReq.cacheName()));
+            log.warning(S.toString("$> clientCachesToStart",
+                "startReq", startReq, "desc", desc),
+                new RuntimeException());
 
             if (desc == null) {
+                log.error(S.toString("clientCachesToStart: desc == null",
+                    "caches.registeredCaches.hashCode", Integer.toHexString(caches.registeredCaches.hashCode()), false,
+                    "caches.registeredCaches.size", caches.registeredCaches.size(), false,
+                    "caches.registeredCaches", caches.registeredCaches, false),
+                    new RuntimeException());
+                U.dumpThreads(log);
                 CacheException err = new CacheException("Failed to start client cache " +
                     "(a cache with the given name is not started): " + startReq.cacheName());
 
@@ -2499,8 +2509,18 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
          * @param desc Description.
          */
         private DynamicCacheDescriptor registerCache(DynamicCacheDescriptor desc) {
+            log.warning(S.toString("$> saveCacheConfiguration",
+                "registeredCaches.hashCode", Integer.toHexString(registeredCaches.hashCode()), false,
+                "registeredCaches.size", registeredCaches.size(), false,
+                "desc", desc, false),
+                new RuntimeException());
             saveCacheConfiguration(desc.cacheConfiguration());
 
+            log.warning(S.toString("$> registerCache",
+                "registeredCaches.hashCode", Integer.toHexString(registeredCaches.hashCode()), false,
+                "registeredCaches.size", registeredCaches.size() + 1, false,
+                "desc", desc, false),
+                new RuntimeException());
             return registeredCaches.put(desc.cacheId(), desc);
         }
 

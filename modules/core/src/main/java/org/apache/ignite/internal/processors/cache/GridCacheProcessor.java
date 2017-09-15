@@ -323,6 +323,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
             ctx.query().onNodeLeave(task0.node());
         }
         else if (task instanceof ClientCacheChangeDummyDiscoveryMessage) {
+            log.warning(S.toString("$> processCustomExchangeTask", "task", task),
+                new RuntimeException());
             ClientCacheChangeDummyDiscoveryMessage task0 = (ClientCacheChangeDummyDiscoveryMessage)task;
 
             sharedCtx.affinity().processClientCachesChanges(task0);
@@ -3776,7 +3778,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                             // If local node has near cache, return success.
                             req.clientStartOnly(true);
                     }
-                    else
+                    else if (!CU.affinityNode(ctx.discovery().localNode(), descCfg.getNodeFilter()))
                         req.clientStartOnly(true);
 
                     req.deploymentId(desc.deploymentId());
