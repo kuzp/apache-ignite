@@ -85,7 +85,11 @@ public class BlasOffHeapTest {
         c.destroy();
     }
 
-    /** Tests 'gemm' operation for large off-heap square matrices that won't fit into JVM memory. */
+    /**
+     * Tests 'gemm' operation for large off-heap square matrices that won't fit into JVM memory.
+     * For the reference, this test passed with largeSize parameter set to 16_000 at machine with 16 Gb RAM
+     * (it took about an hour to calculate with i7-4710HQ CPU @ 2.50GHz).
+     */
     @Test
     @Ignore("If needed manually run this stress test")
     public void testGemmSquareLarge() {
