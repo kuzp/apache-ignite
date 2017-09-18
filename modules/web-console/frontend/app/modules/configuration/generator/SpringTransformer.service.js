@@ -21,7 +21,7 @@ import AbstractTransformer from './AbstractTransformer';
 import StringBuilder from './StringBuilder';
 
 export default class IgniteSpringTransformer extends AbstractTransformer {
-    static escapeXml(str) {
+    static escapeXml(str = '') {
         return str.replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&apos;')
