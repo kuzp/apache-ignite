@@ -9,15 +9,17 @@ import {
     cachesActionTypes,
     shortClustersActionTypes,
     shortCachesActionTypes,
-    shortModelsActionTypes
+    shortModelsActionTypes,
+    shortIGFSsActionTypes,
+    igfssActionTypes
 } from './../reducer';
 
 const ofType = (type) => (s) => s.filter((a) => a.type === type);
 
 export default class ConfigEffects {
-    static $inject = ['ConfigureState', 'Caches', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
-    constructor(ConfigureState, Caches, ConfigSelectors, Clusters, $state, IgniteMessages) {
-        Object.assign(this, {ConfigureState, Caches, ConfigSelectors, Clusters, $state, IgniteMessages});
+    static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
+    constructor(ConfigureState, Caches, IGFSs, ConfigSelectors, Clusters, $state, IgniteMessages) {
+        Object.assign(this, {ConfigureState, Caches, IGFSs, ConfigSelectors, Clusters, $state, IgniteMessages});
 
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
@@ -96,6 +98,43 @@ export default class ConfigEffects {
                     .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
 
+        this.loadIGFSEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'LOAD_IGFS')
+            .exhaustMap((a) => {
+                if (a.igfsID === 'new') return of({type: `${a.type}_OK`});
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFS(a)).take(1)
+                    .switchMap((cache) => {
+                        if (cache) return of({type: `${a.type}_OK`});
+                        return fromPromise(this.IGFSs.getIGFS(a.igfsID))
+                        .switchMap(({data}) => of(
+                            {type: igfssActionTypes.UPSERT, items: [data]},
+                            {type: `${a.type}_OK`}
+                        ));
+                    })
+                    .catch((error) => of({type: `${a.type}_ERR`, error}));
+            });
+
+        this.loadShortIgfssEffect$ = ConfigureState.actions$
+            .filter((a) => a.type === 'LOAD_SHORT_IGFSS')
+            .exhaustMap((a) => {
+                if (!(a.ids || []).length) {return of(
+                    {type: shortIGFSsActionTypes.UPSERT, items: []},
+                    {type: `${a.type}_OK`}
+                );}
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortIGFSs()).take(1)
+                    .switchMap((items) => {
+                        if (!items.pristine && a.ids && a.ids.every((_id) => items.value.has(_id)))
+                            return of({type: `${a.type}_OK`});
+
+                        return fromPromise(this.Clusters.getClusterIGFSs(a.clusterID))
+                            .switchMap(({data}) => of(
+                                {type: shortIGFSsActionTypes.UPSERT, items: data},
+                                {type: `${a.type}_OK`}
+                            ));
+                    })
+                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+            });
+
         this.loadShortModelsEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_MODELS')
             .exhaustMap((a) => {
@@ -133,6 +172,14 @@ export default class ConfigEffects {
                         if (
                             this.$state.is(state) && this.$state.params.cacheID !== value._id
                         ) return this.$state.go(state, {cacheID: value._id}, {location: 'replace'});
+                        break;
+                    }
+                    case 'igfss': {
+                        const state = 'base.configuration.edit.advanced.igfs.igfs';
+                        this.IgniteMessages.showInfo(`IGFS ${value.name} saved`);
+                        if (
+                            this.$state.is(state) && this.$state.params.igfsID !== value._id
+                        ) return this.$state.go(state, {igfsID: value._id}, {location: 'replace'});
                         break;
                     }
                     case 'cluster': {

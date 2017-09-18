@@ -276,10 +276,11 @@ export default angular
             });
         }).subscribe();
     }
-    saveAdvanced({cluster, cache} = {}) {
+    saveAdvanced({cluster, cache, igfs} = {}) {
         const prevActions = [];
         if (cluster) prevActions.push(this.upsertCluster(cluster));
         if (cache) prevActions.push(this.changeItem('caches', cache));
+        if (igfs) prevActions.push(this.changeItem('igfss', igfs));
         this.ConfigureState.state$.pluck('edit').take(1).do((edit) => {
             this.ConfigureState.dispatchAction({
                 type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',

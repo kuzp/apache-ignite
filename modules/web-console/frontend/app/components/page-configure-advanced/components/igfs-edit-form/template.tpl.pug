@@ -1,0 +1,23 @@
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+    form(id='igfs' name='ui.inputForm' novalidate ng-submit='$ctrl.save()')
+        include /app/modules/states/configuration/igfs/general
+
+        include /app/modules/states/configuration/igfs/secondary
+        include /app/modules/states/configuration/igfs/ipc
+        include /app/modules/states/configuration/igfs/fragmentizer
+
+        //- Removed in ignite 2.0
+        include /app/modules/states/configuration/igfs/dual
+        include /app/modules/states/configuration/igfs/misc
+
+.pc-form-actions-panel
+    .pc-form-actions-panel__right-after
+    button.btn-ignite.btn-ignite--link-success(
+        type='button'
+        ng-click='$ctrl.resetAll()'
+    )
+        | Cancel
+    button.btn-ignite.btn-ignite--success(
+        form='igfs'
+        type='submit'
+    ) Save

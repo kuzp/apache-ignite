@@ -27,16 +27,19 @@ const currentShortItems = ({changesKey, shortKey}) => (state$) => {
 };
 
 export default class ConfigSelectors {
-    static $inject = ['Caches', 'Clusters'];
-    constructor(Caches, Clusters) {
-        Object.assign(this, {Caches, Clusters});
+    static $inject = ['Caches', 'Clusters', 'IGFSs'];
+    constructor(Caches, Clusters, IGFSs) {
+        Object.assign(this, {Caches, Clusters, IGFSs});
     }
     selectCluster = (id) => selectMapItem('clusters', id);
     selectShortClusters = () => selectItems('shortClusters');
     selectShortClustersValue = () => (state$) => state$.let(this.selectShortClusters()).let(selectValues);
     selectCache = (id) => selectMapItem('caches', id);
+    selectIGFS = (id) => selectMapItem('igfss', id);
     selectShortCaches = () => selectItems('shortCaches');
     selectShortCachesValue = () => (state$) => state$.let(this.selectShortCaches()).let(selectValues);
+    selectShortIGFSs = () => selectItems('shortIgfss');
+    selectShortIGFSsValue = () => (state$) => state$.let(this.selectShortIGFSs()).let(selectValues);
     selectCacheToEdit = (cacheID) => (state$) => state$
         .let(this.selectCache(cacheID))
         .distinctUntilChanged()
@@ -45,6 +48,15 @@ export default class ConfigSelectors {
             itemFactory: () => this.Caches.getBlankCache(),
             defaultName: 'New cache',
             itemID: cacheID
+        }));
+    selectIGFSToEdit = (itemID) => (state$) => state$
+        .let(this.selectIGFS(itemID))
+        .distinctUntilChanged()
+        .let(selectItemToEdit({
+            items: state$.let(this.selectShortIGFSsValue()),
+            itemFactory: () => this.IGFSs.getBlankIGFS(),
+            defaultName: 'New IGFS',
+            itemID
         }));
     selectClusterToEdit = (clusterID) => (state$) => state$
         .let(this.selectCluster(clusterID))
@@ -57,6 +69,7 @@ export default class ConfigSelectors {
             itemID: clusterID
         }));
     selectCurrentShortCaches = currentShortItems({changesKey: 'caches', shortKey: 'shortCaches'});
+    selectCurrentShortIGFSs = currentShortItems({changesKey: 'igfss', shortKey: 'shortIgfss'});
     selectShortModels = () => selectItems('shortModels');
     selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
 }

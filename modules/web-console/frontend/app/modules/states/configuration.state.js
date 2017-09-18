@@ -479,28 +479,19 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedIGFSComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    igfss: igfssResolve
+                    _shortIGFSs: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
+                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
+                        .map((cluster) => {
+                            return Promise.all([
+                                etp('LOAD_SHORT_IGFSS', {ids: cluster.igfss, clusterID: cluster._id})
+                            ]);
+                        })
+                        .toPromise();
+                    }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
-                },
-                redirectTo: ($transition$) => {
-                    const igfsStateName = 'base.configuration.edit.advanced.igfs.igfs';
-                    const fromState = $transition$.from();
-                    const toState = $transition$.to();
-                    return fromState.name === igfsStateName
-                        ? toState
-                        : $transition$.injector().getAsync('igfss').then((igfss) => {
-                            return igfss.length
-                                ? {
-                                    state: igfsStateName,
-                                    params: {
-                                        igfsID: igfss[0]._id,
-                                        clusterID: $transition$.params().clusterID
-                                    }
-                                }
-                                : toState;
-                        });
                 },
                 tfMetaTags: {
                     title: 'Configure IGFS'
@@ -510,42 +501,15 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: '/{igfsID:string}',
                 permission: 'configuration',
                 resolve: {
-                    igfs: ['IgniteMessages', 'IGFSs', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, IGFSs, Clusters, $transition$, ConfigureState) => {
-                        const cluster = $transition$.injector().getAsync('_cluster');
-                        const igfss = $transition$.injector().getAsync('igfss');
-                        const {igfsID, clusterID} = $transition$.params();
-                        const cachedValue = get(ConfigureState.state$.value, 'igfss', new Map()).get(igfsID);
-
-                        const igfs = cachedValue
-                            ? Promise.resolve(cachedValue)
-                            : igfsID === 'new'
-                                ? Promise.all([cluster, igfss]).then(([cluster, igfss]) => Object.assign(IGFSs.getBlankIGFS(), {
-                                    name: uniqueName('New IGFS', igfss),
-                                    cluster: [cluster._id]
-                                }))
-                                : IGFSs.getIGFS(igfsID).then(({data}) => {
-                                    ConfigureState.dispatchAction({
-                                        type: igfssActionTypes.UPSERT,
-                                        items: [data]
-                                    });
-                                    return data;
-                                });
-
-                        return igfs.then((igfs) => {
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_IGFS_EDIT,
-                                igfs
-                            });
-                            return igfs;
-                        })
+                    _igfs: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                        const {clusterID, igfsID} = $transition$.params();
+                        return etp('LOAD_IGFS', {igfsID})
                         .catch((e) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
                             $transition$.router.stateService.go('base.configuration.edit.advanced.igfs', null, {
                                 location: 'replace'
                             });
                             IgniteMessages.showError(`Failed to load IGFS ${igfsID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            console.debug(e);
                             return Promise.reject(e);
                         });
                     }]
