@@ -18,6 +18,8 @@
 import {
     basicCachesActionTypes,
     clustersActionTypes,
+    modelsActionTypes,
+    shortModelsActionTypes,
     igfssActionTypes,
     shortIGFSsActionTypes,
     shortClustersActionTypes,
@@ -38,6 +40,14 @@ export default class PageConfigureAdvanced {
             .withLatestFrom(this.ConfigureState.state$)
             .switchMap(([action, state]) => {
                 const actions = [
+                    {
+                        type: modelsActionTypes.UPSERT,
+                        items: action.changedItems.models
+                    },
+                    {
+                        type: shortModelsActionTypes.UPSERT,
+                        items: action.changedItems.models
+                    },
                     {
                         type: igfssActionTypes.UPSERT,
                         items: action.changedItems.igfss

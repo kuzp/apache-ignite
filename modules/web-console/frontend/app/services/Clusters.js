@@ -180,6 +180,7 @@ export default class Clusters {
             logger: {Log4j: { mode: 'Default'}},
             caches: [],
             igfss: [],
+            models: [],
             checkpointSpi: [],
             loadBalancingSpi: []
         };
