@@ -11,15 +11,16 @@ import {
     shortCachesActionTypes,
     shortModelsActionTypes,
     shortIGFSsActionTypes,
+    modelsActionTypes,
     igfssActionTypes
 } from './../reducer';
 
 const ofType = (type) => (s) => s.filter((a) => a.type === type);
 
 export default class ConfigEffects {
-    static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
-    constructor(ConfigureState, Caches, IGFSs, ConfigSelectors, Clusters, $state, IgniteMessages) {
-        Object.assign(this, {ConfigureState, Caches, IGFSs, ConfigSelectors, Clusters, $state, IgniteMessages});
+    static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'Models', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
+    constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages) {
+        Object.assign(this, {ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages});
 
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
@@ -117,10 +118,12 @@ export default class ConfigEffects {
         this.loadShortIgfssEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_IGFSS')
             .exhaustMap((a) => {
-                if (!(a.ids || []).length) {return of(
-                    {type: shortIGFSsActionTypes.UPSERT, items: []},
-                    {type: `${a.type}_OK`}
-                );}
+                if (!(a.ids || []).length) {
+                    return of(
+                        {type: shortIGFSsActionTypes.UPSERT, items: []},
+                        {type: `${a.type}_OK`}
+                    );
+                }
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortIGFSs()).take(1)
                     .switchMap((items) => {
                         if (!items.pristine && a.ids && a.ids.every((_id) => items.value.has(_id)))
@@ -135,10 +138,31 @@ export default class ConfigEffects {
                     .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
 
+        this.loadModelEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'LOAD_MODEL')
+            .exhaustMap((a) => {
+                if (a.modelID === 'new') return of({type: `${a.type}_OK`});
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectModel(a)).take(1)
+                    .switchMap((cache) => {
+                        if (cache) return of({type: `${a.type}_OK`});
+                        return fromPromise(this.Models.getModel(a.modelID))
+                        .switchMap(({data}) => of(
+                            {type: modelsActionTypes.UPSERT, items: [data]},
+                            {type: `${a.type}_OK`}
+                        ));
+                    })
+                    .catch((error) => of({type: `${a.type}_ERR`, error}));
+            });
+
         this.loadShortModelsEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_MODELS')
             .exhaustMap((a) => {
-                if (!(a.ids || []).length) return of({type: `${a.type}_OK`});
+                if (!(a.ids || []).length) {
+                    return of(
+                        {type: shortModelsActionTypes.UPSERT, items: []},
+                        {type: `${a.type}_OK`}
+                    );
+                }
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModels()).take(1)
                     .switchMap((items) => {
                         if (!items.pristine && a.ids && a.ids.every((_id) => items.value.has(_id)))

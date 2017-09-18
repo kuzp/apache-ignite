@@ -16,6 +16,7 @@
  */
 
 import ObjectID from 'bson-objectid';
+import omit from 'lodash/fp/omit';
 
 export default class Models {
     static $inject = ['$http'];
@@ -36,4 +37,13 @@ export default class Models {
             queryMetadata: 'Configuration'
         };
     }
+
+    queryMetadata = {
+        values: [
+            {label: 'Annotations', value: 'Annotations'},
+            {label: 'Configuration', value: 'Configuration'}
+        ]
+    };
+
+    normalize = omit(['__v', 'space']);
 }

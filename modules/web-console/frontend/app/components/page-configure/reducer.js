@@ -294,7 +294,7 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                     ...['caches', 'models', 'igfss'].reduce((a, t) => ({
                         ...a,
                         [t]: {
-                            ids: action.cluster ? action.cluster[t] : [],
+                            ids: action.cluster ? action.cluster[t] || [] : [],
                             changedItems: []
                         }
                     }), state.changes),
@@ -309,7 +309,7 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                     ...['caches', 'models', 'igfss'].reduce((a, t) => ({
                         ...a,
                         [t]: {
-                            ids: state.changes.cluster ? state.changes.cluster[t] : [],
+                            ids: state.changes.cluster ? state.changes.cluster[t] || [] : [],
                             changedItems: []
                         }
                     }), state.changes),

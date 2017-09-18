@@ -400,30 +400,20 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedModelsComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    models: modelsResolve,
-                    caches: cachesResolve
+                    _shortCachesAndModels: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
+                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
+                        .map((cluster) => {
+                            return Promise.all([
+                                etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id}),
+                                etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id})
+                            ]);
+                        })
+                        .toPromise();
+                    }]
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
-                },
-                ...resetFormItemToNull({actionType: RECEIVE_MODEL_EDIT, actionKey: 'model'}),
-                redirectTo: ($transition$) => {
-                    const modelStateName = 'base.configuration.edit.advanced.models.model';
-                    const fromState = $transition$.from();
-                    const toState = $transition$.to();
-                    return fromState.name === modelStateName
-                        ? toState
-                        : $transition$.injector().getAsync('models').then((models) => {
-                            return models.length
-                                ? {
-                                    state: modelStateName,
-                                    params: {
-                                        modelID: models[0]._id,
-                                        clusterID: $transition$.params().clusterID
-                                    }
-                                }
-                                : toState;
-                        });
                 },
                 tfMetaTags: {
                     title: 'Configure SQL Schemes'
@@ -432,39 +422,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.edit.advanced.models.model', {
                 url: '/{modelID:string}',
                 resolve: {
-                    model: ['IgniteMessages', 'Models', 'Clusters', '$transition$', 'ConfigureState', (IgniteMessages, Models, Clusters, $transition$, ConfigureState) => {
-                        const cluster = $transition$.injector().getAsync('_cluster');
-                        const models = $transition$.injector().getAsync('models');
-                        const {modelID, clusterID} = $transition$.params();
-                        const cachedValue = get(ConfigureState.state$.value, 'models', new Map()).get(modelID);
-
-                        const model = cachedValue
-                            ? Promise.resolve(cachedValue)
-                            : modelID === 'new'
-                                ? Promise.resolve(Models.getBlankModel())
-                                : Models.getModel(modelID).then(({data}) => {
-                                    ConfigureState.dispatchAction({
-                                        type: modelsActionTypes.UPSERT,
-                                        items: [data]
-                                    });
-                                    return data;
-                                });
-
-                        return model.then((model) => {
-                            ConfigureState.dispatchAction({
-                                type: RECEIVE_MODEL_EDIT,
-                                model
-                            });
-                            return model;
-                        })
+                    _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                        const {clusterID, modelID} = $transition$.params();
+                        return etp('LOAD_MODEL', {modelID})
                         .catch((e) => {
-                            ConfigureState.dispatchAction({
-                                type: HIDE_CONFIG_LOADING
-                            });
                             $transition$.router.stateService.go('base.configuration.edit.advanced.models', null, {
                                 location: 'replace'
                             });
-                            IgniteMessages.showError(`Failed to load domain model ${modelID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
+                            IgniteMessages.showError(`Failed to load model ${modelID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
                             return Promise.reject(e);
                         });
                     }]

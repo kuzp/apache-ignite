@@ -1,0 +1,22 @@
+div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
+    form(id='model' name='ui.inputForm' novalidate ng-submit='$ctrl.save()')
+        include /app/modules/states/configuration/domains/general
+        include /app/modules/states/configuration/domains/query
+        include /app/modules/states/configuration/domains/store
+
+.pc-form-actions-panel
+    button.btn-ignite.btn-ignite--success(
+        n_g-click='showImportDomainModal()'
+        type='button'
+        disabled
+    ) Import from database
+    .pc-form-actions-panel__right-after
+    button.btn-ignite.btn-ignite--link-success(
+        type='button'
+        ng-click='$ctrl.resetAll()'
+    )
+        | Cancel
+    button.btn-ignite.btn-ignite--success(
+        form='model'
+        type='submit'
+    ) Save

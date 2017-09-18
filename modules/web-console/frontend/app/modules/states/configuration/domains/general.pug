@@ -34,9 +34,18 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60
                     +checkbox('Generate POJO classes', generatePojo, '"generatePojo"', 'If selected then POJO classes will be generated from database tables')
                 .pc-form-grid-col-30
-                    +caches(model, 'Select caches to associate domain model with cache')
+                    +sane-ignite-form-field-dropdown({
+                        label: 'Caches:',
+                        model: `${model}.caches`,
+                        name: '"caches"',
+                        multiple: true,
+                        placeholder: 'Choose caches',
+                        placeholderEmpty: 'No valid caches configured',
+                        options: '$ctrl.cachesMenu',
+                        tip: 'Select caches to describe types in cache'
+                    })
                 .pc-form-grid-col-30
-                    +dropdown-required('Query metadata:', `${model}.queryMetadata`, '"queryMetadata"', 'true', 'true', '', 'queryMetadataVariants',
+                    +dropdown-required('Query metadata:', `${model}.queryMetadata`, '"queryMetadata"', 'true', 'true', '', '::$ctrl.Models.queryMetadata.values',
                         'Query metadata configured with:\
                         <ul>\
                             <li>Java annotations like @QuerySqlField</li>\

@@ -1,8 +1,8 @@
-import templateUrl from 'views/configuration/domains.tpl.pug';
-import controller from 'Controllers/domains-controller';
+import controller from './controller';
+import template from './template.pug';
 
 export default {
     name: 'pageConfigureAdvancedModels',
-    templateUrl,
+    template,
     controller
 };
