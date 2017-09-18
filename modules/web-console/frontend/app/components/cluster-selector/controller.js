@@ -21,7 +21,7 @@ import map from 'lodash/fp/map';
 export default class {
     static $inject = ['AgentManager', 'IgniteConfirm'];
 
-    constructor($timeout, agentMgr, Confirm) {
+    constructor(agentMgr, Confirm) {
         Object.assign(this, { agentMgr, Confirm });
 
         this.clusters = [];
