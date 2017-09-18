@@ -11,8 +11,8 @@ export default class PageConfigureAdvancedIGFS {
     }
     $onDestroy() {
         this.subscription.unsubscribe();
-        this.visibleRows$.unsubscribe();
-        this.selectedRows$.unsubscribe();
+        this.visibleRows$.complete();
+        this.selectedRows$.complete();
     }
     $onInit() {
         this.visibleRows$ = new Subject();
@@ -31,16 +31,16 @@ export default class PageConfigureAdvancedIGFS {
                 minWidth: 165
             },
             {
-                name: 'mode',
+                name: 'defaultMode',
                 displayName: 'Mode',
-                field: 'mode',
+                field: 'defaultMode',
                 multiselectFilterOptions: this.IGFSs.defaultMode.values,
                 width: 160
             },
             {
-                name: 'groupSize',
+                name: 'affinnityGroupSize',
                 displayName: 'Group size',
-                field: 'groupSize',
+                field: 'affinnityGroupSize',
                 enableFiltering: false,
                 width: 130
             }
@@ -51,8 +51,8 @@ export default class PageConfigureAdvancedIGFS {
             .map((items = []) => items.map((i) => ({
                 _id: i._id,
                 name: i.name,
-                groupSize: i.affinnityGroupSize || this.IGFSs.affinnityGroupSize.default,
-                mode: i.defaultMode || this.IGFSs.defaultMode.default
+                affinnityGroupSize: i.affinnityGroupSize || this.IGFSs.affinnityGroupSize.default,
+                defaultMode: i.defaultMode || this.IGFSs.defaultMode.default
             })));
         this.originalItem$ = this.itemID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFSToEdit(id));
