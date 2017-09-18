@@ -55,6 +55,8 @@ export default class CacheEditFormController {
                 this.$scope.ui.inputForm.$setUntouched();
             }
         }
+        if ('models' in changes)
+            this.modelsMenu = (changes.models.currentValue || []).map((m) => ({value: m._id, label: m.valueType}));
     }
     uiCanExit($transition$) {
         return this.ConfigChangesGuard.guard(...[this.cache, this.clonedCache].map(this.Caches.normalize));
