@@ -661,7 +661,7 @@ export default class IgniteAgentManager {
      * @returns {Promise}
      */
     toggleClusterState({ active }) {
-        this.visorTask('toggleClusterState', null, active);
+        return this.visorTask('toggleClusterState', null, active);
     }
 
 }

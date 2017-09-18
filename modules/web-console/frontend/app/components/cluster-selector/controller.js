@@ -19,10 +19,10 @@ import 'rxjs/add/operator/startWith';
 import map from 'lodash/fp/map';
 
 export default class {
-    static $inject = ['$timeout', 'AgentManager', 'IgniteConfirm'];
+    static $inject = ['AgentManager', 'IgniteConfirm'];
 
     constructor($timeout, agentMgr, Confirm) {
-        Object.assign(this, { $timeout, agentMgr, Confirm });
+        Object.assign(this, { agentMgr, Confirm });
 
         this.clusters = [];
 
@@ -72,10 +72,9 @@ export default class {
     toggle() {
         const changeState = () => {
             this.cluster.$inProgress = true;
-            this.agentMgr.toggleClusterState(this.cluster);
-            this.$timeout(() => {
+            this.agentMgr.toggleClusterState(this.cluster).then(() => {
                 this.cluster.$inProgress = false;
-            }, 2000);
+            });
         };
 
         if (!this.cluster.active) {
