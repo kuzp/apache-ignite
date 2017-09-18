@@ -116,8 +116,8 @@ export default ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter'
 
         this.$onDestroy = function() {
             this.subscription.unsubscribe();
-            this.visibleRows$.unsubscribe();
-            this.selectedRows$.unsubscribe();
+            this.visibleRows$.complete();
+            this.selectedRows$.complete();
         };
 
         this.edit = (cacheID) => {
