@@ -190,6 +190,14 @@ export default class ConfigEffects {
             })
             .do(([type, value]) => {
                 switch (type) {
+                    case 'models': {
+                        const state = 'base.configuration.edit.advanced.models.model';
+                        this.IgniteMessages.showInfo(`Model ${value.name} saved`);
+                        if (
+                            this.$state.is(state) && this.$state.params.modelID !== value._id
+                        ) return this.$state.go(state, {modelID: value._id}, {location: 'replace'});
+                        break;
+                    }
                     case 'caches': {
                         const state = 'base.configuration.edit.advanced.caches.cache';
                         this.IgniteMessages.showInfo(`Cache ${value.name} saved`);
