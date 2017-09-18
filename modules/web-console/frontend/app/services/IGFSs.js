@@ -16,6 +16,7 @@
  */
 
 import ObjectID from 'bson-objectid';
+import omit from 'lodash/fp/omit';
 
 export default class IGFSs {
     static $inject = ['$http'];
@@ -44,4 +45,21 @@ export default class IGFSs {
             relaxedConsistency: true
         };
     }
+
+    affinnityGroupSize = {
+        default: 512,
+        min: 1
+    };
+
+    defaultMode = {
+        values: [
+            {value: 'PRIMARY', label: 'PRIMARY'},
+            {value: 'PROXY', label: 'PROXY'},
+            {value: 'DUAL_SYNC', label: 'DUAL_SYNC'},
+            {value: 'DUAL_ASYNC', label: 'DUAL_ASYNC'}
+        ],
+        default: 'DUAL_ASYNC'
+    };
+
+    normalize = omit(['__v', 'space', 'clusters']);
 }

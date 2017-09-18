@@ -32,23 +32,33 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60.pc-form-grid__text-only-item
                     +text('Name:', `${model}.name`, '"igfsName"', 'true', 'Input name', 'IGFS name')
                 .pc-form-grid-col-30
-                    +dropdown('IGFS mode:', `${model}.defaultMode`, '"defaultMode"', 'true', '{{::$ctrl.defaultValues.defaultMode}}',
-                    '[\
-                        {value: "PRIMARY", label: "PRIMARY"},\
-                        {value: "PROXY", label: "PROXY"},\
-                        {value: "DUAL_SYNC", label: "DUAL_SYNC"},\
-                        {value: "DUAL_ASYNC", label: "DUAL_ASYNC"}\
-                    ]',
-                    'Mode to specify how IGFS interacts with Hadoop file system\
-                    <ul>\
-                        <li>PRIMARY - in this mode IGFS will not delegate to secondary Hadoop file system and will cache all the files in memory only</li>\
-                        <li>PROXY - in this mode IGFS will not cache any files in memory and will only pass them through to secondary file system</li>\
-                        <li>DUAL_SYNC - in this mode IGFS will cache files locally and also <b>synchronously</b> write them through to secondary file system</li>\
-                        <li>DUAL_ASYNC - in this mode IGFS will cache files locally and also <b> asynchronously </b> write them through to secondary file system</li>\
-                    </ul>')
+                    +sane-ignite-form-field-dropdown({
+                        label: 'IGFS mode:',
+                        model: `${model}.defaultMode`,
+                        name: '"defaultMode"',
+                        placeholder: '{{::$ctrl.IGFSs.defaultMode.default}}',
+                        options: '{{::$ctrl.IGFSs.defaultMode.values}}',
+                        tip: `
+                        Mode to specify how IGFS interacts with Hadoop file system
+                        <ul>
+                            <li>PRIMARY - in this mode IGFS will not delegate to secondary Hadoop file system and will cache all the files in memory only</li>
+                            <li>PROXY - in this mode IGFS will not cache any files in memory and will only pass them through to secondary file system</li>
+                            <li>DUAL_SYNC - in this mode IGFS will cache files locally and also <b>synchronously</b> write them through to secondary file system</li>
+                            <li>DUAL_ASYNC - in this mode IGFS will cache files locally and also <b> asynchronously </b> write them through to secondary file system</li>
+                        </ul>
+                        `
+                    })
                 .pc-form-grid-col-30
-                    +number('Group size:', `${model}.affinnityGroupSize`, '"affinnityGroupSize"', 'true', '{{::$ctrl.defaultValues.affinnityGroupSize}}', '1',
-                        'Size of the group in blocks<br/>\
-                        Required for construction of affinity mapper in IGFS data cache')
+                    +sane-ignite-form-field-number({
+                        label: 'Group size:',
+                        model: `${model}.affinnityGroupSize`,
+                        name: '"affinnityGroupSize"',
+                        placeholder: '{{::$ctrl.IGFSs.affinnityGroupSize.default}}',
+                        min: '{{::$ctrl.IGFSs.affinnityGroupSize.min}}',
+                        tip: `
+                            Size of the group in blocks<br/>
+                            Required for construction of affinity mapper in IGFS data cache
+                        `
+                    })
             .pca-form-column-6
                 +preview-xml-java(model, 'igfsGeneral')
