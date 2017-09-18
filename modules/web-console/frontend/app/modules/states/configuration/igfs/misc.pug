@@ -89,7 +89,16 @@ include /app/helpers/jade/mixins
                                             .pc-form-grid-col-30
                                                 +ignite-form-field-text('Path:', '$parent.item.path', '"path"', false, true, 'Enter path')
                                             .pc-form-grid-col-30
-                                                +dropdown-required('Mode:', '$parent.item.mode', '"mode"', true, true, 'Choose igfs mode', 'igfsModes')
+                                                +sane-ignite-form-field-dropdown({
+                                                    label: 'Mode:',
+                                                    model: `$parent.item.mode`,
+                                                    name: '"mode"',
+                                                    required: true,
+                                                    placeholder: 'Choose igfs mode',
+                                                    options: '{{::$ctrl.IGFSs.defaultMode.values}}'
+                                                })(
+                                                    ng-model-options='{allowInvalid: true}'
+                                                )
 
                                     pc-list-editable-no-items
                                         | You have no path modes.&nbsp;

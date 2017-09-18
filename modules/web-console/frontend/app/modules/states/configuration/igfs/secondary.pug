@@ -33,7 +33,21 @@ include /app/helpers/jade/mixins
                 -var secondaryFileSystem = `${model}.secondaryFileSystem`
 
                 .pc-form-grid-col-60
-                    +checkbox('Enabled', enabled, '"secondaryFileSystemEnabled"', 'Secondary file system enabled flag')
+                    +sane-form-field-checkbox({
+                        label: 'Enabled',
+                        name: '"secondaryFileSystemEnabled"',
+                        model: enabled
+                    })(
+                        ng-model-options='{allowInvalid: true}'
+                        ui-validate=`{
+                            requiredWhenIGFSProxyMode: '$ctrl.IGFSs.secondaryFileSystemEnabled.requiredWhenIGFSProxyMode(${model})',
+                            requiredWhenPathModeProxyMode: '$ctrl.IGFSs.secondaryFileSystemEnabled.requiredWhenPathModeProxyMode(${model})'
+                        }`
+                        ui-validate-watch-collection=`"[${model}.defaultMode, ${model}.pathModes]"`
+                        ui-validate-watch-object-equality='true'
+                    )
+                        +form-field-feedback(null, 'requiredWhenIGFSProxyMode', 'Secondary file system should be configured for "PROXY" IGFS mode')
+                        +form-field-feedback(null, 'requiredWhenPathModeProxyMode', 'Secondary file system should be configured for "PROXY" path mode')
                 .pc-form-grid-col-60
                     +text-enabled('URI:', `${secondaryFileSystem}.uri`, '"hadoopURI"', enabled, 'false', 'hdfs://[namenodehost]:[port]/[path]', 'URI of file system')
                 .pc-form-grid-col-60

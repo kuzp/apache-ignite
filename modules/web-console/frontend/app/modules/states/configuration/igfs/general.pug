@@ -29,8 +29,19 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='general')
         .pca-panel-body.pca-form-row
             .pca-form-column-6.pc-form-grid-row
-                .pc-form-grid-col-60.pc-form-grid__text-only-item
-                    +text('Name:', `${model}.name`, '"igfsName"', 'true', 'Input name', 'IGFS name')
+                .pc-form-grid-col-60
+                    +sane-ignite-form-field-text({
+                        label: 'Name:',
+                        model: `${model}.name`,
+                        name: '"igfsName"',
+                        placeholder: 'Input name',
+                        required: true
+                    })(
+                        ignite-unique='$ctrl.igfss'
+                        ignite-unique-property='name'
+                        ignite-unique-skip=`["_id", ${model}]`
+                    )
+                        +unique-feedback(`${model}.name`, 'IGFS name should be unique.')
                 .pc-form-grid-col-30
                     +sane-ignite-form-field-dropdown({
                         label: 'IGFS mode:',

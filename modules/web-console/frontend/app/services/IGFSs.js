@@ -17,6 +17,7 @@
 
 import ObjectID from 'bson-objectid';
 import omit from 'lodash/fp/omit';
+import get from 'lodash/get';
 
 export default class IGFSs {
     static $inject = ['$http'];
@@ -59,6 +60,17 @@ export default class IGFSs {
             {value: 'DUAL_ASYNC', label: 'DUAL_ASYNC'}
         ],
         default: 'DUAL_ASYNC'
+    };
+
+    secondaryFileSystemEnabled = {
+        requiredWhenIGFSProxyMode: (igfs) => {
+            if (get(igfs, 'defaultMode') === 'PROXY') return get(igfs, 'secondaryFileSystemEnabled') === true;
+            return true;
+        },
+        requiredWhenPathModeProxyMode: (igfs) => {
+            if (get(igfs, 'pathModes', []).some((pm) => pm.mode === 'PROXY')) return get(igfs, 'secondaryFileSystemEnabled') === true;
+            return true;
+        }
     };
 
     normalize = omit(['__v', 'space', 'clusters']);
