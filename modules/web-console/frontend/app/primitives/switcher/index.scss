@@ -75,6 +75,7 @@ label.switcher--ignite {
         }
 
         &[is-in-progress='true'] + div:before {
+            border-left-width: 2px;
             border-left-color: $color-active-primary;
 
             animation-name: switcher--animation;
