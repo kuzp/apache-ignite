@@ -554,16 +554,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             // Clean stale IO messages from just-joined nodes.
             cleanStaleStatusMessages(opId);
         }
-
-        // Complete client future (if any).
-        SchemaOperationClientFuture cliFut = schemaCliFuts.remove(opId);
-
-        if (cliFut != null) {
-            if (msg.hasError())
-                cliFut.onDone(msg.error());
-            else
-                cliFut.onDone();
-        }
     }
 
     /**
@@ -1362,13 +1352,15 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @param cacheGroup Cache group name.
      * @param affinityKey Affinity key column name.
      * @param atomicityMode Atomicity mode.
+     * @param writeSyncMode Write synchronization mode.
      * @param backups Backups.
      * @param ifNotExists Quietly ignore this command if table already exists.
      * @throws IgniteCheckedException If failed.
      */
     @SuppressWarnings("unchecked")
     public void dynamicTableCreate(String schemaName, QueryEntity entity, String templateName, String cacheGroup,
-        String affinityKey, @Nullable CacheAtomicityMode atomicityMode, int backups, boolean ifNotExists)
+        String affinityKey, @Nullable CacheAtomicityMode atomicityMode,
+        @Nullable CacheWriteSynchronizationMode writeSyncMode, int backups, boolean ifNotExists)
         throws IgniteCheckedException {
         assert !F.isEmpty(templateName);
         assert backups >= 0;
@@ -1397,6 +1389,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
         if (atomicityMode != null)
             ccfg.setAtomicityMode(atomicityMode);
+
+        if (writeSyncMode != null)
+            ccfg.setWriteSynchronizationMode(writeSyncMode);
 
         ccfg.setBackups(backups);
 
@@ -2236,7 +2231,7 @@ private IgniteInternalFuture<Object> rebuildIndexesFromHash(@Nullable final Stri
         for (QueryField col : cols) {
             try {
                 props.add(new QueryBinaryProperty(ctx, col.name(), null, Class.forName(col.typeName()),
-                    false, null));
+                    false, null, !col.isNullable()));
             }
             catch (ClassNotFoundException e) {
                 throw new SchemaOperationException("Class not found for new property: " + col.typeName());
@@ -2588,6 +2583,25 @@ private IgniteInternalFuture<Object> rebuildIndexesFromHash(@Nullable final Stri
     }
 
     /**
+     * Performs validation of provided key and value against configured constraints.
+     * Throws runtime exception if validation fails.
+     *
+     * @param coctx Cache object context.
+     * @param key Key.
+     * @param val Value.
+     * @throws IgniteCheckedException, If error happens.
+     */
+    public void validateKeyAndValue(CacheObjectContext coctx, KeyCacheObject key, CacheObject val)
+        throws IgniteCheckedException {
+        QueryTypeDescriptorImpl desc = typeByValue(coctx.cacheName(), coctx, key, val, false);
+
+        if (desc == null)
+            return;
+
+        desc.validateKeyAndValue(key, val);
+    }
+
+    /**
      * @param ver Version.
      */
     public static void setRequestAffinityTopologyVersion(AffinityTopologyVersion ver) {
@@ -2693,6 +2707,16 @@ private IgniteInternalFuture<Object> rebuildIndexesFromHash(@Nullable final Stri
 
                         assert op != null;
                         assert F.eq(op.id(), opId);
+
+                        // Complete client future (if any).
+                        SchemaOperationClientFuture cliFut = schemaCliFuts.remove(opId);
+
+                        if (cliFut != null) {
+                            if (finishMsg.hasError())
+                                cliFut.onDone(finishMsg.error());
+                            else
+                                cliFut.onDone();
+                        }
 
                         // Chain to the next operation (if any).
                         final SchemaOperation nextOp = op.next();
