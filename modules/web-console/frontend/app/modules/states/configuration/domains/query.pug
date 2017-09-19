@@ -55,7 +55,11 @@ include /app/helpers/jade/mixins
                                 +tooltip(`Collection of name-to-type mappings to be queried, in addition to indexed fields`)
                             .ignite-form-field__control
                                 -let items = queryFields
-                                pc-list-editable(ng-model=items name='queryFields')
+                                pc-list-editable(
+                                    ng-model=items
+                                    name='queryFields'
+                                    ng-change=`$ctrl.onQueryFieldsChange(${items})`
+                                )
                                     pc-list-editable-item-view
                                         | {{ $parent.item.name}} / {{ $parent.item.className}}
 
@@ -140,7 +144,8 @@ include /app/helpers/jade/mixins
                                         div {{ $parent.item.name }} [{{ $parent.item.indexType }}]
                                         div(ng-repeat='field in $parent.item.fields')
                                             span {{ field.name }}
-                                            span(ng-if='$parent.item.indexType == "SORTED"') / {{ field.direction ? "ASC" : "DESC"}}
+                                            span(ng-if='$parent.$parent.item.indexType == "SORTED"')
+                                                |  / {{ field.direction ? "ASC" : "DESC"}}
 
                                     pc-list-editable-item-edit
                                         - form = '$parent.form'
@@ -154,7 +159,7 @@ include /app/helpers/jade/mixins
                                                 )
                                                     +unique-feedback('"name"', 'Such field already exists!')
                                             .pc-form-grid-col-30
-                                                +dropdown-required('Index type: ', `$parent.item.indexType`, '"indexType"', true, true, 'Select index type', 'indexType')
+                                                +dropdown-required('Index type: ', `$parent.item.indexType`, '"indexType"', true, true, 'Select index type', '::$ctrl.Models.indexType.values')
                                             .pc-form-grid-col-60
                                                 mixin domains-query-indexes-fields
                                                     .ignite-form-field
@@ -165,7 +170,8 @@ include /app/helpers/jade/mixins
                                                             pc-list-editable(ng-model=items name='indexFields')
                                                                 pc-list-editable-item-view
                                                                     | {{ $parent.item.name }} 
-                                                                    span(ng-if='item.indexType == "SORTED"') / {{ $parent.item.direction ? "ASC" : "DESC" }}
+                                                                    span(ng-if='item.indexType == "SORTED"')
+                                                                        |  / {{ $parent.$parent.item.direction ? "ASC" : "DESC" }}
 
                                                                 pc-list-editable-item-edit
                                                                     - form = '$parent.form'
@@ -177,12 +183,24 @@ include /app/helpers/jade/mixins
                                                                                     .input-tip
                                                                                         button.select-toggle.form-control(ng-model='$parent.item.name' placeholder=`{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}` bs-select bs-options=`item.name as item.name for item in ${queryFields}` ng-disabled=`${queryFields}.length === 0`)
                                                                         .pc-form-grid-col-60(ng-if='item.indexType == "SORTED"')
-                                                                            +dropdown-required('Sort direction:', `$parent.item.direction`, '"indexDirection"', true, true, '', 'sortDirections')
+                                                                            +sane-ignite-form-field-dropdown({
+                                                                                label: 'Sort direction:',
+                                                                                model: '$parent.$parent.item.direction',
+                                                                                name: '"indexDirection"',
+                                                                                required: true,
+                                                                                options: '::$ctrl.Models.indexSortDirection.values'
+                                                                            })
                                                                 pc-list-editable-no-items
                                                                     | You have no fields in index.&nbsp;
-                                                                    a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                                                    a.link-success(
+                                                                        ng-click=`ui.inputForm.query.form.indexFields.editListItem($ctrl.Models.addIndexField(${items}))`
+                                                                    ) Create one?
 
-                                                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                                            button.btn-ignite.btn-ignite--link(
+                                                                type='button'
+                                                                ng-if=`${items}.length`
+                                                                ng-click=`ui.inputForm.query.form.indexFields.editListItem($ctrl.Models.addIndexField(${items}))`
+                                                            )
                                                                 | + Add new field to index
                                                 +domains-query-indexes-fields
 

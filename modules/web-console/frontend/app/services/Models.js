@@ -45,5 +45,25 @@ export default class Models {
         ]
     };
 
+    indexType = {
+        values: [
+            {label: 'SORTED', value: 'SORTED'},
+            {label: 'FULLTEXT', value: 'FULLTEXT'},
+            {label: 'GEOSPATIAL', value: 'GEOSPATIAL'}
+        ]
+    };
+
+    indexSortDirection = {
+        values: [
+            {value: true, label: 'ASC'},
+            {value: false, label: 'DESC'}
+        ],
+        default: true
+    };
+
     normalize = omit(['__v', 'space']);
+
+    addIndexField(fields) {
+        return fields[fields.push({direction: true}) - 1];
+    }
 }
