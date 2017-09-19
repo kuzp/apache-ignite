@@ -16,19 +16,22 @@
  */
 
 class Controller {
-    static $inject = ['$element', '$window'];
+    children = [];
     ignoredClasses = [];
-    handlerCheckFocusOut = (e) => {
+    eventHandler = (e) => {
+        this.children.forEach((c) => c.eventHandler(e));
         if (this.shouldPropagate(e)) this.igniteOnFocusOut();
     };
 
+    static $inject = ['$element', '$window'];
     constructor($element, $window) {
         Object.assign(this, {$element, $window});
     }
     $onDestroy() {
-        this.$window.removeEventListener('click', this.handlerCheckFocusOut, true);
-        this.$window.removeEventListener('focusin', this.handlerCheckFocusOut, true);
-        this.$element = this.$window = this.handlerCheckFocusOut = null;
+        this.$window.removeEventListener('click', this.eventHandler, true);
+        this.$window.removeEventListener('focusin', this.eventHandler, true);
+        if (this.parent) this.parent.children.splice(this.parent.children.indexOf(this), 1);
+        this.$element = this.$window = this.eventHandler = null;
     }
     shouldPropagate(e) {
         return !this.targetHasIgnoredClasses(e) && this.targetIsOutOfElement(e);
@@ -45,17 +48,22 @@ class Controller {
             changes.ignoredClasses.currentValue !== changes.ignoredClasses.previousValue
         )
             this.ignoredClasses = changes.ignoredClasses.currentValue.split(' ');
-
+    }
+    $onInit() {
+        if (this.parent) this.parent.children.push(this);
     }
     $postLink() {
-        this.$window.addEventListener('click', this.handlerCheckFocusOut, true);
-        this.$window.addEventListener('focusin', this.handlerCheckFocusOut, true);
+        this.$window.addEventListener('click', this.eventHandler, true);
+        this.$window.addEventListener('focusin', this.eventHandler, true);
     }
 }
 
 export default function() {
     return {
         controller: Controller,
+        require: {
+            parent: '^^?igniteOnFocusOut'
+        },
         bindToController: {
             igniteOnFocusOut: '&',
             ignoredClasses: '@?igniteOnFocusOutIgnoredClasses'
