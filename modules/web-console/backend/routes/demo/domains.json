@@ -9,10 +9,6 @@
     "aliases": [],
     "fields": [
       {
-        "name": "id",
-        "className": "Integer"
-      },
-      {
         "name": "name",
         "className": "String"
       },
@@ -21,7 +17,6 @@
         "className": "Integer"
       }
     ],
-    "queryKeyFields": ["id"],
     "keyFieldName": "id",
     "valueFields": [
       {
@@ -58,10 +53,6 @@
     "aliases": [],
     "fields": [
       {
-        "name": "id",
-        "className": "Integer"
-      },
-      {
         "name": "countryId",
         "className": "Integer"
       },
@@ -70,7 +61,6 @@
         "className": "String"
       }
     ],
-    "queryKeyFields": ["id"],
     "keyFieldName": "id",
     "valueFields": [
       {
@@ -132,10 +122,6 @@
     "aliases": [],
     "fields": [
       {
-        "name": "id",
-        "className": "Integer"
-      },
-      {
         "name": "departmentId",
         "className": "Integer"
       },
@@ -172,7 +158,6 @@
         "className": "Double"
       }
     ],
-    "queryKeyFields": ["id"],
     "keyFieldName": "id",
     "valueFields": [
       {
@@ -251,10 +236,6 @@
     "aliases": [],
     "fields": [
       {
-        "name": "id",
-        "className": "Integer"
-      },
-      {
         "name": "name",
         "className": "String"
       },
@@ -263,7 +244,6 @@
         "className": "Integer"
       }
     ],
-    "queryKeyFields": ["id"],
     "keyFieldName": "id",
     "valueFields": [
       {
@@ -300,10 +280,6 @@
     "aliases": [],
     "fields": [
       {
-        "name": "id",
-        "className": "Integer"
-      },
-      {
         "name": "parkingId",
         "className": "Integer"
       },
@@ -312,7 +288,6 @@
         "className": "String"
       }
     ],
-    "queryKeyFields": ["id"],
     "keyFieldName": "id",
     "valueFields": [
       {

@@ -96,12 +96,8 @@ public class AgentClusterDemo {
 
         int[] evts = new int[EVTS_DISCOVERY.length + VISOR_TASK_EVTS.length];
 
-        int k = 0;
-
-        System.arraycopy(EVTS_DISCOVERY, 0, evts, k, EVTS_DISCOVERY.length);
-        k += EVTS_DISCOVERY.length;
-
-        System.arraycopy(VISOR_TASK_EVTS, 0, evts, k, VISOR_TASK_EVTS.length);
+        System.arraycopy(EVTS_DISCOVERY, 0, evts, 0, EVTS_DISCOVERY.length);
+        System.arraycopy(VISOR_TASK_EVTS, 0, evts, EVTS_DISCOVERY.length, VISOR_TASK_EVTS.length);
 
         cfg.setIncludeEventTypes(evts);
 
