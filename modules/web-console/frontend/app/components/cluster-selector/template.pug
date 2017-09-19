@@ -34,14 +34,20 @@ button.btn-ignite.btn-ignite--primary(
     span(ng-if='$ctrl.cluster') {{ $ctrl.cluster.label }}
         span.icon-right.fa.fa-caret-down
 
-label(ng-if='$ctrl.cluster')
+div(ng-if='$ctrl.cluster && $ctrl.cluster.$inProgress')
+    | Cluster {{ $ctrl.cluster.active ? 'inactive' : 'active' }}
+
+div(ng-if='$ctrl.cluster && !$ctrl.cluster.$inProgress')
     | Cluster {{ $ctrl.cluster.active ? 'active' : 'inactive' }}
 
 +switcher()(
     ng-if='$ctrl.cluster'
     ng-model='$ctrl.cluster.active'
-    ng-disabled='$ctrl.cluster.activation'
+    ng-disabled='$ctrl.cluster.$inProgress'
     tip='Toggle cluster active state'
     ng-click='$ctrl.toggle()'
     is-in-progress='{{ $ctrl.cluster.$inProgress }}'
 )
+
+div(ng-if='$ctrl.cluster.$inProgress')
+    | {{ $ctrl.cluster.active ? 'Activating...' : 'Deactivating...' }}

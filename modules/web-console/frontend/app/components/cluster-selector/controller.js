@@ -73,16 +73,21 @@ export default class {
         const changeState = () => {
             this.cluster.$inProgress = true;
             this.agentMgr.toggleClusterState(this.cluster).then(() => {
-                this.cluster.$inProgress = false;
+                setTimeout(() => {
+                    this.cluster.$inProgress = false;
+                }, 4000);
             });
         };
 
         if (!this.cluster.active) {
+            this.cluster.$inProgress = true;
             this.Confirm.confirm('Are you sure you want to deactivate cluster?')
                 .then(() => changeState())
                 .catch(({ cancelled }) => {
-                    if (cancelled)
+                    if (cancelled) {
                         this.cluster.active = true;
+                        this.cluster.$inProgress = false;
+                    }
                 });
         } else
             changeState();

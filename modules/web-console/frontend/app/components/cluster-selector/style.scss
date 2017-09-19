@@ -22,8 +22,6 @@ cluster-selector {
     align-items: center;
     justify-content: space-between;
 
-    min-width: 330px;
-
 	[bs-select] {
         border-radius: 9px;
         min-height: 0;
@@ -36,6 +34,17 @@ cluster-selector {
         button {
             font-weight: normal;
         }
+    }
+
+    div {
+        margin: 0 10px 0 20px;
+        font-family: Roboto;
+        font-size: 12px;
+    }
+
+    div:last-child {
+        margin-left: 10px;
+        color: #EE2B27;
     }
 
     .dropdown-menu a {
