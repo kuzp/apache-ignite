@@ -2,9 +2,9 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class IgfsEditFormController {
-    static $inject = ['IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
-    constructor( IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils) {
-        Object.assign(this, { IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils});
+    static $inject = ['IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
+    constructor(IgniteLegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils) {
+        Object.assign(this, {IgniteLegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils});
     }
     $onInit() {
         this.$onDestroy = this.$transitions.onBefore({}, (...args) => this.uiCanExit(...args));
@@ -15,6 +15,24 @@ export default class IgfsEditFormController {
         this.$scope.ui.activePanels = [0, 1];
         this.$scope.ui.topPanels = [0, 1, 2];
         this.$scope.ui.expanded = true;
+
+        this.$scope.javaBuiltInClasses = this.IgniteLegacyUtils.javaBuiltInClasses;
+        this.$scope.supportedJdbcTypes = this.IgniteLegacyUtils.mkOptions(this.IgniteLegacyUtils.SUPPORTED_JDBC_TYPES);
+        this.$scope.supportedJavaTypes = this.IgniteLegacyUtils.mkOptions(this.IgniteLegacyUtils.javaBuiltInTypes);
+        // Create list of fields to show in index fields dropdown.
+        this.$scope.fields = (prefix, cur) => {
+            const fields = _.map(this.$scope.backupItem.fields, (field) => ({value: field.name, label: field.name}));
+
+            if (prefix === 'new')
+                return fields;
+
+            _.forEach(_.isArray(cur) ? cur : [cur], (value) => {
+                if (!_.find(fields, {value}))
+                    fields.push({value, label: value + ' (Unknown field)'});
+            });
+
+            return fields;
+        };
     }
 
     $onChanges(changes) {
@@ -29,7 +47,9 @@ export default class IgfsEditFormController {
         }
         if ('caches' in changes)
             this.cachesMenu = (changes.caches.currentValue || []).map((c) => ({label: c.name, value: c._id}));
-
+    }
+    onQueryFieldsChange(queryFields) {
+        // this.keyFieldsOptions = this.fields('cur', this.keyFieldsOptions);
     }
     uiCanExit($transition$) {
         return this.ConfigChangesGuard.guard(...[this.model, this.$scope.backupItem].map(this.Models.normalize));
