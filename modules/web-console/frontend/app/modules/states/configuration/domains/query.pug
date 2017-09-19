@@ -177,11 +177,20 @@ include /app/helpers/jade/mixins
                                                                     - form = '$parent.form'
                                                                     .pc-form-grid-row
                                                                         .pc-form-grid-col-60
-                                                                            .ignite-form-field
-                                                                                +ignite-form-field__label('Index field:', '"indexField"')
-                                                                                .ignite-form-field__control
-                                                                                    .input-tip
-                                                                                        button.select-toggle.form-control(ng-model='$parent.item.name' placeholder=`{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}` bs-select bs-options=`item.name as item.name for item in ${queryFields}` ng-disabled=`${queryFields}.length === 0`)
+                                                                            +sane-ignite-form-field-dropdown({
+                                                                                label: 'Index field:',
+                                                                                model: '$parent.item.name',
+                                                                                name: '"indexName"',
+                                                                                placeholder: `{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}`,
+                                                                                options: queryFields
+                                                                            })(
+                                                                                bs-options=`item.name as item.name for item in ${queryFields}`
+                                                                                ng-disabled=`${queryFields}.length === 0`
+                                                                                ng-model-options='{allowInvalid: true}'
+                                                                                data-ignite-unique=items
+                                                                                data-ignite-unique-property='name'
+                                                                            )
+                                                                                +unique-feedback('"name"', 'Such field already exists!')
                                                                         .pc-form-grid-col-60(ng-if='item.indexType == "SORTED"')
                                                                             +sane-ignite-form-field-dropdown({
                                                                                 label: 'Sort direction:',
