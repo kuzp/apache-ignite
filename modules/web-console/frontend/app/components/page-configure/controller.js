@@ -30,12 +30,12 @@ export default class PageConfigureController {
     }
 
     $onInit() {
-        const clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID');
-        const cluster$ = clusterID$.switchMap((id) => this.ConfigureState.state$.let(this.ConfigSelectors.selectCluster(id)));
+        this.clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID');
+        const cluster$ = this.clusterID$.switchMap((id) => this.ConfigureState.state$.let(this.ConfigSelectors.selectCluster(id)));
         // this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
         // this.itemToEdit$ = this.ConfigureState.state$.pluck('edit', 'itemToEdit')/* .do((v) => console.log('ed', v))*/;
         // this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
-        const isNew$ = clusterID$.map((v) => v === 'new');
+        const isNew$ = this.clusterID$.map((v) => v === 'new');
         this.clusterName$ = combineLatest(cluster$, isNew$, (cluster, isNew) => {
             return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
         });

@@ -1,0 +1,45 @@
+modal-import-models-step-indicator {
+    @import "public/stylesheets/variables.scss";
+
+    $text-color-default: #393939;
+    $text-color-active: $ignite-brand-success;
+    $indicator-color-default: #757575;
+    $indicator-color-active: $ignite-brand-success;
+    $indicator-size: 12px;
+
+    display: block;
+    font-family: Roboto;
+
+    .step-indicator__steps {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .step-indicator__step {
+        color: $text-color-default;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        &:after {
+            content: '';
+            display: block;
+            background: $indicator-color-default;
+            width: $indicator-size;
+            height: $indicator-size;
+            border-radius: 2px;
+            margin-top: 5px;
+        }
+    }
+    .step-indicator__step-active {
+        color: $text-color-active;
+
+        &:after {
+            background: $indicator-color-active;            
+        }
+    }
+}

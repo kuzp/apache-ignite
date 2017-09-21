@@ -17,6 +17,7 @@
 h1.pc-page-header
     | {{ $ctrl.clusterName$|async:this }}
     version-picker
+    button-import-models(cluster-id='$ctrl.clusterID$|async:this' style='float:right')
 div.pc-content-container
     ul.tabs.tabs--blue
         li(role='presentation' ui-sref-active='active')
