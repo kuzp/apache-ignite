@@ -1,10 +1,10 @@
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
-export default class IgfsEditFormController {
-    static $inject = ['IgniteErrorPopover', 'IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
-    constructor(ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils) {
-        Object.assign(this, {ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils});
+export default class ModelEditFormController {
+    static $inject = ['ModalImportModels', 'IgniteErrorPopover', 'IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
+    constructor(ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils) {
+        Object.assign(this, {ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils});
     }
     $onInit() {
         this.$onDestroy = this.$transitions.onBefore({}, (...args) => this.uiCanExit(...args));
@@ -33,6 +33,10 @@ export default class IgfsEditFormController {
 
             return fields;
         };
+    }
+
+    importModels() {
+        return this.ModalImportModels.open();
     }
 
     checkQueryConfiguration(item) {

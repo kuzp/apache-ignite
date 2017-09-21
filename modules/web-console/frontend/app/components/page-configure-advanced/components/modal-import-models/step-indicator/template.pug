@@ -1,0 +1,6 @@
+nav
+    ul.step-indicator__steps
+        li.step-indicator__step(
+            ng-repeat='step in ::$ctrl.steps'
+            ng-class='{"step-indicator__step-active": $ctrl.currentStep === step.value}'
+        ) {{::step.label}}
