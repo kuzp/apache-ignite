@@ -65,6 +65,8 @@ public class MetadataStorage implements MetaStore {
     /** */
     private final byte allocSpace;
 
+    public static boolean USE_OLD_VER = false;
+
     /**
      * @param pageMem Page memory.
      * @param wal Write ahead log manager.
@@ -200,7 +202,7 @@ public class MetadataStorage implements MetaStore {
             int shift = 0;
 
             // Compare index names.
-            final int len = PageUtils.getUnsignedByte(pageAddr, off + shift);
+            final int len = USE_OLD_VER ? PageUtils.getByte(pageAddr, off + shift) : PageUtils.getUnsignedByte(pageAddr, off + shift);
 
             shift += BYTE_LEN;
 
@@ -259,7 +261,10 @@ public class MetadataStorage implements MetaStore {
         final IndexItem row
     ) {
         // Index name length.
-        PageUtils.putUnsignedByte(pageAddr, off, row.idxName.length);
+        if (USE_OLD_VER)
+            PageUtils.putByte(pageAddr, off, (byte)row.idxName.length);
+        else
+            PageUtils.putUnsignedByte(pageAddr, off, row.idxName.length);
         off++;
 
         // Index name.
@@ -285,13 +290,20 @@ public class MetadataStorage implements MetaStore {
         int srcOff
     ) {
         // Index name length.
-        final int len = PageUtils.getUnsignedByte(srcPageAddr, srcOff);
+        final int len = USE_OLD_VER ? PageUtils.getByte(srcPageAddr, srcOff) : PageUtils.getUnsignedByte(srcPageAddr, srcOff);
         srcOff++;
 
-        PageUtils.putUnsignedByte(dstPageAddr, dstOff, len);
+        if (USE_OLD_VER)
+            PageUtils.putByte(dstPageAddr, dstOff, (byte) len);
+        else
+            PageUtils.putUnsignedByte(dstPageAddr, dstOff, len);
+
         dstOff++;
 
-        PageHandler.copyMemory(srcPageAddr, srcOff, dstPageAddr, dstOff, len);
+        if (USE_OLD_VER)
+            PageHandler.copyMemory(srcPageAddr, dstPageAddr, srcOff, dstOff, len);
+        else
+            PageHandler.copyMemory(srcPageAddr, srcOff, dstPageAddr, dstOff, len);
         srcOff += len;
         dstOff += len;
 
@@ -308,7 +320,8 @@ public class MetadataStorage implements MetaStore {
      */
     private static IndexItem readRow(final long pageAddr, int off) {
         // Index name length.
-        final int len = PageUtils.getUnsignedByte(pageAddr, off) & 0xFF;
+        final int len = USE_OLD_VER ? PageUtils.getByte(pageAddr, off) & 0xFF : PageUtils.getUnsignedByte(pageAddr, off) & 0xFF;
+
         off++;
 
         // Index name.
