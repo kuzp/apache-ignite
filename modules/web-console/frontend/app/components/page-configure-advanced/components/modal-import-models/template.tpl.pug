@@ -27,15 +27,15 @@ mixin td-ellipses-lbl(w, lbl)
     -var tipOpts = {};
     - tipOpts.container = '.modal-content'
     - tipOpts.placement = 'top'
-    .modal-dialog.domains-import-dialog
+    .modal-dialog
         .modal-content(ignite-loading='importDomainFromDb' ignite-loading-text='{{importDomain.loadingOptions.text}}')
             #errors-container.modal-header.header
-                button.close(ng-click='$hide()' aria-hidden='true') &times;
+                button.close(ng-click='$hide()' aria-hidden='true')
+                    svg(ignite-icon="cross")
                 h4.modal-title() 
-                    i.fa.fa-database
                     span(ng-if='!importDomain.demo') Import domain models from database
                     span(ng-if='importDomain.demo') Import domain models from demo database
-            .modal-body
+            .modal-body.theme--ignite
                 modal-import-models-step-indicator(
                     steps='$ctrl.actions'
                     current-step='importDomain.action'
@@ -64,21 +64,21 @@ mixin td-ellipses-lbl(w, lbl)
                 .import-domain-model-wizard-page(ng-if='importDomain.action == "connect" && !importDomain.demo')
                     -var form = 'connectForm'
 
-                    form.form-horizontal(name=form novalidate)
-                        .settings-row.settings-row_small-label
+                    form.pc-form-grid-row(name=form novalidate)
+                        .pc-form-grid-col-30
                             +ignite-form-field-dropdown('Driver JAR:', 'ui.selectedJdbcDriverJar', '"jdbcDriverJar"', false, true, false,
                                 'Choose JDBC driver', '', 'jdbcDriverJars',
                                 'Select appropriate JAR with JDBC driver<br> To add another driver you need to place it into "/jdbc-drivers" folder of Ignite Web Agent<br> Refer to Ignite Web Agent README.txt for for more information'
                             )
-                        .settings-row.settings-row_small-label
+                        .pc-form-grid-col-30
                             +java-class('JDBC driver:', 'selectedPreset.jdbcDriverClass', '"jdbcDriverClass"', true, true, 'Fully qualified class name of JDBC driver that will be used to connect to database')
-                        .settings-row.settings-row_small-label
+                        .pc-form-grid-col-60
                             +text-enabled-autofocus('JDBC URL:', 'selectedPreset.jdbcUrl', '"jdbcUrl"', true, true, 'JDBC URL', 'JDBC URL for connecting to database<br>Refer to your database documentation for details')
-                        .settings-row.settings-row_small-label
+                        .pc-form-grid-col-30
                             +text('User:', 'selectedPreset.user', '"jdbcUser"', false, '', 'User name for connecting to database')
-                        .settings-row.settings-row_small-label
+                        .pc-form-grid-col-30
                             +password('Password:', 'selectedPreset.password', '"jdbcPassword"', false, '', 'Password for connecting to database<br>Note, password would not be saved in preferences for security reasons')(ignite-on-enter='importDomainNext()')
-                        .settings-row
+                        .pc-form-grid-col-60
                             - tipOpts.placement = 'auto'
                             +checkbox('Tables only', 'selectedPreset.tablesOnly', '"tablesOnly"', 'If selected, then only tables metadata will be parsed<br>Otherwise table and view metadata will be parsed')
                             - tipOpts.placement = 'top'
@@ -151,7 +151,7 @@ mixin td-ellipses-lbl(w, lbl)
                             .col-sm-6(style='padding-left: 5px; padding-right: 5px')
                                 button.select-toggle.form-control(bs-select ng-model='importCommon.cacheOrTemplate' bs-options='item.value as item.label for item in importCommon.cachesOrTemplates')
                         .col-sm-1(style='padding-left: 5px')
-                            button.btn.btn-primary(ng-click='applyDefaults()') Apply
+                            button.btn-ignite.btn-ignite--success(ng-click='applyDefaults()') Apply
                 .import-domain-model-wizard-page(ng-show='importDomain.action == "options"')
                     -var form = 'optionsForm'
                     -var generatePojo = 'ui.generatePojo'
