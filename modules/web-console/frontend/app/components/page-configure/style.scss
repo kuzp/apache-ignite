@@ -90,137 +90,137 @@ page-configure {
             margin-left: 10px !important;
         }
     }
+}
 
-    .pc-form-group {
-        $input-height: 36px;
-        width: 100%;
-        border: 1px solid rgba(197, 197, 197, 0.5);
-        border-radius: 4px;
-        padding-bottom: 10px;
+.pc-form-group {
+    $input-height: 36px;
+    width: 100%;
+    border: 1px solid rgba(197, 197, 197, 0.5);
+    border-radius: 4px;
+    padding-bottom: 10px;
+    padding-top: $input-height / 2;
+    margin-top: $input-height / -2;
+
+    &:empty {
+        display: none;
+    }
+
+    &.pc-form-group__text-title {
+        $input-height: 20px;
         padding-top: $input-height / 2;
         margin-top: $input-height / -2;
-
-        &:empty {
-            display: none;
-        }
-
-        &.pc-form-group__text-title {
-            $input-height: 20px;
-            padding-top: $input-height / 2;
-            margin-top: $input-height / -2;
-        }
     }
-    .pc-form-grid__text-only-item {
-        padding-top: 16px;
-        align-self: flex-start;
-        height: 54px;
-        display: flex;
-        justify-content: center;
-        align-content: center;
-        align-items: center;
-        background: white;
-        z-index: 2;
-    }
+}
+.pc-form-grid__text-only-item {
+    padding-top: 16px;
+    align-self: flex-start;
+    height: 54px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    background: white;
+    z-index: 2;
+}
 
-    .pc-form-grid-row {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-content: flex-start;
+.pc-form-grid-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
 
-        &>.pc-form-grid-col-10,
-        &>.pc-form-grid-col-20,
-        &>.pc-form-grid-col-30,
-        &>.pc-form-grid-col-40,
-        &>.pc-form-grid-col-60 {
-            margin: 10px 0 0 !important;
-            max-width: none;
-            padding: 0 10px;
-            flex-grow: 0;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .group-section {
-            width: 100%;
-        }
-
-        &>.pc-form-grid__break {
-            flex: 1 0 100%;
-        }
+    &>.pc-form-grid-col-10,
+    &>.pc-form-grid-col-20,
+    &>.pc-form-grid-col-30,
+    &>.pc-form-grid-col-40,
+    &>.pc-form-grid-col-60 {
+        margin: 10px 0 0 !important;
+        max-width: none;
+        padding: 0 10px;
+        flex-grow: 0;
+        flex-shrink: 0;
+        overflow: hidden;
     }
 
-    .pc-form-grid-row {
+    .group-section {
+        width: 100%;
+    }
+
+    &>.pc-form-grid__break {
+        flex: 1 0 100%;
+    }
+}
+
+.pc-form-grid-row {
+    &>.pc-form-grid-col-10 {
+        flex-basis: calc(100% / 6);
+    }
+
+    &>.pc-form-grid-col-20 {
+        flex-basis: calc(100% / 3);
+    }
+
+    &>.pc-form-grid-col-30 {
+        flex-basis: calc(100% / 2);
+    }
+
+    &>.pc-form-grid-col-40 {
+        flex-basis: calc(100% / 1.5);
+    }
+
+    &>.pc-form-grid-col-60 {
+        flex-basis: calc(100% / 1);
+    }
+
+    @media(max-width: 992px) {
         &>.pc-form-grid-col-10 {
-            flex-basis: calc(100% / 6);
+            flex-basis: calc(25%);
         }
-
         &>.pc-form-grid-col-20 {
-            flex-basis: calc(100% / 3);
+            flex-basis: calc(50%);
         }
 
         &>.pc-form-grid-col-30 {
-            flex-basis: calc(100% / 2);
-        }
-
-        &>.pc-form-grid-col-40 {
-            flex-basis: calc(100% / 1.5);
+            flex-basis: calc(100%);
         }
 
         &>.pc-form-grid-col-60 {
-            flex-basis: calc(100% / 1);
+            flex-basis: calc(100%);
+        }
+    }
+    // IE11 does not count padding towards flex width
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+        &>.pc-form-grid-col-10 {
+            flex-basis: calc(99.9% / 6 - 20px);
+        }
+
+        &>.pc-form-grid-col-20 {
+            flex-basis: calc(99.9% / 3 - 20px);
+        }
+
+        &>.pc-form-grid-col-30 {
+            flex-basis: calc(100% / 2 - 20px);
+        }
+
+        &>.pc-form-grid-col-40 {
+            flex-basis: calc(100% / 1.5 - 20px);
+        }
+
+        &>.pc-form-grid-col-60 {
+            flex-basis: calc(100% / 1 - 20px);
         }
 
         @media(max-width: 992px) {
-            &>.pc-form-grid-col-10 {
-                flex-basis: calc(25%);
-            }
             &>.pc-form-grid-col-20 {
-                flex-basis: calc(50%);
+                flex-basis: calc(50% - 20px);
             }
 
             &>.pc-form-grid-col-30 {
-                flex-basis: calc(100%);
+                flex-basis: calc(100% - 20px);
             }
 
             &>.pc-form-grid-col-60 {
-                flex-basis: calc(100%);
-            }
-        }
-        // IE11 does not count padding towards flex width
-        @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
-            &>.pc-form-grid-col-10 {
-                flex-basis: calc(99.9% / 6 - 20px);
-            }
-
-            &>.pc-form-grid-col-20 {
-                flex-basis: calc(99.9% / 3 - 20px);
-            }
-
-            &>.pc-form-grid-col-30 {
-                flex-basis: calc(100% / 2 - 20px);
-            }
-
-            &>.pc-form-grid-col-40 {
-                flex-basis: calc(100% / 1.5 - 20px);
-            }
-
-            &>.pc-form-grid-col-60 {
-                flex-basis: calc(100% / 1 - 20px);
-            }
-
-            @media(max-width: 992px) {
-                &>.pc-form-grid-col-20 {
-                    flex-basis: calc(50% - 20px);
-                }
-
-                &>.pc-form-grid-col-30 {
-                    flex-basis: calc(100% - 20px);
-                }
-
-                &>.pc-form-grid-col-60 {
-                    flex-basis: calc(100% - 20px);
-                }
+                flex-basis: calc(100% - 20px);
             }
         }
     }
