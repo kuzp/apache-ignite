@@ -65,7 +65,7 @@ public class MetadataStorage implements MetaStore {
     /** */
     private final byte allocSpace;
 
-    public static boolean USE_OLD_VER = false;
+    public static boolean USE_OLD_VER = true;
 
     /**
      * @param pageMem Page memory.
