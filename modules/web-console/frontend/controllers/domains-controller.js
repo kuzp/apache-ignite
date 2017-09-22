@@ -466,19 +466,19 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
         //     return result;
         // }
 
-        $scope.$watch('ui.selectedJdbcDriverJar', function(val) {
-            if (val && !$scope.importDomain.demo) {
-                const foundPreset = _findPreset(val);
+        // $scope.$watch('ui.selectedJdbcDriverJar', function(val) {
+        //     if (val && !$scope.importDomain.demo) {
+        //         const foundPreset = _findPreset(val);
 
-                const selectedPreset = $scope.selectedPreset;
+        //         const selectedPreset = $scope.selectedPreset;
 
-                selectedPreset.db = foundPreset.db;
-                selectedPreset.jdbcDriverJar = foundPreset.jdbcDriverJar;
-                selectedPreset.jdbcDriverClass = foundPreset.jdbcDriverClass;
-                selectedPreset.jdbcUrl = foundPreset.jdbcUrl;
-                selectedPreset.user = foundPreset.user;
-            }
-        }, true);
+        //         selectedPreset.db = foundPreset.db;
+        //         selectedPreset.jdbcDriverJar = foundPreset.jdbcDriverJar;
+        //         selectedPreset.jdbcDriverClass = foundPreset.jdbcDriverClass;
+        //         selectedPreset.jdbcUrl = foundPreset.jdbcUrl;
+        //         selectedPreset.user = foundPreset.user;
+        //     }
+        // }, true);
 
         $scope.ui.showValid = true;
 
