@@ -1,0 +1,28 @@
+button.table-action-cell__edit-button.btn-ignite(
+    type='button'
+    b_s-tooltip=''
+    d_ata-title='Click to edit'
+    title='Click to edit'
+    data-placement='top'
+    ng-click='$ctrl.onEditStart({$event: $ctrl.table})'
+    ng-if='!$ctrl.table.edit'
+)
+    | {{ $ctrl.tableActionView($ctrl.table) }}
+.table-action-cell__edit-form(ng-if='$ctrl.table.edit')
+    .ignite-form-field.ignite-form-field-dropdown.table-action-cell__action-select
+        .ignite-form-field__control
+            .input-tip
+                button.select-toggle.form-control(
+                    type='button'
+                    bs-select
+                    ng-model='$ctrl.table.action'
+                    bs-options='item.value as item.shortLabel for item in $ctrl.importActions'
+                )
+    .ignite-form-field.ignite-form-field-dropdown.table-action-cell__cache-select
+        .ignite-form-field__control
+            .input-tip
+                button.select-toggle.form-control(
+                    bs-select
+                    ng-model='$ctrl.table.cacheOrTemplate'
+                    bs-options='item.value as item.label for item in $ctrl.table.cachesOrTemplates'
+                )

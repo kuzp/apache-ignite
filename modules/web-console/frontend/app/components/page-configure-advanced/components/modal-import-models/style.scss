@@ -1,0 +1,35 @@
+modal-import-models {
+    .modal-content {
+        min-height: 493px;
+        display: flex;
+        flex-direction: column;
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            display: flex;
+            align-items: baseline;
+
+            selected-items-amount-indicator {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+    }
+
+    pc-items-table {
+        width: 100%;
+    }
+
+    modal-import-models-step-indicator {
+        margin-bottom: 30px;
+    }
+    .#{&}__prev-button {
+        margin-right: auto !important;
+    }
+    .#{&}__next-button {
+        margin-left: auto !important;
+    }
+}
