@@ -31,6 +31,7 @@ export default {
         onSortChanged: '&?',
         onFilterChanged: '&?',
 
+        hideHeader: '<?',
         columnDefs: '<',
         tableTitle: '<',
         selectedRowId: '<?',
