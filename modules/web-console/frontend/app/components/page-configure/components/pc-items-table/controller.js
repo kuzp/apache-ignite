@@ -63,6 +63,7 @@ export default class ItemsTableController {
                     });
                 }
             }
+            appScopeProvider: this.$scope.$parent
         };
         this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);
     }
