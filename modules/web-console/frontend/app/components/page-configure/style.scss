@@ -111,17 +111,6 @@ page-configure {
         margin-top: $input-height / -2;
     }
 }
-.pc-form-grid__text-only-item {
-    padding-top: 16px;
-    align-self: flex-start;
-    height: 54px;
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    align-items: center;
-    background: white;
-    z-index: 2;
-}
 
 .pc-form-grid-row {
     display: flex;
@@ -247,3 +236,14 @@ page-configure {
     }
 }
 
+.pc-form-grid__text-only-item {
+    padding-top: 16px;
+    align-self: flex-start;
+    height: 54px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    background: white;
+    z-index: 2;
+}
