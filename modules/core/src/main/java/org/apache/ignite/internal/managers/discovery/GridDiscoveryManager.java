@@ -2002,7 +2002,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
      * @return Server topology nodes or {@code null} if there are no nodes for passed in version.
      */
     @Nullable public Collection<ClusterNode> serverTopologyNodes(long topVer) {
-        return F.view(topology(topVer), F.not(FILTER_CLI));
+        return F.view(topology(topVer), F.not(FILTER_CLI), F.not(FILTER_DAEMON));
     }
 
     /** @return All daemon nodes in topology. */
