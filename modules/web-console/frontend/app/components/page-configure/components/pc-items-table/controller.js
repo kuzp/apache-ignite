@@ -62,7 +62,10 @@ export default class ItemsTableController {
                         this.onFilterChanged();
                     });
                 }
-            }
+                this.$timeout(() => {
+                    if (this.selectedRowId) this.applyIncomingSelection(this.selectedRowId);
+                });
+            },
             appScopeProvider: this.$scope.$parent
         };
         this.actionsMenu = this.makeActionsMenu(this.incomingActionsMenu);
