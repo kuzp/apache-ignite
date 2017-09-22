@@ -17,7 +17,7 @@
 include /app/helpers/jade/mixins
 
 .panel--ignite
-    .panel-heading.ui-grid-settings
+    .panel-heading.ui-grid-settings(ng-if='!$ctrl.hideHeader')
         .panel-title
             | {{ $ctrl.tableTitle }}
             grid-column-selector(grid-api='$ctrl.gridAPI')
