@@ -23,6 +23,7 @@ export default class ItemsTableController {
 
     constructor($scope, gridUtil, $timeout, uiGridSelectionService) {
         Object.assign(this, {$scope, gridUtil, $timeout, uiGridSelectionService});
+        this.rowIdentityKey = '_id';
     }
 
     $onInit() {
@@ -39,8 +40,8 @@ export default class ItemsTableController {
             headerRowHeight: 70,
             modifierKeysToMultiSelect: true,
             enableFiltering: true,
-            rowIdentity(row) {
-                return row._id;
+            rowIdentity: (row) => {
+                return row[this.rowIdentityKey];
             },
             onRegisterApi: (api) => {
                 this.gridAPI = api;
@@ -98,7 +99,7 @@ export default class ItemsTableController {
 
     applyIncomingSelection(selected = []) {
         this.gridAPI.selection.clearSelectedRows({ignore: true});
-        const rows = this.grid.data.filter((r) => selected.includes(r._id));
+        const rows = this.grid.data.filter((r) => selected.includes(r[this.rowIdentityKey]));
         rows.forEach((r) => {
             this.gridAPI.selection.selectRow(r, {ignore: true});
         });

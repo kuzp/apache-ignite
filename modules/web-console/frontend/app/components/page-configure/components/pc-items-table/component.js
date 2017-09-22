@@ -32,6 +32,8 @@ export default {
         onFilterChanged: '&?',
 
         hideHeader: '<?',
+        rowIdentityKey: '@?',
+
         columnDefs: '<',
         tableTitle: '<',
         selectedRowId: '<?',
