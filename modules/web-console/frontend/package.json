@@ -99,7 +99,7 @@
   },
   "devDependencies": {
     "chai": "4.1.0",
-    "type-detect": "4.0.3",
+    "chalk": "^2.1.0",
     "jasmine-core": "2.6.4",
     "karma": "1.7.0",
     "karma-babel-preprocessor": "6.0.1",
@@ -111,7 +111,11 @@
     "karma-webpack": "2.0.4",
     "mocha": "3.4.2",
     "mocha-teamcity-reporter": "1.1.1",
+    "node-fetch": "^1.7.3",
     "phantomjs-prebuilt": "2.1.14",
-    "sinon": "2.3.8"
+    "progress": "^2.0.0",
+    "sinon": "2.3.8",
+    "type-detect": "4.0.3",
+    "yargs": "^9.0.1"
   }
 }
