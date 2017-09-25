@@ -1492,6 +1492,9 @@ public class GridCacheUtils {
 
         for (int i = 0; i < GridCacheAdapter.MAX_RETRIES; i++) {
             try {
+                if (i > 10)
+                    System.err.println("");
+
                 return c.call();
             }
             catch (ClusterGroupEmptyCheckedException | ClusterTopologyServerNotFoundException e) {
