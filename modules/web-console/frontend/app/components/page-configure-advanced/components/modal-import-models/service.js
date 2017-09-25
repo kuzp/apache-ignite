@@ -1,7 +1,7 @@
 export default class ModalImportModels {
-    static $inject = ['$modal'];
-    constructor($modal) {
-        Object.assign(this, {$modal});
+    static $inject = ['$modal', 'AgentManager', '$uiRouter'];
+    constructor($modal, AgentManager, $uiRouter) {
+        Object.assign(this, {$modal, AgentManager, $uiRouter});
         this.importDomainModal = this.$modal({
             template: `
                 <modal-import-models
@@ -12,7 +12,9 @@ export default class ModalImportModels {
         });
     }
     open() {
-        return this.importDomainModal.$promise.then((m) => {
+        return this.AgentManager.startAgentWatch('Back', this.$uiRouter.globals.current.name)
+        .then(() => this.importDomainModal.$promise)
+        .then((m) => {
             this.importDomainModal.show();
             m.locals.modalInstance = m;
         });
