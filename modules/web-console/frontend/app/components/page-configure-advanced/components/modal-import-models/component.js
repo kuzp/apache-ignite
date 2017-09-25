@@ -882,7 +882,7 @@ export class ModalImportModels {
 
         $scope.importDomain.loadingOptions = LOADING_JDBC_DRIVERS;
 
-        agentMgr.startAgentWatch('Back to Domain models')
+        agentMgr.startAgentWatch('Back', this.$uiRouter.globals.current.name)
             .then(() => {
                 ActivitiesData.post({
                     group: 'configuration',
