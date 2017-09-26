@@ -18,6 +18,7 @@
 package org.apache.ignite.internal;
 
 import java.util.Collection;
+import java.util.Set;
 import javax.cache.CacheException;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -175,7 +176,5 @@ public interface IgniteEx extends Ignite {
      */
     public void rebalanceEnabled(boolean rebalanceEnabled);
 
-    public void setBaselineTopology(Collection<ClusterNode> nodes);
-
-    public void resetBaselineTopology();
+    public void activeEx(boolean active, Set<ClusterNode> nodes);
 }

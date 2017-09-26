@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cluster;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -144,7 +145,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         // Start first node as inactive if persistence is enabled.
         boolean activeOnStart = !ctx.config().isPersistentStoreEnabled() && ctx.config().isActiveOnStart();
 
-        globalState = DiscoveryDataClusterState.createState(activeOnStart);
+        globalState = DiscoveryDataClusterState.createState(activeOnStart, null);
 
         ctx.event().addLocalEventListener(lsr, EVT_NODE_LEFT, EVT_NODE_FAILED);
     }
@@ -186,7 +187,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
                     "Switching to inactive state.");
 
                 ChangeGlobalStateFinishMessage msg =
-                    new ChangeGlobalStateFinishMessage(globalState.transitionRequestId(), false);
+                    new ChangeGlobalStateFinishMessage(globalState.transitionRequestId(), false, null);
 
                 onStateFinishMessage(msg);
 
@@ -204,7 +205,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         if (msg.requestId().equals(globalState.transitionRequestId())) {
             log.info("Received state change finish message: " + msg.clusterActive());
 
-            globalState = DiscoveryDataClusterState.createState(msg.clusterActive());
+            globalState = DiscoveryDataClusterState.createState(msg.clusterActive(), msg.baselineTopology());
 
             ctx.cache().onStateChangeFinish(msg);
 
@@ -226,8 +227,10 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
     public boolean onStateChangeMessage(AffinityTopologyVersion topVer,
         ChangeGlobalStateMessage msg,
         DiscoCache discoCache) {
-        if (globalState.transition()) {
-            if (globalState.active() != msg.activate()) {
+        DiscoveryDataClusterState state = globalState;
+
+        if (state.transition()) {
+            if (isApplicable(msg, state)) {
                 GridChangeGlobalStateFuture fut = changeStateFuture(msg);
 
                 if (fut != null)
@@ -238,7 +241,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
                 if (stateFut != null) {
                     IgniteInternalFuture<?> exchFut = ctx.cache().context().exchange().affinityReadyFuture(
-                        globalState.transitionTopologyVersion());
+                        state.transitionTopologyVersion());
 
                     if (exchFut == null)
                         exchFut = new GridFinishedFuture<>();
@@ -252,7 +255,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             }
         }
         else {
-            if (globalState.active() != msg.activate()) {
+            if (isApplicable(msg, state)) {
                 ExchangeActions exchangeActions;
 
                 try {
@@ -281,6 +284,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
                     log.info("Started state transition: " + msg.activate());
 
                 globalState = DiscoveryDataClusterState.createTransitionState(msg.activate(),
+                    msg.baselineTopology(),
                     msg.requestId(),
                     topVer,
                     nodeIds);
@@ -305,6 +309,25 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         }
 
         return false;
+    }
+
+    private static boolean isApplicable(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
+        if (!state.active() && !msg.activate())
+            return false;
+
+        if (msg.activate() != state.active())
+            return true;
+
+        if ((state.baselineTopology() == null) != (msg.baselineTopology() == null))
+            return true;
+
+        if (state.baselineTopology() == null && msg.baselineTopology() == null)
+            return false;
+
+        if (msg.baselineTopology().size() != state.baselineTopology().size())
+            return true;
+
+        return msg.baselineTopology().containsAll(state.baselineTopology());
     }
 
     /**
@@ -408,6 +431,14 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
      * @return State change future.
      */
     public IgniteInternalFuture<?> changeGlobalState(final boolean activate) {
+        return changeGlobalState(activate, null);
+    }
+
+    /**
+     * @param activate New cluster state.
+     * @return State change future.
+     */
+    public IgniteInternalFuture<?> changeGlobalState(final boolean activate, Collection<ClusterNode> baselineTopology) {
         if (ctx.isDaemon() || ctx.clientNode()) {
             GridFutureAdapter<Void> fut = new GridFutureAdapter<>();
 
@@ -469,10 +500,21 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             }
         }
 
+        Set<UUID> bltIds = null;
+
+        if (baselineTopology != null) {
+            bltIds = new HashSet<>();
+            for (ClusterNode node : baselineTopology) {
+                if (!node.isClient() && !node.isDaemon())
+                    bltIds.add(node.id());
+            }
+        }
+
         ChangeGlobalStateMessage msg = new ChangeGlobalStateMessage(startedFut.requestId,
             ctx.localNodeId(),
             storedCfgs,
-            activate);
+            activate,
+            bltIds);
 
         try {
             ctx.discovery().sendCustomEvent(msg);

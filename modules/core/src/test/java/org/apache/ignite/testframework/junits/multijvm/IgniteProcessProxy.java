@@ -19,6 +19,7 @@ package org.apache.ignite.testframework.junits.multijvm;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -760,11 +761,7 @@ public class IgniteProcessProxy implements IgniteEx {
         throw new UnsupportedOperationException("Operation isn't supported yet.");
     }
 
-    @Override public void setBaselineTopology(Collection<ClusterNode> nodes) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override public void resetBaselineTopology() {
+    @Override public void activeEx(boolean active, Set<ClusterNode> nodes) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

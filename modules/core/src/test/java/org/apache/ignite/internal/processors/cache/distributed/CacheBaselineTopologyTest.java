@@ -78,7 +78,7 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         assert initialMapping.size() == 2 : initialMapping;
 
-        ignite.setBaselineTopology(nodes.keySet());
+        ignite.activeEx(true, nodes.keySet());
 
         awaitPartitionMapExchange();
 

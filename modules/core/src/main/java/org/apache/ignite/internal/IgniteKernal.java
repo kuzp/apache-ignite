@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -3485,6 +3486,20 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         }
     }
 
+    @Override public void activeEx(boolean active, Set<ClusterNode> nodes) {
+        guard();
+
+        try {
+            context().state().changeGlobalState(active, nodes).get();
+        }
+        catch (IgniteCheckedException e) {
+            throw U.convertException(e);
+        }
+        finally {
+            unguard();
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public void resetLostPartitions(Collection<String> cacheNames) {
         CU.validateCacheNames(cacheNames);
@@ -3915,14 +3930,6 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
 
             close();
         }
-    }
-
-    @Override public void setBaselineTopology(Collection<ClusterNode> nodes) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override public void resetBaselineTopology() {
-        throw new UnsupportedOperationException("Not implemented");
     }
 
     /**

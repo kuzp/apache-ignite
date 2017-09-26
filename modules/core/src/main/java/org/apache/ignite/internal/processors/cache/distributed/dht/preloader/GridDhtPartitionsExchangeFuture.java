@@ -2399,11 +2399,14 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         cctx.kernalContext().state().onStateChangeError(changeGlobalStateExceptions, req);
                     }
 
+                    // TODO: handle state change error.
+
                     boolean active = !stateChangeErr && req.activate();
 
                     ChangeGlobalStateFinishMessage stateFinishMsg = new ChangeGlobalStateFinishMessage(
                         req.requestId(),
-                        active);
+                        active,
+                        stateChangeErr ? null : req.baselineTopology());
 
                     cctx.discovery().sendCustomEvent(stateFinishMsg);
                 }

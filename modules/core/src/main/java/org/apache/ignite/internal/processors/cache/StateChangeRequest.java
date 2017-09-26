@@ -17,10 +17,12 @@
 
 package org.apache.ignite.internal.processors.cache;
 
+import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.jetbrains.annotations.Nullable;
 
 /**
  *
@@ -61,6 +63,10 @@ public class StateChangeRequest {
      */
     public boolean activate() {
         return msg.activate();
+    }
+
+    @Nullable public Set<UUID> baselineTopology() {
+        return msg.baselineTopology();
     }
 
     /**
