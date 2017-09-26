@@ -174,4 +174,8 @@ public interface IgniteEx extends Ignite {
      * @param rebalanceEnabled rebalance enabled flag.
      */
     public void rebalanceEnabled(boolean rebalanceEnabled);
+
+    public void setBaselineTopology(Collection<ClusterNode> nodes);
+
+    public void resetBaselineTopology();
 }

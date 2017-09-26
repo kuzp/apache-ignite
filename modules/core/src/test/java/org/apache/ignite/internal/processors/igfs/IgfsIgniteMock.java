@@ -604,6 +604,14 @@ public class IgfsIgniteMock implements IgniteEx {
         return null;
     }
 
+    @Override public void setBaselineTopology(Collection<ClusterNode> nodes) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override public void resetBaselineTopology() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     /**
      * Throw {@link UnsupportedOperationException}.
      */

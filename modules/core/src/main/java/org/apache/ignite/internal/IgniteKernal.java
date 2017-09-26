@@ -3917,6 +3917,14 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         }
     }
 
+    @Override public void setBaselineTopology(Collection<ClusterNode> nodes) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override public void resetBaselineTopology() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     /**
      * Creates optional component.
      *

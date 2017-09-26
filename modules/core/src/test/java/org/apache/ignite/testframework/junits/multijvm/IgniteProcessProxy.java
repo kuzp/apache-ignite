@@ -760,6 +760,14 @@ public class IgniteProcessProxy implements IgniteEx {
         throw new UnsupportedOperationException("Operation isn't supported yet.");
     }
 
+    @Override public void setBaselineTopology(Collection<ClusterNode> nodes) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override public void resetBaselineTopology() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     /**
      * @return Jvm process in which grid node started.
      */
