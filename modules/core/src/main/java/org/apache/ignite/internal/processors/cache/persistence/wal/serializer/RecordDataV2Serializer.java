@@ -19,7 +19,11 @@ package org.apache.ignite.internal.processors.cache.persistence.wal.serializer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
+import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.SnapshotRecord;
 import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
@@ -61,6 +65,9 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             case SNAPSHOT:
                 return /*snapshotId*/8 + /*full or incremental*/1;
 
+            case DATA_RECORD:
+                return delegateSerializer.size(record) + 8;
+
             default:
                 return delegateSerializer.size(record);
         }
@@ -80,6 +87,17 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 boolean isFull = in.readByte() == 1;
 
                 return new SnapshotRecord(snpId, isFull);
+
+            case DATA_RECORD:
+                int entryCnt = in.readInt();
+                long timeStamp = in.readLong();
+
+                List<DataEntry> entries = new ArrayList<>(entryCnt);
+
+                for (int i = 0; i < entryCnt; i++)
+                    entries.add(delegateSerializer.readDataEntry(in));
+
+                return new DataRecord(entries, timeStamp);
 
             default:
                 return delegateSerializer.readRecord(type, in);
@@ -104,6 +122,17 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 buf.put((byte)(rec.isFull() ? 1 : 0));
 
                break;
+
+            case DATA_RECORD:
+                DataRecord dataRec = (DataRecord)record;
+
+                buf.putInt(dataRec.writeEntries().size());
+                buf.putLong(dataRec.timestamp());
+
+                for (DataEntry dataEntry : dataRec.writeEntries())
+                    RecordDataV1Serializer.putDataEntry(buf, dataEntry);
+
+                break;
 
             default:
                delegateSerializer.writeRecord(record, buf);

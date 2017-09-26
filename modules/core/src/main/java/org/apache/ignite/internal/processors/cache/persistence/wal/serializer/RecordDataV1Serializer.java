@@ -1302,7 +1302,7 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
      * @param buf Buffer to write to.
      * @param entry Data entry.
      */
-    private static void putDataEntry(ByteBuffer buf, DataEntry entry) throws IgniteCheckedException {
+    static void putDataEntry(ByteBuffer buf, DataEntry entry) throws IgniteCheckedException {
         buf.putInt(entry.cacheId());
 
         if (!entry.key().putValue(buf))
@@ -1370,7 +1370,7 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
      * @param in Input to read from.
      * @return Read entry.
      */
-    private DataEntry readDataEntry(ByteBufferBackedDataInput in) throws IOException, IgniteCheckedException {
+    DataEntry readDataEntry(ByteBufferBackedDataInput in) throws IOException, IgniteCheckedException {
         int cacheId = in.readInt();
 
         int keySize = in.readInt();

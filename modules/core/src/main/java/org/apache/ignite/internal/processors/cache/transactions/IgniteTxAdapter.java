@@ -1106,7 +1106,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
                             remote() ? nodeId() : null
                     );
 
-                    txRecord.timestamp(System.currentTimeMillis());
+                    txRecord.timestamp(U.currentTimeMillis());
 
                     try {
                         cctx.wal().log(txRecord);
