@@ -53,7 +53,7 @@ public class ChangeGlobalStateMessage implements DiscoveryCustomMessage {
     private List<StoredCacheData> storedCfgs;
 
     /** */
-    @Nullable private Set<UUID> baselineTopology;
+    @Nullable private BaselineTopology baselineTopology;
 
     /** */
     @GridToStringExclude
@@ -70,7 +70,7 @@ public class ChangeGlobalStateMessage implements DiscoveryCustomMessage {
         UUID initiatingNodeId,
         @Nullable List<StoredCacheData> storedCfgs,
         boolean activate,
-        Set<UUID> baselineTopology
+        BaselineTopology baselineTopology
     ) {
         assert reqId != null;
         assert initiatingNodeId != null;
@@ -134,7 +134,7 @@ public class ChangeGlobalStateMessage implements DiscoveryCustomMessage {
         return activate;
     }
 
-    @Nullable public Set<UUID> baselineTopology() {
+    @Nullable public BaselineTopology baselineTopology() {
         return baselineTopology;
     }
 

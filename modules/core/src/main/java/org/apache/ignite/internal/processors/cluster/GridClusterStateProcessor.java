@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.processors.cluster;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -291,7 +292,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
                 AffinityTopologyVersion stateChangeTopVer = topVer.nextMinorVersion();
 
-                StateChangeRequest req = new StateChangeRequest(msg, stateChangeTopVer);
+                StateChangeRequest req = new StateChangeRequest(msg, msg.activate() != state.active(), stateChangeTopVer);
 
                 exchangeActions.stateChangeRequest(req);
 
@@ -324,10 +325,23 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         if (state.baselineTopology() == null && msg.baselineTopology() == null)
             return false;
 
-        if (msg.baselineTopology().size() != state.baselineTopology().size())
+        return msg.baselineTopology().equals(state.baselineTopology());
+    }
+
+    private static boolean isEquivalent(DiscoveryDataClusterState oldState, DiscoveryDataClusterState newState) {
+        if (!oldState.active() && !newState.active())
             return true;
 
-        return msg.baselineTopology().containsAll(state.baselineTopology());
+        if (oldState.active() != newState.active())
+            return false;
+
+        if (oldState.baselineTopology() == null && newState.baselineTopology() == null)
+            return true;
+
+        if (oldState.baselineTopology() == null ^ newState.baselineTopology() == null)
+            return false;
+
+        return !oldState.baselineTopology().equals(newState.baselineTopology());
     }
 
     /**
@@ -438,7 +452,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
      * @param activate New cluster state.
      * @return State change future.
      */
-    public IgniteInternalFuture<?> changeGlobalState(final boolean activate, Collection<ClusterNode> baselineTopology) {
+    public IgniteInternalFuture<?> changeGlobalState(final boolean activate, Collection<ClusterNode> baselineNodes) {
         if (ctx.isDaemon() || ctx.clientNode()) {
             GridFutureAdapter<Void> fut = new GridFutureAdapter<>();
 
@@ -452,9 +466,21 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
                 " cluster (must invoke the method outside of an active transaction)."));
         }
 
+        Set<Serializable> bltConsIds = null;
+
+        if (baselineNodes != null) {
+            bltConsIds = new HashSet<>();
+            for (ClusterNode node : baselineNodes) {
+                if (!node.isClient() && !node.isDaemon())
+                    bltConsIds.add(node.id());
+            }
+        }
+
+        BaselineTopology blt = bltConsIds != null ? new BaselineTopology(bltConsIds) : null;
+
         DiscoveryDataClusterState curState = globalState;
 
-        if (!curState.transition() && curState.active() == activate)
+        if (!curState.transition() && curState.active() == activate && BaselineTopology.equals(curState.baselineTopology(), blt))
             return new GridFinishedFuture<>();
 
         GridChangeGlobalStateFuture startedFut = null;
@@ -500,21 +526,11 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             }
         }
 
-        Set<UUID> bltIds = null;
-
-        if (baselineTopology != null) {
-            bltIds = new HashSet<>();
-            for (ClusterNode node : baselineTopology) {
-                if (!node.isClient() && !node.isDaemon())
-                    bltIds.add(node.id());
-            }
-        }
-
         ChangeGlobalStateMessage msg = new ChangeGlobalStateMessage(startedFut.requestId,
             ctx.localNodeId(),
             storedCfgs,
             activate,
-            bltIds);
+            blt);
 
         try {
             ctx.discovery().sendCustomEvent(msg);

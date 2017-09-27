@@ -41,6 +41,7 @@ import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.GridNodeOrderComparator;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.managers.discovery.DiscoCache;
+import org.apache.ignite.internal.processors.cluster.BaselineTopology;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
@@ -84,6 +85,9 @@ public class GridAffinityAssignmentCache {
 
     /** */
     private List<List<ClusterNode>> idealAssignment;
+
+    /** */
+    private BaselineTopology baselineTopology;
 
     /** Cache item corresponding to the head topology version. */
     private final AtomicReference<GridAffinityAssignment> head;
@@ -279,24 +283,40 @@ public class GridAffinityAssignmentCache {
         else
             sorted = Collections.singletonList(ctx.discovery().localNode());
 
+        boolean hasBaseline = discoCache.state().baselineTopology() != null;
+        boolean changedBaseline = !hasBaseline ? baselineTopology != null :
+            discoCache.state().baselineTopology().equals(baselineTopology);
+
         List<List<ClusterNode>> assignment;
 
         if (prevAssignment != null && discoEvt != null) {
             boolean affNode = CU.affinityNode(discoEvt.eventNode(), nodeFilter);
 
-            if (!affNode)
+            if (!affNode || (hasBaseline && !changedBaseline))
                 assignment = prevAssignment;
+            else if (hasBaseline && changedBaseline) {
+                assignment = null;
+                // TODO: calculate based on baseline topology
+            }
             else
                 assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
                     discoEvt, topVer, backups));
         }
-        else
-            assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment, discoEvt,
-                topVer, backups));
+        else {
+            if (hasBaseline) {
+                assignment = null;
+                // TODO: calculate based on baseline topology
+            }
+            else
+                assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
+                    discoEvt, topVer, backups));
+        }
 
         assert assignment != null;
 
         idealAssignment = assignment;
+
+        baselineTopology = discoCache.state().baselineTopology();
 
         if (locCache)
             initialize(topVer, assignment);

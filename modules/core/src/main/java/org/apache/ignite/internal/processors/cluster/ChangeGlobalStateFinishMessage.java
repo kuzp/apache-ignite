@@ -41,13 +41,13 @@ public class ChangeGlobalStateFinishMessage implements DiscoveryCustomMessage {
     private final boolean clusterActive;
 
     /** */
-    @Nullable private final Set<UUID> baselineTopology;
+    @Nullable private final BaselineTopology baselineTopology;
 
     /**
      * @param reqId State change request ID.
      * @param clusterActive New cluster state.
      */
-    public ChangeGlobalStateFinishMessage(UUID reqId, boolean clusterActive, @Nullable Set<UUID> baselineTopology) {
+    public ChangeGlobalStateFinishMessage(UUID reqId, boolean clusterActive, @Nullable BaselineTopology baselineTopology) {
         assert reqId != null;
 
         this.reqId = reqId;
@@ -69,7 +69,7 @@ public class ChangeGlobalStateFinishMessage implements DiscoveryCustomMessage {
         return clusterActive;
     }
 
-    @Nullable public Set<UUID> baselineTopology() {
+    @Nullable public BaselineTopology baselineTopology() {
         return baselineTopology;
     }
 

@@ -40,7 +40,7 @@ public class DiscoveryDataClusterState implements Serializable {
     private final boolean active;
 
     /** */
-    @Nullable private final Set<UUID> baselineTopology;
+    @Nullable private final BaselineTopology baselineTopology;
 
     /** */
     private final UUID transitionReqId;
@@ -60,7 +60,7 @@ public class DiscoveryDataClusterState implements Serializable {
      * @param active Current status.
      * @return State instance.
      */
-    static DiscoveryDataClusterState createState(boolean active, @Nullable Set<UUID> baselineTopology) {
+    static DiscoveryDataClusterState createState(boolean active, @Nullable BaselineTopology baselineTopology) {
         return new DiscoveryDataClusterState(active, baselineTopology, null, null, null);
     }
 
@@ -72,7 +72,7 @@ public class DiscoveryDataClusterState implements Serializable {
      * @return State instance.
      */
     static DiscoveryDataClusterState createTransitionState(boolean active,
-        @Nullable Set<UUID> baselineTopology,
+        @Nullable BaselineTopology baselineTopology,
         UUID transitionReqId,
         AffinityTopologyVersion transitionTopVer,
         Set<UUID> transitionNodes) {
@@ -90,7 +90,7 @@ public class DiscoveryDataClusterState implements Serializable {
      * @param transitionNodes Nodes participating in state change exchange.
      */
     private DiscoveryDataClusterState(boolean active,
-        @Nullable Set<UUID> baselineTopology,
+        @Nullable BaselineTopology baselineTopology,
         @Nullable UUID transitionReqId,
         @Nullable AffinityTopologyVersion transitionTopVer,
         @Nullable Set<UUID> transitionNodes) {
@@ -151,7 +151,7 @@ public class DiscoveryDataClusterState implements Serializable {
         return active;
     }
 
-    @Nullable public Set<UUID> baselineTopology() {
+    @Nullable public BaselineTopology baselineTopology() {
         return baselineTopology;
     }
 
