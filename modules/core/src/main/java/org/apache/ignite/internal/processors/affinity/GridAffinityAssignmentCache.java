@@ -53,6 +53,7 @@ import org.jsr166.ConcurrentHashMap8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE;
 import static org.apache.ignite.IgniteSystemProperties.getInteger;
+import static org.apache.ignite.IgniteSystemProperties.snapshot;
 import static org.apache.ignite.internal.events.DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT;
 
 /**
@@ -285,7 +286,7 @@ public class GridAffinityAssignmentCache {
 
         boolean hasBaseline = discoCache.state().baselineTopology() != null;
         boolean changedBaseline = !hasBaseline ? baselineTopology != null :
-            discoCache.state().baselineTopology().equals(baselineTopology);
+            !discoCache.state().baselineTopology().equals(baselineTopology);
 
         List<List<ClusterNode>> assignment;
 
@@ -294,19 +295,19 @@ public class GridAffinityAssignmentCache {
 
             if (!affNode || (hasBaseline && !changedBaseline))
                 assignment = prevAssignment;
-            else if (hasBaseline && changedBaseline) {
-                assignment = null;
-                // TODO: calculate based on baseline topology
-            }
+            else if (hasBaseline && changedBaseline)
+                assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
+                    filterBaseline(sorted, discoCache.state().baselineTopology()),
+                    prevAssignment, discoEvt, topVer, backups));
             else
                 assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
                     discoEvt, topVer, backups));
         }
         else {
-            if (hasBaseline) {
-                assignment = null;
-                // TODO: calculate based on baseline topology
-            }
+            if (hasBaseline)
+                assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
+                    filterBaseline(sorted, discoCache.state().baselineTopology()),
+                    prevAssignment, discoEvt, topVer, backups));
             else
                 assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
                     discoEvt, topVer, backups));
@@ -322,6 +323,19 @@ public class GridAffinityAssignmentCache {
             initialize(topVer, assignment);
 
         return assignment;
+    }
+
+    private static List<ClusterNode> filterBaseline(List<ClusterNode> nodes, BaselineTopology blt) {
+        List<ClusterNode> res = new ArrayList<>(blt.consistentIds().size());
+
+        for (ClusterNode node : nodes) {
+            if (blt.consistentIds().contains(node.consistentId()))
+                res.add(node);
+        }
+
+        assert res.size() == blt.consistentIds().size();
+
+        return res;
     }
 
     /**

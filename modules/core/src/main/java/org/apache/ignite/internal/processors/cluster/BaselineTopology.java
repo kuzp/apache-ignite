@@ -29,13 +29,13 @@ import org.apache.ignite.lang.IgnitePredicate;
 
 public class BaselineTopology implements Serializable {
 
-    private final Set<Serializable> consistentIds;
+    private final Set<Object> consistentIds;
 
-    public BaselineTopology(Set<Serializable> consistentIds) {
+    public BaselineTopology(Set<Object> consistentIds) {
         this.consistentIds = consistentIds;
     }
 
-    public Set<Serializable> consistentIds() {
+    public Set<Object> consistentIds() {
         return consistentIds;
     }
 

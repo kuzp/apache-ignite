@@ -466,13 +466,13 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
                 " cluster (must invoke the method outside of an active transaction)."));
         }
 
-        Set<Serializable> bltConsIds = null;
+        Set<Object> bltConsIds = null;
 
         if (baselineNodes != null) {
             bltConsIds = new HashSet<>();
             for (ClusterNode node : baselineNodes) {
                 if (!node.isClient() && !node.isDaemon())
-                    bltConsIds.add(node.id());
+                    bltConsIds.add(node.consistentId());
             }
         }
 
