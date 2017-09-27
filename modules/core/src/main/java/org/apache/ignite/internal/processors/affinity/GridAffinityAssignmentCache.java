@@ -38,7 +38,7 @@ import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.internal.GridKernalContext;
-import org.apache.ignite.internal.GridNodeOrderComparator;
+import org.apache.ignite.internal.cluster.NodeOrderLegacyComparator;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.managers.discovery.DiscoCache;
 import org.apache.ignite.internal.processors.cluster.BaselineTopology;
@@ -49,11 +49,9 @@ import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.jetbrains.annotations.Nullable;
-import org.jsr166.ConcurrentHashMap8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE;
 import static org.apache.ignite.IgniteSystemProperties.getInteger;
-import static org.apache.ignite.IgniteSystemProperties.snapshot;
 import static org.apache.ignite.internal.events.DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT;
 
 /**
@@ -279,7 +277,7 @@ public class GridAffinityAssignmentCache {
         if (!locCache) {
             sorted = new ArrayList<>(discoCache.cacheGroupAffinityNodes(groupId()));
 
-            Collections.sort(sorted, GridNodeOrderComparator.INSTANCE);
+            Collections.sort(sorted, NodeOrderLegacyComparator.INSTANCE);
         }
         else
             sorted = Collections.singletonList(ctx.discovery().localNode());
@@ -325,13 +323,15 @@ public class GridAffinityAssignmentCache {
         return assignment;
     }
 
-    private static List<ClusterNode> filterBaseline(List<ClusterNode> nodes, BaselineTopology blt) {
+    private List<ClusterNode> filterBaseline(List<ClusterNode> nodes, BaselineTopology blt) {
         List<ClusterNode> res = new ArrayList<>(blt.consistentIds().size());
 
         for (ClusterNode node : nodes) {
             if (blt.consistentIds().contains(node.consistentId()))
                 res.add(node);
         }
+
+        // TODO: calculate for < case using DetachedNode.
 
         assert res.size() == blt.consistentIds().size();
 
