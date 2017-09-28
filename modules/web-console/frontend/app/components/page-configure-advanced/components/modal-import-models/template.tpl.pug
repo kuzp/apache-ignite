@@ -107,6 +107,7 @@ mixin td-ellipses-lbl(w, lbl)
                                 model: 'importCommon.cacheOrTemplate'
                             })(
                                 bs-options='item.value as item.label for item in importCommon.cachesOrTemplates'
+                                ng-change='$ctrl.onCacheSelect(importCommon.cacheOrTemplate)'
                             )
                         .pc-form-grid-col-60.pc-form-grid__text-only-item
                             | Defaults to be applied for filtered tables
@@ -149,11 +150,6 @@ mixin td-ellipses-lbl(w, lbl)
                             +checkbox('Generate aliases for query fields', 'ui.generateFieldAliases', '"domainGenerateFieldAliases"', 'Generate aliases for query fields with database field names when database field name differ from Java field name')
                         .pc-form-grid-col-60(ng-if=generatePojo)
                             +java-package('Package:', 'ui.packageName', '"domainPackageName"', true, true, 'Package that will be used for POJOs generation')
-                        .pc-form-grid-col-60
-                            +ignite-form-field-dropdown('Clusters:', 'ui.generatedCachesClusters', '"generatedCachesClusters"', false, false, true,
-                                'Choose clusters for generated caches', '', 'clusters',
-                                'Choose clusters that will be associated with generated caches'
-                            )
             .modal-footer
                 button.btn-ignite.btn-ignite--success.modal-import-models__prev-button(
                     type='button'

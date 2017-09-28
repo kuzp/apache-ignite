@@ -6,7 +6,8 @@ import find from 'lodash/fp/find';
 import get from 'lodash/fp/get';
 import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
-
+import ObjectID from 'bson-objectid';
+import {uniqueName} from 'app/utils/uniqueName';
 
 function _mapCaches(caches = []) {
     return caches.map((cache) => {
@@ -50,6 +51,7 @@ const DFLT_REPLICATED_CACHE = {
     }
 };
 
+const CACHE_TEMPLATES = [DFLT_PARTITIONED_CACHE, DFLT_REPLICATED_CACHE];
 
 export class ModalImportModels {
     static $inject = ['$uiRouter', 'ConfigSelectors', 'ConfigEffects', 'ConfigureState', '$http', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteFocus', 'SqlTypes', 'JavaTypes', 'IgniteMessages', '$scope', '$rootScope', 'AgentManager', 'IgniteActivitiesData', 'IgniteLoading', 'IgniteFormUtils', 'IgniteLegacyUtils'];
@@ -57,32 +59,27 @@ export class ModalImportModels {
         Object.assign(this, {$uiRouter, ConfigSelectors, ConfigEffects, ConfigureState, $http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils});
     }
     loadData() {
-        return Observable.combineLatest(
-            this.$uiRouter.globals.params$.pluck('clusterID').take(1),
-            Observable
-                .fromPromise(this.ConfigEffects.etp('LOAD_USER_CLUSTERS'))
-                .switchMap(() => this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue()))
-                .take(1)
-        )
-        .switchMap(([clusterID, shortClusters]) => {
-            return (!clusterID || clusterID === 'new')
+        return this.$uiRouter.globals.params$.pluck('clusterID').take(1)
+        .switchMap((id = 'new') => {
+            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id, 'Imported cluster'));
+        })
+        .switchMap((cluster) => {
+            return (!cluster.caches.length && !cluster.models.length)
                 ? Observable.of({
-                    cluster: {_id: clusterID},
-                    clusters: shortClusters,
+                    cluster,
                     caches: [],
                     models: []
                 })
                 : Observable.fromPromise(Promise.all([
-                    this.ConfigEffects.etp('LOAD_SHORT_CACHES', {clusterID}),
-                    this.ConfigEffects.etp('LOAD_SHORT_MODELS', {clusterID})
+                    this.ConfigEffects.etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id}),
+                    this.ConfigEffects.etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id})
                 ]))
                 .switchMap(() => {
                     return Observable.combineLatest(
                         this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue()),
                         this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue()),
                         (caches, models) => ({
-                            cluster: {_id: clusterID},
-                            clusters: shortClusters,
+                            cluster,
                             caches,
                             models
                         })
@@ -90,6 +87,27 @@ export class ModalImportModels {
                 });
         })
         .take(1);
+    }
+    saveBatch(batch) {
+        this.ConfigureState.dispatchAction({
+            type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+            changedItems: this.batchActionsToRequestBody(batch),
+            prevActions: []
+        });
+    }
+    batchActionsToRequestBody(batch) {
+        return batch.reduce((req, action) => {
+            return {
+                ...req,
+                cluster: {
+                    ...req.cluster,
+                    models: [...req.cluster.models, action.newDomainModel._id],
+                    caches: [...req.cluster.caches, ...action.newDomainModel.caches]
+                },
+                models: [...req.models, action.newDomainModel],
+                caches: action.newCache ? [...req.caches, action.newCache] : req.caches
+            };
+        }, {cluster: this.cluster, models: [], caches: [], igfss: []});
     }
     onTableSelectionChange(selected) {
         this.$scope.$applyAsync(() => {
@@ -106,6 +124,28 @@ export class ModalImportModels {
     onVisibleRowsChange(rows) {
         return this.visibleTables = rows.map((r) => r.entity);
     }
+    onCacheSelect(cacheID) {
+        if (cacheID < 0) return;
+        if (this.loadedCaches[cacheID]) return;
+        return this.onCacheSelectSubcription = Observable.merge(
+            Observable.timer(0, 1).take(1)
+                .do(() => this.ConfigureState.dispatchAction({type: 'LOAD_CACHE', cacheID})),
+            Observable.race(
+                this.ConfigureState.actions$
+                    .filter((a) => a.type === 'LOAD_CACHE_OK' && a.cache._id === cacheID).pluck('cache')
+                    .do((cache) => {
+                        this.loadedCaches[cacheID] = cache;
+                    }),
+                this.ConfigureState.actions$
+                    .filter((a) => a.type === 'LOAD_CACHE_ERR' && a.action.cacheID === cacheID)
+            ).take(1)
+        )
+        .subscribe();
+    }
+    $onDestroy() {
+        this.subscription.unsubscribe();
+        if (this.onCacheSelectSubcription) this.onCacheSelectSubcription.unsubscribe();
+    }
     $onInit() {
         // Restores old behavior
         const {$http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils} = this;
@@ -116,17 +156,15 @@ export class ModalImportModels {
                 this.onHide();
             }
         };
-        this.$scope.ui = {
-            generatedCachesClusters: []
-        };
+        this.$scope.ui = {};
         this.$scope.$hide = importDomainModal.hide;
 
-        this.loadData().debug('import data').do((data) => {
-            this.$scope.clusters = data.clusters.map((c) => ({value: c._id, label: c.name}));
+        this.subscription = this.loadData().debug('import data').do((data) => {
             this.$scope.caches = _mapCaches(data.caches);
             this.$scope.domains = data.models;
+            this.caches = data.caches;
+            this.cluster = data.cluster;
 
-            this.$scope.clusters.forEach((cluster) => this.$scope.ui.generatedCachesClusters.push(cluster.value));
             if (!_.isEmpty(this.$scope.caches)) {
                 this.$scope.importActions.push({
                     label: 'Associate with existing cache',
@@ -140,6 +178,9 @@ export class ModalImportModels {
 
         // New
 
+        this.loadedCaches = {
+            ...CACHE_TEMPLATES.reduce((a, c) => ({...a, [c.value]: c.cache}), {})
+        };
         this.actions = [
             {value: 'connect', label: this.$root.IgniteDemoMode ? 'Description' : 'Connection'},
             {value: 'schemas', label: 'Schemas'},
@@ -406,14 +447,15 @@ export class ModalImportModels {
                     return agentMgr.tables(preset);
                 })
                 .then((tables) => {
-                    this._importCachesOrTemplates = [DFLT_PARTITIONED_CACHE, DFLT_REPLICATED_CACHE].concat($scope.caches);
+                    this._importCachesOrTemplates = CACHE_TEMPLATES.concat($scope.caches);
 
                     this._fillCommonCachesOrTemplates($scope.importCommon)($scope.importCommon.action);
 
                     _.forEach(tables, (tbl, idx) => {
                         tbl.id = idx;
                         tbl.action = IMPORT_DM_NEW_CACHE;
-                        tbl.generatedCacheName = toJavaClassName(tbl.table) + 'Cache';
+                        // tbl.generatedCacheName = toJavaClassName(tbl.table) + 'Cache';
+                        tbl.generatedCacheName = uniqueName(toJavaClassName(tbl.table) + 'Cache', this.caches);
                         tbl.cacheOrTemplate = DFLT_PARTITIONED_CACHE.value;
                         tbl.label = tbl.schema + '.' + tbl.table;
                         tbl.edit = false;
@@ -474,63 +516,12 @@ export class ModalImportModels {
             Focus.move('domainPackageName');
         }
 
-        function _saveBatch(batch) {
-            if (batch && batch.length > 0) {
-                $scope.importDomain.loadingOptions = SAVING_DOMAINS;
-                Loading.start('importDomainFromDb');
-
-                $http.post('/api/v1/configuration/domains/save/batch', batch)
-                    .then(({data}) => {
-                        let lastItem;
-                        const newItems = [];
-
-                        _.forEach(_mapCaches(data.generatedCaches), (cache) => $scope.caches.push(cache));
-
-                        _.forEach(data.savedDomains, function(savedItem) {
-                            const idx = _.findIndex($scope.domains, function(domain) {
-                                return domain._id === savedItem._id;
-                            });
-
-                            if (idx >= 0)
-                                $scope.domains[idx] = savedItem;
-                            else
-                                newItems.push(savedItem);
-
-                            lastItem = savedItem;
-                        });
-
-                        _.forEach(newItems, function(item) {
-                            $scope.domains.push(item);
-                        });
-
-                        if (!lastItem && $scope.domains.length > 0)
-                            lastItem = $scope.domains[0];
-
-                        $scope.selectItem(lastItem);
-
-                        Messages.showInfo('Domain models imported from database.');
-
-                        $scope.ui.activePanels = [0, 1, 2];
-
-                        $scope.ui.showValid = true;
-                    })
-                    .catch(Messages.showError)
-                    .finally(() => {
-                        Loading.finish('importDomainFromDb');
-
-                        importDomainModal.hide();
-                    });
-            }
-            else
-                importDomainModal.hide();
-        }
-
         const _saveDomainModel = (optionsForm) => {
+            if (optionsForm.$invalid)
+                return this.FormUtils.triggerValidation(optionsForm, this.$scope);
+
             const generatePojo = $scope.ui.generatePojo;
             const packageName = $scope.ui.packageName;
-
-            if (generatePojo && !LegacyUtils.checkFieldValidators({inputForm: optionsForm}))
-                return false;
 
             const batch = [];
             const checkedCaches = [];
@@ -551,181 +542,185 @@ export class ModalImportModels {
                 };
             }
 
-            _.forEach($scope.importDomain.tables, (table, curIx) => {
-                if (table.use) {
-                    const qryFields = [];
-                    const indexes = [];
-                    const keyFields = [];
-                    const valFields = [];
-                    const aliases = [];
+            _.forEach($scope.importDomain.tablesToUse, (table, curIx, tablesToUse) => {
+                const qryFields = [];
+                const indexes = [];
+                const keyFields = [];
+                const valFields = [];
+                const aliases = [];
 
-                    const tableName = table.table;
-                    let typeName = toJavaClassName(tableName);
+                const tableName = table.table;
+                let typeName = toJavaClassName(tableName);
 
-                    if (_.find($scope.importDomain.tables,
-                            (tbl, ix) => tbl.use && ix !== curIx && tableName === tbl.table)) {
-                        typeName = typeName + '_' + toJavaClassName(table.schema);
+                if (_.find($scope.importDomain.tablesToUse,
+                        (tbl, ix) => ix !== curIx && tableName === tbl.table)) {
+                    typeName = typeName + '_' + toJavaClassName(table.schema);
 
-                        containDup = true;
+                    containDup = true;
+                }
+
+                let valType = tableName;
+                let typeAlias;
+
+                if (generatePojo) {
+                    if ($scope.ui.generateTypeAliases && tableName.toLowerCase() !== typeName.toLowerCase())
+                        typeAlias = tableName;
+
+                    valType = _toJavaPackage(packageName) + '.' + typeName;
+                }
+
+                let _containKey = false;
+
+                _.forEach(table.columns, function(col) {
+                    const fld = dbField(col.name, SqlTypes.findJdbcType(col.type), col.nullable, col.unsigned);
+
+                    qryFields.push({name: fld.javaFieldName, className: fld.javaType});
+
+                    const dbName = fld.databaseFieldName;
+
+                    if (generatePojo && $scope.ui.generateFieldAliases &&
+                        SqlTypes.validIdentifier(dbName) && !SqlTypes.isKeyword(dbName) &&
+                        !_.find(aliases, {field: fld.javaFieldName}) &&
+                        fld.javaFieldName.toUpperCase() !== dbName.toUpperCase())
+                        aliases.push({field: fld.javaFieldName, alias: dbName});
+
+                    if (col.key) {
+                        keyFields.push(fld);
+
+                        _containKey = true;
                     }
+                    else
+                        valFields.push(fld);
+                });
 
-                    let valType = tableName;
-                    let typeAlias;
+                containKey &= _containKey;
+                if (table.indexes) {
+                    _.forEach(table.indexes, (idx) => {
+                        const idxFields = _.map(idx.fields, (idxFld) => ({
+                            name: toJavaFieldName(idxFld.name),
+                            direction: idxFld.sortOrder
+                        }));
 
-                    if (generatePojo) {
-                        if ($scope.ui.generateTypeAliases && tableName.toLowerCase() !== typeName.toLowerCase())
-                            typeAlias = tableName;
-
-                        valType = _toJavaPackage(packageName) + '.' + typeName;
-                    }
-
-                    let _containKey = false;
-
-                    _.forEach(table.columns, function(col) {
-                        const fld = dbField(col.name, SqlTypes.findJdbcType(col.type), col.nullable, col.unsigned);
-
-                        qryFields.push({name: fld.javaFieldName, className: fld.javaType});
-
-                        const dbName = fld.databaseFieldName;
-
-                        if (generatePojo && $scope.ui.generateFieldAliases &&
-                            SqlTypes.validIdentifier(dbName) && !SqlTypes.isKeyword(dbName) &&
-                            !_.find(aliases, {field: fld.javaFieldName}) &&
-                            fld.javaFieldName.toUpperCase() !== dbName.toUpperCase())
-                            aliases.push({field: fld.javaFieldName, alias: dbName});
-
-                        if (col.key) {
-                            keyFields.push(fld);
-
-                            _containKey = true;
-                        }
-                        else
-                            valFields.push(fld);
-                    });
-
-                    containKey &= _containKey;
-                    if (table.indexes) {
-                        _.forEach(table.indexes, (idx) => {
-                            const idxFields = _.map(idx.fields, (idxFld) => ({
-                                name: toJavaFieldName(idxFld.name),
-                                direction: idxFld.sortOrder
-                            }));
-
-                            indexes.push({
-                                name: idx.name,
-                                indexType: 'SORTED',
-                                fields: idxFields
-                            });
+                        indexes.push({
+                            name: idx.name,
+                            indexType: 'SORTED',
+                            fields: idxFields
                         });
-                    }
+                    });
+                }
 
-                    const domainFound = _.find($scope.domains, (domain) => domain.valueType === valType);
+                const domainFound = _.find($scope.domains, (domain) => domain.valueType === valType);
 
-                    const newDomain = {
-                        confirm: false,
-                        skip: false,
-                        space: $scope.spaces[0],
+                const batchAction = {
+                    confirm: false,
+                    skip: false,
+                    table,
+                    newDomainModel: {
+                        _id: ObjectID.generate(),
                         caches: [],
                         generatePojo
-                    };
-
-                    if (LegacyUtils.isDefined(domainFound)) {
-                        newDomain._id = domainFound._id;
-                        newDomain.caches = domainFound.caches;
-                        newDomain.confirm = true;
                     }
+                };
 
-                    newDomain.tableName = typeAlias;
-                    newDomain.keyType = valType + 'Key';
-                    newDomain.valueType = valType;
-                    newDomain.queryMetadata = 'Configuration';
-                    newDomain.databaseSchema = table.schema;
-                    newDomain.databaseTable = tableName;
-                    newDomain.fields = qryFields;
-                    newDomain.queryKeyFields = _.map(keyFields, (field) => field.javaFieldName);
-                    newDomain.indexes = indexes;
-                    newDomain.keyFields = keyFields;
-                    newDomain.aliases = aliases;
-                    newDomain.valueFields = valFields;
-
-                    // If value fields not found - copy key fields.
-                    if (_.isEmpty(valFields))
-                        newDomain.valueFields = keyFields.slice();
-
-                    // Use Java built-in type for key.
-                    if ($scope.ui.builtinKeys && newDomain.keyFields.length === 1) {
-                        const keyField = newDomain.keyFields[0];
-
-                        newDomain.keyType = keyField.javaType;
-                        newDomain.keyFieldName = keyField.javaFieldName;
-
-                        if (!$scope.ui.generateKeyFields) {
-                            // Exclude key column from query fields.
-                            newDomain.fields = _.filter(newDomain.fields, (field) => field.name !== keyField.javaFieldName);
-
-                            newDomain.queryKeyFields = [];
-                        }
-
-                        // Exclude key column from indexes.
-                        _.forEach(newDomain.indexes, (index) => {
-                            index.fields = _.filter(index.fields, (field) => field.name !== keyField.javaFieldName);
-                        });
-
-                        newDomain.indexes = _.filter(newDomain.indexes, (index) => !_.isEmpty(index.fields));
-                    }
-
-                    // Prepare caches for generation.
-                    if (table.action === IMPORT_DM_NEW_CACHE) {
-                        const template = _.find(this._importCachesOrTemplates, {value: table.cacheOrTemplate});
-
-                        const newCache = angular.copy(template.cache);
-
-                        newDomain.newCache = newCache;
-
-                        delete newCache._id;
-                        newCache.name = typeName + 'Cache';
-                        newCache.clusters = $scope.ui.generatedCachesClusters;
-
-                        // POJO store factory is not defined in template.
-                        if (!newCache.cacheStoreFactory || newCache.cacheStoreFactory.kind !== 'CacheJdbcPojoStoreFactory') {
-                            const dialect = $scope.importDomain.demo ? 'H2' : $scope.selectedPreset.db;
-
-                            const catalog = $scope.importDomain.catalog;
-
-                            newCache.cacheStoreFactory = {
-                                kind: 'CacheJdbcPojoStoreFactory',
-                                CacheJdbcPojoStoreFactory: {
-                                    dataSourceBean: 'ds' + dialect + '_' + catalog,
-                                    dialect
-                                },
-                                CacheJdbcBlobStoreFactory: { connectVia: 'DataSource' }
-                            };
-                        }
-
-                        if (!newCache.readThrough && !newCache.writeThrough) {
-                            newCache.readThrough = true;
-                            newCache.writeThrough = true;
-                        }
-                    }
-                    else {
-                        const cacheId = table.cacheOrTemplate;
-
-                        newDomain.caches = [cacheId];
-
-                        if (!_.includes(checkedCaches, cacheId)) {
-                            const cache = _.find($scope.caches, {value: cacheId}).cache;
-
-                            const change = LegacyUtils.autoCacheStoreConfiguration(cache, [newDomain]);
-
-                            if (change)
-                                newDomain.cacheStoreChanges = [{cacheId, change}];
-
-                            checkedCaches.push(cacheId);
-                        }
-                    }
-
-                    batch.push(newDomain);
+                if (LegacyUtils.isDefined(domainFound)) {
+                    batchAction.newDomainModel._id = domainFound._id;
+                    // Don't touch original caches value
+                    delete batchAction.newDomainModel.caches;
+                    batchAction.confirm = true;
                 }
+
+                Object.assign(batchAction.newDomainModel, {
+                    tableName: typeAlias,
+                    keyType: valType + 'Key',
+                    valueType: valType,
+                    queryMetadata: 'Configuration',
+                    databaseSchema: table.schema,
+                    databaseTable: tableName,
+                    fields: qryFields,
+                    queryKeyFields: _.map(keyFields, (field) => field.javaFieldName),
+                    indexes,
+                    keyFields,
+                    aliases,
+                    valueFields: _.isEmpty(valFields) ? keyFields.slice() : valFields
+                });
+
+                // Use Java built-in type for key.
+                if ($scope.ui.builtinKeys && batchAction.newDomainModel.keyFields.length === 1) {
+                    const newDomain = batchAction.newDomainModel;
+                    const keyField = newDomain.keyFields[0];
+
+                    newDomain.keyType = keyField.javaType;
+                    newDomain.keyFieldName = keyField.javaFieldName;
+
+                    if (!$scope.ui.generateKeyFields) {
+                        // Exclude key column from query fields.
+                        newDomain.fields = _.filter(newDomain.fields, (field) => field.name !== keyField.javaFieldName);
+
+                        newDomain.queryKeyFields = [];
+                    }
+
+                    // Exclude key column from indexes.
+                    _.forEach(newDomain.indexes, (index) => {
+                        index.fields = _.filter(index.fields, (field) => field.name !== keyField.javaFieldName);
+                    });
+
+                    newDomain.indexes = _.filter(newDomain.indexes, (index) => !_.isEmpty(index.fields));
+                }
+
+                // Prepare caches for generation.
+                if (table.action === IMPORT_DM_NEW_CACHE) {
+                    const newCache = angular.copy(this.loadedCaches[table.cacheOrTemplate]);
+
+                    batchAction.newCache = newCache;
+
+                    // const siblingCaches = batch.filter((a) => a.newCache).map((a) => a.newCache);
+                    const siblingCaches = [];
+                    newCache._id = ObjectID.generate();
+                    newCache.name = uniqueName(typeName + 'Cache', this.caches.concat(siblingCaches));
+                    newCache.domains = [batchAction.newDomainModel._id];
+                    batchAction.newDomainModel.caches = [newCache._id];
+
+                    // POJO store factory is not defined in template.
+                    if (!newCache.cacheStoreFactory || newCache.cacheStoreFactory.kind !== 'CacheJdbcPojoStoreFactory') {
+                        const dialect = $scope.importDomain.demo ? 'H2' : $scope.selectedPreset.db;
+
+                        const catalog = $scope.importDomain.catalog;
+
+                        newCache.cacheStoreFactory = {
+                            kind: 'CacheJdbcPojoStoreFactory',
+                            CacheJdbcPojoStoreFactory: {
+                                dataSourceBean: 'ds' + dialect + '_' + catalog,
+                                dialect
+                            },
+                            CacheJdbcBlobStoreFactory: { connectVia: 'DataSource' }
+                        };
+                    }
+
+                    if (!newCache.readThrough && !newCache.writeThrough) {
+                        newCache.readThrough = true;
+                        newCache.writeThrough = true;
+                    }
+                }
+                else {
+                    const newDomain = batchAction.newDomainModel;
+                    const cacheId = table.cacheOrTemplate;
+
+                    batchAction.newDomainModel.caches = [cacheId];
+
+                    if (!_.includes(checkedCaches, cacheId)) {
+                        const cache = _.find($scope.caches, {value: cacheId}).cache;
+
+                        // TODO: move elsewhere, make sure it still works
+                        const change = LegacyUtils.autoCacheStoreConfiguration(cache, [newDomain]);
+
+                        if (change)
+                            batchAction.cacheStoreChanges = [{cacheId, change}];
+
+                        checkedCaches.push(cacheId);
+                    }
+                }
+
+                batch.push(batchAction);
             });
 
             /**
@@ -743,17 +738,16 @@ export class ModalImportModels {
 
             const itemsToConfirm = _.filter(batch, (item) => item.confirm);
 
-            function checkOverwrite() {
+            const checkOverwrite = () => {
                 if (itemsToConfirm.length > 0) {
-                    ConfirmBatch.confirm(overwriteMessage, itemsToConfirm)
-                        .then(() => _saveBatch(_.filter(batch, (item) => !item.skip)))
+                    return ConfirmBatch.confirm(overwriteMessage, itemsToConfirm)
+                        .then(() => this.saveBatch(_.filter(batch, (item) => !item.skip)))
                         .catch(() => Messages.showError('Importing of domain models interrupted by user.'));
                 }
-                else
-                    _saveBatch(batch);
-            }
+                return this.saveBatch(batch);
+            };
 
-            function checkDuplicate() {
+            const checkDuplicate = () => {
                 if (containDup) {
                     Confirm.confirm('Some tables have the same name.<br/>' +
                         'Name of types for that tables will contain schema name too.')
@@ -761,7 +755,7 @@ export class ModalImportModels {
                 }
                 else
                     checkOverwrite();
-            }
+            };
 
             if (containKey)
                 checkDuplicate();
@@ -1036,6 +1030,7 @@ export class ModalImportModels {
                 <tables-action-cell
                     table='row.entity'
                     on-edit-start='grid.appScope.$ctrl.$scope.startEditDbTableCache($event)'
+                    on-cache-select='grid.appScope.$ctrl.onCacheSelect($event)'
                     caches='grid.appScope.$ctrl._importCachesOrTemplates'
                     import-actions='grid.appScope.$ctrl.$scope.importActions'
                 ></tables-action-cell>
