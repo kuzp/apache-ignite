@@ -185,10 +185,10 @@ export default class Caches {
             {value: null, label: 'Not set'}
         ],
         storeDisabledValueOff: (cache, value) => {
-            return cache.cacheStoreFactory.kind ? true : !value;
+            return cache && cache.cacheStoreFactory.kind ? true : !value;
         },
         storeEnabledReadOrWriteOn: (cache) => {
-            return cache.cacheStoreFactory.kind ? (cache.readThrough || cache.writeThrough) : true;
+            return cache && cache.cacheStoreFactory.kind ? (cache.readThrough || cache.writeThrough) : true;
         }
     };
 
