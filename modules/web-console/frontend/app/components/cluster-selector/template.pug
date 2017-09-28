@@ -19,6 +19,18 @@ include /app/helpers/jade/mixins
 -var clusterName = 'Cluster {{ ctrl.cluster.id | id8 }}'
 
 button.btn-ignite.btn-ignite--primary(
+    data-ng-if='$ctrl.clusters.length == 0'
+)
+    | No clusters available
+
+button.btn-ignite.btn-ignite--primary(
+    data-ng-if='$ctrl.clusters.length == 1'
+)
+    | {{ $ctrl.cluster.label }}
+
+button.btn-ignite.btn-ignite--primary(
+    data-ng-if='$ctrl.clusters.length > 1'
+
     data-ng-model='$ctrl.cluster'
 
     bs-select=''
@@ -34,20 +46,18 @@ button.btn-ignite.btn-ignite--primary(
     span(ng-if='$ctrl.cluster') {{ $ctrl.cluster.label }}
         span.icon-right.fa.fa-caret-down
 
-div(ng-if='$ctrl.cluster && $ctrl.cluster.$inProgress')
-    | Cluster {{ $ctrl.cluster.active ? 'inactive' : 'active' }}
-
-div(ng-if='$ctrl.cluster && !$ctrl.cluster.$inProgress')
+.cluster-selector--state(ng-if='$ctrl.cluster')
     | Cluster {{ $ctrl.cluster.active ? 'active' : 'inactive' }}
 
 +switcher()(
     ng-if='$ctrl.cluster'
-    ng-model='$ctrl.cluster.active'
+    ng-click='$ctrl.toggle($event)'
+    ng-checked='$ctrl.cluster.active'
     ng-disabled='$ctrl.cluster.$inProgress'
+
     tip='Toggle cluster active state'
-    ng-click='$ctrl.toggle()'
     is-in-progress='{{ $ctrl.cluster.$inProgress }}'
 )
 
 div(ng-if='$ctrl.cluster.$inProgress')
-    | {{ $ctrl.cluster.active ? 'Activating...' : 'Deactivating...' }}
+    | {{ !$ctrl.cluster.active ? 'Activating...' : 'Deactivating...' }}

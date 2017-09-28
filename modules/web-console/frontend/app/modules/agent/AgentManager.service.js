@@ -34,6 +34,11 @@ class ConnectionState {
         this.state = State.DISCONNECTED;
     }
 
+    set(cluster) {
+        this.cluster = cluster;
+        this.cluster.connected = !!_.find(this.clusters, {id: this.cluster.id});
+    }
+
     update(demo, count, clusters) {
         this.clusters = clusters;
 
@@ -152,7 +157,9 @@ export default class IgniteAgentManager {
     saveToStorage(cluster = this.connectionSbj.getValue().cluster) {
         try {
             localStorage.cluster = JSON.stringify(cluster);
-            this.connectionSbj = new BehaviorSubject(new ConnectionState(cluster));
+            const state = this.connectionSbj.getValue();
+            state.set(cluster);
+            this.connectionSbj.next(state);
         } catch (ignore) {
             // No-op.
         }

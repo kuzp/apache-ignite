@@ -16,11 +16,8 @@
  */
 
 import angular from 'angular';
-import 'angular1-async-filter';
 import component from './component';
 
 export default angular
-    .module('ignite-console.cluster-selector', [
-        'asyncFilter'
-    ])
+    .module('ignite-console.cluster-selector', [ ])
     .component('clusterSelector', component);
