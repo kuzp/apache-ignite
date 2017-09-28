@@ -28,15 +28,14 @@ export default class {
 
         const _map = map((cluster) => {
             cluster.label = `Cluster ${_.id8(cluster.id)}`;
+            cluster.active = false;
+
             return cluster;
         });
 
         this.clusters$ = this.agentMgr
             .connectionSbj
             .startWith({ clusters: [] })
-            .do((...args) => {
-                console.log('side', args);
-            })
             .do(({ clusters }) => {
                 const removed = _.differenceBy(this.clusters, clusters, 'id');
 
@@ -69,27 +68,22 @@ export default class {
         this.agentMgr.saveToStorage(this.cluster);
     }
 
-    toggle() {
+    toggle($event) {
         const changeState = () => {
             this.cluster.$inProgress = true;
-            this.agentMgr.toggleClusterState(this.cluster).then(() => {
-                setTimeout(() => {
-                    this.cluster.$inProgress = false;
-                }, 4000);
-            });
+            this.agentMgr.toggleClusterState({ active: !this.cluster.active })
+                .then(() => this.cluster.active = !this.cluster.active)
+                .finally(() => this.cluster.$inProgress = false);
         };
 
-        if (!this.cluster.active) {
-            this.cluster.$inProgress = true;
+        if (this.cluster.active) {
+            $event.preventDefault();
             this.Confirm.confirm('Are you sure you want to deactivate cluster?')
-                .then(() => changeState())
-                .catch(({ cancelled }) => {
-                    if (cancelled) {
-                        this.cluster.active = true;
-                        this.cluster.$inProgress = false;
-                    }
-                });
+                .then(() => changeState());
+
         } else
             changeState();
+
+        return false;
     }
 }
