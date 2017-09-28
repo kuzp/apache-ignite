@@ -179,14 +179,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     '@': {
                         template: base2
                     }
-                }
-            })
-            .state('base.configuration.overview', {
-                url: '/configuration/overview',
-                component: 'pageConfigureOverview',
-                permission: 'configuration',
-                metaTags: {
-                    title: 'Configuration'
                 },
                 resolve: {
                     _shortClusters: ['ConfigEffects', ({etp}) => {
@@ -197,14 +189,19 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     async: 'NOWAIT'
                 }
             })
+            .state('base.configuration.overview', {
+                url: '/configuration/overview',
+                component: 'pageConfigureOverview',
+                permission: 'configuration',
+                metaTags: {
+                    title: 'Configuration'
+                }
+            })
             .state('base.configuration.edit', {
                 url: '/configuration/:clusterID',
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {
-                    _shortClusters: ['ConfigEffects', ({etp}) => {
-                        return etp('LOAD_USER_CLUSTERS');
-                    }],
                     _cluster: ['ConfigEffects', '$transition$', ({etp}, $transition$) => {
                         return $transition$.injector().getAsync('_shortClusters').then(() => {
                             return etp('LOAD_AND_EDIT_CLUSTER', {clusterID: $transition$.params().clusterID});
