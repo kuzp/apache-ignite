@@ -108,7 +108,7 @@ export class ModalImportModels {
         .subscribe();
     }
     batchActionsToRequestBody(batch) {
-        return batch.reduce((req, action) => {
+        const result = batch.reduce((req, action) => {
             return {
                 ...req,
                 cluster: {
@@ -120,6 +120,9 @@ export class ModalImportModels {
                 caches: action.newCache ? [...req.caches, action.newCache] : req.caches
             };
         }, {cluster: this.cluster, models: [], caches: [], igfss: []});
+        result.cluster.models = [...new Set(result.cluster.models)];
+        result.cluster.caches = [...new Set(result.cluster.caches)];
+        return result;
     }
     onTableSelectionChange(selected) {
         this.$scope.$applyAsync(() => {
