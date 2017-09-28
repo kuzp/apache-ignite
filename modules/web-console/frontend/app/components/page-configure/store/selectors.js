@@ -70,14 +70,14 @@ export default class ConfigSelectors {
             // defaultName: 'New IGFS',
             itemID
         }));
-    selectClusterToEdit = (clusterID) => (state$) => state$
+    selectClusterToEdit = (clusterID, defaultName = 'New cluster') => (state$) => state$
         .let(this.selectCluster(clusterID))
         .distinctUntilChanged()
         .debug('what')
         .let(selectItemToEdit({
             items: state$.let(this.selectShortClustersValue()),
             itemFactory: () => this.Clusters.getBlankCluster(),
-            defaultName: 'New cluster',
+            defaultName,
             itemID: clusterID
         }));
     selectCurrentShortCaches = currentShortItems({changesKey: 'caches', shortKey: 'shortCaches'});
