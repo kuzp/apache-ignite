@@ -24,5 +24,6 @@ button.table-action-cell__edit-button.btn-ignite(
                 button.select-toggle.form-control(
                     bs-select
                     ng-model='$ctrl.table.cacheOrTemplate'
+                    ng-change='$ctrl.onCacheSelect({$event: $ctrl.table.cacheOrTemplate})'
                     bs-options='item.value as item.label for item in $ctrl.table.cachesOrTemplates'
                 )
