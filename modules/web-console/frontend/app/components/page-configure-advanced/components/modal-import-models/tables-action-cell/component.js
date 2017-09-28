@@ -39,6 +39,7 @@ export const component = {
     controller: TablesActionCell,
     bindings: {
         onEditStart: '&',
+        onCacheSelect: '&?',
         table: '<',
         caches: '<',
         importActions: '<'
