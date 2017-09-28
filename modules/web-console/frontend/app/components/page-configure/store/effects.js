@@ -139,18 +139,21 @@ export default class ConfigEffects {
         this.loadCacheEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_CACHE')
             .exhaustMap((a) => {
-                if (a.cacheID === 'new') return of({type: `${a.type}_OK`});
-                return this.ConfigureState.state$.let(this.ConfigSelectors.selectCache(a)).take(1)
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectCache(a.cacheID)).take(1)
                     .switchMap((cache) => {
-                        if (cache) return of({type: `${a.type}_OK`});
+                        if (cache) return of({type: `${a.type}_OK`, cache});
                         return fromPromise(this.Caches.getCache(a.cacheID))
                         .switchMap(({data}) => of(
-                            {type: cachesActionTypes.UPSERT, items: [data]},
-                            {type: `${a.type}_OK`}
+                            {type: 'CACHE', cache: data},
+                            {type: `${a.type}_OK`, cache: data}
                         ));
                     })
                     .catch((error) => of({type: `${a.type}_ERR`, error}));
             });
+
+        this.storeCacheEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'CACHE')
+            .map((a) => ({type: cachesActionTypes.UPSERT, items: [a.cache]}));
 
         this.loadShortCachesEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_CACHES')

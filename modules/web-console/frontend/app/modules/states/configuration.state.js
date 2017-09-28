@@ -375,6 +375,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
                         const {clusterID, cacheID} = $transition$.params();
+                        if (cacheID === 'new') return Promise.resolve();
                         return etp('LOAD_CACHE', {cacheID})
                         .catch((e) => {
                             $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
