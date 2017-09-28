@@ -30,7 +30,7 @@ mixin td-ellipses-lbl(w, lbl)
     .modal-dialog
         .modal-content(ignite-loading='importDomainFromDb' ignite-loading-text='{{importDomain.loadingOptions.text}}')
             #errors-container.modal-header.header
-                button.close(ng-click='$hide()' aria-hidden='true')
+                button.close(type='button' ng-click='$hide()' aria-hidden='true')
                     svg(ignite-icon="cross")
                 h4.modal-title() 
                     span(ng-if='!importDomain.demo') Import domain models from database
