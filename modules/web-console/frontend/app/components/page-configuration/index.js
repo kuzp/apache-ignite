@@ -185,8 +185,8 @@ export default angular
     `
 })
 .service('conf', class Conf {
-    static $inject = ['$window', 'ConfigureState', '$uiRouter', 'Clusters', '$state', 'PageConfigureBasic', 'Caches', 'IGFSs', 'PageConfigureAdvanced'];
-    constructor($window, ConfigureState, {globals: {params$}}, Clusters, $state, PageConfigureBasic, Caches, IGFSs, PageConfigureAdvanced) {
+    static $inject = ['$window', 'ConfigureState', '$uiRouter', 'Clusters', '$state', 'PageConfigureBasic', 'Caches', 'IGFSs'];
+    constructor($window, ConfigureState, {globals: {params$}}, Clusters, $state, PageConfigureBasic, Caches, IGFSs) {
         Object.assign(this, {$window, ConfigureState, Caches, IGFSs, params$, $state});
         const {state$, actions$} = ConfigureState;
 

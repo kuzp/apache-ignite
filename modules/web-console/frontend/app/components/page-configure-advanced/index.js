@@ -17,7 +17,6 @@
 
 import angular from 'angular';
 import component from './component';
-import service from './service';
 
 import cluster from './components/page-configure-advanced-cluster';
 import models from './components/page-configure-advanced-models';
@@ -43,5 +42,4 @@ export default angular
         modalImportModels.name,
         buttonImportModels.name
     ])
-    .component('pageConfigureAdvanced', component)
-    .service('PageConfigureAdvanced', service);
+    .component('pageConfigureAdvanced', component);
