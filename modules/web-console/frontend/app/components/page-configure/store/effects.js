@@ -100,13 +100,11 @@ export default class ConfigEffects {
             .exhaustMap((a) => {
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClusters()).take(1)
                 .switchMap((shortClusters) => {
-                    if (shortClusters.pristine) {
-                        return fromPromise(this.Clusters.getClustersOverview())
+                    return fromPromise(this.Clusters.getClustersOverview())
                         .switchMap(({data}) => of(
                             {type: shortClustersActionTypes.UPSERT, items: data},
                             {type: `${a.type}_OK`}
                         ));
-                    } return of({type: `${a.type}_OK`});
                 })
                 .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
