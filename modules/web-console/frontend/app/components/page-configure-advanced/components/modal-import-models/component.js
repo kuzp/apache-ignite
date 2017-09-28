@@ -980,15 +980,12 @@ export class ModalImportModels {
             else
                 item.cachesOrTemplates = [];
 
-            if (action === IMPORT_DM_NEW_CACHE) {
-                item.cachesOrTemplates.push(DFLT_PARTITIONED_CACHE);
-                item.cachesOrTemplates.push(DFLT_REPLICATED_CACHE);
-            }
+            if (action === IMPORT_DM_NEW_CACHE)
+                item.cachesOrTemplates.push(...CACHE_TEMPLATES);
 
             if (!_.isEmpty(this.$scope.caches)) {
-                _.forEach(this.$scope.caches, function(cache) {
-                    item.cachesOrTemplates.push(cache);
-                });
+                item.cachesOrTemplates.push(...this.$scope.caches);
+                this.onCacheSelect(item.cachesOrTemplates[0].value);
             }
 
             if (
