@@ -1,8 +1,10 @@
+import 'rxjs/add/operator/ignoreElements';
 import {merge} from 'rxjs/observable/merge';
 import {empty} from 'rxjs/observable/empty';
 import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
 import {uniqueName} from 'app/utils/uniqueName';
+import pick from 'lodash/fp/pick';
 
 import {
     clustersActionTypes,
@@ -21,6 +23,77 @@ export default class ConfigEffects {
     static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'Models', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
     constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages) {
         Object.assign(this, {ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages});
+
+        this.saveCompleteConfigurationEffect$ = this.ConfigureState.actions$
+            .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
+            .withLatestFrom(this.ConfigureState.state$)
+            .switchMap(([action, state]) => {
+                const actions = [
+                    {
+                        type: modelsActionTypes.UPSERT,
+                        items: action.changedItems.models
+                    },
+                    {
+                        type: shortModelsActionTypes.UPSERT,
+                        items: action.changedItems.models
+                    },
+                    {
+                        type: igfssActionTypes.UPSERT,
+                        items: action.changedItems.igfss
+                    },
+                    {
+                        type: shortIGFSsActionTypes.UPSERT,
+                        items: action.changedItems.igfss
+                    },
+                    {
+                        type: cachesActionTypes.UPSERT,
+                        items: action.changedItems.caches
+                    },
+                    {
+                        type: shortCachesActionTypes.UPSERT,
+                        items: action.changedItems.caches.map(Caches.toShortCache)
+                    },
+                    {
+                        type: clustersActionTypes.UPSERT,
+                        items: [action.changedItems.cluster]
+                    },
+                    {
+                        type: shortClustersActionTypes.UPSERT,
+                        items: [Clusters.toShortCluster(action.changedItems.cluster)]
+                    }
+                ];
+
+                return of(...actions)
+                .merge(
+                    fromPromise(Clusters.saveAdvanced(action.changedItems))
+                    .switchMap((res) => {
+                        return of(
+                            {type: 'EDIT_CLUSTER', cluster: action.changedItems.cluster},
+                            // {type: 'RESET_EDIT_CHANGES'},
+                            {type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}
+                        );
+                    })
+                    .catch((res) => {
+                        return of({
+                            type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR',
+                            changedItems: action.changedItems,
+                            action,
+                            error: {
+                                title: `Failed to save cluster ${action.changedItems.cluster.name}`,
+                                message: res.data
+                            }
+                        }, {
+                            type: 'UNDO_ACTIONS',
+                            actions: action.prevActions.concat(actions)
+                        });
+                    })
+                );
+            });
+
+        this.saveCompleteConfigurationErrEffect$ = this.ConfigureState.actions$
+            .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
+            .do((action) => this.IgniteMessages.showError(action.error.title, action.error.message))
+            .ignoreElements();
 
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
