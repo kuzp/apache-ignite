@@ -21,7 +21,9 @@ export default class ModelEditFormController {
         this.$scope.supportedJavaTypes = this.LegacyUtils.mkOptions(this.LegacyUtils.javaBuiltInTypes);
         // Create list of fields to show in index fields dropdown.
         this.$scope.fields = (prefix, cur) => {
-            const fields = _.map(this.$scope.backupItem.fields, (field) => ({value: field.name, label: field.name}));
+            const fields = this.$scope.backupItem
+                ? _.map(this.$scope.backupItem.fields, (field) => ({value: field.name, label: field.name}))
+                : [];
 
             if (prefix === 'new')
                 return fields;
