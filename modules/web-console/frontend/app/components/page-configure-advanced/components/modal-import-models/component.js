@@ -89,11 +89,23 @@ export class ModalImportModels {
         .take(1);
     }
     saveBatch(batch) {
+        if (!batch.length) return;
+        this.Loading.start('importDomainFromDb');
         this.ConfigureState.dispatchAction({
             type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
             changedItems: this.batchActionsToRequestBody(batch),
             prevActions: []
         });
+        this.saveSubscription = Observable.race(
+            this.ConfigureState.actions$.filter((a) => a.type === 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK')
+                .do(() => this.onHide()),
+            this.ConfigureState.actions$.filter((a) => a.type === 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR')
+        )
+        .take(1)
+        .do(() => {
+            this.Loading.finish('importDomainFromDb');
+        })
+        .subscribe();
     }
     batchActionsToRequestBody(batch) {
         return batch.reduce((req, action) => {
@@ -145,6 +157,7 @@ export class ModalImportModels {
     $onDestroy() {
         this.subscription.unsubscribe();
         if (this.onCacheSelectSubcription) this.onCacheSelectSubcription.unsubscribe();
+        if (this.saveSubscription) this.saveSubscription.unsubscribe();
     }
     $onInit() {
         // Restores old behavior
