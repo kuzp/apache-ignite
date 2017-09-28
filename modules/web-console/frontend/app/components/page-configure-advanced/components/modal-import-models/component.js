@@ -156,7 +156,14 @@ export class ModalImportModels {
                 this.onHide();
             }
         };
-        this.$scope.ui = {};
+        this.$scope.ui = {
+            generatePojo: true,
+            builtinKeys: true,
+            generateKeyFields: true,
+            usePrimitives: true,
+            generateTypeAliases: true,
+            generateFieldAliases: true
+        };
         this.$scope.$hide = importDomainModal.hide;
 
         this.subscription = this.loadData().debug('import data').do((data) => {
