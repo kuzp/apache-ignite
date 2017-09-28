@@ -738,7 +738,7 @@ export class ModalImportModels {
              */
             function overwriteMessage(meta) {
                 return '<span>' +
-                    'Domain model with name &quot;' + meta.databaseTable + '&quot; already exist.<br/><br/>' +
+                    'Domain model with name &quot;' + meta.newDomainModel.databaseTable + '&quot; already exist.<br/><br/>' +
                     'Are you sure you want to overwrite it?' +
                     '</span>';
             }
