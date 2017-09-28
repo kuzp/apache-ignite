@@ -179,12 +179,12 @@ export default ['$transitions', 'ConfigureState', '$rootScope', '$scope', '$http
 
         $scope.$on('$destroy', $root.$on('user', _packageNameUpdate));
 
-        $scope.ui.generatePojo = true;
-        $scope.ui.builtinKeys = true;
-        $scope.ui.generateKeyFields = true;
-        $scope.ui.usePrimitives = true;
-        $scope.ui.generateTypeAliases = true;
-        $scope.ui.generateFieldAliases = true;
+        // $scope.ui.generatePojo = true;
+        // $scope.ui.builtinKeys = true;
+        // $scope.ui.generateKeyFields = true;
+        // $scope.ui.usePrimitives = true;
+        // $scope.ui.generateTypeAliases = true;
+        // $scope.ui.generateFieldAliases = true;
         $scope.ui.generatedCachesClusters = [];
 
         $scope.contentVisible = function() {
