@@ -38,9 +38,9 @@ include /app/helpers/jade/mixins
                         placeholder: 'Input name',
                         required: true
                     })(
-                        i_gnite-unique='$ctrl.clusterItems.shortCaches'
-                        i_gnite-unique-property='name'
-                        i_gnite-unique-skip=`["_id", ${model}]`
+                        ignite-unique='$ctrl.caches'
+                        ignite-unique-property='name'
+                        ignite-unique-skip=`["_id", ${model}]`
                     )
                         +unique-feedback(`${model}.name`, 'Cache name should be unique')
                 .pc-form-grid-col-30(ng-if='$ctrl.available("2.1.0")')
