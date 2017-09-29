@@ -56,26 +56,26 @@ function copy_to_hosts()
     IFS=' ' read -ra ips_array <<< $(define_ips)
     for ip in ${ips_array[@]}
     do
-        if [[ $ip != "127.0.0.1" && $ip != "localhost" ]]
-        then
+        #if [[ $ip != "127.0.0.1" && $ip != "localhost" ]]
+        #then
             echo "<"$(date +"%H:%M:%S")"> Copying to the host ${ip}"
 
-            #ssh -o StrictHostKeyChecking=no $ip rm -rf $REMOTE_WORK_DIR
+            ssh -o StrictHostKeyChecking=no $ip rm -rf $REMOTE_WORK_DIR
 
-            #ssh -o StrictHostKeyChecking=no $ip mkdir -p $REMOTE_WORK_DIR
+            ssh -o StrictHostKeyChecking=no $ip mkdir -p $REMOTE_WORK_DIR
 
-            #scp -o StrictHostKeyChecking=no  $IGNITE_ZIP_FILE $ip:$REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME
+            scp -o StrictHostKeyChecking=no  $IGNITE_ZIP_FILE $ip:$REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME
 
-            #ssh -o StrictHostKeyChecking=no $ip unzip -q $REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME -d $REMOTE_WORK_DIR
+            ssh -o StrictHostKeyChecking=no $ip unzip -q $REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME -d $REMOTE_WORK_DIR
 
-            #ssh -o StrictHostKeyChecking=no $ip mkdir -p $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/log
+            ssh -o StrictHostKeyChecking=no $ip mkdir -p $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/log
 
-            #scp -o StrictHostKeyChecking=no  ${IGNITE_CONFIG_FILE}.temp${NOW} $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$IGNITE_CONFIG_BASENAME
+            scp -o StrictHostKeyChecking=no  ${IGNITE_CONFIG_FILE}.temp${NOW} $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$IGNITE_CONFIG_BASENAME
 
             scp -o StrictHostKeyChecking=no  $IGNITE_BASE_CONFIG $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/ignite-base-config.xml
 
             ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${REMOTE_USER}"@"${ip} nohup $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ignite.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$IGNITE_CONFIG_BASENAME &
-        fi
+        #fi
     done
 
     rm ${IGNITE_CONFIG_FILE}.temp${NOW}
