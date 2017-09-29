@@ -16,6 +16,7 @@
  */
 
 import {combineLatest} from 'rxjs/observable/combineLatest';
+import difference from 'lodash/difference';
 
 export const LOAD_LIST = Symbol('LOAD_LIST');
 export const ADD_CLUSTER = Symbol('ADD_CLUSTER');
@@ -358,3 +359,77 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
 editReducer2.getDefaults = () => ({
     changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
+
+export const refsReducer = (state, action) => {
+    switch (action.type) {
+        case 'ADVANCED_SAVE_COMPLETE_CONFIGURATION': {
+            console.time('refs advanced save');
+            let val = state;
+            if (state && state.models && state.clusters && state.caches.size) {
+                const newCluster = action.changedItems.cluster;
+                const oldCluster = state.clusters.get(newCluster._id) || {caches: [], models: []};
+                const addedModels = new Set(difference(newCluster.models, oldCluster.models));
+                const removedModels = new Set(difference(oldCluster.models, newCluster.models));
+                const changedModels = new Map(action.changedItems.models.map((m) => [m._id, m]));
+
+                const caches = new Map();
+                const maybeAddCache = (id) => {
+                    if (!caches.has(id)) caches.set(id, {models: {add: new Set(), remove: new Set()}});
+                    return caches.get(id);
+                };
+
+                [...state.caches.values()].forEach((cache) => {
+                    cache.domains
+                    .filter((modelID) => removedModels.has(modelID))
+                    .forEach((modelID) => maybeAddCache(cache._id).models.remove.add(modelID));
+                });
+                [...addedModels.values()].forEach((modelID) => {
+                    const model = changedModels.get(modelID);
+                    model.caches.forEach((cacheID) => {
+                        maybeAddCache(cacheID).models.add.add(modelID);
+                    });
+                });
+                action.changedItems.models.filter((m) => !addedModels.has(m._id)).forEach((model) => {
+                    const newModel = model;
+                    const oldModel = state.models.get(model._id);
+                    const addedCaches = difference(newModel.caches, oldModel.caches);
+                    const removedCaches = difference(oldModel.caches, newModel.caches);
+                    addedCaches.forEach((cacheID) => {
+                        maybeAddCache(cacheID).models.add.add(model._id);
+                    });
+                    removedCaches.forEach((cacheID) => {
+                        maybeAddCache(cacheID).models.remove.add(model._id);
+                    });
+                });
+                const result = [...caches.entries()]
+                    .filter(([cacheID]) => state.caches.has(cacheID))
+                    .map(([cacheID, changes]) => {
+                        const cache = state.caches.get(cacheID);
+                        return [
+                            cacheID,
+                            {
+                                ...cache,
+                                domains: cache.domains
+                                    .filter((modelID) => !changes.models.remove.has(modelID))
+                                    .concat([...changes.models.add.values()])
+                            }
+                        ];
+                    });
+
+                if (result.length) {
+                    val = {
+                        ...state,
+                        caches: new Map([...state.caches.entries()].concat(result))
+                    };
+                }
+
+                console.debug('added', addedModels, 'removed', removedModels, 'changed', changedModels);
+                console.debug('val', val);
+            }
+            console.timeEnd('refs advanced save');
+            return val;
+        }
+        default:
+            return state;
+    }
+};

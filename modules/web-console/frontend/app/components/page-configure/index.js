@@ -62,7 +62,8 @@ import {
     modelsActionTypes,
     shortModelsActionTypes,
     igfssActionTypes,
-    shortIGFSsActionTypes
+    shortIGFSsActionTypes,
+    refsReducer
 } from './reducer';
 import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegration';
 
@@ -91,6 +92,7 @@ export default angular
 
             ConfigureState.addReducer(reduxDevtoolsReducer);
         }
+        ConfigureState.addReducer(refsReducer);
         ConfigureState.addReducer((state, action) => Object.assign({}, state, {
             clusterConfiguration: editReducer(state.clusterConfiguration, action),
             configurationLoading: loadingReducer(state.configurationLoading, action),
