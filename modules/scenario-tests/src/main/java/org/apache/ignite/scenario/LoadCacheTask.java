@@ -67,7 +67,7 @@ public class LoadCacheTask extends AbstractTask {
     /** {@inheritDoc} */
     @Override protected void setUp() {
         super.setUp();
-        ignite = Ignition.start();
+        ignite = Ignition.start(config);
     }
 
     /** {@inheritDoc} */
