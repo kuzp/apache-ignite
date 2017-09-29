@@ -20,6 +20,8 @@ package org.apache.ignite.internal.processors.affinity;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +38,11 @@ import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.affinity.AffinityCentralizedFunction;
 import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cluster.ClusterNode;
+import org.apache.ignite.cluster.DetachedClusterNode;
 import org.apache.ignite.events.DiscoveryEvent;
+import org.apache.ignite.internal.GridComponent;
 import org.apache.ignite.internal.GridKernalContext;
+import org.apache.ignite.internal.cluster.NodeOrderComparator;
 import org.apache.ignite.internal.cluster.NodeOrderLegacyComparator;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.managers.discovery.DiscoCache;
@@ -87,6 +92,9 @@ public class GridAffinityAssignmentCache {
 
     /** */
     private BaselineTopology baselineTopology;
+
+    /** */
+    private List<List<ClusterNode>> baselineAssignment;
 
     /** Cache item corresponding to the head topology version. */
     private final AtomicReference<GridAffinityAssignment> head;
@@ -277,7 +285,7 @@ public class GridAffinityAssignmentCache {
         if (!locCache) {
             sorted = new ArrayList<>(discoCache.cacheGroupAffinityNodes(groupId()));
 
-            Collections.sort(sorted, NodeOrderLegacyComparator.INSTANCE);
+            Collections.sort(sorted, NodeOrderComparator.INSTANCE);
         }
         else
             sorted = Collections.singletonList(ctx.discovery().localNode());
@@ -291,21 +299,35 @@ public class GridAffinityAssignmentCache {
         if (prevAssignment != null && discoEvt != null) {
             boolean affNode = CU.affinityNode(discoEvt.eventNode(), nodeFilter);
 
-            if (!affNode || (hasBaseline && !changedBaseline))
+            if (!affNode)
                 assignment = prevAssignment;
-            else if (hasBaseline && changedBaseline)
-                assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
-                    filterBaseline(sorted, discoCache.state().baselineTopology()),
+            else if (hasBaseline && !changedBaseline) {
+                if (baselineAssignment == null)
+                    baselineAssignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
+                        createBaselineView(sorted, discoCache.state().baselineTopology()),
+                        prevAssignment, discoEvt, topVer, backups));
+
+                assignment = currentBaselineAssignment(topVer);
+            }
+            else if (hasBaseline && changedBaseline) {
+                baselineAssignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
+                    createBaselineView(sorted, discoCache.state().baselineTopology()),
                     prevAssignment, discoEvt, topVer, backups));
+
+                assignment = currentBaselineAssignment(topVer);
+            }
             else
                 assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
                     discoEvt, topVer, backups));
         }
         else {
-            if (hasBaseline)
-                assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
-                    filterBaseline(sorted, discoCache.state().baselineTopology()),
+            if (hasBaseline) {
+                baselineAssignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(
+                    createBaselineView(sorted, discoCache.state().baselineTopology()),
                     prevAssignment, discoEvt, topVer, backups));
+
+                assignment = currentBaselineAssignment(topVer);
+            }
             else
                 assignment = aff.assignPartitions(new GridAffinityFunctionContextImpl(sorted, prevAssignment,
                     discoEvt, topVer, backups));
@@ -323,7 +345,7 @@ public class GridAffinityAssignmentCache {
         return assignment;
     }
 
-    private List<ClusterNode> filterBaseline(List<ClusterNode> nodes, BaselineTopology blt) {
+    private List<ClusterNode> createBaselineView(List<ClusterNode> nodes, BaselineTopology blt) {
         List<ClusterNode> res = new ArrayList<>(blt.consistentIds().size());
 
         for (ClusterNode node : nodes) {
@@ -333,9 +355,64 @@ public class GridAffinityAssignmentCache {
 
         // TODO: calculate for < case using DetachedNode.
 
-        assert res.size() == blt.consistentIds().size();
+        assert res.size() <= blt.consistentIds().size();
+
+        if (res.size() == blt.consistentIds().size())
+            return res;
+
+        Map<Object, ClusterNode> consIdMap = new HashMap<>();
+
+        for (ClusterNode node : nodes) {
+            if (blt.consistentIds().contains(node.consistentId()))
+                consIdMap.put(node.consistentId(), node);
+        }
+
+        for (Object consId : blt.consistentIds()) {
+            if (!consIdMap.containsKey(consId)) {
+                DetachedClusterNode node = new DetachedClusterNode(consId);
+
+                consIdMap.put(consId, node);
+            }
+        }
+
+        res = new ArrayList<>();
+
+        res.addAll(consIdMap.values());
+
+        Collections.sort(res, NodeOrderComparator.INSTANCE);
 
         return res;
+    }
+
+    private List<List<ClusterNode>> currentBaselineAssignment(AffinityTopologyVersion topVer) {
+        Map<Object, ClusterNode> alives = new HashMap<>();
+
+        for (ClusterNode node : ctx.discovery().nodes(topVer)) {
+            if (!node.isClient() && !node.isDaemon())
+                alives.put(node.consistentId(), node);
+        }
+
+        List<List<ClusterNode>> result = new ArrayList<>(baselineAssignment.size());
+
+        for (int p = 0; p < baselineAssignment.size(); p++) {
+            List<ClusterNode> baselineMapping = baselineAssignment.get(p);
+            List<ClusterNode> currentMapping = null;
+
+            for (ClusterNode node : baselineMapping) {
+                ClusterNode aliveNode = alives.get(node.consistentId());
+
+                if (aliveNode != null) {
+                    if (currentMapping == null)
+                        currentMapping = new ArrayList<>();
+
+                    currentMapping.add(aliveNode);
+                }
+            }
+
+            result.add(p, currentMapping != null ? currentMapping : Collections.<ClusterNode>emptyList());
+        }
+
+        return result;
     }
 
     /**

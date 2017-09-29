@@ -19,10 +19,12 @@
 package org.apache.ignite.internal.processors.cache.distributed;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.cache.CacheException;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheMode;
@@ -30,6 +32,8 @@ import org.apache.ignite.cache.PartitionLossPolicy;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
+import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
@@ -82,7 +86,23 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         awaitPartitionMapExchange();
 
+        cache.put(key, 1);
+
         Collection<ClusterNode> mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping.size() == mapping.size() : mapping;
+        assert initialMapping.containsAll(mapping) : mapping;
+
+        IgniteEx newIgnite = startGrid(4);
+
+        awaitPartitionMapExchange();
+
+        mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping.size() == mapping.size() : mapping;
+        assert initialMapping.containsAll(mapping) : mapping;
+
+        mapping = newIgnite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
 
         assert initialMapping.size() == mapping.size() : mapping;
         assert initialMapping.containsAll(mapping) : mapping;
@@ -117,6 +137,27 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
 
         assert mapping.isEmpty() : mapping;
+
+        GridDhtPartitionTopology topology = ignite.cachex(CACHE_NAME).context().topology();
+
+        assert topology.lostPartitions().contains(part);
+
+        for (String nodeName : stoppedNodeNames) {
+            startGrid(nodeName);
+        }
+
+        assert ignite.cluster().nodes().size() == NODE_COUNT + 1;
+
+        mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping.size() == mapping.size() : mapping;
+        assert initialMapping.containsAll(mapping) : mapping;
+
+        assert topology.lostPartitions().contains(part);
+
+        ignite.resetLostPartitions(Collections.singleton(CACHE_NAME));
+
+        cache.put(key, 2);
     }
 
 }

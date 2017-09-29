@@ -59,6 +59,7 @@ import org.apache.ignite.events.Event;
 import org.apache.ignite.internal.ClusterMetricsSnapshot;
 import org.apache.ignite.internal.GridComponent;
 import org.apache.ignite.internal.GridKernalContext;
+import org.apache.ignite.internal.cluster.NodeOrderComparator;
 import org.apache.ignite.internal.cluster.NodeOrderLegacyComparator;
 import org.apache.ignite.internal.IgniteClientDisconnectedCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
@@ -2224,7 +2225,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
         Map<Integer, List<ClusterNode>> allCacheNodes = U.newHashMap(allNodes.size());
         Map<Integer, List<ClusterNode>> cacheGrpAffNodes = U.newHashMap(allNodes.size());
 
-        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(NodeOrderLegacyComparator.INSTANCE);
+        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(NodeOrderComparator.INSTANCE);
 
         for (ClusterNode node : allNodes) {
             assert node.order() != 0 : "Invalid node order [locNode=" + loc + ", node=" + node + ']';
