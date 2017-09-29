@@ -869,7 +869,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
         }
         else {
             try {
-                onServerNodeEvent(crd);
+                cctx.affinity().onBaselineTopologyChanged(this, crd);
             }
             catch (Exception e) {
                 U.error(log, "Failed to change baseline topology [nodeId=" + cctx.localNodeId() +

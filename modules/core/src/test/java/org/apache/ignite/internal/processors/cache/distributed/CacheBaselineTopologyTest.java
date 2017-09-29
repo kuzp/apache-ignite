@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.cache.CacheException;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheMode;
@@ -41,7 +42,7 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
     private static final String CACHE_NAME = "cache";
     private static final int NODE_COUNT = 4;
 
-    public void test() throws Exception {
+    public void testTopologyChangesWithFixedBaseline() throws Exception {
         startGrids(NODE_COUNT);
 
         awaitPartitionMapExchange();
@@ -158,6 +159,119 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         ignite.resetLostPartitions(Collections.singleton(CACHE_NAME));
 
         cache.put(key, 2);
+    }
+
+    public void testBaselineTopologyChanges() throws Exception {
+        startGrids(NODE_COUNT);
+
+        awaitPartitionMapExchange();
+
+        IgniteEx ignite = grid(0);
+
+        Map<ClusterNode, Ignite> nodes = new HashMap<>();
+
+        for (int i = 0; i < NODE_COUNT; i++) {
+            Ignite ig = grid(i);
+
+            nodes.put(ig.cluster().localNode(), ig);
+        }
+
+        IgniteCache<Integer, Integer> cache =
+            ignite.createCache(
+                new CacheConfiguration<Integer, Integer>()
+                    .setName(CACHE_NAME)
+                    .setCacheMode(CacheMode.PARTITIONED)
+                    .setBackups(1)
+                    .setPartitionLossPolicy(PartitionLossPolicy.READ_ONLY_SAFE)
+            );
+
+        int key = -1;
+
+        for (int k = 0; k < 100_000; k++) {
+            if (!ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(k).contains(ignite.localNode())) {
+                key = k;
+                break;
+            }
+        }
+
+        assert key >= 0;
+
+        int part = ignite.affinity(CACHE_NAME).partition(key);
+
+        Collection<ClusterNode> initialMapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping.size() == 2 : initialMapping;
+
+        ignite.activeEx(true, nodes.keySet());
+
+        Set<String> stoppedNodeNames = new HashSet<>();
+
+        ClusterNode node = initialMapping.iterator().next();
+
+        stoppedNodeNames.add(nodes.get(node).name());
+
+        nodes.get(node).close();
+
+        nodes.remove(node);
+
+        awaitPartitionMapExchange();
+
+        Collection<ClusterNode> mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert mapping.size() == 1 : mapping;
+        assert initialMapping.containsAll(mapping);
+
+        Set<ClusterNode> blt2 = new HashSet<>(ignite.cluster().nodes());
+
+        ignite.activeEx(true, blt2);
+
+        awaitPartitionMapExchange();
+
+        Collection<ClusterNode> initialMapping2 = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping2.size() == 2 : initialMapping2;
+
+        Ignite newIgnite = startGrid(4);
+
+        awaitPartitionMapExchange();
+
+        mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert mapping.size() == initialMapping2.size() : mapping;
+        assert mapping.containsAll(initialMapping2);
+
+        assert ignite.affinity(CACHE_NAME).primaryPartitions(newIgnite.cluster().localNode()).length == 0;
+
+        Set<ClusterNode> blt3 = new HashSet<>(ignite.cluster().nodes());
+
+        ignite.activeEx(true, blt3);
+
+        awaitPartitionMapExchange();
+
+        Collection<ClusterNode> initialMapping3 = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert initialMapping3.size() == 2;
+
+        assert ignite.affinity(CACHE_NAME).primaryPartitions(newIgnite.cluster().localNode()).length > 0;
+
+        newIgnite = startGrid(5);
+
+        awaitPartitionMapExchange();
+
+        mapping = ignite.affinity(CACHE_NAME).mapKeyToPrimaryAndBackups(key);
+
+        assert mapping.size() == initialMapping3.size() : mapping;
+        assert mapping.containsAll(initialMapping3);
+
+        assert ignite.affinity(CACHE_NAME).primaryPartitions(newIgnite.cluster().localNode()).length == 0;
+
+        DebugUtils.setFlag("test", true);
+
+        ignite.activeEx(true, null);
+
+        awaitPartitionMapExchange();
+
+        assert ignite.affinity(CACHE_NAME).primaryPartitions(newIgnite.cluster().localNode()).length > 0;
     }
 
 }

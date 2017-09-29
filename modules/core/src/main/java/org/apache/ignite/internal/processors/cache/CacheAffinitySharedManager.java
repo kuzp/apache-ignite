@@ -1432,6 +1432,24 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         }
     }
 
+    public void onBaselineTopologyChanged(final GridDhtPartitionsExchangeFuture fut,
+        boolean crd) throws IgniteCheckedException {
+        assert !fut.firstEvent().eventNode().isClient();
+
+        WaitRebalanceInfo waitRebalanceInfo = initAffinityOnNodeJoin(fut, crd);
+
+        this.waitInfo = waitRebalanceInfo != null && !waitRebalanceInfo.empty() ? waitRebalanceInfo : null;
+
+        WaitRebalanceInfo info = this.waitInfo;
+
+        if (crd) {
+            if (log.isDebugEnabled()) {
+                log.debug("Computed new affinity after node join [topVer=" + fut.initialVersion() +
+                    ", waitGrps=" + (info != null ? groupNames(info.waitGrps.keySet()) : null) + ']');
+            }
+        }
+    }
+
     /**
      * @param grpIds Cache group IDs.
      * @return Cache names.

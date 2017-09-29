@@ -339,6 +339,9 @@ public class GridAffinityAssignmentCache {
 
         baselineTopology = discoCache.state().baselineTopology();
 
+        if (baselineTopology == null)
+            baselineAssignment = null;
+
         if (locCache)
             initialize(topVer, assignment);
 

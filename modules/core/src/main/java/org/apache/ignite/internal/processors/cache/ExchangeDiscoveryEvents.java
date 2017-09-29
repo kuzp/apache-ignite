@@ -125,7 +125,7 @@ public class ExchangeDiscoveryEvents {
         this.lastEvt = evt;
         this.discoCache = cache;
 
-        if (evt.type() != EVT_DISCOVERY_CUSTOM_EVT) {
+        if (evt.type() != EVT_DISCOVERY_CUSTOM_EVT || 1 == 1) {
             ClusterNode node = evt.eventNode();
 
             if (!CU.clientNode(node)) {
@@ -135,10 +135,13 @@ public class ExchangeDiscoveryEvents {
 
                 if (evt.type()== EVT_NODE_JOINED)
                     srvJoin = true;
-                else {
+                else if (evt.type() == EVT_NODE_LEFT || evt.type() == EVT_NODE_FAILED) {
                     assert evt.type() == EVT_NODE_LEFT || evt.type() == EVT_NODE_FAILED : evt;
 
                     srvLeft = !CU.clientNode(node);
+                }
+                else if (evt.type() == EVT_DISCOVERY_CUSTOM_EVT) {
+                    // no-op
                 }
             }
         }

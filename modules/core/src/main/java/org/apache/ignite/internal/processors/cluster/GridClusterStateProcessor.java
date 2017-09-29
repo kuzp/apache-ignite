@@ -325,7 +325,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         if (state.baselineTopology() == null && msg.baselineTopology() == null)
             return false;
 
-        return msg.baselineTopology().equals(state.baselineTopology());
+        return !msg.baselineTopology().equals(state.baselineTopology());
     }
 
     private static boolean isEquivalent(DiscoveryDataClusterState oldState, DiscoveryDataClusterState newState) {
