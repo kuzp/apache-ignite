@@ -42,6 +42,10 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
     private static final String CACHE_NAME = "cache";
     private static final int NODE_COUNT = 4;
 
+    @Override protected void afterTest() throws Exception {
+        stopAllGrids();
+    }
+
     public void testTopologyChangesWithFixedBaseline() throws Exception {
         startGrids(NODE_COUNT);
 
