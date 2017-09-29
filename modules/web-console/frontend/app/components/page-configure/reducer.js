@@ -360,72 +360,69 @@ editReducer2.getDefaults = () => ({
     changes: ['caches', 'models', 'igfss'].reduce((a, t) => ({...a, [t]: {ids: [], changedItems: []}}), {cluster: null})
 });
 
-export const refsReducer = (state, action) => {
+export const refsReducer = (refs) => (state, action) => {
     switch (action.type) {
         case 'ADVANCED_SAVE_COMPLETE_CONFIGURATION': {
             console.time('refs advanced save');
-            let val = state;
-            if (state && state.models && state.clusters && state.caches.size) {
-                const newCluster = action.changedItems.cluster;
-                const oldCluster = state.clusters.get(newCluster._id) || {caches: [], models: []};
-                const addedModels = new Set(difference(newCluster.models, oldCluster.models));
-                const removedModels = new Set(difference(oldCluster.models, newCluster.models));
-                const changedModels = new Map(action.changedItems.models.map((m) => [m._id, m]));
+            const newCluster = action.changedItems.cluster;
+            const oldCluster = state.clusters.get(newCluster._id) || {};
+            const val = Object.keys(refs).reduce((state, ref) => {
+                if (!state || !state[refs[ref].store].size) return state;
 
-                const caches = new Map();
-                const maybeAddCache = (id) => {
-                    if (!caches.has(id)) caches.set(id, {models: {add: new Set(), remove: new Set()}});
-                    return caches.get(id);
+                const addedSources = new Set(difference(newCluster[ref], oldCluster[ref] || []));
+                const removedSources = new Set(difference(oldCluster[ref] || [], newCluster[ref]));
+                const changedSources = new Map(action.changedItems[ref].map((m) => [m._id, m]));
+
+                const targets = new Map();
+                const maybeTarget = (id) => {
+                    if (!targets.has(id)) targets.set(id, {[refs[ref].at]: {add: new Set(), remove: new Set()}});
+                    return targets.get(id);
                 };
 
-                [...state.caches.values()].forEach((cache) => {
-                    cache.domains
-                    .filter((modelID) => removedModels.has(modelID))
-                    .forEach((modelID) => maybeAddCache(cache._id).models.remove.add(modelID));
+                [...state[refs[ref].store].values()].forEach((target) => {
+                    target[refs[ref].at]
+                    .filter((sourceID) => removedSources.has(sourceID))
+                    .forEach((sourceID) => maybeTarget(target._id)[refs[ref].at].remove.add(sourceID));
                 });
-                [...addedModels.values()].forEach((modelID) => {
-                    const model = changedModels.get(modelID);
-                    model.caches.forEach((cacheID) => {
-                        maybeAddCache(cacheID).models.add.add(modelID);
+                [...addedSources.values()].forEach((sourceID) => {
+                    changedSources.get(sourceID)[refs[ref].store].forEach((targetID) => {
+                        maybeTarget(targetID)[refs[ref].at].add.add(sourceID);
                     });
                 });
-                action.changedItems.models.filter((m) => !addedModels.has(m._id)).forEach((model) => {
-                    const newModel = model;
-                    const oldModel = state.models.get(model._id);
-                    const addedCaches = difference(newModel.caches, oldModel.caches);
-                    const removedCaches = difference(oldModel.caches, newModel.caches);
-                    addedCaches.forEach((cacheID) => {
-                        maybeAddCache(cacheID).models.add.add(model._id);
+                action.changedItems[ref].filter((s) => !addedSources.has(s._id)).forEach((source) => {
+                    const newSource = source;
+                    const oldSource = state[ref].get(source._id);
+                    const addedTargets = difference(newSource[refs[ref].store], oldSource[refs[ref].store]);
+                    const removedCaches = difference(oldSource[refs[ref].store], newSource[refs[ref].store]);
+                    addedTargets.forEach((targetID) => {
+                        maybeTarget(targetID)[refs[ref].at].add.add(source._id);
                     });
-                    removedCaches.forEach((cacheID) => {
-                        maybeAddCache(cacheID).models.remove.add(model._id);
+                    removedCaches.forEach((targetID) => {
+                        maybeTarget(targetID)[refs[ref].at].remove.add(source._id);
                     });
                 });
-                const result = [...caches.entries()]
-                    .filter(([cacheID]) => state.caches.has(cacheID))
-                    .map(([cacheID, changes]) => {
-                        const cache = state.caches.get(cacheID);
+                const result = [...targets.entries()]
+                    .filter(([targetID]) => state[refs[ref].store].has(targetID))
+                    .map(([targetID, changes]) => {
+                        const target = state[refs[ref].store].get(targetID);
                         return [
-                            cacheID,
+                            targetID,
                             {
-                                ...cache,
-                                domains: cache.domains
-                                    .filter((modelID) => !changes.models.remove.has(modelID))
-                                    .concat([...changes.models.add.values()])
+                                ...target,
+                                [refs[ref].at]: target[refs[ref].at]
+                                    .filter((sourceID) => !changes[refs[ref].at].remove.has(sourceID))
+                                    .concat([...changes[refs[ref].at].add.values()])
                             }
                         ];
                     });
 
-                if (result.length) {
-                    val = {
+                return result.length
+                    ? {
                         ...state,
-                        caches: new Map([...state.caches.entries()].concat(result))
-                    };
-                }
-
-                console.debug('added', addedModels, 'removed', removedModels, 'changed', changedModels);
-                console.debug('val', val);
-            }
+                        [refs[ref].store]: new Map([...state[refs[ref].store].entries()].concat(result))
+                    }
+                    : state;
+            }, state);
             console.timeEnd('refs advanced save');
             return val;
         }

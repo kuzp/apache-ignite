@@ -92,7 +92,10 @@ export default angular
 
             ConfigureState.addReducer(reduxDevtoolsReducer);
         }
-        ConfigureState.addReducer(refsReducer);
+        ConfigureState.addReducer(refsReducer({
+            models: {at: 'domains', store: 'caches'},
+            caches: {at: 'caches', store: 'models'}
+        }));
         ConfigureState.addReducer((state, action) => Object.assign({}, state, {
             clusterConfiguration: editReducer(state.clusterConfiguration, action),
             configurationLoading: loadingReducer(state.configurationLoading, action),
