@@ -66,6 +66,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 cellTemplate: cellTemplate('base.configuration.edit.advanced.caches'),
                 enableFiltering: false,
+                type: 'number',
                 width: 95
             },
             {
@@ -75,6 +76,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 cellTemplate: cellTemplate('base.configuration.edit.advanced.models'),
                 enableFiltering: false,
+                type: 'number',
                 width: 95
             },
             {
@@ -84,6 +86,7 @@ export default class PageConfigureOverviewController {
                 cellClass: 'ui-grid-number-cell',
                 cellTemplate: cellTemplate('base.configuration.edit.advanced.igfs'),
                 enableFiltering: false,
+                type: 'number',
                 width: 80
             }
         ];
