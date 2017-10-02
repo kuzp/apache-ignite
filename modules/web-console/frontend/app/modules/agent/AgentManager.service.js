@@ -670,11 +670,9 @@ export default class IgniteAgentManager {
     /**
      * Change cluster active state.
      *
-     * @param {String} nid Node ID.
-     * @param {Boolean} state Activation state of cluster.
      * @returns {Promise}
      */
-    toggleClusterState({ active }) {
-        return this.visorTask('toggleClusterState', null, active);
+    toggleClusterState() {
+        return this.visorTask('toggleClusterState', null, !this.connectionSbj.getValue().cluster.active);
     }
 }
