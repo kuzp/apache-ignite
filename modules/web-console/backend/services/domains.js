@@ -161,6 +161,9 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
             const query = _.pick(model, ['space', '_id']);
 
             return mongo.DomainModel.update(query, {$set: model}, {upsert: true}).exec()
+                .then(() => mongo.Cache.update({_id: {$in: model.caches}}, {$addToSet: {domains: model._id}}, {multi: true}).exec())
+                .then(() => mongo.Cache.update({_id: {$nin: model.caches}}, {$pull: {domains: model._id}}, {multi: true}).exec())
+                .then(() => _updateCacheStore(model.cacheStoreChanges))
                 .catch((err) => {
                     if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
                         throw new errors.DuplicateKeyException(`Model with value type: "${model.valueType}" already exist.`);
