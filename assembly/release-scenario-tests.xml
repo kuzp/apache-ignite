@@ -70,11 +70,11 @@
 
         <fileSet>
             <directory>modules/scenario-tests/target/assembly/bin</directory>
-            <outputDirectory>scenario-tests/sources/config</outputDirectory>
+            <outputDirectory>scenario-tests/sources/bin</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>modules/scenario-tests/target/assembly/bin</directory>
+            <directory>modules/scenario-tests/target/assembly/config</directory>
             <outputDirectory>scenario-tests/sources/config</outputDirectory>
         </fileSet>
     </fileSets>
