@@ -70,7 +70,7 @@ export default class ConfigEffects {
                         return of(
                             {type: 'EDIT_CLUSTER', cluster: action.changedItems.cluster},
                             // {type: 'RESET_EDIT_CHANGES'},
-                            {type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'}
+                            {type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK', changedItems: action.changedItems}
                         );
                     })
                     .catch((res) => {
