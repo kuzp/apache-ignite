@@ -69,21 +69,20 @@ export default class {
     }
 
     toggle($event) {
-        const changeState = () => {
+        const toggleClusterState = () => {
             this.cluster.$inProgress = true;
-            this.agentMgr.toggleClusterState({ active: !this.cluster.active })
+
+            this.agentMgr.toggleClusterState()
                 .then(() => this.cluster.active = !this.cluster.active)
                 .finally(() => this.cluster.$inProgress = false);
         };
 
         if (this.cluster.active) {
             $event.preventDefault();
+
             this.Confirm.confirm('Are you sure you want to deactivate cluster?')
-                .then(() => changeState());
-
+                .then(() => toggleClusterState());
         } else
-            changeState();
-
-        return false;
+            toggleClusterState();
     }
 }
