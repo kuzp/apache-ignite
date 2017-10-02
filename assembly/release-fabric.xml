@@ -33,6 +33,7 @@
         <componentDescriptor>release-base.xml</componentDescriptor>
         <componentDescriptor>release-fabric-base.xml</componentDescriptor>
         <componentDescriptor>release-yardstick.xml</componentDescriptor>
+        <componentDescriptor>release-scenario-tests.xml</componentDescriptor>
     </componentDescriptors>
 
     <files>
