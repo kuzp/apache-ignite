@@ -54,22 +54,16 @@ module.exports.factory = (_, mongo, spacesService, clustersService, cachesServic
                 .then(([clusters, domains, caches, igfss]) => ({clusters, domains, caches, igfss, spaces}));
         }
 
-        static preview(userId, demo) {
-            let spaces;
-
-            return spacesService.spaces(userId, demo)
-                .then((_spaces) => {
-                    spaces = _spaces;
-
-                    return spaces.map((space) => space._id);
-                })
-                .then((spaceIds) => Promise.all([
-                    clustersService.listBySpaces(spaceIds),
-                    domainsService.listBySpaces(spaceIds),
-                    cachesService.listBySpaces(spaceIds),
-                    igfssService.listBySpaces(spaceIds)
-                ]))
-                .then(([clusters, domains, caches, igfss]) => ({clusters, domains, caches, igfss, spaces}));
+        static get(userId, demo, _id) {
+            return clustersService.get(userId, demo, _id)
+                .then((cluster) =>
+                    Promise.all([
+                        mongo.Cache.find({space: cluster.space, _id: {$in: cluster.caches}}).lean().exec(),
+                        mongo.DomainModel.find({space: cluster.space, _id: {$in: cluster.models}}).lean().exec(),
+                        mongo.Igfs.find({space: cluster.space, _id: {$in: cluster.igfss}}).lean().exec()
+                    ])
+                        .then(([caches, models, igfss]) => ({cluster, caches, models, igfss}))
+                );
         }
     }
 
