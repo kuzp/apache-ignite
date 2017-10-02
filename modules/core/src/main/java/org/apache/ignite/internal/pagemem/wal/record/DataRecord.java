@@ -32,6 +32,9 @@ public class DataRecord extends TimeStampRecord {
     @GridToStringInclude
     private List<DataEntry> writeEntries;
 
+    /** */
+    private long timestamp;
+
     /** {@inheritDoc} */
     @Override public RecordType type() {
         return RecordType.DATA_RECORD;
@@ -48,14 +51,29 @@ public class DataRecord extends TimeStampRecord {
      * @param writeEntry Write entry.
      */
     public DataRecord(DataEntry writeEntry) {
-        this(Collections.singletonList(writeEntry));
+        this(writeEntry, -1L);
     }
 
     /**
      * @param writeEntries Write entries.
      */
     public DataRecord(List<DataEntry> writeEntries) {
+        this(writeEntries, -1L);
+    }
+
+    /**
+     * @param writeEntry Write entry.
+     */
+    public DataRecord(DataEntry writeEntry, long timestamp) {
+        this(Collections.singletonList(writeEntry), timestamp);
+    }
+
+    /**
+     * @param writeEntries Write entries.
+     */
+    public DataRecord(List<DataEntry> writeEntries, long timestamp) {
         this.writeEntries = writeEntries;
+        this.timestamp = timestamp;
     }
 
     /**
@@ -81,6 +99,13 @@ public class DataRecord extends TimeStampRecord {
      */
     public List<DataEntry> writeEntries() {
         return writeEntries == null ? Collections.<DataEntry>emptyList() : writeEntries;
+    }
+
+    /**
+     * @return Timestamp.
+     */
+    public long timestamp() {
+        return timestamp;
     }
 
     /** {@inheritDoc} */
