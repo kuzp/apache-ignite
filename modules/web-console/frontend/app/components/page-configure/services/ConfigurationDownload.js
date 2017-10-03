@@ -25,11 +25,12 @@ export default class ConfigurationDownload {
         'IgniteSummaryZipper',
         'IgniteVersion',
         '$q',
-        '$rootScope'
+        '$rootScope',
+        'PageConfigure'
     ];
 
-    constructor(messages, activitiesData, configuration, summaryZipper, Version, $q, $rootScope) {
-        Object.assign(this, {messages, activitiesData, configuration, summaryZipper, Version, $q, $rootScope});
+    constructor(messages, activitiesData, configuration, summaryZipper, Version, $q, $rootScope, PageConfigure) {
+        Object.assign(this, {messages, activitiesData, configuration, summaryZipper, Version, $q, $rootScope, PageConfigure});
 
         this.saver = saver;
     }
@@ -37,7 +38,7 @@ export default class ConfigurationDownload {
     downloadClusterConfiguration(cluster) {
         this.activitiesData.post({action: '/configuration/download'});
 
-        return this.configuration.read()
+        return this.PageConfigure.getClusterConfiguration({clusterID: cluster._id, isDemo: !!this.$rootScope.IgniteDemoMode})
             .then((data) => this.configuration.populate(data))
             .then(({clusters}) => {
                 return clusters.find(({_id}) => _id === cluster._id)

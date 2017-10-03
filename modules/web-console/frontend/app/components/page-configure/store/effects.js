@@ -24,18 +24,27 @@ export default class ConfigEffects {
     constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages) {
         Object.assign(this, {ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages});
 
-        this.loadAllConfigurationsEffect$ = this.ConfigureState.actions$
-            .let(ofType('LOAD_ALL_CONFIGURATIONS'))
+        this.loadConfigurationEffect$ = this.ConfigureState.actions$
+            .let(ofType('LOAD_COMPLETE_CONFIGURATION'))
             .exhaustMap((action) => {
-                return fromPromise(this.Clusters.getAllConfigurations())
-                .map(({data}) => ({type: 'LOAD_ALL_CONFIGURATIONS_OK', data}))
-                .catch((error) => ({type: 'LOAD_ALL_CONFIGURATIONS_ERR', error, action}));
+                // return this.ConfigureState.state$
+                // .let(this.ConfigSelectors.selectCompleteClusterConfiguration({clusterID: action.clusterID, isDemo: action.isDemo}))
+                // .take(1)
+                // .switchMap((configuration) => {
+                // if (configuration.__isComplete) return of({type: 'LOAD_COMPLETE_CONFIGURATION_OK', data: configuration});
+                return fromPromise(this.Clusters.getConfiguration(action.clusterID))
+                    .switchMap(({data}) => of(
+                        {type: 'COMPLETE_CONFIGURATION', configuration: data},
+                        {type: 'LOAD_COMPLETE_CONFIGURATION_OK', data}
+                    ))
+                    .catch((error) => ({type: 'LOAD_COMPLETE_CONFIGURATION_ERR', error, action}));
+                // });
             });
 
-        this.storeAllConfigurationsEffect$ = this.ConfigureState.actions$
-            .let(ofType('LOAD_ALL_CONFIGURATIONS_OK'))
-            .exhaustMap(({data}) => of(...[
-                data.clusters && data.clusters.length && {type: clustersActionTypes.UPSERT, items: data.clusters},
+        this.storlConfiguratiosEffect$ = this.ConfigureState.actions$
+            .let(ofType('COMPLETE_CONFIGURATION'))
+            .exhaustMap(({configuration: data}) => of(...[
+                data.cluster && {type: clustersActionTypes.UPSERT, items: [data.cluster]},
                 data.caches && data.caches.length && {type: cachesActionTypes.UPSERT, items: data.caches},
                 data.domains && data.domains.length && {type: modelsActionTypes.UPSERT, items: data.domains},
                 data.igfss && data.igfss.length && {type: igfssActionTypes.UPSERT, items: data.igfss}

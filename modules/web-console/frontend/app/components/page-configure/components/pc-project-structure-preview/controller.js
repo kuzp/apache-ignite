@@ -48,8 +48,7 @@ export default class ProjectStructurePreviewController {
             },
             controller: class ProjectStructurePreviewModalController {
                 static $inject = [
-                    'ConfigureState',
-                    'ConfigSelectors',
+                    'PageConfigure',
                     'IgniteConfigurationResource',
                     'IgniteSummaryZipper',
                     '$rootScope',
@@ -61,8 +60,8 @@ export default class ProjectStructurePreviewController {
                     'IgniteMessages'
                 ];
 
-                constructor(ConfigureState, ConfigSelectors, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages) {
-                    Object.assign(this, {ConfigureState, ConfigSelectors, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages});
+                constructor(PageConfigure, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages) {
+                    Object.assign(this, {PageConfigure, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages});
                     this.$onInit();
                 }
 
@@ -89,18 +88,9 @@ export default class ProjectStructurePreviewController {
                     });
                 }
 
-                loadData({clusterID, isDemo}) {
-                    return Observable.merge(
-                        Observable.timer(1).take(1).do(() => this.ConfigureState.dispatchAction({type: 'LOAD_ALL_CONFIGURATIONS'})).ignoreElements(),
-                        this.ConfigureState.state$.let(this.ConfigSelectors.selectCompleteClusterConfiguration({clusterID, isDemo}))
-                    )
-                    .take(1)
-                    .toPromise();
-                }
-
                 doStuff(cluster, isDemo) {
                     this.IgniteLoading.start('projectStructurePreview');
-                    return this.loadData({clusterID: cluster._id, isDemo})
+                    return this.PageConfigure.getClusterConfiguration({clusterID: cluster._id, isDemo})
                     .then((data) => {
                         return this.IgniteConfigurationResource.populate(data);
                     })

@@ -48,10 +48,10 @@ export const REMOVE_CLUSTERS_LOCAL_REMOTE = Symbol('REMOVE_CLUSTERS_LOCAL_REMOTE
 export const CLONE_CLUSTERS = Symbol('CLONE_CLUSTERS');
 
 export default class PageConfigure {
-    static $inject = ['IgniteConfigurationResource', '$state', 'ConfigureState', 'Clusters'];
+    static $inject = ['IgniteConfigurationResource', '$state', 'ConfigureState', 'Clusters', 'ConfigSelectors'];
 
-    constructor(configuration, $state, ConfigureState, Clusters) {
-        Object.assign(this, {configuration, $state, ConfigureState, Clusters});
+    constructor(configuration, $state, ConfigureState, Clusters, ConfigSelectors) {
+        Object.assign(this, {configuration, $state, ConfigureState, Clusters, ConfigSelectors});
 
         this.removeClusters$ = this.ConfigureState.actions$
             .filter(propEq('type', REMOVE_CLUSTERS_LOCAL_REMOTE))
@@ -152,5 +152,22 @@ export default class PageConfigure {
             );
         })
         .subscribe();
+    }
+
+    getClusterConfiguration({clusterID, isDemo}) {
+        return Observable.merge(
+            Observable
+                .timer(1)
+                .take(1)
+                .do(() => this.ConfigureState.dispatchAction({type: 'LOAD_COMPLETE_CONFIGURATION', clusterID, isDemo}))
+                .ignoreElements(),
+            this.ConfigureState.state$
+                .let(this.ConfigSelectors.selectCompleteClusterConfiguration({clusterID, isDemo}))
+                .filter((c) => c.__isComplete)
+                .take(1)
+                .map((data) => ({...data, clusters: [cloneDeep(data.cluster)]}))
+        )
+        .take(1)
+        .toPromise();
     }
 }
