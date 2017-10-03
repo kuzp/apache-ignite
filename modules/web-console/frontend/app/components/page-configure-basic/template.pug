@@ -164,7 +164,7 @@ form(novalidate name=form)
             | + Add one more cache
         
     .pc-form-actions-panel
-        pc-project-structure-preview(ng-if='!$ctrl.isNew' cluster=model)
+        button-preview-project(ng-if='!$ctrl.isNew' cluster=model)
         .pc-form-actions-panel__right-after
         button.btn-ignite.btn-ignite--link-success(
             type='button'

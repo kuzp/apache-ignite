@@ -29,6 +29,7 @@ import modelEditForm from './components/model-edit-form';
 import modalImportModels from './components/modal-import-models';
 import buttonImportModels from './components/button-import-models';
 import buttonDownloadProject from './components/button-download-project';
+import buttonPreviewProject from './components/button-preview-project';
 
 export default angular
     .module('ignite-console.page-configure-advanced', [
@@ -42,6 +43,7 @@ export default angular
         clusterEditForm.name,
         modalImportModels.name,
         buttonImportModels.name,
-        buttonDownloadProject.name
+        buttonDownloadProject.name,
+        buttonPreviewProject.name
     ])
     .component('pageConfigureAdvanced', component);
