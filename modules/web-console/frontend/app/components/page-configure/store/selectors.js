@@ -91,23 +91,22 @@ export default class ConfigSelectors {
     selectCompleteClusterConfiguration = ({clusterID, isDemo}) => (state$) => {
         const hasValues = (array) => !array.some((v) => !v);
         return state$.let(this.selectCluster(clusterID))
-        // .take(1)
-        .switchMap((cluster) => {
+        .exhaustMap((cluster) => {
+            if (!cluster) return of({__isComplete: false});
             const withSpace = (array) => array.map((c) => ({...c, space: cluster.space}));
-            return Observable.combineLatest(
-                state$.let(selectMapItems('caches', cluster.caches || [])).filter(hasValues).take(1),
-                state$.let(selectMapItems('models', cluster.models || [])).filter(hasValues).take(1),
-                state$.let(selectMapItems('igfss', cluster.igfss || [])).filter(hasValues).take(1),
+            return Observable.forkJoin(
+                state$.let(selectMapItems('caches', cluster.caches || [])).take(1),
+                state$.let(selectMapItems('models', cluster.models || [])).take(1),
+                state$.let(selectMapItems('igfss', cluster.igfss || [])).take(1),
             )
-            // .filter((values) => values.every((items) => items.every((item) => item)))
             .map(([caches, models, igfss]) => ({
-                clusters: [cluster],
-                caches: withSpace(caches),
-                domains: withSpace(models),
-                igfss: withSpace(igfss),
-                spaces: [{_id: cluster.space, demo: isDemo}]
+                cluster,
+                caches,
+                domains: models,
+                igfss,
+                spaces: [{_id: cluster.space, demo: isDemo}],
+                __isComplete: !!cluster && !(!hasValues(caches) || !hasValues(models) || !hasValues(igfss))
             }));
         });
-        // .debug('selectCompleteClusterConfiguration');
     };
 }

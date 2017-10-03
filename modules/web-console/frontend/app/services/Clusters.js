@@ -74,6 +74,10 @@ export default class Clusters {
         Object.assign(this, {$http});
     }
 
+    getConfiguration(clusterID) {
+        return this.$http.get(`/api/v1/configuration/${clusterID}`);
+    }
+
     getAllConfigurations() {
         return this.$http.get('/api/v1/configuration/list');
     }
