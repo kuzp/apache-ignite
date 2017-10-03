@@ -179,7 +179,7 @@ export const loadingReducer = (state = loadingDefaults, action) => {
 export const setStoreReducerFactory = (actionTypes) => (state = new Set(), action = {}) => {
     switch (action.type) {
         case actionTypes.SET:
-            return action.state;
+            return new Set(action.items.map((i) => i._id));
         case actionTypes.RESET:
             return new Set();
         case actionTypes.UPSERT:
@@ -194,7 +194,7 @@ export const setStoreReducerFactory = (actionTypes) => (state = new Set(), actio
 export const mapStoreReducerFactory = (actionTypes) => (state = new Map(), action = {}) => {
     switch (action.type) {
         case actionTypes.SET:
-            return action.state;
+            return new Map(action.items.map((i) => [i._id, i]));
         case actionTypes.RESET:
             return new Map();
         case actionTypes.UPSERT:
@@ -213,7 +213,6 @@ export const mapCacheReducerFactory = (actionTypes) => {
     return (state = {value: mapStoreReducer(), pristine: true}, action) => {
         switch (action.type) {
             case actionTypes.SET:
-                return action.state;
             case actionTypes.REMOVE:
             case actionTypes.UPSERT:
                 return {

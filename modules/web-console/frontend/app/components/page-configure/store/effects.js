@@ -124,15 +124,12 @@ export default class ConfigEffects {
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
             .exhaustMap((a) => {
-                return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClusters()).take(1)
-                .switchMap((shortClusters) => {
-                    return fromPromise(this.Clusters.getClustersOverview())
-                        .switchMap(({data}) => of(
-                            {type: shortClustersActionTypes.UPSERT, items: data},
-                            {type: `${a.type}_OK`}
-                        ));
-                })
-                .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+                return fromPromise(this.Clusters.getClustersOverview())
+                    .switchMap(({data}) => of(
+                        {type: shortClustersActionTypes.SET, items: data},
+                        {type: `${a.type}_OK`}
+                    ))
+                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
 
         this.loadCluster$ = this.ConfigureState.actions$
