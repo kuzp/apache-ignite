@@ -15,4 +15,4 @@ done
 
 echo ${CP}
 
-java -cp ${CP} org.apache.ignite.scenario.LoadCacheTask  -cfg $SCRIPT_DIR/../config/ignite-remote-client-config.xml
+java -cp ${CP} org.apache.ignite.scenario.LoadCacheTask  -cfg $SCRIPT_DIR/../config/ignite-remote-client-config.xml -c "atomic"
