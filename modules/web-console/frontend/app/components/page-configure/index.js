@@ -30,7 +30,7 @@ import configSelectionManager from './services/configSelectionManager';
 import selectors from './store/selectors';
 import effects from './store/effects';
 
-import projectStructurePreview from './components/pc-project-structure-preview';
+import projectStructurePreview from './components/modal-preview-project';
 import itemsTable from './components/pc-items-table';
 import pcUiGridFilters from './components/pc-ui-grid-filters';
 import pcFormFieldSize from './components/pc-form-field-size';
