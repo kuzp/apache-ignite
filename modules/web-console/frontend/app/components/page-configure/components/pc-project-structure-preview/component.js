@@ -20,9 +20,12 @@ import './style.scss';
 import controller from './controller';
 
 export default {
+    name: 'modalPreviewProject',
     template,
     controller,
     bindings: {
-        cluster: '<'
+        onHide: '&',
+        cluster: '<',
+        isDemo: '<'
     }
 };

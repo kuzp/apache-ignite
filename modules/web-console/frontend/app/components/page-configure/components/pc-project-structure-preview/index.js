@@ -22,6 +22,6 @@ import component from './component';
 import service from './service';
 
 export default angular
-    .module('ignite-console.page-configure.project-structure-preview', [])
-    .service('pcProjectStructurePreview', service)
-    .component('pcProjectStructurePreview', component);
+    .module('ignite-console.page-configure.modal-preview-project', [])
+    .service(service.name, service)
+    .component(component.name, component);

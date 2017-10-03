@@ -1,6 +1,8 @@
-pc-project-structure-preview {}
+modal-preview-project {
+    display: block;
+}
 
-.pc-project-structure-preview-modal {
+.modal-preview-project-structure {
     @import '../../../../../public/stylesheets/variables.scss';
 
     .modal-dialog {
