@@ -28,6 +28,7 @@ import igfsEditForm from './components/igfs-edit-form';
 import modelEditForm from './components/model-edit-form';
 import modalImportModels from './components/modal-import-models';
 import buttonImportModels from './components/button-import-models';
+import buttonDownloadProject from './components/button-download-project';
 
 export default angular
     .module('ignite-console.page-configure-advanced', [
@@ -40,6 +41,7 @@ export default angular
         cacheEditForm.name,
         clusterEditForm.name,
         modalImportModels.name,
-        buttonImportModels.name
+        buttonImportModels.name,
+        buttonDownloadProject.name
     ])
     .component('pageConfigureAdvanced', component);

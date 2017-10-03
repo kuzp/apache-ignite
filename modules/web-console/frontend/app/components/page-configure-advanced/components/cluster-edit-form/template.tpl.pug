@@ -73,12 +73,7 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
 
 .pc-form-actions-panel(n_g-show='$ctrl.$scope.selectedItem')
     pc-project-structure-preview(cluster='$ctrl.clonedCluster')
-    button.btn-ignite.btn-ignite--success(
-        type='button'
-        ng-click='$ctrl.downloadConfiguration($ctrl.cluster)'
-    )
-        svg(ignite-icon='download').icon-left
-        | Download project
+    button-download-project(cluster='$ctrl.cluster')
 
     .pc-form-actions-panel__right-after
 
