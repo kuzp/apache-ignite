@@ -29,10 +29,10 @@ const cellTemplate = (state) => `
 `;
 
 export default class PageConfigureOverviewController {
-    static $inject = ['PageConfigureOverviewService', 'Clusters', 'ConfigureState', 'ConfigSelectors'];
+    static $inject = ['PageConfigureOverviewService', 'Clusters', 'ConfigureState', 'ConfigSelectors', 'ConfigurationDownload'];
 
-    constructor(pageService, Clusters, ConfigureState, ConfigSelectors) {
-        Object.assign(this, {pageService, Clusters, ConfigureState, ConfigSelectors});
+    constructor(pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload) {
+        Object.assign(this, {pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload});
     }
 
     $onInit() {
@@ -103,6 +103,11 @@ export default class PageConfigureOverviewController {
                 action: 'Clone',
                 click: () => this.pageService.cloneClusters(selectedClusters),
                 available: true
+            },
+            {
+                action: 'Download project',
+                click: () => this.ConfigurationDownload.downloadClusterConfiguration(selectedClusters[0]),
+                available: selectedClusters.length === 1
             },
             {
                 action: 'Delete',
