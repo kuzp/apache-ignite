@@ -24,6 +24,23 @@ export default class ConfigEffects {
     constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages) {
         Object.assign(this, {ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages});
 
+        this.loadAllConfigurationsEffect$ = this.ConfigureState.actions$
+            .let(ofType('LOAD_ALL_CONFIGURATIONS'))
+            .exhaustMap((action) => {
+                return fromPromise(this.Clusters.getAllConfigurations())
+                .map(({data}) => ({type: 'LOAD_ALL_CONFIGURATIONS_OK', data}))
+                .catch((error) => ({type: 'LOAD_ALL_CONFIGURATIONS_ERR', error, action}));
+            });
+
+        this.storeAllConfigurationsEffect$ = this.ConfigureState.actions$
+            .let(ofType('LOAD_ALL_CONFIGURATIONS_OK'))
+            .exhaustMap(({data}) => of(...[
+                data.clusters && data.clusters.length && {type: clustersActionTypes.UPSERT, items: data.clusters},
+                data.caches && data.caches.length && {type: cachesActionTypes.UPSERT, items: data.caches},
+                data.domains && data.domains.length && {type: modelsActionTypes.UPSERT, items: data.domains},
+                data.igfss && data.igfss.length && {type: igfssActionTypes.UPSERT, items: data.igfss}
+            ].filter((v) => v)));
+
         this.saveCompleteConfigurationEffect$ = this.ConfigureState.actions$
             .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
             .withLatestFrom(this.ConfigureState.state$)
@@ -108,6 +125,18 @@ export default class ConfigEffects {
                 })
                 .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
+
+        this.loadCluster$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'LOAD_CLUSTER')
+            .exhaustMap((a) => {
+                return fromPromise(this.Clusters.getCluster(a.clusterID))
+                .map(({data}) => of({type: 'LOAD_CLUSTER_OK', cluster: data}))
+                .catch((error) => of({type: 'LOAD_CLUSTER_ERR', error}));
+            });
+
+        this.storeLoadedCluster$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'LOAD_CLUSTER_OK')
+            .map((a) => ({type: clustersActionTypes.UPSERT, items: [a.cluster]}));
 
         this.loadAndEditClusterEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_AND_EDIT_CLUSTER')

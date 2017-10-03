@@ -23,14 +23,20 @@ import get from 'lodash/get';
 import values from 'lodash/values';
 import reduce from 'lodash/reduce';
 import modalTemplate from './modal.pug';
+import {Observable} from 'rxjs/Observable';
 
 export default class ProjectStructurePreviewController {
     static $inject = [
-        '$modal'
+        '$modal',
+        '$rootScope'
     ];
 
-    constructor($modal) {
-        Object.assign(this, {$modal});
+    constructor($modal, $rootScope) {
+        Object.assign(this, {$modal, $rootScope});
+    }
+
+    $onDestroy() {
+        this.$rootScope = null;
     }
 
     showModal() {
@@ -42,6 +48,8 @@ export default class ProjectStructurePreviewController {
             },
             controller: class ProjectStructurePreviewModalController {
                 static $inject = [
+                    'ConfigureState',
+                    'ConfigSelectors',
                     'IgniteConfigurationResource',
                     'IgniteSummaryZipper',
                     '$rootScope',
@@ -53,8 +61,8 @@ export default class ProjectStructurePreviewController {
                     'IgniteMessages'
                 ];
 
-                constructor(IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages) {
-                    Object.assign(this, {IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages});
+                constructor(ConfigureState, ConfigSelectors, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages) {
+                    Object.assign(this, {ConfigureState, ConfigSelectors, IgniteConfigurationResource, summaryZipper, $rootScope, IgniteVersion, $scope, cluster, ConfigurationDownload, IgniteLoading, IgniteMessages});
                     this.$onInit();
                 }
 
@@ -67,7 +75,7 @@ export default class ProjectStructurePreviewController {
                             iCollapsed: 'fa fa-folder-o'
                         }
                     };
-                    this.doStuff(this.cluster);
+                    this.doStuff(this.cluster, !!this.$rootScope.IgniteDemoMode);
                 }
 
                 showPreview(node) {
@@ -81,10 +89,21 @@ export default class ProjectStructurePreviewController {
                     });
                 }
 
-                doStuff(cluster) {
+                loadData({clusterID, isDemo}) {
+                    return Observable.merge(
+                        Observable.timer(1).take(1).do(() => this.ConfigureState.dispatchAction({type: 'LOAD_ALL_CONFIGURATIONS'})).ignoreElements(),
+                        this.ConfigureState.state$.let(this.ConfigSelectors.selectCompleteClusterConfiguration({clusterID, isDemo}))
+                    )
+                    .take(1)
+                    .toPromise();
+                }
+
+                doStuff(cluster, isDemo) {
                     this.IgniteLoading.start('projectStructurePreview');
-                    this.IgniteConfigurationResource.read()
-                    .then((data) => this.IgniteConfigurationResource.populate(data))
+                    return this.loadData({clusterID: cluster._id, isDemo})
+                    .then((data) => {
+                        return this.IgniteConfigurationResource.populate(data);
+                    })
                     .then(({clusters}) => {
                         return clusters.find(({_id}) => _id === cluster._id);
                     })

@@ -1,12 +1,15 @@
 import {uniqueName} from 'app/utils/uniqueName';
 import {of} from 'rxjs/observable/of';
 import {empty} from 'rxjs/observable/empty';
+import {forkJoin} from 'rxjs/observable/forkJoin';
+import 'rxjs/add/operator/mergeMap';
 import {Observable} from 'rxjs/Observable';
 
 const isDefined = (s) => s.filter((v) => v);
 const selectItems = (path) => (s) => s.filter((s) => s).pluck(path).filter((v) => v);
 const selectValues = (s) => s.map((v) => v && [...v.value.values()]);
 const selectMapItem = (mapPath, key) => (s) => s.pluck(mapPath).map((v) => v && v.get(key));
+const selectMapItems = (mapPath, keys) => (s) => s.pluck(mapPath).map((v) => v && keys.map((key) => v.get(key)));
 const selectItemToEdit = ({items, itemFactory, defaultName, itemID}) => (s) => s.switchMap((item) => {
     if (item) return of(item);
     if (itemID === 'new') return items.take(1).map((items) => Object.assign(itemFactory(), {name: uniqueName(defaultName, items)}));
@@ -85,4 +88,26 @@ export default class ConfigSelectors {
     selectCurrentShortModels = currentShortItems({changesKey: 'models', shortKey: 'shortModels'});
     selectShortModels = () => selectItems('shortModels');
     selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
+    selectCompleteClusterConfiguration = ({clusterID, isDemo}) => (state$) => {
+        const hasValues = (array) => !array.some((v) => !v);
+        return state$.let(this.selectCluster(clusterID))
+        // .take(1)
+        .switchMap((cluster) => {
+            const withSpace = (array) => array.map((c) => ({...c, space: cluster.space}));
+            return Observable.combineLatest(
+                state$.let(selectMapItems('caches', cluster.caches || [])).filter(hasValues).take(1),
+                state$.let(selectMapItems('models', cluster.models || [])).filter(hasValues).take(1),
+                state$.let(selectMapItems('igfss', cluster.igfss || [])).filter(hasValues).take(1),
+            )
+            // .filter((values) => values.every((items) => items.every((item) => item)))
+            .map(([caches, models, igfss]) => ({
+                clusters: [cluster],
+                caches: withSpace(caches),
+                domains: withSpace(models),
+                igfss: withSpace(igfss),
+                spaces: [{_id: cluster.space, demo: isDemo}]
+            }));
+        });
+        // .debug('selectCompleteClusterConfiguration');
+    };
 }
