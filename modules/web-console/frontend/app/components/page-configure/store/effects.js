@@ -43,11 +43,11 @@ export default class ConfigEffects {
 
         this.storlConfiguratiosEffect$ = this.ConfigureState.actions$
             .let(ofType('COMPLETE_CONFIGURATION'))
-            .exhaustMap(({configuration: data}) => of(...[
-                data.cluster && {type: clustersActionTypes.UPSERT, items: [data.cluster]},
-                data.caches && data.caches.length && {type: cachesActionTypes.UPSERT, items: data.caches},
-                data.domains && data.domains.length && {type: modelsActionTypes.UPSERT, items: data.domains},
-                data.igfss && data.igfss.length && {type: igfssActionTypes.UPSERT, items: data.igfss}
+            .exhaustMap(({configuration: {cluster, caches, models, igfss}}) => of(...[
+                cluster && {type: clustersActionTypes.UPSERT, items: [cluster]},
+                caches && caches.length && {type: cachesActionTypes.UPSERT, items: caches},
+                models && models.length && {type: modelsActionTypes.UPSERT, items: models},
+                igfss && igfss.length && {type: igfssActionTypes.UPSERT, items: igfss}
             ].filter((v) => v)));
 
         this.saveCompleteConfigurationEffect$ = this.ConfigureState.actions$
