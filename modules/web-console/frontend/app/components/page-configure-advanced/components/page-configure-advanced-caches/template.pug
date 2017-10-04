@@ -27,7 +27,7 @@ pc-items-table(
 )
     footer-slot
         div(style='font-style: italic' ng-hide='($ctrl.shortCaches$|async:this).length')
-            | You have no caches.
+            | You have no caches. 
             a.link-success(
                 ui-sref='base.configuration.edit.advanced.caches.cache({cacheID: "new"})'
                 ui-sref-opts='{location: "replace"}'
