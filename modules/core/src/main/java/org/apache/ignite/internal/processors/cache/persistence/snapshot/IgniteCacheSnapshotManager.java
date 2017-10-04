@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache.persistence.snapshot;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.UUID;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.events.DiscoveryEvent;
@@ -28,7 +29,11 @@ import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.processors.cache.CacheGroupContext;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedManagerAdapter;
+import org.apache.ignite.internal.processors.cache.StoredCacheData;
 import org.apache.ignite.internal.processors.cache.persistence.partstate.PartitionAllocationMap;
+import org.apache.ignite.internal.processors.cluster.BaselineTopology;
+import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMessage;
+import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.IgniteChangeGlobalStateSupport;
 import org.jetbrains.annotations.Nullable;
 
@@ -164,5 +169,19 @@ public class IgniteCacheSnapshotManager<T extends SnapshotOperation> extends Gri
     /** {@inheritDoc} */
     @Override public void onDeActivate(GridKernalContext kctx) {
         // No-op.
+    }
+
+    @Nullable public ChangeGlobalStateMessage createChangeGlobalStateMessage(UUID reqId, UUID initiatingNodeId,
+            @Nullable List<StoredCacheData> storedCfgs,
+            boolean activate, @Nullable BaselineTopology baselineTopology) {
+        return null;
+    }
+
+    @Nullable public ChangeGlobalStateFinishMessage createChangeGlobalStateFinishMessage(ChangeGlobalStateMessage req, boolean clusterActive, @Nullable BaselineTopology baselineTopology) {
+        return null;
+    }
+
+    public IgniteInternalFuture wrapStateChangeFuture(IgniteInternalFuture startFut, ChangeGlobalStateMessage msg) {
+        return startFut;
     }
 }

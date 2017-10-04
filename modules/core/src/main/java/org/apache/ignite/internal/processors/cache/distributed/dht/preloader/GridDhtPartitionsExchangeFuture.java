@@ -2417,10 +2417,14 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                     boolean active = !stateChangeErr && req.activate();
 
-                    ChangeGlobalStateFinishMessage stateFinishMsg = new ChangeGlobalStateFinishMessage(
-                        req.requestId(),
-                        active,
-                        stateChangeErr ? null : req.baselineTopology());
+                    ChangeGlobalStateFinishMessage stateFinishMsg = cctx.snapshot().createChangeGlobalStateFinishMessage(req.message(), active, stateChangeErr ? null : req.baselineTopology());
+
+                    if (stateFinishMsg == null) {
+                        stateFinishMsg = new ChangeGlobalStateFinishMessage(
+                            req.requestId(),
+                            active,
+                            stateChangeErr ? null : req.baselineTopology());
+                    }
 
                     cctx.discovery().sendCustomEvent(stateFinishMsg);
                 }

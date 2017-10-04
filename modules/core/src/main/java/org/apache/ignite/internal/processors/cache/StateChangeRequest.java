@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.cache;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.cache.persistence.snapshot.SnapshotDiscoveryMessage;
 import org.apache.ignite.internal.processors.cluster.BaselineTopology;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -77,6 +78,10 @@ public class StateChangeRequest {
 
     @Nullable public BaselineTopology baselineTopology() {
         return msg.baselineTopology();
+    }
+
+    public ChangeGlobalStateMessage message() {
+        return msg;
     }
 
     /**

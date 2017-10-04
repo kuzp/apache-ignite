@@ -526,11 +526,20 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             }
         }
 
-        ChangeGlobalStateMessage msg = new ChangeGlobalStateMessage(startedFut.requestId,
+        ChangeGlobalStateMessage msg = sharedCtx.snapshot().createChangeGlobalStateMessage(
+            startedFut.requestId,
             ctx.localNodeId(),
             storedCfgs,
             activate,
             blt);
+
+        if (msg == null) {
+            msg = new ChangeGlobalStateMessage(startedFut.requestId,
+                ctx.localNodeId(),
+                storedCfgs,
+                activate,
+                blt);
+        }
 
         try {
             ctx.discovery().sendCustomEvent(msg);
@@ -545,7 +554,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             startedFut.onDone(e);
         }
 
-        return startedFut;
+        return sharedCtx.snapshot().wrapStateChangeFuture(startedFut, msg);
     }
 
     /**

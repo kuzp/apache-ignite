@@ -70,7 +70,7 @@ public class ChangeGlobalStateMessage implements DiscoveryCustomMessage {
         UUID initiatingNodeId,
         @Nullable List<StoredCacheData> storedCfgs,
         boolean activate,
-        BaselineTopology baselineTopology
+        @Nullable BaselineTopology baselineTopology
     ) {
         assert reqId != null;
         assert initiatingNodeId != null;
