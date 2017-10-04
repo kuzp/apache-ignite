@@ -35,6 +35,6 @@ h1.pc-page-header Configuration
         on-selection-change='$ctrl.selectedRows$.next($event)'
         actions-menu='$ctrl.actions$|async:this'
     )
-        footer-slot(ng-hide='$ctrl.clusters.length' style='font-style: italic')
+        footer-slot(ng-hide='($ctrl.shortClusters$|async:this).length' style='font-style: italic')
             | You have no cluster configurations.
             a.link-success(ui-sref='base.configuration.edit.basic({clusterID: "new"})')  Create one?
