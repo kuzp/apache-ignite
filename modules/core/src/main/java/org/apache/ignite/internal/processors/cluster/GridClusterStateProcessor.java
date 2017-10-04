@@ -526,20 +526,12 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             }
         }
 
-        ChangeGlobalStateMessage msg = sharedCtx.snapshot().createChangeGlobalStateMessage(
+        ChangeGlobalStateMessage msg = createChangeGlobalStateMessage(
             startedFut.requestId,
             ctx.localNodeId(),
             storedCfgs,
             activate,
             blt);
-
-        if (msg == null) {
-            msg = new ChangeGlobalStateMessage(startedFut.requestId,
-                ctx.localNodeId(),
-                storedCfgs,
-                activate,
-                blt);
-        }
 
         try {
             ctx.discovery().sendCustomEvent(msg);
@@ -554,7 +546,22 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
             startedFut.onDone(e);
         }
 
-        return sharedCtx.snapshot().wrapStateChangeFuture(startedFut, msg);
+        return wrapStateChangeFuture(fut, msg);
+    }
+
+    protected ChangeGlobalStateMessage createChangeGlobalStateMessage(UUID reqId, UUID initiatingNodeId,
+                @Nullable List<StoredCacheData> storedCfgs,
+                boolean activate, @Nullable BaselineTopology baselineTopology) {
+        return new ChangeGlobalStateMessage(reqId, initiatingNodeId, storedCfgs, activate, baselineTopology);
+    }
+
+    public ChangeGlobalStateFinishMessage createChangeGlobalStateFinishMessage(ChangeGlobalStateMessage req,
+        boolean clusterActive, @Nullable BaselineTopology baselineTopology) {
+        return new ChangeGlobalStateFinishMessage(req.requestId(), clusterActive, baselineTopology);
+    }
+
+    protected IgniteInternalFuture wrapStateChangeFuture(IgniteInternalFuture fut, ChangeGlobalStateMessage msg) {
+        return fut;
     }
 
     /**

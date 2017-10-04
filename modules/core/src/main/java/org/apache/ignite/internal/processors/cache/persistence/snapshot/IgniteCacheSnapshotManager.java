@@ -170,18 +170,4 @@ public class IgniteCacheSnapshotManager<T extends SnapshotOperation> extends Gri
     @Override public void onDeActivate(GridKernalContext kctx) {
         // No-op.
     }
-
-    @Nullable public ChangeGlobalStateMessage createChangeGlobalStateMessage(UUID reqId, UUID initiatingNodeId,
-            @Nullable List<StoredCacheData> storedCfgs,
-            boolean activate, @Nullable BaselineTopology baselineTopology) {
-        return null;
-    }
-
-    @Nullable public ChangeGlobalStateFinishMessage createChangeGlobalStateFinishMessage(ChangeGlobalStateMessage req, boolean clusterActive, @Nullable BaselineTopology baselineTopology) {
-        return null;
-    }
-
-    public IgniteInternalFuture wrapStateChangeFuture(IgniteInternalFuture startFut, ChangeGlobalStateMessage msg) {
-        return startFut;
-    }
 }
