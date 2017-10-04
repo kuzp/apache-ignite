@@ -1,8 +1,8 @@
-import templateUrl from 'views/configuration/caches.tpl.pug';
+import template from './template.pug';
 import controller from 'Controllers/caches-controller';
 
 export default {
     name: 'pageConfigureAdvancedCaches',
-    templateUrl,
+    template,
     controller
 };
