@@ -5,15 +5,4 @@ export default {
     name: 'pageConfigureAdvancedCaches',
     templateUrl,
     controller
-    // bindings: {
-    //     originalCache: '<cache',
-    //     clusterItems: '<',
-    //     itemToEdit: '<',
-    //     isNew: '<',
-    //     onAdvancedSave: '&',
-    //     onItemAdd: '&',
-    //     onItemChange: '&',
-    //     onItemRemove: '&',
-    //     onEditCancel: '&'
-    // }
 };
