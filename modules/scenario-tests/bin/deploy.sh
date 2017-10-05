@@ -37,9 +37,7 @@ echo $IGNITE_ZIP_BASENAME
 echo $IGNITE_CONFIG_BASENAME
 echo $IGNITE_DIR_NAME
 
-REMOTE_USER="oostanin"
-
-function edit_xml()
+function edit_remote_config()
 {
     cp $IGNITE_CONFIG_FILE "${IGNITE_CONFIG_FILE}.temp${NOW}"
     IFS=' ' read -ra ips_array <<< $(define_ips)
@@ -73,8 +71,6 @@ function copy_to_hosts()
             scp -o StrictHostKeyChecking=no  ${IGNITE_CONFIG_FILE}.temp${NOW} $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$IGNITE_CONFIG_BASENAME
 
             scp -o StrictHostKeyChecking=no  $IGNITE_BASE_CONFIG $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/ignite-base-config.xml
-
-            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${REMOTE_USER}"@"${ip} nohup $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ignite.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$IGNITE_CONFIG_BASENAME &
         #fi
     done
 
@@ -95,6 +91,6 @@ function kill_nodes()
     done
 }
 
-edit_xml
+edit_remote_config
 #kill_nodes
 copy_to_hosts
