@@ -39,7 +39,6 @@ import javax.cache.CacheException;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.IgniteException;
-import org.apache.ignite.binary.BinaryType;
 import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheKeyConfiguration;
@@ -1355,7 +1354,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @param schemaName Schema name to create table in.
      * @param entity Entity to create table from.
      * @param templateName Template name.
-     * @param cacheName
+     * @param cacheName Cache name.
      * @param cacheGroup Cache group name.
      * @param affinityKey Affinity key column name.
      * @param atomicityMode Atomicity mode.
@@ -1388,6 +1387,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         if (!F.isEmpty(ccfg.getQueryEntities()))
             throw new SchemaOperationException("Template cache already contains query entities which it should not: " +
                 templateName);
+
+        if (!F.isEmpty(entity.getNotNullFields()))
+            QueryUtils.checkNotNullAllowed(ccfg);
 
         if (F.isEmpty(cacheName))
             cacheName = QueryUtils.createTableCacheName(schemaName, entity.getTableName());
@@ -1867,7 +1869,8 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                         if (cctx.config().getQueryParallelism() > 1) {
                             qry.setDistributedJoins(true);
 
-                            cur = idx.queryDistributedSqlFields(schemaName, qry, keepBinary, cancel, mainCacheId);
+                            cur = idx.queryDistributedSqlFields(schemaName, qry,
+                                keepBinary, cancel, mainCacheId, true).get(0);
                         }
                         else {
                             IndexingQueryFilter filter = idx.backupFilter(requestTopVer.get(), qry.getPartitions());
@@ -1884,7 +1887,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             else {
                 clo = new IgniteOutClosureX<FieldsQueryCursor<List<?>>>() {
                     @Override public FieldsQueryCursor<List<?>> applyx() throws IgniteCheckedException {
-                        return idx.queryDistributedSqlFields(schemaName, qry, keepBinary, null, mainCacheId);
+                        return idx.queryDistributedSqlFields(schemaName, qry, keepBinary, null, mainCacheId, true).get(0);
                     }
                 };
             }
@@ -1906,7 +1909,20 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @param keepBinary Keep binary flag.
      * @return Cursor.
      */
-    public FieldsQueryCursor<List<?>> querySqlFieldsNoCache(final SqlFieldsQuery qry, final boolean keepBinary) {
+    public FieldsQueryCursor<List<?>> querySqlFieldsNoCache(final SqlFieldsQuery qry,
+        final boolean keepBinary) {
+        return querySqlFieldsNoCache(qry, keepBinary, true).get(0);
+    }
+
+    /**
+     * Query SQL fields without strict dependency on concrete cache.
+     *
+     * @param qry Query.
+     * @param keepBinary Keep binary flag.
+     * @return Cursor.
+     */
+    public List<FieldsQueryCursor<List<?>>> querySqlFieldsNoCache(final SqlFieldsQuery qry,
+        final boolean keepBinary, final boolean failOnMultipleStmts) {
         checkxEnabled();
 
         validateSqlFieldsQuery(qry);
@@ -1921,11 +1937,13 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             throw new IllegalStateException("Failed to execute query (grid is stopping).");
 
         try {
-            IgniteOutClosureX<FieldsQueryCursor<List<?>>> clo = new IgniteOutClosureX<FieldsQueryCursor<List<?>>>() {
-                @Override public FieldsQueryCursor<List<?>> applyx() throws IgniteCheckedException {
+            IgniteOutClosureX<List<FieldsQueryCursor<List<?>>>> clo =
+                new IgniteOutClosureX<List<FieldsQueryCursor<List<?>>>>() {
+                @Override public List<FieldsQueryCursor<List<?>>> applyx() throws IgniteCheckedException {
                     GridQueryCancel cancel = new GridQueryCancel();
 
-                    return idx.queryDistributedSqlFields(qry.getSchema(), qry, keepBinary, cancel, null);
+                    return idx.queryDistributedSqlFields(qry.getSchema(), qry, keepBinary, cancel, null,
+                        failOnMultipleStmts);
                 }
             };
 

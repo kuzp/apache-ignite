@@ -1872,6 +1872,8 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
         if (tx == null || tx.implicit()) {
             Map<KeyCacheObject, EntryGetResult> misses = null;
 
+            Set<GridCacheEntryEx> newLocalEntries = null;
+
             final AffinityTopologyVersion topVer = tx == null ? ctx.affinity().affinityTopologyVersion() :
                 tx.topologyVersion();
 
@@ -1944,6 +1946,8 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                             }
 
                             if (!skipEntry) {
+                                boolean isNewLocalEntry = this.map.getEntry(ctx, key) == null;
+
                                 entry = entryEx(key);
 
                                 if (entry == null) {
@@ -1951,6 +1955,13 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                                         ctx.cache().metrics0().onRead(false);
 
                                     break;
+                                }
+
+                                if (isNewLocalEntry) {
+                                    if (newLocalEntries == null)
+                                        newLocalEntries = new HashSet<>();
+
+                                    newLocalEntries.add(entry);
                                 }
 
                                 if (storeEnabled) {
@@ -2145,6 +2156,11 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 if (misses != null) {
                     for (KeyCacheObject key0 : misses.keySet())
                         ctx.evicts().touch(peekEx(key0), topVer);
+                }
+
+                if (newLocalEntries != null) {
+                    for (GridCacheEntryEx entry : newLocalEntries)
+                        removeEntry(entry);
                 }
 
                 return new GridFinishedFuture<>(e);
