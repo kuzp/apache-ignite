@@ -32,7 +32,8 @@
     "win32"
   ],
   "dependencies": {
-    "@uirouter/angularjs": "1.0.5",
+    "@uirouter/angularjs": "^1.0.7",
+    "@uirouter/core": "^5.0.9",
     "@uirouter/rx": "^0.4.1",
     "@uirouter/visualizer": "^4.0.2",
     "angular": "1.5.11",
