@@ -659,7 +659,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                             writeVersion(),
                                             0,
                                             txEntry.key().partition(),
-                                            txEntry.updateCounter()), U.currentTimeMillis()));
+                                            txEntry.updateCounter())));
 
                                     if (op == CREATE || op == UPDATE) {
                                         assert val != null : txEntry;

@@ -742,7 +742,7 @@ public abstract class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
                             }
 
                             if (!near() && cctx.wal() != null)
-                                cctx.wal().log(new DataRecord(dataEntries, U.currentTimeMillis()));
+                                cctx.wal().log(new DataRecord(dataEntries));
 
                             if (ptr != null)
                                 cctx.wal().fsync(ptr);
