@@ -166,7 +166,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     private RecordSerializer serializer;
 
     /** Serializer latest version to use. */
-    private final int serializerVersion =
+    public final int serializerVersion =
         IgniteSystemProperties.getInteger(IGNITE_WAL_SERIALIZER_VERSION, LATEST_SERIALIZER_VERSION);
 
     /** */
