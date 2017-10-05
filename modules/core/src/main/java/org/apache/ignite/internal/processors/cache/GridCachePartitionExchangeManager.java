@@ -1427,8 +1427,11 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                     }
                 }
 
-                if (!hasMovingParts)
+                if (!hasMovingParts) {
                     cctx.database().releaseHistoryForPreloading();
+
+//                    cctx.kernalContext().state().
+                }
             }
             else
                 exchangeFuture(msg.exchangeId(), null, null, null, null).onReceiveFullMessage(node, msg);

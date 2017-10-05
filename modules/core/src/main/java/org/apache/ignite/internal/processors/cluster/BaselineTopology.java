@@ -31,12 +31,19 @@ public class BaselineTopology implements Serializable {
 
     private final Set<Object> consistentIds;
 
-    public BaselineTopology(Set<Object> consistentIds) {
+    private final boolean ready;
+
+    public BaselineTopology(Set<Object> consistentIds, boolean ready) {
         this.consistentIds = consistentIds;
+        this.ready = ready;
     }
 
     public Set<Object> consistentIds() {
         return consistentIds;
+    }
+
+    public boolean ready() {
+        return ready;
     }
 
     @Override public boolean equals(Object o) {
