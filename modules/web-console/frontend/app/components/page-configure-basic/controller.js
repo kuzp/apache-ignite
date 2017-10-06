@@ -30,13 +30,16 @@ export default class PageConfigureBasicController {
 
     $onDestroy() {
         this.subscription.unsubscribe();
+        if (this.onBeforeTransition) this.onBeforeTransition();
     }
 
     $postLink() {
         this.$element.addClass('panel--ignite');
     }
 
-    uiCanExit() {
+    _uiCanExit($transition$) {
+        if ($transition$.params().justIDUpdate) return true;
+        $transition$.onSuccess({}, () => this.reset());
         return this.ConfigureState.state$.pluck('edit', 'changes').take(1).toPromise().then((changes) => {
             return this.ConfigChangesGuard.guard(
                 {
@@ -52,6 +55,8 @@ export default class PageConfigureBasicController {
     }
 
     $onInit() {
+        this.onBeforeTransition = this.$uiRouter.transitionService.onBefore({}, (t) => this._uiCanExit(t));
+
         this.memorySizeInputVisible$ = this.IgniteVersion.currentSbj
             .map((version) => this.IgniteVersion.since(version.ignite, '2.0.0'));
 
@@ -105,8 +110,17 @@ export default class PageConfigureBasicController {
         this.conf.saveBasic({andDownload, cluster: cloneDeep(this.clonedCluster)});
     }
 
-    resetAll() {
+    reset() {
+        this.clonedCluster = cloneDeep(this.originalCluster);
+        this.ConfigureState.dispatchAction({
+            type: 'RESET_EDIT_CHANGES'
+        });
+    }
+
+    confirmAndReset() {
         return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cluster?')
-        .then(() => this.conf.onEditCancel());
+        .then((forReal = true) => {
+            if (forReal) this.reset();
+        });
     }
 }
