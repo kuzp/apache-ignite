@@ -77,7 +77,7 @@ export default ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter'
 
             this.isNew$ = cacheID$.map((id) => id === 'new');
             this.itemEditTitle$ = combineLatest(this.isNew$, this.originalCache$, (isNew, cache) => {
-                return `${isNew ? 'Create' : 'Edit'} cache ${cache.name ? `‘${cache.name}’` : ''}`;
+                return `${isNew ? 'Create' : 'Edit'} cache ${!isNew && cache.name ? `‘${cache.name}’` : ''}`;
             });
             this.selectionManager = this.configSelectionManager({
                 itemID$: cacheID$,

@@ -48,7 +48,7 @@ export default class PageConfigureAdvancedModels {
         })/* .take(1)*/.distinctUntilChanged().publishReplay(1).refCount().debug('model to edit');
         this.isNew$ = this.itemID$.map((id) => id === 'new');
         this.itemEditTitle$ = combineLatest(this.isNew$, this.originalItem$, (isNew, item) => {
-            return `${isNew ? 'Create' : 'Edit'} model ${get(item, 'name') ? `‘${get(item, 'name')}’` : ''}`;
+            return `${isNew ? 'Create' : 'Edit'} model ${!isNew && get(item, 'valueType') ? `‘${get(item, 'valueType')}’` : ''}`;
         });
         this.selectionManager = this.configSelectionManager({
             itemID$: this.itemID$,
