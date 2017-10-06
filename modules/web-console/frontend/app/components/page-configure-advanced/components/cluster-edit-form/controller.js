@@ -2,17 +2,14 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class ClusterEditFormController {
-    static $inject = ['IgniteLegacyUtils', 'IgniteEventGroups', 'IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Clusters', 'IgniteFormUtils'];
-    constructor(IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Clusters, IgniteFormUtils) {
-        Object.assign(this, {IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Clusters, IgniteFormUtils});
+    static $inject = ['IgniteLegacyUtils', 'IgniteEventGroups', 'IgniteConfirm', 'IgniteVersion', '$scope', 'Clusters', 'IgniteFormUtils'];
+    constructor(IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils) {
+        Object.assign(this, {IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils});
     }
     $onDestroy() {
         this.versionSubscription.unsubscribe();
-        this.onBeforeOff();
     }
     $onInit() {
-        this.onBeforeOff = this.$transitions.onBefore({}, (...args) => this.uiCanExit(...args));
-
         this.available = this.IgniteVersion.available.bind(this.IgniteVersion);
 
         let __original_value;
@@ -82,16 +79,17 @@ export default class ClusterEditFormController {
             }
         }
     }
-    uiCanExit($transition$) {
-        return this.ConfigChangesGuard.guard(...[this.cluster, this.clonedCluster].map(this.Clusters.normalize));
+    getValuesToCompare() {
+        return [this.cluster, this.clonedCluster].map(this.Clusters.normalize);
     }
     save() {
         if (this.$scope.ui.inputForm.$invalid)
             return this.IgniteFormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
         this.onSave({$event: cloneDeep(this.clonedCluster)});
     }
-    resetAll() {
+    reset = () => this.clonedCluster = cloneDeep(this.cluster);
+    confirmAndReset() {
         return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cluster?')
-        .then(() => this.clonedCluster = cloneDeep(this.cluster));
+        .then(this.reset);
     }
 }

@@ -51,4 +51,6 @@ cache-edit-form(
     models='$ctrl.shortModels$|async:this'
     on-save='$ctrl.save($event)'
     ng-class='{"pca-form-blocked": !($ctrl.isBlocked$|async:this)}'
+    fake-ui-can-exit='base.configuration.edit.advanced.caches.cache'
+    form-ui-can-exit-guard
 )
