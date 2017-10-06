@@ -164,6 +164,15 @@ const resetFormItemToNull = ({actionKey, actionType}) => {
 //     return this.publishReplay(times).refCount();
 // };
 
+const shortCachesResolve = ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+    return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
+    .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
+    .switchMap((cluster) => {
+        return etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id});
+    })
+    .toPromise();
+}];
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
@@ -306,16 +315,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: 'pageConfigureBasic',
                 permission: 'configuration',
                 resolve: {
-                    _shortCaches: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
-                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
-                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
-                        .switchMap((cluster) => {
-                            return cluster
-                                ? etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id})
-                                : Observable.of(true);
-                        })
-                        .toPromise();
-                    }]
+                    _shortCaches: shortCachesResolve
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -335,14 +335,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedClusterComponent.name,
                 permission: 'configuration',
                 resolve: {
-                    _shortCaches: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
-                        return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
-                        .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
-                        .switchMap((cluster) => {
-                            return etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id});
-                        })
-                        .toPromise();
-                    }]
+                    _shortCaches: shortCachesResolve
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
