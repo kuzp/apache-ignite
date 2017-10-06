@@ -292,6 +292,11 @@ export default class ConfigEffects {
                     .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
 
+        this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
+            .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id, justIDUpdate: true}, {location: 'replace'}))
+            .ignoreElements();
+
         this.advancedSaveRedirectEffect$ = this.ConfigureState.actions$
             .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK'))
             .withLatestFrom(this.ConfigureState.actions$.let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION')))
