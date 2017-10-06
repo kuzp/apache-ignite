@@ -94,7 +94,7 @@ export default class PageConfigureBasicController {
     }
 
     addCache() {
-        this.conf.addItem('caches');
+        this.ConfigureState.dispatchAction({type: 'ADD_CACHE_TO_EDIT'});
     }
 
     removeCache(cache) {

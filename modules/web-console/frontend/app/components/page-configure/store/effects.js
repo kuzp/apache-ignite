@@ -116,6 +116,11 @@ export default class ConfigEffects {
                 );
             });
 
+        this.addCacheToEditEffect$ = this.ConfigureState.actions$
+            .let(ofType('ADD_CACHE_TO_EDIT'))
+            .switchMap(() => this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit('new')).take(1))
+            .map((cache) => ({type: 'UPSERT_CLUSTER_ITEM', itemType: 'caches', item: cache}));
+
         this.saveCompleteConfigurationErrEffect$ = this.ConfigureState.actions$
             .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
             .do((action) => this.IgniteMessages.showError(action.error.title, action.error.message))
