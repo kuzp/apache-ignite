@@ -59,6 +59,8 @@ import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/race';
 
+const idRegex = `new|[a-z0-9]+`;
+
 const getErrorMessage = (e) => get(e, 'error.data', e);
 
 const makeClusterItemsResolver = ({
@@ -174,6 +176,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration', {
                 abstract: true,
                 permission: 'configuration',
+                url: '/configuration',
                 onEnter: ['ConfigureState', (ConfigureState) => ConfigureState.dispatchAction({type: 'PRELOAD_STATE', state: {}})],
                 views: {
                     '@': {
@@ -190,7 +193,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.overview', {
-                url: '/configuration/overview',
+                url: '/overview',
                 component: 'pageConfigureOverview',
                 permission: 'configuration',
                 metaTags: {
@@ -198,7 +201,13 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.edit', {
-                url: '/configuration/:clusterID',
+                url: `/{clusterID:${idRegex}}`,
+                params: {
+                    justIDUpdate: {
+                        type: 'bool',
+                        value: false
+                    }
+                },
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {
@@ -370,7 +379,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.edit.advanced.caches.cache', {
-                url: '/{cacheID:string}',
+                url: `/{cacheID:${idRegex}}`,
                 permission: 'configuration',
                 resolve: {
                     _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
@@ -418,7 +427,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.edit.advanced.models.model', {
-                url: '/{modelID:string}',
+                url: `/{modelID:${idRegex}}`,
                 resolve: {
                     _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
                         const {clusterID, modelID} = $transition$.params();
@@ -461,7 +470,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 }
             })
             .state('base.configuration.edit.advanced.igfs.igfs', {
-                url: '/{igfsID:string}',
+                url: `/{igfsID:${idRegex}}`,
                 permission: 'configuration',
                 resolve: {
                     _igfs: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
