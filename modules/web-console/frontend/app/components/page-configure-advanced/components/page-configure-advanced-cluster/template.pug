@@ -15,6 +15,7 @@
     limitations under the License.
 
 cluster-edit-form(
+    is-new='$ctrl.isNew$|async:this'
     cluster='$ctrl.originalCluster$|async:this'
     caches='$ctrl.shortCaches$|async:this'
     on-save='$ctrl.save($event)'
