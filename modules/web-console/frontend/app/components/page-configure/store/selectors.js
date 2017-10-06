@@ -50,7 +50,7 @@ export default class ConfigSelectors {
         .let(this.selectCache(cacheID))
         .distinctUntilChanged()
         .let(selectItemToEdit({
-            items: state$.let(this.selectShortCachesValue()),
+            items: state$.let(this.selectCurrentShortCaches),
             itemFactory: () => this.Caches.getBlankCache(),
             defaultName: 'New cache',
             itemID: cacheID
