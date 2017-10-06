@@ -67,7 +67,7 @@ export default ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter'
         ];
 
         this.$onInit = function() {
-            const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID');
+            const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID').publishReplay(1).refCount();
 
             this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
             this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue());
