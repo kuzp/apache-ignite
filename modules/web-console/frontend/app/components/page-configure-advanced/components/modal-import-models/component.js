@@ -59,7 +59,7 @@ export class ModalImportModels {
         Object.assign(this, {$uiRouter, ConfigSelectors, ConfigEffects, ConfigureState, $http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils});
     }
     loadData() {
-        return this.$uiRouter.globals.params$.pluck('clusterID').take(1)
+        return Observable.of(this.clusterID)
         .switchMap((id = 'new') => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id, 'Imported cluster'));
         })
@@ -1074,6 +1074,7 @@ export const component = {
     controller: ModalImportModels,
     templateUrl,
     bindings: {
-        onHide: '&'
+        onHide: '&',
+        clusterID: '<clusterId'
     }
 };
