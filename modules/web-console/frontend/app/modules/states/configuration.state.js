@@ -217,9 +217,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         });
                     }]
                 },
-                resolvePolicy: {
-                    async: 'NOWAIT'
-                },
                 // resolve: {
                 //     clustersTable: clustersTableResolve,
                 //     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
