@@ -37,6 +37,8 @@ import pcFormFieldSize from './components/pc-form-field-size';
 import pcListEditable from './components/pc-list-editable';
 import isInCollection from './components/pcIsInCollection';
 import pcValidation from './components/pcValidation';
+import fakeUiCanExit from './components/fakeUiCanExit';
+import formUICanExitGuard from './components/formUICanExitGuard';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -139,6 +141,8 @@ export default angular
     }])
     .component('pageConfigure', component)
     .directive(isInCollection.name, isInCollection)
+    .directive(fakeUiCanExit.name, fakeUiCanExit)
+    .directive(formUICanExitGuard.name, formUICanExitGuard)
     .factory('configSelectionManager', configSelectionManager)
     .service('ConfigSelectors', selectors)
     .service('ConfigEffects', effects)
