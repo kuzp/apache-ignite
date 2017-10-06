@@ -50,10 +50,9 @@ module.exports.factory = (_, mongo, errors) => {
          */
         static revert(session) {
             return new Promise((resolve) => {
-                const {viewedUser} = session;
                 delete session.viewedUser;
 
-                resolve(viewedUser);
+                resolve(true);
             });
         }
     }

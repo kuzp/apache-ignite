@@ -139,7 +139,7 @@ module.exports.factory = (_, mongo, spacesService, cachesService, modelsService,
                     const query = _.pick(cluster, ['space', '_id']);
                     const basicCluster = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
 
-                    return mongo.Cluster.findOneAndUpdate(query, {$set: basicCluster}, {projection: {caches: 1, igfss: 1}, upsert: true}).lean().exec()
+                    return mongo.Cluster.findOneAndUpdate(query, {$set: basicCluster}, {projection: 'caches', upsert: true}).lean().exec()
                         .catch((err) => {
                             if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
                                 throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
@@ -172,7 +172,7 @@ module.exports.factory = (_, mongo, spacesService, cachesService, modelsService,
 
                     const query = _.pick(cluster, ['space', '_id']);
 
-                    return mongo.Cluster.findOneAndUpdate(query, {$set: cluster}, {projection: 'caches', upsert: true}).lean().exec()
+                    return mongo.Cluster.findOneAndUpdate(query, {$set: cluster}, {projection: {models: 1, caches: 1, igfss: 1}, upsert: true}).lean().exec()
                         .catch((err) => {
                             if (err.code === mongo.errCodes.DUPLICATE_KEY_ERROR)
                                 throw new errors.DuplicateKeyException(`Cluster with name: "${cluster.name}" already exist.`);
