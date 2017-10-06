@@ -6,6 +6,7 @@ export default {
     controller,
     templateUrl,
     bindings: {
+        isNew: '<',
         cluster: '<',
         caches: '<',
         onSave: '&'

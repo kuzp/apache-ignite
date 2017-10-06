@@ -55,8 +55,9 @@ export default class PageConfigureBasicController {
         this.memorySizeInputVisible$ = this.IgniteVersion.currentSbj
             .map((version) => this.IgniteVersion.since(version.ignite, '2.0.0'));
 
-        const clusterID$ = this.$uiRouter.globals.params$.take(1).pluck('clusterID').filter((v) => v).take(1).debug('clusterID$');
+        const clusterID$ = this.$uiRouter.globals.params$.take(1).pluck('clusterID').filter((v) => v).take(1);
 
+        this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((id) => id === 'new');
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
         this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {

@@ -40,7 +40,7 @@ export default class PageConfigureAdvancedCluster {
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id)).debug('clusterToEdit').take(1);
         }).take(1).debug('originalCluster$');
-        this.isNew$ = clusterID$.map((id) => id === 'new');
+        this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((id) => id === 'new');
         this.isBlocked$ = clusterID$;
     }
 

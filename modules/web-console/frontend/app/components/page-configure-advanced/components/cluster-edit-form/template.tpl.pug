@@ -72,8 +72,8 @@ div(bs-collapse='' data-allow-multiple='true' ng-model='ui.activePanels')
             include /app/modules/states/configuration/clusters/attributes
 
 .pc-form-actions-panel(n_g-show='$ctrl.$scope.selectedItem')
-    button-preview-project(cluster='$ctrl.cluster')
-    button-download-project(cluster='$ctrl.cluster')
+    button-preview-project(cluster='$ctrl.cluster' ng-hide='$ctrl.isNew')
+    button-download-project(cluster='$ctrl.cluster' ng-hide='$ctrl.isNew')
 
     .pc-form-actions-panel__right-after
 
