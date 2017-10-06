@@ -2,13 +2,11 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class ModelEditFormController {
-    static $inject = ['ModalImportModels', 'IgniteErrorPopover', 'IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
-    constructor(ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils) {
-        Object.assign(this, {ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Models, IgniteFormUtils});
+    static $inject = ['ModalImportModels', 'IgniteErrorPopover', 'IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
+    constructor(ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, IgniteVersion, $scope, Models, IgniteFormUtils) {
+        Object.assign(this, {ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, IgniteVersion, $scope, Models, IgniteFormUtils});
     }
     $onInit() {
-        this.$onDestroy = this.$transitions.onBefore({}, (...args) => this.uiCanExit(...args));
-
         this.available = this.IgniteVersion.available.bind(this.IgniteVersion);
 
         this.$scope.ui = this.IgniteFormUtils.formUI();
@@ -117,8 +115,8 @@ export default class ModelEditFormController {
     onQueryFieldsChange(queryFields) {
         // this.keyFieldsOptions = this.fields('cur', this.keyFieldsOptions);
     }
-    uiCanExit($transition$) {
-        return this.ConfigChangesGuard.guard(...[this.model, this.$scope.backupItem].map(this.Models.normalize));
+    getValuesToCompare() {
+        return [this.model, this.$scope.backupItem].map(this.Models.normalize);
     }
     save() {
         if (this.$scope.ui.inputForm.$invalid)
@@ -126,8 +124,9 @@ export default class ModelEditFormController {
         if (!this.validate(this.$scope.backupItem)) return;
         this.onSave({$event: cloneDeep(this.$scope.backupItem)});
     }
-    resetAll() {
+    reset = (forReal) => forReal ? this.$scope.backupItem = cloneDeep(this.model) : void 0;
+    confirmAndReset() {
         return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current model?')
-        .then(() => this.$scope.backupItem = cloneDeep(this.model));
+        .then(this.reset);
     }
 }
