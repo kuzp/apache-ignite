@@ -36,7 +36,8 @@
                         class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
                         <property name="addresses">
                             <list>
-                                <value>127.0.0.1:47500..47509</value>
+                                <!-- In distributed environment, replace with actual hosts IP addresses. -->
+                                <!--to_be_replaced_by_IP_list-->
                             </list>
                         </property>
                     </bean>
