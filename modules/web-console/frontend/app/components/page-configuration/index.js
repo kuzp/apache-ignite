@@ -190,26 +190,6 @@ export default angular
         Object.assign(this, {$window, ConfigureState, Caches, IGFSs, params$, $state});
         const {state$, actions$} = ConfigureState;
 
-        const basicRedirects$ = actions$
-            .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
-            .do((a) => $state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace'}));
-
-        // const advancedRedirects$ = actions$
-        //     .filter((a) => a.type === 'UPSERT_CLUSTER_ITEM')
-        //     .exhaustMap(({itemType, item: {_id}}) => {
-        //         return actions$.filter((a) => a.type === 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK')
-        //         .takeUntil(actions$.filter((a) => a.type === 'UPSERT_CLUSTER_ITEM').take(1))
-        //         .mapTo({itemType, _id});
-        //     })
-        //     .debug('adv redirect')
-        //     .do(({itemType, _id}) => {
-        //         if (itemType === 'caches' && $state.params.cacheID !== _id)
-        //             return $state.go('base.configuration.edit.advanced.caches.cache', {cacheID: _id}, {location: 'replace'});
-
-        //     });
-
-        merge(basicRedirects$, /* advancedRedirects$,*/ params$).subscribe();
-
         const shortClusters$ = state$
             .pluck('shortClusters')
             .distinctUntilChanged()
