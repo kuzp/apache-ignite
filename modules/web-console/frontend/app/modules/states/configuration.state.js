@@ -421,6 +421,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
                         const {clusterID, modelID} = $transition$.params();
+                        if (modelID === 'new') return Promise.resolve();
                         return etp('LOAD_MODEL', {modelID})
                         .catch((e) => {
                             $transition$.router.stateService.go('base.configuration.edit.advanced.models', null, {
@@ -465,6 +466,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 resolve: {
                     _igfs: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
                         const {clusterID, igfsID} = $transition$.params();
+                        if (igfsID === 'new') return Promise.resolve();
                         return etp('LOAD_IGFS', {igfsID})
                         .catch((e) => {
                             $transition$.router.stateService.go('base.configuration.edit.advanced.igfs', null, {
