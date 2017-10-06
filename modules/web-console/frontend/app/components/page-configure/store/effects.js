@@ -295,16 +295,21 @@ export default class ConfigEffects {
                     .map((k) => Array.isArray(req[k]) ? [k, req[k][0]] : [k, req[k]])
                     .filter((v) => v[1])
                     .pop();
-                return firstChangedItem || ['cluster', req.cluster];
+                if (!firstChangedItem) return null;
+                return [...firstChangedItem, req.cluster] || ['cluster', req.cluster, req.cluster];
             })
-            .do(([type, value]) => {
+            .filter((v) => v)
+            .do(([type, value, cluster]) => {
+                const go = (state, params = {}) => this.$state.go(
+                    state, {...params, justIDUpdate: true, clusterID: cluster._id}, {location: 'replace'}
+                );
                 switch (type) {
                     case 'models': {
                         const state = 'base.configuration.edit.advanced.models.model';
-                        this.IgniteMessages.showInfo(`Model ${value.name} saved`);
+                        this.IgniteMessages.showInfo(`Model ${value.valueType} saved`);
                         if (
                             this.$state.is(state) && this.$state.params.modelID !== value._id
-                        ) return this.$state.go(state, {modelID: value._id}, {location: 'replace'});
+                        ) return go(state, {modelID: value._id});
                         break;
                     }
                     case 'caches': {
@@ -312,7 +317,7 @@ export default class ConfigEffects {
                         this.IgniteMessages.showInfo(`Cache ${value.name} saved`);
                         if (
                             this.$state.is(state) && this.$state.params.cacheID !== value._id
-                        ) return this.$state.go(state, {cacheID: value._id}, {location: 'replace'});
+                        ) return go(state, {cacheID: value._id});
                         break;
                     }
                     case 'igfss': {
@@ -320,7 +325,7 @@ export default class ConfigEffects {
                         this.IgniteMessages.showInfo(`IGFS ${value.name} saved`);
                         if (
                             this.$state.is(state) && this.$state.params.igfsID !== value._id
-                        ) return this.$state.go(state, {igfsID: value._id}, {location: 'replace'});
+                        ) return go(state, {igfsID: value._id});
                         break;
                     }
                     case 'cluster': {
@@ -328,14 +333,13 @@ export default class ConfigEffects {
                         this.IgniteMessages.showInfo(`Cluster ${value.name} saved`);
                         if (
                             this.$state.is(state) && this.$state.params.clusterID !== value._id
-                        ) return this.$state.go(state, {clusterID: value._id}, {location: 'replace'});
+                        ) return go(state);
                         break;
                     }
                     default: break;
                 }
             })
-            .debug('adv save change')
-            .switchMap(() => empty());
+            .ignoreElements();
     }
 
     etp = (action, params) => {
