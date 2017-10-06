@@ -46,4 +46,6 @@ igfs-edit-form(
     m_odels='$ctrl.shortModels$|async:this'
     on-save='$ctrl.save($event)'
     ng-class='{"pca-form-blocked": !($ctrl.itemID$|async:this)}'
+    fake-ui-can-exit='base.configuration.edit.advanced.igfs.igfs'
+    form-ui-can-exit-guard
 )

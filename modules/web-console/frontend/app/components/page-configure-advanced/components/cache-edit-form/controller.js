@@ -2,13 +2,11 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class CacheEditFormController {
-    static $inject = ['IgniteConfirm', 'ConfigChangesGuard', '$transitions', 'IgniteVersion', '$scope', 'Caches', 'IgniteFormUtils'];
-    constructor(IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Caches, IgniteFormUtils) {
-        Object.assign(this, {IgniteConfirm, ConfigChangesGuard, $transitions, IgniteVersion, $scope, Caches, IgniteFormUtils});
+    static $inject = ['IgniteConfirm', 'IgniteVersion', '$scope', 'Caches', 'IgniteFormUtils'];
+    constructor(IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils) {
+        Object.assign(this, {IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils});
     }
     $onInit() {
-        this.$onDestroy = this.$transitions.onBefore({}, (...args) => this.uiCanExit(...args));
-
         this.available = this.IgniteVersion.available.bind(this.IgniteVersion);
 
         const rebuildDropdowns = () => {
@@ -58,16 +56,17 @@ export default class CacheEditFormController {
         if ('models' in changes)
             this.modelsMenu = (changes.models.currentValue || []).map((m) => ({value: m._id, label: m.valueType}));
     }
-    uiCanExit($transition$) {
-        return this.ConfigChangesGuard.guard(...[this.cache, this.clonedCache].map(this.Caches.normalize));
+    getValuesToCompare() {
+        return [this.cache, this.clonedCache].map(this.Caches.normalize);
     }
     save() {
         if (this.$scope.ui.inputForm.$invalid)
             return this.IgniteFormUtils.triggerValidation(this.$scope.ui.inputForm, this.$scope);
         this.onSave({$event: cloneDeep(this.clonedCache)});
     }
-    resetAll() {
+    reset = (forReal) => forReal ? this.clonedCache = cloneDeep(this.cache) : void 0;
+    confirmAndReset() {
         return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cache?')
-        .then(() => this.clonedCache = cloneDeep(this.cache));
+        .then(this.reset);
     }
 }
