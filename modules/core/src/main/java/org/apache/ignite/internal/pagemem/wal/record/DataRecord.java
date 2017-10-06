@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.apache.ignite.internal.util.typedef.internal.U;
 
 /**
  * Logical data record with cache operation description.
@@ -48,14 +49,14 @@ public class DataRecord extends TimeStampRecord {
      * @param writeEntry Write entry.
      */
     public DataRecord(DataEntry writeEntry) {
-        this(writeEntry, 0L);
+        this(writeEntry, U.currentTimeMillis());
     }
 
     /**
      * @param writeEntries Write entries.
      */
     public DataRecord(List<DataEntry> writeEntries) {
-        this(writeEntries, 0L);
+        this(writeEntries, U.currentTimeMillis());
     }
 
     /**
