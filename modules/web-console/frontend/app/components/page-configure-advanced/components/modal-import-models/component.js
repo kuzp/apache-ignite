@@ -189,6 +189,8 @@ export class ModalImportModels {
         };
         this.$scope.$hide = importDomainModal.hide;
 
+        this.$scope.importCommon = {};
+
         this.subscription = this.loadData().debug('import data').do((data) => {
             this.$scope.caches = _mapCaches(data.caches);
             this.$scope.domains = data.models;
@@ -232,7 +234,6 @@ export class ModalImportModels {
             value: IMPORT_DM_NEW_CACHE
         }];
 
-        $scope.importCommon = {};
 
         const _dbPresets = [
             {
