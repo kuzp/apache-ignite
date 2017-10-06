@@ -64,15 +64,15 @@ export class ModalImportModels {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id, 'Imported cluster'));
         })
         .switchMap((cluster) => {
-            return (!cluster.caches.length && !cluster.models.length)
+            return (!(cluster.caches || []).length && !(cluster.models || []).length)
                 ? Observable.of({
                     cluster,
                     caches: [],
                     models: []
                 })
                 : Observable.fromPromise(Promise.all([
-                    this.ConfigEffects.etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id}),
-                    this.ConfigEffects.etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id})
+                    this.ConfigEffects.etp('LOAD_SHORT_CACHES', {ids: cluster.caches || [], clusterID: cluster._id}),
+                    this.ConfigEffects.etp('LOAD_SHORT_MODELS', {ids: cluster.models || [], clusterID: cluster._id})
                 ]))
                 .switchMap(() => {
                     return Observable.combineLatest(
