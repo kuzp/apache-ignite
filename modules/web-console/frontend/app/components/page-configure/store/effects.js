@@ -301,10 +301,8 @@ export default class ConfigEffects {
                     .map((k) => Array.isArray(req[k]) ? [k, req[k][0]] : [k, req[k]])
                     .filter((v) => v[1])
                     .pop();
-                if (!firstChangedItem) return null;
-                return [...firstChangedItem, req.cluster] || ['cluster', req.cluster, req.cluster];
+                return firstChangedItem ? [...firstChangedItem, req.cluster] : ['cluster', req.cluster, req.cluster];
             })
-            .filter((v) => v)
             .do(([type, value, cluster]) => {
                 const go = (state, params = {}) => this.$state.go(
                     state, {...params, justIDUpdate: true, clusterID: cluster._id}, {location: 'replace'}
