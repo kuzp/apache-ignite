@@ -208,21 +208,24 @@ export default class ConfigEffects {
                     .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
 
-        this.loadIGFSEffect$ = this.ConfigureState.actions$
+        this.loadIgfsEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_IGFS')
             .exhaustMap((a) => {
-                if (a.igfsID === 'new') return of({type: `${a.type}_OK`});
-                return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFS(a)).take(1)
-                    .switchMap((cache) => {
-                        if (cache) return of({type: `${a.type}_OK`});
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFS(a.igfsID)).take(1)
+                    .switchMap((igfs) => {
+                        if (igfs) return of({type: `${a.type}_OK`, igfs});
                         return fromPromise(this.IGFSs.getIGFS(a.igfsID))
                         .switchMap(({data}) => of(
-                            {type: igfssActionTypes.UPSERT, items: [data]},
-                            {type: `${a.type}_OK`}
+                            {type: 'IGFS', igfs: data},
+                            {type: `${a.type}_OK`, igfs: data}
                         ));
                     })
                     .catch((error) => of({type: `${a.type}_ERR`, error}));
             });
+
+        this.storeIgfsEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'IGFS')
+            .map((a) => ({type: igfssActionTypes.UPSERT, items: [a.igfs]}));
 
         this.loadShortIgfssEffect$ = ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_IGFSS')
@@ -250,18 +253,21 @@ export default class ConfigEffects {
         this.loadModelEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_MODEL')
             .exhaustMap((a) => {
-                if (a.modelID === 'new') return of({type: `${a.type}_OK`});
-                return this.ConfigureState.state$.let(this.ConfigSelectors.selectModel(a)).take(1)
-                    .switchMap((cache) => {
-                        if (cache) return of({type: `${a.type}_OK`});
+                return this.ConfigureState.state$.let(this.ConfigSelectors.selectModel(a.modelID)).take(1)
+                    .switchMap((model) => {
+                        if (model) return of({type: `${a.type}_OK`, model});
                         return fromPromise(this.Models.getModel(a.modelID))
                         .switchMap(({data}) => of(
-                            {type: modelsActionTypes.UPSERT, items: [data]},
-                            {type: `${a.type}_OK`}
+                            {type: 'MODEL', model: data},
+                            {type: `${a.type}_OK`, model: data}
                         ));
                     })
                     .catch((error) => of({type: `${a.type}_ERR`, error}));
             });
+
+        this.storeCacheEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.type === 'MODEL')
+            .map((a) => ({type: modelsActionTypes.UPSERT, items: [a.model]}));
 
         this.loadShortModelsEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'LOAD_SHORT_MODELS')
