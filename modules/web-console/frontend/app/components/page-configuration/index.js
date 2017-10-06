@@ -68,18 +68,6 @@ export default angular
             item
         });
     }
-    addItem(type) {
-        const make = {
-            caches: () => this.Caches.getBlankCache(),
-            igfss: () => this.IGFSs.getBlankIGFS()
-        };
-        const item = make[type]();
-        this.ConfigureState.dispatchAction({
-            type: 'UPSERT_CLUSTER_ITEM',
-            itemType: type,
-            item: {...item, name: item._id}
-        });
-    }
     removeItem({type, itemIDs, andSave}) {
         this.ConfigureState.dispatchAction({
             type: 'REMOVE_CLUSTER_ITEMS',
