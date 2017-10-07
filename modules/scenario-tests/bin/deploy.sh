@@ -9,4 +9,4 @@ check_properties $1
 
 read_properties $1
 
-kill_java "${SERVER_HOSTS},${ClIENT_HOSTS}"
+deploy_to_hosts "${SERVER_HOSTS},${ClIENT_HOSTS}"

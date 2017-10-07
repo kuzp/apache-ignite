@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR=$(cd $(dirname "$0"); pwd)
+# Define script directory.
+SCRIPTS_HOME=$(cd $(dirname "$0"); pwd)
 
-libs=$(find $SCRIPT_DIR/../libs -type f -name *.jar)
+libs=$(find $SCRIPTS_HOME/../libs -type f -name *.jar)
 
 for lib in $libs
 do
@@ -15,4 +16,4 @@ done
 
 echo ${CP}
 
-java -cp ${CP} org.apache.ignite.scenario.LoadCacheTask  -cfg $SCRIPT_DIR/../config/ignite-remote-client-config.xml -c "atomic"
+java -cp ${CP} org.apache.ignite.scenario.LoadCacheTask  -cfg $SCRIPTS_HOME/../config/ignite-remote-client-config.xml -c "atomic"
