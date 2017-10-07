@@ -9,4 +9,6 @@ check_properties $1
 
 read_properties $1
 
-kill_java "${SERVER_HOSTS},${ClIENT_HOSTS}"
+deploy_configs ${CLIENT_HOSTS}
+
+start_client_nodes ${CLIENT_HOSTS}

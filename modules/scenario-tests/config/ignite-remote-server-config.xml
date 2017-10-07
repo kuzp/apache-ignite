@@ -31,14 +31,9 @@
         <property name="discoverySpi">
             <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
                 <property name="ipFinder">
-                    <bean
-                        class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
-                        <property name="addresses">
-                            <list>
-                                <!-- In distributed environment, replace with actual hosts IP addresses. -->
-                                <!--to_be_replaced_by_IP_list-->
-                            </list>
-                        </property>
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder">
+                        <property name="multicastGroup" value="229.113.137.228"/>
+                        <property name="multicastPort" value="54378"/>
                     </bean>
                 </property>
             </bean>

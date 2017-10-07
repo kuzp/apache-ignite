@@ -9,4 +9,6 @@ check_config $1
 
 read_config $1
 
+deploy_configs ${SERVER_HOSTS}
+
 start_server_nodes ${SERVER_HOSTS}

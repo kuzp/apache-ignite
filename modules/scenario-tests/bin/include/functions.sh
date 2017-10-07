@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
-IGNITE_ZIP_BASENAME=$(basename $IGNITE_ZIP_FILE)
-IGNITE_DIR_NAME=${IGNITE_ZIP_BASENAME/.zip/}
-SERVER_CONFIG_BASENAME=$(basename $SERVER_CONFIG_FILE)
-CLIENT_CONFIG_BASENAME=$(basename $CLIENT_CONFIG_FILE)
+# Define script directory.
+SCRIPTS_HOME=$(cd $(dirname "$0"); pwd)
+
+function define_variables(){
+    IGNITE_ZIP_BASENAME=$(basename $IGNITE_ZIP_FILE)
+    IGNITE_DIR_NAME=${IGNITE_ZIP_BASENAME/.zip/}
+    SERVER_CONFIG_BASENAME=$(basename $SERVER_CONFIG_FILE)
+    CLIENT_CONFIG_BASENAME=$(basename $CLIENT_CONFIG_FILE)
+}
 
 function print_help()
 {
@@ -14,12 +19,9 @@ function print_help()
 # Copying working directory to remote hosts.
 function deploy_to_hosts()
 {
-    IFS=' ' read -ra ips_array <<< $(define_ips $1)
+    define_variables
 
-    for ip1 in ${ips_array[@]}
-    do
-        echo $ip1
-    done
+    IFS=' ' read -ra ips_array <<< $(define_ips $1)
 
     for ip in ${ips_array[@]}
     do
@@ -38,6 +40,26 @@ function deploy_to_hosts()
     done
 }
 
+# Copying working directory to remote hosts.
+function deploy_configs()
+{
+    define_variables
+
+    IFS=' ' read -ra ips_array <<< $(define_ips $1)
+
+    for ip in ${ips_array[@]}
+    do
+        if [[ $ip != "127.0.0.1" && $ip != "localhost" ]]
+        then
+            echo "<"$(date +"%H:%M:%S")"> Copying config directory to the host ${ip}"
+
+            scp -o StrictHostKeyChecking=no $SCRIPTS_HOME/../config/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/ >> /dev/null
+            scp -o StrictHostKeyChecking=no $SCRIPTS_HOME/../bin/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ >> /dev/null
+        fi
+    done
+}
+
+
 # Creating an array of IP addresses of the remote hosts from $1.
 function define_ips()
 {
@@ -55,6 +77,8 @@ function define_ips()
 
 function start_server_nodes()
 {
+    define_variables
+
     IFS=' ' read -ra ips_array <<< $(define_ips $1)
     for ip in ${ips_array[@]}
     do
@@ -70,6 +94,8 @@ function start_server_nodes()
 # Starting client nodes on remote hosts.
 function start_client_nodes()
 {
+    define_variables
+
     IFS=' ' read -ra ips_array <<< $(define_ips)
     for ip in ${ips_array[@]}
     do
@@ -77,7 +103,7 @@ function start_client_nodes()
         then
             echo "<"$(date +"%H:%M:%S")"> Starting client node on the host ${ip}"
 
-            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-remote-client.sh &
+            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-client.sh &
         fi
     done
 }

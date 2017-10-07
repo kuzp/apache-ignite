@@ -9,4 +9,12 @@ check_properties $1
 
 read_properties $1
 
-start_client_nodes ${CLIENT_HOSTS}
+libs=$(find $SCRIPTS_HOME/../libs -type f -name *.jar)
+
+for lib in $libs; do
+
+    CP="${CP}:${lib}"
+
+done
+
+java -cp ${CP} org.apache.ignite.scenario.${MAIN_CLASS} -cfg $SCRIPTS_HOME/../config/ignite-remote-client-config.xml -c ${CACHE}
