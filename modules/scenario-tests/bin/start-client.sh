@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 # Define script directory.
-SCRIPTS_HOME=$(cd $(dirname "$0"); pwd)
+SCRIPT_HOME=$(cd $(dirname "$0"); pwd)
 
-source "${SCRIPTS_HOME}"/include/functions.sh
+source "${SCRIPT_HOME}"/include/main-functions.sh
 
 check_properties $1
 
 read_properties $1
 
-libs=$(find $SCRIPTS_HOME/../libs -type f -name *.jar)
+libs=$(find $SCRIPT_HOME/../libs -type f -name *.jar)
 
 for lib in $libs; do
 
@@ -17,4 +17,4 @@ for lib in $libs; do
 
 done
 
-java -cp ${CP} org.apache.ignite.scenario.${MAIN_CLASS} -cfg $SCRIPTS_HOME/../config/ignite-remote-client-config.xml -c ${CACHE}
+java -cp ${CP} org.apache.ignite.scenario.${MAIN_CLASS} -cfg $SCRIPT_HOME/../config/ignite-remote-client-config.xml -c ${CACHE_NAME} -s ${DATASET_SIZE} -f ${FIELDS_PER_ENTRY} -fs ${FIELD_SIZE}

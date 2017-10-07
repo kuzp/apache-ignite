@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Define script directory.
-SCRIPTS_HOME=$(cd $(dirname "$0"); pwd)
+SCRIPT_HOME=$(cd $(dirname "$0"); pwd)
 
 function define_variables(){
     IGNITE_ZIP_BASENAME=$(basename $IGNITE_ZIP_FILE)
@@ -22,6 +22,11 @@ function deploy_to_hosts()
     define_variables
 
     IFS=' ' read -ra ips_array <<< $(define_ips $1)
+
+    for ip1 in ${ips_array[@]}
+    do
+        echo $ip1
+    done
 
     for ip in ${ips_array[@]}
     do
@@ -53,8 +58,8 @@ function deploy_configs()
         then
             echo "<"$(date +"%H:%M:%S")"> Copying config directory to the host ${ip}"
 
-            scp -o StrictHostKeyChecking=no $SCRIPTS_HOME/../config/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/ >> /dev/null
-            scp -o StrictHostKeyChecking=no $SCRIPTS_HOME/../bin/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ >> /dev/null
+            scp -r -o StrictHostKeyChecking=no $SCRIPT_HOME/../config/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/config/ >> /dev/null
+            scp -r -o StrictHostKeyChecking=no $SCRIPT_HOME/../bin/* $ip:$REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/ >> /dev/null
         fi
     done
 }
@@ -86,7 +91,7 @@ function start_server_nodes()
         then
             echo "<"$(date +"%H:%M:%S")"> Starting node on the host ${ip}"
 
-            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} nohup $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ignite.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/config/$SERVER_CONFIG_BASENAME &
+            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} nohup $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/bin/ignite.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/config/$SERVER_CONFIG_BASENAME &
         fi
     done
 }
@@ -96,14 +101,14 @@ function start_client_nodes()
 {
     define_variables
 
-    IFS=' ' read -ra ips_array <<< $(define_ips)
+    IFS=' ' read -ra ips_array <<< $(define_ips $1)
     for ip in ${ips_array[@]}
     do
         if [[ $ip != "127.0.0.1" && $ip != "localhost" ]]
         then
             echo "<"$(date +"%H:%M:%S")"> Starting client node on the host ${ip}"
 
-            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-client.sh &
+            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-client.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/config/test.properties &
         fi
     done
 }

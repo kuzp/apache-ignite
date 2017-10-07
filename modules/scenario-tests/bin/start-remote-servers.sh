@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # Define script directory.
-SCRIPTS_HOME=$(cd $(dirname "$0"); pwd)
+SCRIPT_HOME=$(cd $(dirname "$0"); pwd)
 
-source "${SCRIPTS_HOME}"/include/functions.sh
+source "${SCRIPT_HOME}"/include/main-functions.sh
 
-check_config $1
+check_properties $1
 
-read_config $1
+read_properties $1
 
 deploy_configs ${SERVER_HOSTS}
 
