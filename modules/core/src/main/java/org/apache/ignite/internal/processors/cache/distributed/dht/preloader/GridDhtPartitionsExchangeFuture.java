@@ -1559,7 +1559,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         type = ExchangeRecord.Type.LEFT;
 
                     if (type != null)
-                        cctx.wal().log(new ExchangeRecord(type, firstDiscoEvt.eventNode().consistentId().toString()));
+                        cctx.wal().log(new ExchangeRecord(firstDiscoEvt.eventNode().consistentId().toString(), type));
                 }
                 catch (IgniteCheckedException e) {
                     e.printStackTrace();

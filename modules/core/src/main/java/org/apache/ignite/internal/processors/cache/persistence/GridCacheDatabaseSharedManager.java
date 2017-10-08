@@ -1624,14 +1624,15 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
         IgnitePredicate<DataEntry> entryPredicate,
         Map<T2<Integer, Integer>, T2<Integer, Long>> partStates,
-        boolean debug
+        StringBuilder sb
     ) throws IgniteCheckedException {
         cctx.kernalContext().query().skipFieldLookup(true);
 
-        StringBuilder sb = new StringBuilder();
-
-        if (debug)
-            sb.append("NodeId:").append(cctx.localNodeId()).append("\n");
+        if (sb != null)
+            sb.append("\n")
+                .append("ConstId:")
+                .append(cctx.localNode().consistentId())
+                .append("\n");
 
         try (WALIterator it = cctx.wal().replay(pnt)) {
             while (it.hasNextX()) {
@@ -1640,8 +1641,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 WALRecord rec = next.get2();
 
                 if (!recPredicate.apply(next)){
-                    if (debug)
-                        sb.append("Stop iteration ")
+                    if (sb != null)
+                        sb.append("Last record ")
                             .append(next.get1())
                             .append(" rec ")
                             .append(rec)
@@ -1664,7 +1665,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 assert cacheCtx != null;
 
-                                if (debug) {
+                                if (sb != null) {
                                     GridCacheVersion ver = dataEntry.nearXidVersion();
 
                                     String entry = "null";
@@ -1693,7 +1694,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     case TX_RECORD:
                         TxRecord txRec = (TxRecord)rec;
 
-                        if (debug){
+                        if (sb != null) {
                             GridCacheVersion ver = txRec.nearXidVersion();
 
                             sb.append(txRec.state())
@@ -1719,7 +1720,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         finally {
             cctx.kernalContext().query().skipFieldLookup(false);
 
-            if (debug)
+            if (sb != null)
                 log.debug(sb.toString());
         }
     }

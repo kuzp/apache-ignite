@@ -60,7 +60,7 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 return 8 + 1;
 
             case EXCHANGE:
-                return 4 + 2 + ((ExchangeRecord)record).getConstId().getBytes().length;
+                return 4 + 8 + 2 + ((ExchangeRecord)record).getConstId().getBytes().length;
 
             default:
                 return delegateSerializer.size(record);
@@ -92,13 +92,14 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
 
             case EXCHANGE:
                 int idx = in.readInt();
+                long ts = in.readLong();
                 short size = in.readShort();
 
                 byte[] arr = new byte[size];
 
                 in.readFully(arr);
 
-                return new ExchangeRecord(new String(arr), ExchangeRecord.Type.values()[idx]);
+                return new ExchangeRecord(new String(arr), ExchangeRecord.Type.values()[idx], ts);
 
             default:
                 return delegateSerializer.readRecord(type, in);
@@ -136,6 +137,7 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 byte[] bytes = rec.getConstId().getBytes();
 
                 buf.putInt(rec.getType().ordinal());
+                buf.putLong(rec.timestamp());
                 buf.putShort((short)bytes.length);
                 buf.put(bytes);
 

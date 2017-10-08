@@ -10,19 +10,24 @@ public class ExchangeRecord extends TimeStampRecord {
     /**
      * @param constId Const id.
      * @param type Type.
+     * @param timeStamp TimeStamp.
+     */
+    public ExchangeRecord(String constId, Type type, long timeStamp) {
+        super(timeStamp);
+
+        this.constId = constId;
+        this.type = type;
+    }
+
+    /**
+     * @param constId Const id.
+     * @param type Type.
      */
     public ExchangeRecord(String constId, Type type) {
         this.constId = constId;
         this.type = type;
     }
 
-    /**
-     *
-     */
-    public ExchangeRecord(Type type, String constId) {
-        this.type = type;
-        this.constId = constId;
-    }
 
     /** {@inheritDoc} */
     @Override public RecordType type() {
@@ -48,5 +53,13 @@ public class ExchangeRecord extends TimeStampRecord {
         JOIN,
         /** Left. */
         LEFT
+    }
+
+    @Override public String toString() {
+        return "ExchangeRecord[" +
+            "constId='" + constId + '\'' +
+            ", type=" + type +
+            ", timestamp=" + timestamp +
+            ']';
     }
 }
