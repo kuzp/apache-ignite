@@ -1623,6 +1623,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         WALPointer pnt,
         IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
         IgnitePredicate<DataEntry> entryPredicate,
+        Map<T2<Integer, Integer>, T2<Integer, Long>> partStates,
         boolean debug
     ) throws IgniteCheckedException {
         cctx.kernalContext().query().skipFieldLookup(true);
@@ -1633,10 +1634,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             sb.append("NodeId:").append(cctx.localNodeId()).append("\n");
 
         try (WALIterator it = cctx.wal().replay(pnt)) {
-            Set<Integer> grpIds = new HashSet<>();
-
-            Map<T2<Integer, Integer>, T2<Integer, Long>> partStates = new HashMap<>();
-
             while (it.hasNextX()) {
                 IgniteBiTuple<WALPointer, WALRecord> next = it.nextX();
 
@@ -1689,8 +1686,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                                 }
 
                                 applyUpdate(cacheCtx, dataEntry);
-
-                                grpIds.add(cacheCtx.groupId());
                             }
                         }
 
@@ -1710,17 +1705,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                                 .append(" offset=").append(p.fileOffset())
                                 .append(" len=").append(p.length())
                                 .append("\n");
-                        }
-
-                        break;
-
-                    case PART_META_UPDATE_STATE:
-                        PartitionMetaStateRecord metaStateRecord = (PartitionMetaStateRecord)rec;
-
-                        if (grpIds.contains(metaStateRecord.groupId())){
-                            partStates.put(
-                                new T2<>(metaStateRecord.groupId(), metaStateRecord.partitionId()),
-                                new T2<>((int)metaStateRecord.state(), metaStateRecord.updateCounter()));
                         }
 
                         break;

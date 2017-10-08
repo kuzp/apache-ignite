@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
+import org.apache.ignite.internal.pagemem.wal.record.ExchangeRecord;
 import org.apache.ignite.internal.pagemem.wal.record.SnapshotRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.persistence.wal.ByteBufferBackedDataInput;
@@ -58,6 +59,9 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             case SNAPSHOT:
                 return 8 + 1;
 
+            case EXCHANGE:
+                return 4 + 2 + ((ExchangeRecord)record).getConstId().getBytes().length;
+
             default:
                 return delegateSerializer.size(record);
         }
@@ -85,6 +89,16 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 byte full = in.readByte();
 
                 return new SnapshotRecord(snpId, full == 1);
+
+            case EXCHANGE:
+                int idx = in.readInt();
+                short size = in.readShort();
+
+                byte[] arr = new byte[size];
+
+                in.readFully(arr);
+
+                return new ExchangeRecord(new String(arr), ExchangeRecord.Type.values()[idx]);
 
             default:
                 return delegateSerializer.readRecord(type, in);
@@ -115,6 +129,18 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 buf.put(snpRec.isFull() ? (byte)1 : 0);
 
                 break;
+
+            case EXCHANGE:
+                ExchangeRecord rec = (ExchangeRecord)record;
+
+                byte[] bytes = rec.getConstId().getBytes();
+
+                buf.putInt(rec.getType().ordinal());
+                buf.putShort((short)bytes.length);
+                buf.put(bytes);
+
+                break;
+
             default:
                 delegateSerializer.writeRecord(record, buf);
         }
