@@ -2,6 +2,7 @@ import {uniqueName} from 'app/utils/uniqueName';
 import {of} from 'rxjs/observable/of';
 import {empty} from 'rxjs/observable/empty';
 import {forkJoin} from 'rxjs/observable/forkJoin';
+import {combineLatest} from 'rxjs/observable/combineLatest';
 import 'rxjs/add/operator/mergeMap';
 import {Observable} from 'rxjs/Observable';
 
@@ -88,6 +89,14 @@ export default class ConfigSelectors {
     selectCurrentShortModels = currentShortItems({changesKey: 'models', shortKey: 'shortModels'});
     selectShortModels = () => selectItems('shortModels');
     selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
+    selectClusterShortCaches = (clusterID) => (state$) => {
+        if (clusterID === 'new') return [];
+        return combineLatest(
+            state$.let(this.selectCluster(clusterID)).pluck('caches'),
+            state$.let(this.selectShortCaches()).pluck('value'),
+            (ids, items) => ids.map((id) => items.get(id))
+        );
+    };
     selectCompleteClusterConfiguration = ({clusterID, isDemo}) => (state$) => {
         const hasValues = (array) => !array.some((v) => !v);
         return state$.let(this.selectCluster(clusterID))
