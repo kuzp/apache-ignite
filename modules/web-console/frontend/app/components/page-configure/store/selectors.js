@@ -90,7 +90,7 @@ export default class ConfigSelectors {
     selectShortModels = () => selectItems('shortModels');
     selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
     selectClusterShortCaches = (clusterID) => (state$) => {
-        if (clusterID === 'new') return [];
+        if (clusterID === 'new') return of([]);
         return combineLatest(
             state$.let(this.selectCluster(clusterID)).pluck('caches'),
             state$.let(this.selectShortCaches()).pluck('value'),
