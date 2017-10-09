@@ -40,15 +40,20 @@ export default class PageConfigureBasicController {
     _uiCanExit($transition$) {
         if ($transition$.params().justIDUpdate) return true;
         $transition$.onSuccess({}, () => this.reset());
-        return this.ConfigureState.state$.pluck('edit', 'changes').take(1).toPromise().then((changes) => {
+        return Observable.forkJoin(
+            this.ConfigureState.state$.pluck('edit', 'changes').take(1),
+            this.clusterID$.switchMap((id) => this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterShortCaches(id))).take(1),
+            this.shortCaches$.take(1)
+        ).toPromise()
+        .then(([changes, originalShortCaches, currentCaches]) => {
             return this.ConfigChangesGuard.guard(
                 {
                     cluster: this.Clusters.normalize(this.originalCluster),
-                    caches: []
+                    caches: originalShortCaches.map(this.Caches.normalize)
                 },
                 {
                     cluster: {...this.Clusters.normalize(this.clonedCluster), caches: changes.caches.ids},
-                    caches: changes.caches.changedItems.map(this.Caches.normalize)
+                    caches: currentCaches.map(this.Caches.normalize)
                 }
             );
         });
@@ -61,6 +66,7 @@ export default class PageConfigureBasicController {
             .map((version) => this.IgniteVersion.since(version.ignite, '2.0.0'));
 
         const clusterID$ = this.$uiRouter.globals.params$.take(1).pluck('clusterID').filter((v) => v).take(1);
+        this.clusterID$ = clusterID$;
 
         this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((id) => id === 'new');
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
