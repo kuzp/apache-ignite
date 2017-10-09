@@ -39,6 +39,10 @@ import isInCollection from './components/pcIsInCollection';
 import pcValidation from './components/pcValidation';
 import fakeUiCanExit from './components/fakeUiCanExit';
 import formUICanExitGuard from './components/formUICanExitGuard';
+import modalImportModels from './components/modal-import-models';
+import buttonImportModels from './components/button-import-models';
+import buttonDownloadProject from './components/button-download-project';
+import buttonPreviewProject from './components/button-preview-project';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -77,7 +81,11 @@ export default angular
         pcListEditable.name,
         projectStructurePreview.name,
         itemsTable.name,
-        pcValidation.name
+        pcValidation.name,
+        modalImportModels.name,
+        buttonImportModels.name,
+        buttonDownloadProject.name,
+        buttonPreviewProject.name
     ])
     .run(['ConfigEffects', 'ConfigureState', '$uiRouter', (ConfigEffects, ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
