@@ -12,8 +12,7 @@ function define_variables(){
 
 function print_help()
 {
-    echo "There will be help to_do"
-
+    echo "There will be help todo"
 }
 
 # Copying working directory to remote hosts.
