@@ -18,7 +18,6 @@ import {uniqueName} from 'app/utils/uniqueName';
 import naturalCompare from 'natural-compare-lite';
 import camelCase from 'lodash/camelCase';
 import cloneDeep from 'lodash/cloneDeep';
-import isMatch from 'lodash/isMatch';
 import angular from 'angular';
 import 'angular1-async-filter';
 import {
@@ -48,18 +47,6 @@ export default angular
     static $inject = ['$window', 'ConfigureState', '$uiRouter', 'Clusters', '$state', 'PageConfigureBasic', 'Caches', 'IGFSs'];
     constructor($window, ConfigureState, {globals: {params$}}, Clusters, $state, PageConfigureBasic, Caches, IGFSs) {
         Object.assign(this, {$window, ConfigureState, Caches, IGFSs, params$, $state});
-        const {state$, actions$} = ConfigureState;
-
-        const shortClusters$ = state$
-            .pluck('shortClusters')
-            .distinctUntilChanged()
-            .filter((v) => v)
-            .pluck('value')
-            .map((v) => [...v.values()])
-            .do((v) => console.log('shortClusters', v))
-            .publishReplay(1).refCount();
-
-        Object.assign(this, {shortClusters$});
     }
     changeItem(type, item) {
         return this.ConfigureState.dispatchAction({
@@ -117,12 +104,6 @@ export default angular
                 prevActions
             });
         }).subscribe();
-    }
-    goToItemCreation(type) {
-        this.$state.go('conf.edit.item', {itemType: type, itemID: 'new'});
-    }
-    confirmExit(itemType, original, changed) {
-        return isMatch(original, changed) || this.$window.confirm(`You have unsaved ${itemType}, wanna leave?`);
     }
     onEditCancel() {
         this.ConfigureState.dispatchAction({
