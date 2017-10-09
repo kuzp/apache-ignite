@@ -8,7 +8,6 @@ export default {
     bindings: {
         igfs: '<',
         igfss: '<',
-        // models: '<',
         onSave: '&'
     }
 };

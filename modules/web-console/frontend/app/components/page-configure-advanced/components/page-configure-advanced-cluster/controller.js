@@ -23,14 +23,6 @@ export default class PageConfigureAdvancedCluster {
 
     constructor($uiRouter, ConfigSelectors, ConfigureState, conf) {
         Object.assign(this, {$uiRouter, ConfigSelectors, ConfigureState, conf});
-        this.onDestroy$ = new Subject();
-    }
-
-    $onDestroy() {
-        // this.originalCluster$.complete();
-        // console.debug('PageConfigureAdvancedCluster destroy$');
-        this.onDestroy$.next(true);
-        this.onDestroy$.complete();
     }
 
     $onInit() {

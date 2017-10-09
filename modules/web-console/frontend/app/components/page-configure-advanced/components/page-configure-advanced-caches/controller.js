@@ -25,9 +25,9 @@ import {combineLatest} from 'rxjs/observable/combineLatest';
 
 // Controller for Caches screen.
 export default class Controller {
-    static $inject = ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter', 'PageConfigureAdvancedCaches', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches'];
-    constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {conf, ConfigSelectors, configSelectionManager, $uiRouter, pageService, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
+    static $inject = ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches'];
+    constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
+        Object.assign(this, {conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
 
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
@@ -131,68 +131,4 @@ export default class Controller {
     save(cache) {
         this.conf.saveAdvanced({cache});
     }
-
-    // When landing on the page, get caches and show them.
-    // Resource.read()
-    //     .then(({spaces, clusters, caches, domains, igfss}) => {
-    //         const validFilter = $filter('domainsValidation');
-
-    //         $scope.spaces = spaces;
-    //         $scope.caches = caches;
-    //         this.cachesTable = this.buildCachesTable($scope.caches);
-    //         $scope.igfss = _.map(igfss, (igfs) => ({
-    //             label: igfs.name,
-    //             value: igfs._id,
-    //             igfs
-    //         }));
-
-    //         _.forEach($scope.caches, (cache) => cache.label = _cacheLbl(cache));
-
-    //         $scope.clusters = _.map(clusters, (cluster) => ({
-    //             value: cluster._id,
-    //             label: cluster.name,
-    //             discovery: cluster.discovery,
-    //             checkpointSpi: cluster.checkpointSpi,
-    //             caches: cluster.caches
-    //         }));
-
-    //         $scope.domains = _.sortBy(_.map(validFilter(domains, true, false), (domain) => ({
-    //             label: domain.valueType,
-    //             value: domain._id,
-    //             kind: domain.kind,
-    //             meta: domain
-    //         })), 'label');
-
-    //         selectFirstItem();
-
-    //         $scope.$watch('ui.inputForm.$valid', function(valid) {
-    //             if (valid && ModelNormalizer.isEqual(__original_value, $scope.backupItem))
-    //                 $scope.ui.inputForm.$dirty = false;
-    //         });
-
-    //         $scope.$watch('backupItem', function(val) {
-    //             if (!$scope.ui.inputForm)
-    //                 return;
-
-    //             const form = $scope.ui.inputForm;
-
-    //             if (form.$valid && ModelNormalizer.isEqual(__original_value, val))
-    //                 form.$setPristine();
-    //             else
-    //                 form.$setDirty();
-    //         }, true);
-
-    //         $scope.$watch('backupItem.offHeapMode', setOffHeapMaxMemory);
-
-    //         $scope.$watch('ui.activePanels.length', () => {
-    //             ErrorPopover.hide();
-    //         });
-    //     })
-    //     .catch(Messages.showError)
-    //     .then(() => {
-    //         $scope.ui.ready = true;
-    //         $scope.ui.inputForm && $scope.ui.inputForm.$setPristine();
-
-    //         Loading.finish('loadingCachesScreen');
-    //     });
 }
