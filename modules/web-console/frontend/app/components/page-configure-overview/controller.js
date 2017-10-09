@@ -35,6 +35,10 @@ export default class PageConfigureOverviewController {
         Object.assign(this, {ModalPreviewProject, pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload});
     }
 
+    $onDestroy() {
+        this.selectedRows$.complete();
+    }
+
     $onInit() {
         this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
 

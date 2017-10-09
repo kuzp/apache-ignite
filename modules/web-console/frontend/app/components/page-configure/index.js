@@ -130,10 +130,6 @@ export default angular
         });
         const la = ConfigureState.actions$.scan((acc, action) => [...acc, action], []);
 
-        // const ls = ConfigureState.state$.withLatestFrom(ConfigureState.actions$)
-        // .scan((acc, action) => [...acc, action].slice(-10), [])
-        // .map((s) => s[0]);
-
         ConfigureState.actions$
             .filter((a) => a.type === 'UNDO_ACTIONS')
             .withLatestFrom(la, ({actions}, actionsWindow, initialState) => {
