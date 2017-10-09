@@ -270,7 +270,7 @@ export default class ConfigEffects {
                     .catch((error) => of({type: `${a.type}_ERR`, error}));
             });
 
-        this.storeCacheEffect$ = this.ConfigureState.actions$
+        this.storeModelEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'MODEL')
             .map((a) => ({type: modelsActionTypes.UPSERT, items: [a.model]}));
 
