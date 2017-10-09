@@ -25,7 +25,6 @@ const currentShortItems = ({changesKey, shortKey}) => (state$) => {
         .map(([{ids = [], changedItems}, shortItems]) => {
             if (!ids.length || !shortItems) return [];
             return ids.map((id) => changedItems.find(({_id}) => _id === id) || shortItems.get(id));
-            // return ids.map((id) => shortItems.get(id) || changedItems.find(({_id}) => _id === id));
         })
         .map((v) => v.filter((v) => v));
 };
@@ -71,7 +70,6 @@ export default class ConfigSelectors {
         .let(selectItemToEdit({
             items: state$.let(this.selectShortModelsValue()),
             itemFactory: () => this.Models.getBlankModel(),
-            // defaultName: 'New IGFS',
             itemID
         }));
     selectClusterToEdit = (clusterID, defaultName = 'New cluster') => (state$) => state$

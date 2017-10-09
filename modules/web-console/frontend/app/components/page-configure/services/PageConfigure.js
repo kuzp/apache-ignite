@@ -39,7 +39,6 @@ import {
     UPDATE_CLUSTER,
     UPSERT_CLUSTERS,
     REMOVE_CLUSTERS,
-    LOAD_LIST,
     UPSERT_CACHES,
     uniqueName
 } from '../reducer';
@@ -109,10 +108,6 @@ export default class PageConfigure {
 
     cloneClusters(clusters) {
         this.ConfigureState.dispatchAction({type: CLONE_CLUSTERS, clusters});
-    }
-
-    loadList(list) {
-        this.ConfigureState.dispatchAction({type: LOAD_LIST, list});
     }
 
     addCluster(cluster) {
