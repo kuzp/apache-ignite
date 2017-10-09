@@ -25,144 +25,17 @@ import ConfigurationResource from './configuration/Configuration.resource';
 import IgniteSummaryZipper from './configuration/summary/summary-zipper.service';
 
 import base2 from 'views/base2.pug';
-
-import {RECEIVE_CONFIGURE_OVERVIEW} from 'app/components/page-configure-overview/reducer';
-import {
-    shortIGFSsActionTypes,
-    igfssActionTypes,
-    shortModelsActionTypes,
-    modelsActionTypes,
-    shortClustersActionTypes,
-    cachesActionTypes,
-    shortCachesActionTypes,
-    clustersActionTypes,
-    basicCachesActionTypes,
-    RECEIVE_CLUSTER_EDIT,
-    RECEIVE_CACHE_EDIT,
-    RECEIVE_MODELS_EDIT,
-    RECEIVE_MODEL_EDIT,
-    RECEIVE_IGFSS_EDIT,
-    RECEIVE_IGFS_EDIT,
-    SHOW_CONFIG_LOADING,
-    LOAD_ITEMS,
-    HIDE_CONFIG_LOADING,
-    selectShortClustersValue,
-    selectEditCluster
-} from 'app/components/page-configure/reducer';
 import pageConfigureAdvancedClusterComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-cluster/component';
 import pageConfigureAdvancedModelsComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-models/component';
 import pageConfigureAdvancedCachesComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-caches/component';
 import pageConfigureAdvancedIGFSComponent from 'app/components/page-configure-advanced/components/page-configure-advanced-igfs/component';
 
-import {uniqueName} from 'app/utils/uniqueName';
 import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/observable/race';
 
 const idRegex = `new|[a-z0-9]+`;
 
 const getErrorMessage = (e) => get(e, 'error.data', e);
-
-const makeClusterItemsResolver = ({
-    feedbackName,
-    cachePath,
-    getItemsMethodName,
-    actionTypes
-}) => ['Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Clusters, $transition$, ConfigureState, IgniteMessages) => {
-    const {clusterID} = $transition$.params();
-    const cachedValue = get(ConfigureState.state$.value, cachePath);
-
-    if (clusterID === 'new') return Promise.resolve([]);
-    if (cachedValue && cachedValue.size) return Promise.resolve([...cachedValue.values()]);
-
-    ConfigureState.dispatchAction({
-        type: SHOW_CONFIG_LOADING,
-        loadingText: `Loading ${feedbackName}…`
-    });
-
-    return Clusters[getItemsMethodName](clusterID).then(({data}) => data).then((items) => {
-        ConfigureState.dispatchAction({
-            type: HIDE_CONFIG_LOADING
-        });
-        ConfigureState.dispatchAction({
-            type: actionTypes.UPSERT,
-            items
-        });
-        return items;
-    })
-    .catch((e) => {
-        ConfigureState.dispatchAction({
-            type: HIDE_CONFIG_LOADING
-        });
-        $transition$.router.stateService.go('base.configuration.overview', null, {
-            location: 'replace'
-        });
-        IgniteMessages.showError(`Failed to load ${feedbackName} for cluster ${clusterID}. ${getErrorMessage(e)}`);
-        return Promise.reject(e);
-    });
-}];
-
-const clustersTableResolve = ['Clusters', 'ConfigureState', (Clusters, ConfigureState) => {
-    const cachedValue = get(ConfigureState.state$.value, 'shortClusters');
-    if (cachedValue && cachedValue.size) return Promise.resolve(cachedValue);
-
-    ConfigureState.dispatchAction({
-        type: SHOW_CONFIG_LOADING,
-        loadingText: 'Loading clusters…'
-    });
-
-    return Clusters.getClustersOverview()
-    .then(({data}) => {
-        ConfigureState.dispatchAction({
-            type: HIDE_CONFIG_LOADING
-        });
-
-        ConfigureState.dispatchAction({
-            type: shortClustersActionTypes.UPSERT,
-            items: data
-        });
-
-        return data;
-    });
-}];
-
-export const cachesResolve = makeClusterItemsResolver({
-    feedbackName: 'caches',
-    cachePath: 'shortCaches',
-    getItemsMethodName: 'getClusterCaches',
-    actionTypes: shortCachesActionTypes
-});
-
-const modelsResolve = makeClusterItemsResolver({
-    feedbackName: 'domain models',
-    cachePath: 'shortModels',
-    getItemsMethodName: 'getClusterModels',
-    actionTypes: shortModelsActionTypes
-});
-
-const igfssResolve = makeClusterItemsResolver({
-    feedbackName: 'IGFSs',
-    cachePath: 'shortIGFSs',
-    getItemsMethodName: 'getClusterIGFSs',
-    actionTypes: shortIGFSsActionTypes
-});
-
-const resetFormItemToNull = ({actionKey, actionType}) => {
-    const fn = ['ConfigureState', '$transition$', (ConfigureState, $transition$) => {
-        if (!$transition$.params().cacheID) {
-            ConfigureState.dispatchAction({
-                type: actionType,
-                [actionKey]: null
-            });
-        }
-        return $transition$;
-    }];
-    return {onEnter: fn, onRetain: fn};
-};
-
-// Observable.prototype.cache = function(times) {
-//     return this.publishReplay(times).refCount();
-// };
 
 const shortCachesResolve = ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
     return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
@@ -226,70 +99,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         });
                     }]
                 },
-                // resolve: {
-                //     clustersTable: clustersTableResolve,
-                //     cluster: ['Caches', 'Clusters', '$transition$', 'ConfigureState', 'IgniteMessages', (Caches, Clusters, $transition$, ConfigureState, IgniteMessages) => {
-                //         const newCluster = () => $transition$.injector().getAsync('clustersTable')
-                //             .then((clusters) => {
-                //                 return {
-                //                     ...Clusters.getBlankCluster(),
-                //                     name: uniqueName('New cluster', [...clusters.values()])
-                //                 };
-                //             });
-
-                //         const {clusterID} = $transition$.params();
-                //         const cachedValue = get(ConfigureState.state$.value, 'clusters', new Map()).get(clusterID);
-
-                //         const cluster = cachedValue
-                //             ? Promise.resolve(cachedValue)
-                //             : clusterID === 'new'
-                //                 ? Promise.resolve(newCluster())
-                //                 : Clusters.getCluster(clusterID).then(({data}) => {
-                //                     ConfigureState.dispatchAction({
-                //                         type: clustersActionTypes.UPSERT,
-                //                         items: [data]
-                //                     });
-                //                     return data;
-                //                 });
-
-                //         ConfigureState.dispatchAction({
-                //             type: RECEIVE_CLUSTER_EDIT,
-                //             cluster: null
-                //         });
-                //         ConfigureState.dispatchAction({
-                //             type: SHOW_CONFIG_LOADING,
-                //             loadingText: 'Loading cluster…'
-                //         });
-
-                //         return cluster.then((cluster) => {
-                //             ConfigureState.dispatchAction({
-                //                 type: HIDE_CONFIG_LOADING
-                //             });
-                //             ConfigureState.dispatchAction({
-                //                 type: RECEIVE_CLUSTER_EDIT,
-                //                 cluster
-                //             });
-                //             return cluster;
-                //         })
-                //         .catch((e) => {
-                //             IgniteMessages.showError(`Failed to load cluster ${clusterID}. ${getErrorMessage(e)}`);
-                //             $transition$.router.stateService.go('base.configuration.overview', null, {
-                //                 location: 'replace'
-                //             });
-                //             return Promise.reject(e);
-                //         });
-                //     }]
-                // },
-                // redirectTo: ($transition$) => {
-                //     const cluster = $transition$.injector().getAsync('_cluster');
-                //     const clusters = $transition$.injector().getAsync('_shortClusters');
-                //     return Promise.all([clusters, cluster]).then(([clusters, cluster]) => {
-                //         return (clusters.value.size > 10 || cluster.caches.length > 5)
-                //             ? 'base.configuration.edit.advanced'
-                //             : 'base.configuration.edit.basic';
-                //     });
-                // },
-                // redirectTo: 'base.configuration.edit.advanced',
                 redirectTo: ($transition$) => {
                     const [ConfigureState, ConfigSelectors] = ['ConfigureState', 'ConfigSelectors'].map((t) => $transition$.injector().get(t));
                     const waitFor = ['_cluster', '_shortClusters'].map((t) => $transition$.injector().getAsync(t));

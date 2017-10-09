@@ -1,15 +1,8 @@
-import 'rxjs/add/operator/pluck';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/distinctUntilChanged';
-import 'rxjs/add/operator/let';
-// import {selectShortClustersValue} from 'app/components/page-configure/reducer';
-
 export default class PageConfigureOverviewService {
-    static $inject = ['ConfigureState', '$state', 'PageConfigure', 'IgniteConfirm'];
+    static $inject = ['$state', 'PageConfigure', 'IgniteConfirm'];
 
-    constructor(ConfigureState, $state, PageConfigure, IgniteConfirm) {
-        Object.assign(this, {ConfigureState, $state, PageConfigure, IgniteConfirm});
-        // this.shortClusters$ = this.ConfigureState.state$.let(selectShortClustersValue);
+    constructor($state, PageConfigure, IgniteConfirm) {
+        Object.assign(this, {$state, PageConfigure, IgniteConfirm});
     }
 
     _allNames(items) {

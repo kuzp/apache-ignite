@@ -19,14 +19,10 @@ import angular from 'angular';
 
 import component from './component';
 import gridColumnCategories from './components/pco-grid-column-categories/directive';
-import {reducer} from './reducer';
 import service from './service';
 
 export default angular
     .module('ignite-console.page-configure-overview', [])
-    .run(['ConfigureState', (ConfigureState) => ConfigureState.addReducer((state, action) => Object.assign(state, {
-        configurationOverview: reducer(state.configurationOverview, action)
-    }))])
     .service('PageConfigureOverviewService', service)
     .component('pageConfigureOverview', component)
     .directive('pcoGridColumnCategories', gridColumnCategories);
