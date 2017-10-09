@@ -1,4 +1,4 @@
-import isMatch from 'lodash/isMatch';
+import isEqual from 'lodash/isEqual';
 import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
 // import {diff} from 'jsondiffpatch';
@@ -12,7 +12,7 @@ export default class ConfigChangesGuard {
 
     _hasChanges(a, b) {
         // return diff(a, b)
-        return !isMatch(a, b);
+        return !isEqual(a, b);
     }
 
     _confirm(changes) {
