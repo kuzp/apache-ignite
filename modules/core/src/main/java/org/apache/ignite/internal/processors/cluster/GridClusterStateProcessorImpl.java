@@ -415,8 +415,10 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteInternalFuture<?> changeGlobalState(final boolean activate,
-        Collection<ClusterNode> baselineNodes) {
+    @Override public IgniteInternalFuture<?> changeGlobalState(
+        final boolean activate,
+        Collection<ClusterNode> baselineNodes
+    ) {
         if (ctx.isDaemon() || ctx.clientNode()) {
             GridFutureAdapter<Void> fut = new GridFutureAdapter<>();
 
@@ -429,6 +431,9 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
             return new GridFinishedFuture<>(new IgniteCheckedException("Failed to " + prettyStr(activate) +
                 " cluster (must invoke the method outside of an active transaction)."));
         }
+
+        if (baselineNodes == null || baselineNodes.isEmpty())
+            baselineNodes = ctx.discovery().serverNodes(AffinityTopologyVersion.NONE);
 
         BaselineTopology blt = BaselineTopology.build(baselineNodes);
 
