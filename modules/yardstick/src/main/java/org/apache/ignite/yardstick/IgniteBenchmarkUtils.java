@@ -33,7 +33,6 @@ import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
 import org.apache.ignite.yardstick.cache.IgniteInsertBenchmark;
 import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
-import org.apache.ignite.yardstick.cache.IgnitePutGetUpdateBenchmark;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
 
