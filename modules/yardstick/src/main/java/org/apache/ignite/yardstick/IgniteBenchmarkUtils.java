@@ -31,6 +31,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
+import org.apache.ignite.yardstick.cache.IgniteInsertBenchmark;
 import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
 import org.apache.ignite.yardstick.cache.IgnitePutGetUpdateBenchmark;
 import org.yardstickframework.BenchmarkDriver;
@@ -92,7 +93,7 @@ public class IgniteBenchmarkUtils {
         //final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
         final String cfg = "C:\\projects\\incubator-ignite\\modules\\yardstick\\config\\ignite-localhost-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgnitePutGetUpdateBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgniteInsertBenchmark.class;
 
         final int threads = 2;
 
