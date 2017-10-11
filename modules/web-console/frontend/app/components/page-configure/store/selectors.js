@@ -9,7 +9,7 @@ import {Observable} from 'rxjs/Observable';
 const isDefined = (s) => s.filter((v) => v);
 const selectItems = (path) => (s) => s.filter((s) => s).pluck(path).filter((v) => v);
 const selectValues = (s) => s.map((v) => v && [...v.value.values()]);
-const selectMapItem = (mapPath, key) => (s) => s.pluck(mapPath).map((v) => v && v.get(key));
+export const selectMapItem = (mapPath, key) => (s) => s.pluck(mapPath).map((v) => v && v.get(key));
 const selectMapItems = (mapPath, keys) => (s) => s.pluck(mapPath).map((v) => v && keys.map((key) => v.get(key)));
 const selectItemToEdit = ({items, itemFactory, defaultName, itemID}) => (s) => s.switchMap((item) => {
     if (item) return of(item);
