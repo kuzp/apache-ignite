@@ -43,6 +43,7 @@ import modalImportModels from './components/modal-import-models';
 import buttonImportModels from './components/button-import-models';
 import buttonDownloadProject from './components/button-download-project';
 import buttonPreviewProject from './components/button-preview-project';
+import pcListEditableCols from './components/pc-list-editable-cols';
 
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
@@ -85,7 +86,8 @@ export default angular
         modalImportModels.name,
         buttonImportModels.name,
         buttonDownloadProject.name,
-        buttonPreviewProject.name
+        buttonPreviewProject.name,
+        pcListEditableCols.name
     ])
     .run(['ConfigEffects', 'ConfigureState', '$uiRouter', (ConfigEffects, ConfigureState, $uiRouter) => {
         $uiRouter.plugin(UIRouterRx);
