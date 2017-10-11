@@ -25,48 +25,13 @@ import org.yardstickframework.BenchmarkConfiguration;
 
 import static org.yardstickframework.BenchmarkUtils.println;
 
-public class IgniteDeleteBenchmark extends IgniteCacheAbstractBenchmark<Integer, Object> {
-    /** {@inheritDoc} */
-    @Override public void setUp(BenchmarkConfiguration cfg) throws Exception {
-        super.setUp(cfg);
-
-        if (args.preloadAmount() > args.range())
-            throw new IllegalArgumentException("Preloading amount (\"-pa\", \"--preloadAmount\") " +
-                "must by less then the range (\"-r\", \"--range\").");
-
-        String cacheName = cache().getName();
-
-        println(cfg, "Loading data for cache: " + cacheName);
-
-        long start = System.nanoTime();
-
-        try (IgniteDataStreamer<Object, Object> dataLdr = ignite().dataStreamer(cacheName)) {
-            for (int i = 0; i < args.preloadAmount(); i++) {
-                dataLdr.addData(i, PositionUtils.createPosition(i));
-
-                if (i % 100000 == 0) {
-                    if (Thread.currentThread().isInterrupted())
-                        break;
-
-                    println("Loaded entries: " + i);
-                }
-            }
-        }
-
-        println(cfg, "Finished populating query data in " + ((System.nanoTime() - start) / 1_000_000) + " ms.");
-    }
-
+public class IgniteDeleteBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
     /** {@inheritDoc} */
     @Override public boolean test(Map<Object, Object> ctx) throws Exception {
         int key = nextRandom(args.range());
 
-        cache.remove(key);
+        cache.remove(Integer.toString(key));
 
         return true;
-    }
-
-    /** {@inheritDoc} */
-    @Override protected IgniteCache<Integer, Object> cache() {
-        return ignite().cache("test-fd-atomic");
     }
 }

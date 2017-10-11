@@ -20,19 +20,17 @@ package org.apache.ignite.yardstick.cache;
 import java.util.Map;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
-import org.apache.ignite.yardstick.cache.model.Position;
 import org.apache.ignite.yardstick.cache.model.PositionUtils;
-import org.apache.ignite.yardstick.cache.model.SampleValue;
 import org.yardstickframework.BenchmarkConfiguration;
 
 import static org.yardstickframework.BenchmarkUtils.println;
 
-public class IgniteInsertBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
+public class IgniteLookupBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
     /** {@inheritDoc} */
     @Override public boolean test(Map<Object, Object> ctx) throws Exception {
         int key = nextRandom(args.range());
 
-        cache.put(Integer.toString(key), PositionUtils.createPosition(key));
+        cache.get(Integer.toString(key));
 
         return true;
     }
