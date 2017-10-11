@@ -18,6 +18,7 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import cloneDeep from 'lodash/cloneDeep';
+import naturalCompare from 'natural-compare-lite';
 
 export default class PageConfigureBasicController {
     static $inject = [
@@ -76,7 +77,7 @@ export default class PageConfigureBasicController {
         }).take(1).debug('originalCluster$');
 
         this.subscription = Observable.merge(
-            this.shortCaches$.do((v) => this.shortCaches = v),
+            this.shortCaches$.map((caches) => caches.sort((a, b) => naturalCompare(a.name, b.name))).do((v) => this.shortCaches = v),
             this.shortClusters$.do((v) => this.shortClusters = v),
             this.originalCluster$.do((v) => {
                 this.originalCluster = v;
