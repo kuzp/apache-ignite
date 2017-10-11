@@ -17,7 +17,7 @@ import {
     igfssActionTypes
 } from './../reducer';
 
-const ofType = (type) => (s) => s.filter((a) => a.type === type);
+export const ofType = (type) => (s) => s.filter((a) => a.type === type);
 
 export default class ConfigEffects {
     static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'Models', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
