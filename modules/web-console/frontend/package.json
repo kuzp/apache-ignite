@@ -112,6 +112,7 @@
     "worker-loader": "0.8.1"
   },
   "devDependencies": {
+    "@types/angular": "^1.6.32",
     "chai": "4.1.0",
     "copy-dir": "^0.3.0",
     "fs-extra": "^4.0.2",

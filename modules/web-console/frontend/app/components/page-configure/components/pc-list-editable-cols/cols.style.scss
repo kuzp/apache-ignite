@@ -1,0 +1,30 @@
+.list-editable-cols__header {
+    $index-column-width: 46px;
+    $remove-column-width: 36px;
+
+    margin-right: $remove-column-width;
+    margin-top: 10px;
+    margin-left: $index-column-width;
+
+    .ignite-form-field__label {
+        margin-left: 0;
+    }
+
+    [ignite-icon='info'] {
+        margin-left: 5px;
+        color: #0067b9;
+    }
+
+    &+pc-list-editable {
+        .ignite-form-field__label {
+            display: none;
+        }
+        .pcle-row-item-view:nth-last-child(2) {
+            display: none;
+        }
+    }
+
+    .list-editable-cols__header-cell {
+        padding-bottom: 5px;
+    }
+}
