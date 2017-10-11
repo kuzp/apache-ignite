@@ -40,15 +40,6 @@ page-configure-basic {
         }
     }
 
-    .pcb-caches-list__header {
-        margin-left: 47px;
-        margin-right: 36px;
-        margin-top: 10px;
-
-        .ignite-form-field__label {
-            margin-left: 0;
-        }
-    }
 
     .pcb-caches-list {
         [ng-transclude='itemView'] {

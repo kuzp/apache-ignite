@@ -106,56 +106,38 @@ form(novalidate name=form)
             )
                 +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
 
-    .pcb-caches-list__header.pc-form-grid-row(ng-show='$ctrl.shortCaches.length')
-        .pc-form-grid-col-10
-            span.ignite-form-field__label Name:
-        .pc-form-grid-col-10
-            span.ignite-form-field__label Mode:
-        .pc-form-grid-col-10
-            span.ignite-form-field__label Atomicity:
-        .pc-form-grid-col-10
-            span.ignite-form-field__label Backups:
     pc-list-editable.pcb-caches-list(
         ng-model='$ctrl.shortCaches'
         pc-list-editable-one-way
         on-item-change='$ctrl.changeCache($event)'
         on-item-remove='$ctrl.removeCache($event)'
+        pc-list-editable-cols='::$ctrl.cachesColDefs'
+        pc-list-editable-cols-row-class='pc-form-grid-row'
     )
-        pc-list-editable-item-view.pc-form-grid-row
-            .pc-form-grid-col-10
-                | {{ $parent.item.name }}
-            .pc-form-grid-col-10
-                | {{ $parent.item.cacheMode }}
-            .pc-form-grid-col-10
-                | {{ $parent.item.atomicityMode }}
-            .pc-form-grid-col-10
-                | {{ $parent.item.backups || '0' }}
-        pc-list-editable-item-edit.pc-form-grid-row
-            .pc-form-grid-col-10
+        pc-list-editable-item-view
+            div {{ $parent.item.name }}
+            div {{ $parent.item.cacheMode }}
+            div {{ $parent.item.atomicityMode }}
+            div {{ $parent.item.backups || '0' }}
+        pc-list-editable-item-edit
+            div
                 +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
                     ignite-unique='$ctrl.shortCaches'
                     ignite-unique-property='name'
                 )
                     +unique-feedback('"name"', 'Cache name should be unqiue')
-            .pc-form-grid-col-10
+            div
                 +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
-            .pc-form-grid-col-10
+            div
                 +sane-ignite-form-field-dropdown({
                     label: 'Atomicity:',
                     model: '$parent.item.atomicityMode',
                     name: '"atomicityMode"',
                     placeholder: 'ATOMIC',
-                    options: '::$ctrl.Caches.atomicityModes',
-                    tip: `
-                        Atomicity:
-                        <ul>
-                            <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>
-                            <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>
-                        </ul>
-                    `
+                    options: '::$ctrl.Caches.atomicityModes'
                 })
-            .pc-form-grid-col-10(ng-show='$parent.item.cacheMode === "PARTITIONED"')
-                +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0', 'Number of nodes used to back up single partition for partitioned cache')
+            div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
+                +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
 
     .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding
         a.link-primary(

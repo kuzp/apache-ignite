@@ -97,6 +97,21 @@ export default class PageConfigureBasicController {
                 icon: 'checkmark'
             }
         ];
+
+        this.cachesColDefs = [
+            {name: 'Name:', cellClass: 'pc-form-grid-col-10'},
+            {name: 'Mode:', cellClass: 'pc-form-grid-col-10'},
+            {name: 'Atomicity:', cellClass: 'pc-form-grid-col-10', tip: `
+                Atomicity:
+                <ul>
+                    <li>ATOMIC - in this mode distributed transactions and distributed locking are not supported</li>
+                    <li>TRANSACTIONAL - in this mode specified fully ACID-compliant transactional cache behavior</li>
+                </ul>
+            `},
+            {name: 'Backups:', cellClass: 'pc-form-grid-col-10', tip: `
+                Number of nodes used to back up single partition for partitioned cache
+            `}
+        ];
     }
 
     addCache() {
