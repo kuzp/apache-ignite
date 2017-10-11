@@ -1681,9 +1681,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                                             .append(" topVer=").append(ver.topologyVersion())
                                             .append(", order=").append(ver.order())
                                             .append(", nodeOrder=").append(ver.nodeOrder())
-                                            .append(" idx=").append(p.index())
-                                            .append(" offset=").append(p.fileOffset())
-                                            .append(" len=").append(p.length())
+                                            .append(" idx=").append(p != null ? p.index() : "N/A")
+                                            .append(" offset=").append(p != null ? p.fileOffset() : "N/A")
+                                            .append(" len=").append(p != null ? p.length() : "N/A")
                                             .append("\n");
                                     }
                                 }

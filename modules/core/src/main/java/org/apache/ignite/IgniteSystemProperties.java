@@ -751,6 +751,13 @@ public final class IgniteSystemProperties {
     public static final String IGNITE_USE_LEGACY_NODE_COMPARATOR = "IGNITE_USE_LEGACY_NODE_COMPARATOR";
 
     /**
+     *
+     *
+     * Default value is {@code false}.
+     */
+    public static final String IGNITE_WAL_DEBUG_LOG_ON_RECOVERY = "IGNITE_WAL_DEBUG_LOG_ON_RECOVERY";
+
+    /**
      * Enforces singleton.
      */
     private IgniteSystemProperties() {
