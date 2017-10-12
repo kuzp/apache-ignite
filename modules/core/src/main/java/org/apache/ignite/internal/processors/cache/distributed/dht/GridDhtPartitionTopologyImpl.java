@@ -671,8 +671,7 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                         if (locPart != null) {
                             GridDhtPartitionState state = locPart.state();
 
-                            // TODO: ask Alexey G why we didn't evict OWNING parts.
-                            if (state == MOVING || state == OWNING) {
+                            if (state == MOVING) {
                                 locPart.rent(false);
 
                                 updateSeq = updateLocal(p, locPart.state(), updateSeq, topVer);
