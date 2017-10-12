@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+    Ignite Spring configuration file to startup grid.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <bean id="storeDataSource" class="oracle.jdbc.pool.OracleDataSource">
+        <property name="URL" value="jdbc:oracle:thin:@//172.25.1.26:1521/SK_DB"/>
+        <property name="user" value="sk_adm"/>
+        <property name="password" value="pwd"/>
+    </bean>
+
+    <bean id="sampleTypeMetadata" class="org.apache.ignite.cache.store.jdbc.JdbcType">
+        <property name="databaseTable" value="BENCHMARK"/>
+        <property name="keyType" value="java.lang.String"/>
+
+        <property name="keyFields">
+            <list>
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="ID"/>
+                </bean>
+            </list>
+        </property>
+
+        <property name="valueType" value="org.apache.ignite.yardstick.cache.model.TestValue"/>
+        <property name="valueFields">
+            <list>
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="POSNID"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="POSNID"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.DOUBLE"/>
+                    </property>
+                    <property name="databaseFieldName" value="posnVerN"/>
+                    <property name="javaFieldType" value="java.lang.Double"/>
+                    <property name="javaFieldName" value="POSNVERN"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="accId"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="ACCID"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="accN"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="ACCN"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="base-ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration" abstract="true">
+        <property name="peerClassLoadingEnabled" value="true"/>
+
+        <!--<property name="metricsLogFrequency" value="5000"/>-->
+
+        <property name="cacheConfiguration">
+            <list>
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="test-fd-atomic"/>
+
+                    <property name="cacheMode" value="PARTITIONED"/>
+
+                    <property name="atomicityMode" value="ATOMIC"/>
+
+                    <property name="swapEnabled" value="false"/>
+
+                    <property name="writeSynchronizationMode" value="PRIMARY_SYNC"/>
+
+                    <property name="backups" value="3"/>
+
+                    <property name="readThrough" value="true"/>
+                    <property name="writeThrough" value="true"/>
+                    <!--<property name="writeBehindEnabled" value="true"/>-->
+
+                    <property name="cacheStoreFactory">
+                        <bean class="org.apache.ignite.cache.store.jdbc.CacheJdbcPojoStoreFactory">
+                            <property name="dataSourceBean" value = "storeDataSource" />
+                            <property name="dialect">
+                                <bean class="org.apache.ignite.cache.store.jdbc.dialect.OracleDialect"/>
+                            </property>
+                            <property name="types">
+                                <list>
+                                    <bean parent="sampleTypeMetadata">
+                                        <property name="cacheName" value="test-fd-atomic"/>
+                                    </bean>
+                                </list>
+                            </property>
+                        </bean>
+                    </property>
+
+                </bean>
+            </list>
+        </property>
+
+        <property name="includeEventTypes">
+            <list/>
+        </property>
+
+        <property name="loadBalancingSpi">
+            <bean class="org.apache.ignite.spi.loadbalancing.roundrobin.RoundRobinLoadBalancingSpi">
+                <property name="perTask" value="false"/>
+            </bean>
+        </property>
+    </bean>
+</beans>

@@ -15,27 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.yardstick.cache;
+package org.apache.ignite.yardstick.cache.model;
 
-import java.util.Map;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.IgniteDataStreamer;
-import org.apache.ignite.yardstick.cache.model.PositionUtils;
-import org.yardstickframework.BenchmarkConfiguration;
+import java.io.Serializable;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
-import static org.yardstickframework.BenchmarkUtils.println;
+public class TestValue implements Serializable {
+    /** Value for posnId. */
+    @QuerySqlField(index = true)
+    public String posnId;
 
-public class IgniteLookupBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
-    /** {@inheritDoc} */
-    @Override public boolean test(Map<Object, Object> ctx) throws Exception {
-        int key = nextRandom(args.range());
+    /** Value for posnVerN. */
+    @QuerySqlField
+    public Double posnVerN;
 
-        cache.get(Integer.toString(key));
+    /** Value for accId. */
+    @QuerySqlField
+    public String accId;
 
-        return true;
-    }
+    /** Value for accN. */
+    @QuerySqlField
+    public String accN;
 
-    protected Object getValue(int key) {
-        return PositionUtils.createPosition(key);
+    public TestValue(String posnId, Double posnVerN, String accId, String accN) {
+        this.posnId = posnId;
+        this.posnVerN = posnVerN;
+        this.accId = accId;
+        this.accN = accN;
     }
 }

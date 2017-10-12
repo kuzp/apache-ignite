@@ -34,4 +34,7 @@ public class IgniteDeleteBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
 
         return true;
     }
+    protected Object getValue(int key) {
+        return PositionUtils.createPosition(key);
+    }
 }

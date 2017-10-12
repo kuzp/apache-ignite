@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-
 package org.apache.ignite.yardstick.cache;
 
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
-import org.apache.ignite.yardstick.cache.model.PositionUtils;
 import org.yardstickframework.BenchmarkConfiguration;
 
 import static org.yardstickframework.BenchmarkUtils.println;
@@ -42,7 +40,7 @@ public abstract class IgniteInsLkpUpdDelBaseBenchmark extends IgniteCacheAbstrac
 
         try (IgniteDataStreamer<String, Object> dataLdr = ignite().dataStreamer(cacheName)) {
             for (int i = 0; i < args.preloadAmount(); i++) {
-                dataLdr.addData(Integer.toString(i), PositionUtils.createPosition(i));
+                dataLdr.addData(Integer.toString(i), getValue(i));
 
                 if (i % 100000 == 0) {
                     if (Thread.currentThread().isInterrupted())
@@ -56,6 +54,7 @@ public abstract class IgniteInsLkpUpdDelBaseBenchmark extends IgniteCacheAbstrac
         println(cfg, "Finished populating query data in " + ((System.nanoTime() - start) / 1_000_000) + " ms.");
     }
 
+    protected abstract Object getValue(int idx);
 
     /** {@inheritDoc} */
     @Override protected IgniteCache<String, Object> cache() {

@@ -17,27 +17,10 @@
 
 package org.apache.ignite.yardstick.cache;
 
-import java.util.Map;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.IgniteDataStreamer;
-import org.apache.ignite.yardstick.cache.model.Position;
-import org.apache.ignite.yardstick.cache.model.PositionUtils;
-import org.apache.ignite.yardstick.cache.model.SampleValue;
-import org.yardstickframework.BenchmarkConfiguration;
+import org.apache.ignite.yardstick.cache.model.TestValue;
 
-import static org.yardstickframework.BenchmarkUtils.println;
-
-public class IgniteInsertBenchmark extends IgniteInsLkpUpdDelBaseBenchmark {
-    /** {@inheritDoc} */
-    @Override public boolean test(Map<Object, Object> ctx) throws Exception {
-        int key = nextRandom(args.range());
-
-        cache.put(Integer.toString(key), getValue(key));
-
-        return true;
-    }
-
+public class IgniteDeleteJdbcBenchmark extends IgniteDeleteBenchmark{
     protected Object getValue(int key) {
-        return PositionUtils.createPosition(key);
+        return new TestValue(Integer.toString(key), 1d, "accId"+"-"+key, "accN"+"-"+key);
     }
 }

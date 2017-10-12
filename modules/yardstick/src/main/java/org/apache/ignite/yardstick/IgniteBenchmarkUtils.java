@@ -32,6 +32,7 @@ import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
 import org.apache.ignite.yardstick.cache.IgniteInsertBenchmark;
+import org.apache.ignite.yardstick.cache.IgniteInsertJdbcBenchmark;
 import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
 import org.yardstickframework.BenchmarkDriver;
 import org.yardstickframework.BenchmarkDriverStartUp;
@@ -92,19 +93,19 @@ public class IgniteBenchmarkUtils {
         //final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
         final String cfg = "C:\\projects\\incubator-ignite\\modules\\yardstick\\config\\ignite-localhost-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgniteInsertBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgniteInsertJdbcBenchmark.class;
 
         final int threads = 2;
 
-        final boolean clientDriverNode = false;
+        final boolean clientDriverNode = true;
 
-        final int extraNodes = 2;
+        final int extraNodes = 1;
 
-        final int warmUp = 15;
-        final int duration = 60;
+        final int warmUp = 10;
+        final int duration = 20;
 
-        final int range = 10_000_000;
-        final int preloadAmmount = 500_000;
+        final int range = 1_000;
+        final int preloadAmmount = 1_000;
 
         final boolean throughputLatencyProbe = true;
 
@@ -113,14 +114,15 @@ public class IgniteBenchmarkUtils {
 
             nodeCfg.setGridName("node-" + i);
             nodeCfg.setMetricsLogFrequency(0);
-            nodeCfg.setCacheConfiguration();
+            //nodeCfg.setCacheConfiguration();
 
-            Ignition.start(nodeCfg);
+            //Ignition.start(nodeCfg);
+            Ignition.start(cfg);
         }
 
         ArrayList<String> args0 = new ArrayList<>();
 
-        addArg(args0, "-sm", "FULL_ASYNC");
+        addArg(args0, "-sm", "PRIMARY_SYNC");
         addArg(args0, "-b", 3);
 
         addArg(args0, "-t", threads);
@@ -129,6 +131,10 @@ public class IgniteBenchmarkUtils {
 
         addArg(args0, "-r", range);
         addArg(args0, "-pa", preloadAmmount);
+
+        addArg(args0, "-cs", "");
+        addArg(args0, "-wb", "");
+        addArg(args0, "-jdbc", "jdbc:oracle:thin:sk_adm/pwd@//172.25.1.26:1521/SK_DB");
 
         addArg(args0, "-dn", benchmark.getSimpleName());
         addArg(args0, "-sn", "IgniteNode");
