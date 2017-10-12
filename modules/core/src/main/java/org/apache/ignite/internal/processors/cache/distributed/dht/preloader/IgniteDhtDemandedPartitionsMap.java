@@ -20,12 +20,10 @@ package org.apache.ignite.internal.processors.cache.distributed.dht.preloader;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Map of partitions demanded during rebalancing.
@@ -35,10 +33,21 @@ public class IgniteDhtDemandedPartitionsMap implements Serializable {
     private static final long serialVersionUID = 0L;
 
     /** Map of partitions that will be preloaded from history. (partId -> (fromCntr, toCntr)). */
-    private Map<Integer, T2<Long, Long>> historical;
+    private CachePartitionPartialCountersMap historical;
 
     /** Set of partitions that will be preloaded from all it's current data. */
     private Set<Integer> full;
+
+    public IgniteDhtDemandedPartitionsMap(
+        @Nullable CachePartitionPartialCountersMap historical,
+        @Nullable Set<Integer> full)
+    {
+        this.historical = historical;
+        this.full = full;
+    }
+
+    public IgniteDhtDemandedPartitionsMap() {
+    }
 
     /**
      * Adds partition for preloading from history.
@@ -46,14 +55,15 @@ public class IgniteDhtDemandedPartitionsMap implements Serializable {
      * @param partId Partition ID.
      * @param from First demanded counter.
      * @param to Last demanded counter.
+     * @param partCnt Maximum possible partition count.
      */
-    public void addHistorical(int partId, long from, long to) {
+    public void addHistorical(int partId, long from, long to, int partCnt) {
         assert !hasFull(partId);
 
         if (historical == null)
-            historical = new HashMap<>();
+            historical = new CachePartitionPartialCountersMap(partCnt);
 
-        historical.put(partId, new T2<>(from, to));
+        historical.add(partId, from, to);
     }
 
     /**
@@ -80,7 +90,7 @@ public class IgniteDhtDemandedPartitionsMap implements Serializable {
         if (full != null && full.remove(partId))
             return true;
 
-        if (historical != null && historical.remove(partId) != null)
+        if (historical != null && historical.remove(partId))
             return true;
 
         return false;
@@ -98,7 +108,7 @@ public class IgniteDhtDemandedPartitionsMap implements Serializable {
 
     /** */
     public boolean hasHistorical(int partId) {
-        return historical != null && historical.containsKey(partId);
+        return historical != null && historical.contains(partId);
     }
 
     /** */
@@ -125,11 +135,11 @@ public class IgniteDhtDemandedPartitionsMap implements Serializable {
     }
 
     /** */
-    public Map<Integer, T2<Long, Long>> historicalMap() {
+    public CachePartitionPartialCountersMap historicalMap() {
         if (historical == null)
-            return Collections.emptyMap();
+            return CachePartitionPartialCountersMap.EMPTY;
 
-        return Collections.unmodifiableMap(historical);
+        return historical;
     }
 
     /** */

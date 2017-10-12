@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.ignite.IgniteCheckedException;
@@ -438,7 +437,6 @@ public class GridDhtPartitionDemander {
             GridDhtPartitionDemandMessage d = e.getValue();
 
             final IgniteDhtDemandedPartitionsMap parts = fut.remaining.get(node.id()).get2();
-//            final Collection<Integer> parts = d.partitions();
 
             U.log(log, "Starting rebalancing [mode=" + cfg.getRebalanceMode() +
                 ", fromNode=" + node.id() + ", partitionsCount=" + parts.size() +
@@ -454,8 +452,7 @@ public class GridDhtPartitionDemander {
             if (parts.hasHistorical()) {
                 hasReservedStripe = true;
 
-                for (Map.Entry<Integer,T2<Long,Long>> entry : parts.historicalMap().entrySet())
-                    sParts.get(lsnrCnt - 1).addHistorical(entry.getKey(), entry.getValue().get1(), entry.getValue().get2());
+                sParts.add(lsnrCnt - 1, new IgniteDhtDemandedPartitionsMap(parts.historicalMap(), null));
             }
 
             Iterator<Integer> it = parts.fullSet().iterator();
@@ -536,7 +533,9 @@ public class GridDhtPartitionDemander {
         for (Integer p : map.fullSet())
             s.add(p);
 
-        for (Integer p : map.historicalMap().keySet()) {
+        for (int i = 0; i < map.historicalMap().size(); i++) {
+            int p = map.historicalMap().partitionAt(i);
+
             assert !s.contains(p);
 
             s.add(p);

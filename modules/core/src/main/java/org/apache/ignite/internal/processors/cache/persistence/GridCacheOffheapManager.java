@@ -49,6 +49,7 @@ import org.apache.ignite.internal.processors.cache.IgniteCacheOffheapManagerImpl
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState;
+import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.CachePartitionPartialCountersMap;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionMap;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.IgniteHistoricalIterator;
 import org.apache.ignite.internal.processors.cache.persistence.freelist.FreeListImpl;
@@ -575,7 +576,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
 
     /** {@inheritDoc} */
     @Override @Nullable protected IgniteHistoricalIterator historicalIterator(
-        Map<Integer, T2<Long, Long>> partCntrs) throws IgniteCheckedException {
+        CachePartitionPartialCountersMap partCntrs) throws IgniteCheckedException {
         if (partCntrs == null || partCntrs.isEmpty())
             return null;
 
@@ -583,11 +584,14 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
 
         FileWALPointer minPtr = null;
 
-        for (Map.Entry<Integer, T2<Long, Long>> e : partCntrs.entrySet()) {
-            FileWALPointer startPtr = (FileWALPointer)database.searchPartitionCounter(grp.groupId(), e.getKey(), e.getValue().get1());
+        for (int i = 0; i < partCntrs.size(); i++) {
+            int p = partCntrs.partitionAt(i);
+            long initCntr = partCntrs.initialUpdateCounterAt(i);
+
+            FileWALPointer startPtr = (FileWALPointer)database.searchPartitionCounter(grp.groupId(), p, initCntr);
 
             if (startPtr == null)
-                throw new IgniteCheckedException("Could not find start pointer for partition [part=" + e.getKey() + ", partCntrSince=" + e.getValue().get1() + "]");
+                throw new IgniteCheckedException("Could not find start pointer for partition [part=" + p + ", partCntrSince=" + initCntr + "]");
 
             if (minPtr == null || startPtr.compareTo(minPtr) == -1)
                 minPtr = startPtr;
@@ -635,7 +639,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
         private final CacheGroupContext grp;
 
         /** Partition counters map. */
-        private final Map<Integer, T2<Long, Long>> partMap;
+        private final CachePartitionPartialCountersMap partMap;
 
         /** Partitions marked as done. */
         private final Set<Integer> doneParts = new HashSet<>();
@@ -653,7 +657,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
          * @param grp Cache context.
          * @param walIt WAL iterator.
          */
-        private WALIteratorAdapter(CacheGroupContext grp, Map<Integer, T2<Long, Long>> partMap, WALIterator walIt) {
+        private WALIteratorAdapter(CacheGroupContext grp, CachePartitionPartialCountersMap partMap, WALIterator walIt) {
             this.grp = grp;
             this.partMap = partMap;
             this.walIt = walIt;
@@ -663,7 +667,7 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
 
         /** {@inheritDoc} */
         @Override public boolean contains(int partId) {
-            return partMap.containsKey(partId);
+            return partMap.contains(partId);
         }
 
         /** {@inheritDoc} */
@@ -735,10 +739,16 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                         DataEntry entry = entryIt.next();
 
                         if (grp.cacheIds().contains(entry.cacheId())) {
-                            T2<Long, Long> t = partMap.get(entry.partitionId());
+                            int idx = partMap.partitionIndex(entry.partitionId());
 
-                            if (t != null && entry.partitionCounter() >= t.get1() && entry.partitionCounter() <= t.get2()) {
-                                if (entry.partitionCounter() == t.get2())
+                            if (idx < 0)
+                                continue;
+
+                            long from = partMap.initialUpdateCounterAt(idx);
+                            long to = partMap.updateCounterAt(idx);
+
+                            if (entry.partitionCounter() >= from && entry.partitionCounter() <= to) {
+                                if (entry.partitionCounter() == to)
                                     doneParts.add(entry.partitionId());
 
                                 next = new DataEntryRow(entry);

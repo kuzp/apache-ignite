@@ -2309,11 +2309,6 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
-    @Override public T2<Long, Long> updateCounter(int part) {
-        return new T2<>(cntrMap.initialUpdateCounter(part), cntrMap.updateCounter(part));
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean rebalanceFinished(AffinityTopologyVersion topVer) {
         AffinityTopologyVersion curTopVer = this.readyTopVer;
 

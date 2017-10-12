@@ -245,6 +245,12 @@ public interface IgniteCacheOffheapManager {
      */
     public GridIterator<CacheDataRow> partitionIterator(final int part) throws IgniteCheckedException;
 
+    /**
+     * @param part Partition number.
+     * @param topVer Topology version.
+     * @return Iterator for given partition that will reserve partition state until it is closed.
+     * @throws IgniteCheckedException If failed.
+     */
     public GridCloseableIterator<CacheDataRow> reservedIterator(final int part, final AffinityTopologyVersion topVer)
         throws IgniteCheckedException;
 

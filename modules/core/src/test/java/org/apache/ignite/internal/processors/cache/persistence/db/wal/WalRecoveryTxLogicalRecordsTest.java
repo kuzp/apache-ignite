@@ -361,7 +361,7 @@ public class WalRecoveryTxLogicalRecordsTest extends GridCommonAbstractTest {
 
             for (int i = 0; i < entries; i++) {
                 map = new IgniteDhtDemandedPartitionsMap();
-                map.addHistorical(0, i, Long.MAX_VALUE);
+                map.addHistorical(0, i, Long.MAX_VALUE, entries);
 
                 try (IgniteRebalanceIterator it = offh.rebalanceIterator(map, topVer)) {
                     assertNotNull(it);
@@ -381,7 +381,7 @@ public class WalRecoveryTxLogicalRecordsTest extends GridCommonAbstractTest {
                 }
 
                 map = new IgniteDhtDemandedPartitionsMap();
-                map.addHistorical(1, i, Long.MAX_VALUE);
+                map.addHistorical(1, i, Long.MAX_VALUE, entries);
 
                 try (IgniteRebalanceIterator it = offh.rebalanceIterator(map, topVer)) {
                     assertNotNull(it);
@@ -416,7 +416,7 @@ public class WalRecoveryTxLogicalRecordsTest extends GridCommonAbstractTest {
                 long start = System.currentTimeMillis();
 
                 map = new IgniteDhtDemandedPartitionsMap();
-                map.addHistorical(0, i, Long.MAX_VALUE);
+                map.addHistorical(0, i, Long.MAX_VALUE, entries);
 
                 try (IgniteRebalanceIterator it = offh.rebalanceIterator(map, topVer)) {
                     long end = System.currentTimeMillis();
@@ -446,7 +446,7 @@ public class WalRecoveryTxLogicalRecordsTest extends GridCommonAbstractTest {
                 }
 
                 map = new IgniteDhtDemandedPartitionsMap();
-                map.addHistorical(1, i, Long.MAX_VALUE);
+                map.addHistorical(1, i, Long.MAX_VALUE, entries);
 
                 try (IgniteRebalanceIterator it = offh.rebalanceIterator(map, topVer)) {
                     assertNotNull(it);

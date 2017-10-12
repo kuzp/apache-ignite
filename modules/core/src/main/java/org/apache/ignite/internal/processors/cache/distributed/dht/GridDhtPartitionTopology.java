@@ -331,8 +331,6 @@ public interface GridDhtPartitionTopology {
      */
     public CachePartitionPartialCountersMap localUpdateCounters(boolean skipZeros);
 
-    public T2<Long, Long> updateCounter(int part);
-
     /**
      * @param part Partition to own.
      * @return {@code True} if owned.

@@ -1148,11 +1148,6 @@ public class GridClientPartitionTopology implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
-    @Override public T2<Long, Long> updateCounter(int part) {
-        return new T2<>(cntrMap.initialUpdateCounter(part), cntrMap.updateCounter(part));
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean rebalanceFinished(AffinityTopologyVersion topVer) {
         assert false : "Should not be called on non-affinity node";
 

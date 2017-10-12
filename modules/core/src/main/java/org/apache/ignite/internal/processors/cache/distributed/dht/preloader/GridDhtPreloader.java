@@ -201,6 +201,8 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
 
         AffinityAssignment aff = grp.affinity().cachedAffinity(topVer);
 
+        CachePartitionFullCountersMap cntrMap = top.fullUpdateCounters();
+
         for (int p = 0; p < partCnt; p++) {
             if (ctx.exchange().hasPendingExchange()) {
                 if (log.isDebugEnabled())
@@ -248,11 +250,7 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                             grp.groupId()));
                     }
 
-                    T2<Long, Long> cntr = top.updateCounter(p);
-
-                    assert cntr != null;
-
-                    msg.partitions().addHistorical(p, cntr.get1(), cntr.get2());
+                    msg.partitions().addHistorical(p, cntrMap.initialUpdateCounter(p), cntrMap.updateCounter(p), partCnt);
                 }
                 else {
                     if (ctx.database().persistenceEnabled()) {

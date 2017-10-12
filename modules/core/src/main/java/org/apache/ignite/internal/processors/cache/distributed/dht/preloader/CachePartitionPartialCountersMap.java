@@ -72,6 +72,10 @@ public class CachePartitionPartialCountersMap implements Serializable {
         return curIdx;
     }
 
+    public boolean isEmpty() {
+        return curIdx == 0;
+    }
+
     /**
      * Adds partition counters for a partition with the given ID.
      *
@@ -96,6 +100,27 @@ public class CachePartitionPartialCountersMap implements Serializable {
         curIdx++;
     }
 
+    public boolean remove(int partId) {
+        int idx = partitionIndex(partId);
+
+        if (idx < 0)
+            return false;
+
+        for (int i = curIdx - 1; i >= idx; i--) {
+            partIds[i] = partIds[i + 1];
+            initialUpdCntrs[i] = initialUpdCntrs[i + 1];
+            updCntrs[i] = updCntrs[i + 1];
+        }
+
+        partIds[curIdx] = 0;
+        initialUpdCntrs[curIdx] = 0;
+        updCntrs[curIdx] = 0;
+
+        curIdx--;
+
+        return true;
+    }
+
     /**
      * Cuts the array sizes according to curIdx. No more entries can be added to this map
      * after this method is called.
@@ -114,6 +139,10 @@ public class CachePartitionPartialCountersMap implements Serializable {
      */
     public int partitionIndex(int partId) {
         return Arrays.binarySearch(partIds, 0, curIdx, partId);
+    }
+
+    public boolean contains(int partId) {
+        return partitionIndex(partId) >= 0;
     }
 
     /**

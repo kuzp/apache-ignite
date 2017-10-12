@@ -36,14 +36,13 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartit
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
-import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.spi.IgniteSpiException;
+import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState.OWNING;
 
@@ -244,7 +243,13 @@ class GridDhtPartitionSupplier {
 
                 remainingParts = new HashSet<>(d.partitions().fullSet());
 
-                remainingParts.addAll(d.partitions().historicalMap().keySet());
+                CachePartitionPartialCountersMap histMap = d.partitions().historicalMap();
+
+                for (int i = 0; i < histMap.size(); i++) {
+                    int p = histMap.partitionAt(i);
+
+                    remainingParts.add(p);
+                }
 
                 for (Integer part : d.partitions().fullSet()) {
                     if (iter.isPartitionMissing(part))
@@ -257,11 +262,13 @@ class GridDhtPartitionSupplier {
                     s.addEstimatedKeysCount(grp.offheap().totalPartitionEntriesCount(part));
                 }
 
-                for (Map.Entry<Integer, T2<Long, Long>> e : d.partitions().historicalMap().entrySet()) {
-                    if (iter.isPartitionMissing(e.getKey()))
+                for (int i = 0; i < histMap.size(); i++) {
+                    int p = histMap.partitionAt(i);
+
+                    if (iter.isPartitionMissing(p))
                         continue;
 
-                    s.addEstimatedKeysCount(e.getValue().get2() - e.getValue().get1());
+                    s.addEstimatedKeysCount(histMap.updateCounterAt(i) - histMap.initialUpdateCounterAt(i));
                 }
             }
             else {
@@ -273,7 +280,7 @@ class GridDhtPartitionSupplier {
             while (iter.hasNext()) {
                 if (s.messageSize() >= grp.config().getRebalanceBatchSize()) {
                     if (++bCnt >= maxBatchesCnt) {
-                        saveSupplyContext(scId,
+                        sctx = saveSupplyContext(scId,
                             iter,
                             remainingParts,
                             d.topologyVersion(),
@@ -373,7 +380,10 @@ class GridDhtPartitionSupplier {
 
             assert remainingParts.isEmpty();
 
-            iter.close();
+            if (sctx != null)
+                clearContext(sctx, log);
+            else
+                iter.close();
 
             reply(node, d, s, scId);
 
@@ -433,7 +443,7 @@ class GridDhtPartitionSupplier {
      * @param t Tuple.
      * @param entryIt Entry it.
      */
-    private void saveSupplyContext(
+    @Nullable private SupplyContext saveSupplyContext(
         T3<UUID, Integer, AffinityTopologyVersion> t,
         IgniteRebalanceIterator entryIt,
         Set<Integer> sentLast,
@@ -443,10 +453,15 @@ class GridDhtPartitionSupplier {
             if (grp.affinity().lastVersion().equals(topVer)) {
                 assert scMap.get(t) == null;
 
-                scMap.put(t,
-                    new SupplyContext(entryIt, sentLast, updateSeq));
+                SupplyContext sctx = new SupplyContext(entryIt, sentLast, updateSeq);
+
+                scMap.put(t, sctx);
+
+                return sctx;
             }
         }
+
+        return null;
     }
 
     /**
