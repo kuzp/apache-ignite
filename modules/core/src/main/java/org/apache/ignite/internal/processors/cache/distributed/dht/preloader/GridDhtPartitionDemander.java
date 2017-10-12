@@ -477,7 +477,8 @@ public class GridDhtPartitionDemander {
                         @Override public void run() {
                             try {
                                 if (!fut.isDone()) {
-                                    ctx.io().sendOrderedMessage(node, rebalanceTopics.get(finalCnt), initD, grp.ioPolicy(), initD.timeout());
+                                    ctx.io().sendOrderedMessage(node, rebalanceTopics.get(finalCnt),
+                                        initD.convertIfNeeded(node.version()), grp.ioPolicy(), initD.timeout());
 
                                     // Cleanup required in case partitions demanded in parallel with cancellation.
                                     synchronized (fut) {
@@ -745,7 +746,7 @@ public class GridDhtPartitionDemander {
             if (!topologyChanged(fut) && !fut.isDone()) {
                 // Send demand message.
                 ctx.io().sendOrderedMessage(node, rebalanceTopics.get(idx),
-                    d, grp.ioPolicy(), grp.config().getRebalanceTimeout());
+                    d.convertIfNeeded(node.version()), grp.ioPolicy(), grp.config().getRebalanceTimeout());
             }
         }
         catch (IgniteCheckedException e) {
@@ -1025,7 +1026,7 @@ public class GridDhtPartitionDemander {
                     d.topic(GridCachePartitionExchangeManager.rebalanceTopic(idx));
 
                     ctx.io().sendOrderedMessage(node, GridCachePartitionExchangeManager.rebalanceTopic(idx),
-                        d, grp.ioPolicy(), grp.config().getRebalanceTimeout());
+                        d.convertIfNeeded(node.version()), grp.ioPolicy(), grp.config().getRebalanceTimeout());
                 }
             }
             catch (IgniteCheckedException ignored) {
