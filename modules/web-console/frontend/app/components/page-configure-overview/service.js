@@ -10,7 +10,7 @@ export default class PageConfigureOverviewService {
     }
 
     editCluster(cluster) {
-        return this.$state.go('^.tabs', {clusterID: cluster._id});
+        return this.$state.go('^.edit', {clusterID: cluster._id});
     }
 
     cloneClusters(clusters) {
