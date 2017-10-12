@@ -245,7 +245,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
             return;
         }
 
-        Throwable exc = cctx.kernalContext().cache().validateCache(cctx.name(), topVer);
+        Throwable exc = cctx.topologyVersionFuture().validateCache(cctx);
 
         if (exc != null) {
             onDone(exc);

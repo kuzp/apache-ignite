@@ -109,7 +109,6 @@ import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.IgniteOutClosureX;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.F;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -123,7 +122,6 @@ import org.apache.ignite.marshaller.Marshaller;
 import org.apache.ignite.marshaller.MarshallerUtils;
 import org.apache.ignite.spi.IgniteNodeValidationResult;
 import org.jetbrains.annotations.Nullable;
-import org.jsr166.ConcurrentHashMap8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_CACHE_REMOVED_ENTRIES_TTL;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_CACHE_VALIDATOR;
@@ -205,9 +203,6 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
     /** */
     private IgniteClosure<String, Throwable> validator;
-
-    /** Validation history. */
-    private ConcurrentMap<String, T2<AffinityTopologyVersion, Throwable>> validationHist = new ConcurrentHashMap8<>();
 
     /**
      * @param ctx Kernal context.
@@ -3899,38 +3894,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         return name == NULL_NAME ? null : name;
     }
 
-
-    /**
-     * @param cacheName Cache name.
-     * @param topVer Topology version.
-     */
-    public Throwable validateCache(String cacheName, @Nullable AffinityTopologyVersion topVer) {
-        Throwable res = null;
-
-        cacheName = maskNull(cacheName);
-
-        if (validator != null) {
-            try {
-                if (topVer != null) {
-                    T2<AffinityTopologyVersion, Throwable> r = validationHist.get(cacheName);
-
-                    if (r != null && topVer.compareTo(r.get1()) <= 0)
-                        return r.get2();
-                    else
-                        validationHist.remove(cacheName, r);
-                }
-
-                res = validator.apply(cacheName);
-
-                if (topVer != null)
-                    validationHist.putIfAbsent(cacheName, new T2<>(topVer, res));
-            }
-            catch (Throwable e) {
-                res = e;
-            }
-        }
-
-        return res;
+    public IgniteClosure<String, Throwable> cacheValidator() {
+        return validator;
     }
 
     /**

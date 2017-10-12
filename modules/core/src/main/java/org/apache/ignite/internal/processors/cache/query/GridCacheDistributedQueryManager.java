@@ -219,7 +219,7 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
                     threads.put(req.id(), Thread.currentThread());
 
                     try {
-                        Throwable exc = cctx.kernalContext().cache().validateCache(req.cacheName(), null);
+                        Throwable exc = cctx.topologyVersionFuture().validateCache(cctx);
 
                         if (exc != null)
                             throw new IgniteCheckedException(exc);

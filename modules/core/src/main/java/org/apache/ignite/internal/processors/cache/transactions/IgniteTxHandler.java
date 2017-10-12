@@ -124,8 +124,8 @@ public class IgniteTxHandler {
                 ", node=" + nearNodeId + ']');
         }
 
-        for (String cacheName : caches(req)) {
-            Throwable exc = ctx.cache().validateCache(cacheName, req.topologyVersion());
+        for (GridCacheContext cctx : caches(req)) {
+            Throwable exc = cctx.topologyVersionFuture().validateCache(cctx);
 
             if (exc != null) {
                 GridNearTxPrepareResponse resp = new GridNearTxPrepareResponse(
@@ -969,8 +969,8 @@ public class IgniteTxHandler {
         GridDhtTxPrepareResponse res;
 
         try {
-            for (String cacheName : caches(req)) {
-                Throwable exc = ctx.cache().validateCache(cacheName, req.topologyVersion());
+            for (GridCacheContext cctx : caches(req)) {
+                Throwable exc = cctx.topologyVersionFuture().validateCache(cctx);
 
                 if (exc != null)
                     throw new IgniteCheckedException(exc);
@@ -1078,15 +1078,15 @@ public class IgniteTxHandler {
     /**
      * @param req Request.
      */
-    private Collection<String> caches(GridDistributedTxPrepareRequest req) {
-        Set<String> caches = new HashSet<>();
+    private Collection<GridCacheContext> caches(GridDistributedTxPrepareRequest req) {
+        Set<GridCacheContext> caches = new HashSet<>();
         
         if (!F.isEmpty(req.reads())) {
             for (IgniteTxEntry entry : req.reads()) {
                 GridCacheContext cctx = ctx.cacheContext(entry.cacheId());
 
                 if (cctx != null)
-                    caches.add(cctx.name());
+                    caches.add(cctx);
             }
         }
 
@@ -1095,7 +1095,7 @@ public class IgniteTxHandler {
                 GridCacheContext cctx = ctx.cacheContext(entry.cacheId());
 
                 if (cctx != null)
-                    caches.add(cctx.name());
+                    caches.add(cctx);
             }
         }
 

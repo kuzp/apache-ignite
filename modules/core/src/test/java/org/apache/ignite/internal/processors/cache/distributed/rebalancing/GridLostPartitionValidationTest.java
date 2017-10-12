@@ -129,7 +129,7 @@ public class GridLostPartitionValidationTest extends GridCommonAbstractTest {
     public void testPartDataLostEvent1Backup() throws Exception {
         backups = 1;
 
-        checkValidator ();
+        checkValidator();
     }
 
     /**

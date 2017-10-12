@@ -1851,7 +1851,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
         IgniteCacheExpiryPolicy expiry = null;
 
         try {
-            Throwable exc = ctx.kernalContext().cache().validateCache(ctx.name(), req.topologyVersion());
+            Throwable exc = ctx.topologyVersionFuture().validateCache(ctx);
 
             if (exc != null)
                 throw new IgniteException(exc);

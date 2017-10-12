@@ -1873,7 +1873,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
 
                 int keysSize = keys.size();
 
-                Throwable exc = ctx.kernalContext().cache().validateCache(ctx.name(), topVer);
+                Throwable exc = ctx.shared().exchange().lastTopologyFuture().validateCache(ctx);
 
                 if (exc != null)
                     return new GridFinishedFuture<>(exc);
