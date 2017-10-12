@@ -1145,7 +1145,8 @@ button.form-control {
     }
 }
 
-.theme-line .popover.validation-error {
+.popover.validation-error {
+    font-family: Roboto;
     max-width: 400px;
     color: $brand-primary;
     background: white;
