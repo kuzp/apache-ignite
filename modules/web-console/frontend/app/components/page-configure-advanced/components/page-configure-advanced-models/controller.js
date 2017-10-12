@@ -4,6 +4,9 @@ import naturalCompare from 'natural-compare-lite';
 import {merge} from 'rxjs/observable/merge';
 import get from 'lodash/get';
 
+import keyCellTemplate from './keyCell.template.pug';
+import valueCellTemplate from './valueCell.template.pug';
+
 export default class PageConfigureAdvancedModels {
     static $inject = ['ConfigSelectors', 'ConfigureState', '$uiRouter', 'Models', '$state', 'conf', 'configSelectionManager'];
     constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager) {
@@ -26,6 +29,7 @@ export default class PageConfigureAdvancedModels {
                 filter: {
                     placeholder: 'Filter by key type…'
                 },
+                cellTemplate: keyCellTemplate,
                 minWidth: 165
             },
             {
@@ -37,6 +41,7 @@ export default class PageConfigureAdvancedModels {
                     placeholder: 'Filter by value type…'
                 },
                 sort: {direction: 'asc', priority: 0},
+                cellTemplate: valueCellTemplate,
                 minWidth: 165
             }
         ];
