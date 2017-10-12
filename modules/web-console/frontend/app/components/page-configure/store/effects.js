@@ -356,10 +356,25 @@ export default class ConfigEffects {
             .ignoreElements();
     }
 
-    etp = (action, params) => {
-        const ok = `${action}_OK`;
-        const err = `${action}_ERR`;
-        setTimeout(() => this.ConfigureState.dispatchAction({type: action, ...params}));
+    /**
+     * @name etp
+     * @function
+     * @param {object} action
+     * @returns {Promise}
+     */
+    /**
+     * @name etp^2
+     * @function
+     * @param {string} type
+     * @param {object} [params]
+     * @returns {Promise}
+     */
+    etp = (...args) => {
+        const action = typeof args[0] === 'object' ? args[0] : {type: args[0], ...args[1]};
+        const ok = `${action.type}_OK`;
+        const err = `${action.type}_ERR`;
+
+        setTimeout(() => this.ConfigureState.dispatchAction(action));
         return this.ConfigureState.actions$
             .filter((a) => a.type === ok || a.type === err)
             .take(1)
