@@ -1873,6 +1873,11 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
 
                 int keysSize = keys.size();
 
+                Throwable exc = ctx.kernalContext().cache().validateCache(ctx.name(), topVer);
+
+                if (exc != null)
+                    return new GridFinishedFuture<>(exc);
+
                 final Map<K1, V1> map = keysSize == 1 ?
                     (Map<K1, V1>)new IgniteBiTuple<>() :
                     U.<K1, V1>newHashMap(keysSize);

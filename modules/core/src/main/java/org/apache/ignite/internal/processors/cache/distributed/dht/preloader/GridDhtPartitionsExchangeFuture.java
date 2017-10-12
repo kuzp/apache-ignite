@@ -1165,7 +1165,7 @@ public class GridDhtPartitionsExchangeFuture extends GridFutureAdapter<AffinityT
             }
         }
 
-        return null;
+        return cctx.kernalContext().cache().validateCache(cctx.name(), topologyVersion());
     }
 
     /**
