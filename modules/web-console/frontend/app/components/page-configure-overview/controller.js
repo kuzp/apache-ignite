@@ -106,7 +106,7 @@ export default class PageConfigureOverviewController {
             {
                 action: 'Clone',
                 click: () => this.pageService.cloneClusters(selectedClusters),
-                available: true
+                available: false
             },
             {
                 action: 'See project structure',
