@@ -17,6 +17,7 @@
 
 package org.apache.ignite.examples;
 
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
@@ -29,6 +30,26 @@ import static java.lang.System.out;
  * Starts up an empty node with example compute configuration.
  */
 public class ExampleNodeStartup {
+    public static class MyRunnable implements Runnable {
+        public Ignite ignite;
+
+        public MyRunnable(Ignite ignite) {
+            this.ignite = ignite;
+        }
+
+        public void run() {
+            IgniteCache cache = ignite.getOrCreateCache("test-fd-atomic");
+            while (true) {
+                Integer i = ThreadLocalRandom.current().nextInt(10_000);
+
+                String key = Integer.toString(i);
+
+                TestValue t = new TestValue(key, 1d, "accId", "accN");
+
+                cache.put(key, t);
+            }
+        }
+    }
     /**
      * Start up an empty node with example compute configuration.
      *
@@ -40,17 +61,24 @@ public class ExampleNodeStartup {
 
         try {
             IgniteCache cache = ignite.getOrCreateCache("test-fd-atomic");
-            TestValue t = new TestValue();
-            t.int_val = 12d;
-            t.name = "teststring";
+            new Thread(new MyRunnable(ignite)).start();
+            new Thread(new MyRunnable(ignite)).start();
+            new Thread(new MyRunnable(ignite)).start();
+            new Thread(new MyRunnable(ignite)).start();
+            new Thread(new MyRunnable(ignite)).start();
+            new Thread(new MyRunnable(ignite)).start();
 
-            cache.put("IDD", t);
-
-            t.name = "new string";
-            cache.put("IDD", t);
-
-            t = (TestValue)cache.get("IDD2");
-            System.out.println("value: " + t.int_val + ", " + t.name);
+//            TestValue t = new TestValue();
+//            t.int_val = 12d;
+//            t.name = "teststring";
+//
+//            cache.put("IDD", t);
+//
+//            t.name = "new string";
+//            cache.put("IDD", t);
+//
+//            t = (TestValue)cache.get("IDD2");
+//            System.out.println("value: " + t.int_val + ", " + t.name);
         }
         catch (Exception e) {
             e.printStackTrace();

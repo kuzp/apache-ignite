@@ -35,12 +35,6 @@
         <!--<property name="user" value="sa" />-->
     <!--</bean>-->
 
-    <bean id="storeDataSource" class="oracle.jdbc.pool.OracleDataSource">
-        <property name="URL" value="jdbc:oracle:thin:@//172.25.1.26:1521/SK_DB"/>
-        <property name="user" value="sk_adm"/>
-        <property name="password" value="pwd"/>
-    </bean>
-
 <!--
     <property name="types">
         <list>
@@ -149,6 +143,7 @@
     </property>
 -->
 
+<!--
     <bean id="sampleTypeMetadata" class="org.apache.ignite.cache.store.jdbc.JdbcType">
         <property name="databaseTable" value="SAMPLE"/>
         <property name="keyType" value="java.lang.String"/>
@@ -181,6 +176,70 @@
                     <property name="databaseFieldName" value="NAME"/>
                     <property name="javaFieldType" value="java.lang.String"/>
                     <property name="javaFieldName" value="name"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+-->
+
+    <bean id="storeDataSource" class="oracle.jdbc.pool.OracleDataSource">
+        <property name="URL" value="jdbc:oracle:thin:@//172.25.1.26:1521/SK_DB"/>
+        <property name="user" value="sk_adm"/>
+        <property name="password" value="pwd"/>
+    </bean>
+
+    <bean id="sampleTypeMetadata" class="org.apache.ignite.cache.store.jdbc.JdbcType">
+        <property name="databaseTable" value="BENCHMARK"/>
+        <property name="keyType" value="java.lang.String"/>
+
+        <property name="keyFields">
+            <list>
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="ID"/>
+                </bean>
+            </list>
+        </property>
+
+        <property name="valueType" value="org.apache.ignite.examples.TestValue"/>
+        <property name="valueFields">
+            <list>
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="POSNID"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="posnId"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.DOUBLE"/>
+                    </property>
+                    <property name="databaseFieldName" value="POSNVERN"/>
+                    <property name="javaFieldType" value="java.lang.Double"/>
+                    <property name="javaFieldName" value="posnVerN"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="ACCID"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="accId"/>
+                </bean>
+
+                <bean class="org.apache.ignite.cache.store.jdbc.JdbcTypeField">
+                    <property name="databaseFieldType">
+                        <util:constant static-field="java.sql.Types.VARCHAR"/>
+                    </property>
+                    <property name="databaseFieldName" value="ACCN"/>
+                    <property name="javaFieldType" value="java.lang.String"/>
+                    <property name="javaFieldName" value="accN"/>
                 </bean>
             </list>
         </property>
