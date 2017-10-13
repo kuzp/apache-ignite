@@ -693,8 +693,7 @@ public class GridDhtPartitionDemander {
                             // If message was last for this partition,
                             // then we take ownership.
                             if (last) {
-                                if (supply.isClean(p))
-                                    part.updateCounter(supply.last().get(p));
+                                part.updateCounter(supply.last().get(p));
 
                                 top.own(part);
 
