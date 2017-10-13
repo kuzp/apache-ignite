@@ -338,6 +338,7 @@ class GridDhtPartitionSupplier {
                 info.expireTime(row.expireTime());
                 info.version(row.version());
                 info.value(row.value());
+                info.cacheId(row.cacheId());
 
                 if (preloadPred == null || preloadPred.apply(info))
                     s.addEntry0(part, info, grp.shared(), grp.cacheObjectContext());
