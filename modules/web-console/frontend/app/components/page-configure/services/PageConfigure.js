@@ -43,7 +43,10 @@ import {
     uniqueName
 } from '../reducer';
 
-export const REMOVE_CLUSTERS_LOCAL_REMOTE = Symbol('REMOVE_CLUSTERS_LOCAL_REMOTE');
+import {
+    REMOVE_CLUSTERS_LOCAL_REMOTE
+} from '../store/actionTypes';
+
 export const CLONE_CLUSTERS = Symbol('CLONE_CLUSTERS');
 
 export default class PageConfigure {
