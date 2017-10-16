@@ -439,16 +439,16 @@ public class PageMemoryImpl implements PageMemoryEx {
 
         assert PageIdUtils.pageIndex(pageId) > 0; //it's crucial for tracking pages (zero page is super one)
 
+        FullPageId fullId = new FullPageId(pageId, cacheId);
+
+        boolean isTrackingPage = trackingIO.trackingPageFor(pageId, pageSize()) == pageId;
+
         // We need to allocate page in memory for marking it dirty to save it in the next checkpoint.
         // Otherwise it is possible that on file will be empty page which will be saved at snapshot and read with error
         // because there is no crc inside them.
         Segment seg = segment(cacheId, pageId);
 
-        FullPageId fullId = new FullPageId(pageId, cacheId);
-
         seg.writeLock().lock();
-
-        boolean isTrackingPage = trackingIO.trackingPageFor(pageId, pageSize()) == pageId;
 
         try {
             long relPtr = seg.borrowOrAllocateFreePage(pageId);
