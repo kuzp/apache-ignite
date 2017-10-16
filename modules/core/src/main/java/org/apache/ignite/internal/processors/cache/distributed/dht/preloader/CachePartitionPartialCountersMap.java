@@ -126,7 +126,7 @@ public class CachePartitionPartialCountersMap implements Serializable {
      * after this method is called.
      */
     public void trim() {
-        if (curIdx < partIds.length) {
+        if (partIds != null && curIdx < partIds.length) {
             partIds = Arrays.copyOf(partIds, curIdx);
             initialUpdCntrs = Arrays.copyOf(initialUpdCntrs, curIdx);
             updCntrs = Arrays.copyOf(updCntrs, curIdx);
