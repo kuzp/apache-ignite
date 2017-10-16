@@ -1263,7 +1263,7 @@ public class GridDhtPartitionsExchangeFuture extends GridFutureAdapter<AffinityT
 
             if (t != null) {
                 return new IgniteCheckedException("Failed to perform cache operation " +
-                    "(cache is not valid): " + cctx.name());
+                    "(cache is not valid): " + cctx.name(), t);
             }
         }
 
