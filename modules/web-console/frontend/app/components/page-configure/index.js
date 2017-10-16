@@ -26,7 +26,7 @@ import ConfigureState from './services/ConfigureState';
 import PageConfigure from './services/PageConfigure';
 import ConfigurationDownload from './services/ConfigurationDownload';
 import ConfigChangesGuard from './services/ConfigChangesGuard';
-import configSelectionManager from './services/configSelectionManager';
+import ConfigSelectionManager from './services/ConfigSelectionManager';
 import selectors from './store/selectors';
 import effects from './store/effects';
 
@@ -149,7 +149,7 @@ export default angular
     .directive(isInCollection.name, isInCollection)
     .directive(fakeUiCanExit.name, fakeUiCanExit)
     .directive(formUICanExitGuard.name, formUICanExitGuard)
-    .factory('configSelectionManager', configSelectionManager)
+    .factory('configSelectionManager', ConfigSelectionManager)
     .service('ConfigSelectors', selectors)
     .service('ConfigEffects', effects)
     .service('ConfigChangesGuard', ConfigChangesGuard)
