@@ -301,9 +301,9 @@ public abstract class IgniteAbstractStandByClientReconnectTest extends GridCommo
             ClusterNode node,
             Collection<ClusterNode> topSnapshot,
             @Nullable Map<Long, Collection<ClusterNode>> topHist,
-            @Nullable DiscoverySpiCustomMessage data
-        ) {
-            delegate.onDiscovery(type, topVer, node, topSnapshot, topHist, data);
+            @Nullable DiscoverySpiCustomMessage data,
+            String msgId) {
+            delegate.onDiscovery(type, topVer, node, topSnapshot, topHist, data, null);
 
             if (type == EVT_CLIENT_NODE_DISCONNECTED)
                 try {

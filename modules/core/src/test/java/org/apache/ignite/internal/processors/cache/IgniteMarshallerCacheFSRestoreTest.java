@@ -184,8 +184,8 @@ public class IgniteMarshallerCacheFSRestoreTest extends GridCommonAbstractTest {
                 ClusterNode node,
                 Collection<ClusterNode> topSnapshot,
                 @Nullable Map<Long, Collection<ClusterNode>> topHist,
-                @Nullable DiscoverySpiCustomMessage spiCustomMsg
-            ) {
+                @Nullable DiscoverySpiCustomMessage spiCustomMsg,
+                String msgId) {
                 DiscoveryCustomMessage customMsg = spiCustomMsg == null ? null
                     : (DiscoveryCustomMessage) U.field(spiCustomMsg, "delegate");
 
@@ -202,7 +202,7 @@ public class IgniteMarshallerCacheFSRestoreTest extends GridCommonAbstractTest {
                 }
 
                 if (delegate != null)
-                    delegate.onDiscovery(type, topVer, node, topSnapshot, topHist, spiCustomMsg);
+                    delegate.onDiscovery(type, topVer, node, topSnapshot, topHist, spiCustomMsg, null);
             }
 
             /** {@inheritDoc} */

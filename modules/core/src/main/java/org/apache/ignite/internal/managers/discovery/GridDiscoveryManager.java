@@ -117,6 +117,7 @@ import org.apache.ignite.spi.discovery.DiscoverySpiHistorySupport;
 import org.apache.ignite.spi.discovery.DiscoverySpiListener;
 import org.apache.ignite.spi.discovery.DiscoverySpiNodeAuthenticator;
 import org.apache.ignite.spi.discovery.DiscoverySpiOrderSupport;
+import org.apache.ignite.spi.discovery.TraceHelper;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.thread.IgniteThread;
 import org.jetbrains.annotations.NotNull;
@@ -559,7 +560,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 final ClusterNode node,
                 final Collection<ClusterNode> topSnapshot,
                 final Map<Long, Collection<ClusterNode>> snapshots,
-                @Nullable DiscoverySpiCustomMessage spiCustomMsg) {
+                @Nullable DiscoverySpiCustomMessage spiCustomMsg, String msgId) {
                 synchronized (discoEvtMux) {
                     onDiscovery0(type, topVer, node, topSnapshot, snapshots, spiCustomMsg);
                 }
@@ -583,6 +584,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             ) {
                 DiscoveryCustomMessage customMsg = spiCustomMsg == null ? null
                     : ((CustomMessageWrapper)spiCustomMsg).delegate();
+
+                TraceHelper.get().start(customMsg);
 
                 if (skipMessage(type, customMsg))
                     return;
@@ -678,7 +681,13 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 else
                     nextTopVer = new AffinityTopologyVersion(topVer, minorTopVer);
 
+                TraceHelper.get().finish(customMsg);
+
+                TraceHelper.get().start(customMsg);
+
                 ctx.cache().onDiscoveryEvent(type, customMsg, node, nextTopVer, ctx.state().clusterState());
+
+                TraceHelper.get().finish(customMsg);
 
                 if (type == EVT_DISCOVERY_CUSTOM_EVT) {
                     for (Class cls = customMsg.getClass(); cls != null; cls = cls.getSuperclass()) {
@@ -696,6 +705,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                         }
                     }
                 }
+
+                TraceHelper.get().start(customMsg);
 
                 // Put topology snapshot into discovery history.
                 // There is no race possible between history maintenance and concurrent discovery
@@ -720,10 +731,14 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                     // Current version.
                     discoCache = discoCache();
 
+                TraceHelper.get().finish(customMsg);
+
                 final DiscoCache discoCache0 = discoCache;
 
                 // If this is a local join event, just save it and do not notify listeners.
                 if (locJoinEvt) {
+                    TraceHelper.get().start(customMsg);
+
                     if (gridStartTime == 0)
                         gridStartTime = getSpi().getGridStartTime();
 
@@ -750,9 +765,13 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                         transitionWaitFut,
                         ctx.state().clusterState().active()));
 
+                    TraceHelper.get().finish(customMsg);
+
                     return;
                 }
                 else if (type == EVT_CLIENT_NODE_DISCONNECTED) {
+                    TraceHelper.get().start(customMsg);
+
                     /*
                      * Notify all components from discovery thread to avoid concurrent
                      * reconnect while disconnect handling is in progress.
@@ -778,8 +797,12 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
                     topSnap.set(new Snapshot(AffinityTopologyVersion.ZERO,
                         createDiscoCache(AffinityTopologyVersion.ZERO, ctx.state().clusterState(), locNode, Collections.<ClusterNode>singleton(locNode))));
+
+                    TraceHelper.get().finish(customMsg);
                 }
                 else if (type == EVT_CLIENT_NODE_RECONNECTED) {
+                    TraceHelper.get().start(customMsg);
+
                     assert locNode.isClient() : locNode;
                     assert node.isClient() : node;
 
@@ -804,14 +827,20 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                         }
                     });
 
+                    TraceHelper.get().finish(customMsg);
+
                     return;
                 }
+
+                TraceHelper.get().start(customMsg);
 
                 if (type == EVT_CLIENT_NODE_DISCONNECTED || type == EVT_NODE_SEGMENTED || !ctx.clientDisconnected())
                     discoWrk.addEvent(type, nextTopVer, node, discoCache, topSnapshot, customMsg);
 
                 if (stateFinishMsg != null)
                     discoWrk.addEvent(EVT_DISCOVERY_CUSTOM_EVT, nextTopVer, node, discoCache, topSnapshot, stateFinishMsg);
+
+                TraceHelper.get().finish(customMsg);
             }
         });
 

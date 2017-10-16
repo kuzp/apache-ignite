@@ -69,6 +69,7 @@ import org.apache.ignite.internal.IgniteInterruptedCheckedException;
 import org.apache.ignite.internal.IgniteNodeAttributes;
 import org.apache.ignite.internal.IgnitionEx;
 import org.apache.ignite.internal.events.DiscoveryCustomEvent;
+import org.apache.ignite.internal.managers.discovery.DiscoveryCustomMessage;
 import org.apache.ignite.internal.processors.security.SecurityContext;
 import org.apache.ignite.internal.processors.security.SecurityUtils;
 import org.apache.ignite.internal.util.GridBoundedLinkedHashSet;
@@ -99,6 +100,7 @@ import org.apache.ignite.spi.IgniteSpiOperationTimeoutHelper;
 import org.apache.ignite.spi.IgniteSpiThread;
 import org.apache.ignite.spi.discovery.DiscoverySpiCustomMessage;
 import org.apache.ignite.spi.discovery.DiscoverySpiListener;
+import org.apache.ignite.spi.discovery.TraceHelper;
 import org.apache.ignite.spi.discovery.tcp.internal.DiscoveryDataPacket;
 import org.apache.ignite.spi.discovery.tcp.internal.TcpDiscoveryNode;
 import org.apache.ignite.spi.discovery.tcp.internal.TcpDiscoveryNodesRing;
@@ -499,7 +501,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                     Map<Long, Collection<ClusterNode>> hist = updateTopologyHistory(topVer,
                         Collections.unmodifiableList(top));
 
-                    lsnr.onDiscovery(EVT_NODE_FAILED, topVer, n, top, hist, null);
+                    lsnr.onDiscovery(EVT_NODE_FAILED, topVer, n, top, hist, null, null);
                 }
             }
         }
@@ -1384,7 +1386,7 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             Map<Long, Collection<ClusterNode>> hist = updateTopologyHistory(topVer, top);
 
-            lsnr.onDiscovery(type, topVer, node, top, hist, null);
+            lsnr.onDiscovery(type, topVer, node, top, hist, null, null);
         }
         else {
             if (log.isDebugEnabled())
@@ -5463,10 +5465,24 @@ class ServerImpl extends TcpDiscoveryImpl {
                             node,
                             snapshot,
                             hist,
-                            msgObj);
+                            msgObj, msg.id().shortString());
 
-                        if (msgObj.isMutable())
-                            msg.message(msgObj, U.marshal(spi.marshaller(), msgObj));
+                        TraceHelper helper = TraceHelper.get();
+
+                        DiscoveryCustomMessage delegate = U.field(msgObj, "delegate");
+
+                        if ("StartSnapshotOperationAckDiscoveryMessage".equals(delegate.getClass().getSimpleName())) {
+                            List<TraceHelper.TraceStep> traces = helper.getTraces();
+
+                            for (TraceHelper.TraceStep trace : traces)
+                                log.info("Custom message: [id="+msg.id().shortString()+ ", trace=" + trace.getFileName()+':' + trace.getLine() + ", time=" + trace.getDelta()/1000/1000. + " ms]");
+                        }
+
+                        if (msgObj.isMutable()) {
+                            byte[] marshal = U.marshal(spi.marshaller(), msgObj);
+
+                            msg.message(msgObj, marshal);
+                        }
                     }
                     catch (Throwable e) {
                         U.error(log, "Failed to unmarshal discovery custom message.", e);
