@@ -18,7 +18,7 @@
 import get from 'lodash/get';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
-import ObjectID from 'bson-objectid';
+import ObjectID from 'bson-objectid/objectid';
 import {uniqueName} from 'app/utils/uniqueName';
 import omit from 'lodash/fp/omit';
 
@@ -70,8 +70,12 @@ export default class Clusters {
         invalidValues: [0]
     };
 
+    /**
+     * Cluster-related configuration stuff
+     * @param {ng.IHttpService} $http
+     */
     constructor($http) {
-        Object.assign(this, {$http});
+        this.$http = $http;
     }
 
     getConfiguration(clusterID) {
