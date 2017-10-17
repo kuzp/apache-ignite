@@ -368,7 +368,7 @@ mixin list-url-field(lbl, model, name, items)
             block
 
 mixin list-addresses({ items, name })
-    pc-list-editable(ng-model=items name=name)
+    pc-list-editable(ng-model=items name=name)&attributes(attributes)
         pc-list-editable-item-view
             | {{ $parent.item }}
         pc-list-editable-item-edit
