@@ -22,6 +22,7 @@ import 'rxjs/add/operator/scan';
 
 export default class ConfigureState {
     constructor() {
+        /** @type {Subject<{type: string}>} */
         this.actions$ = new Subject();
         this.state$ = new BehaviorSubject({});
         this._combinedReducer = (state, action) => state;
