@@ -15,23 +15,47 @@
  * limitations under the License.
  */
 
-class Controller {
+/**
+ * @type {ng.IComponentController}
+ */
+class OnFocusOutController {
+    /** @type {OnFocusOutController} */
+    parent;
+    /** @type {Array<OnFocusOutController>} */
     children = [];
+    /** @type {Array<string>} */
     ignoredClasses = [];
-    eventHandler = (e) => {
-        this.children.forEach((c) => c.eventHandler(e));
-        if (this.shouldPropagate(e)) this.igniteOnFocusOut();
-    };
+    /** @type {function} */
+    igniteOnFocusOut;
 
     static $inject = ['$element', '$window'];
+    /**
+     * @param {JQLite} $element
+     * @param {ng.IWindowService} $window 
+     */
     constructor($element, $window) {
-        Object.assign(this, {$element, $window});
+        this.$element = $element;
+        this.$window = $window;
+
+        /** @param {MouseEvent|FocusEvent} e */
+        this._eventHandler = (e) => {
+            this.children.forEach((c) => c._eventHandler(e));
+            if (this.shouldPropagate(e) && this.isFocused) {
+                this.igniteOnFocusOut();
+                this.isFocused = false;
+            }
+        };
+        /** @param {FocusEvent} e */
+        this._onFocus = (e) => {
+            this.isFocused = true;
+        };
     }
     $onDestroy() {
-        this.$window.removeEventListener('click', this.eventHandler, true);
-        this.$window.removeEventListener('focusin', this.eventHandler, true);
+        this.$window.removeEventListener('click', this._eventHandler, true);
+        this.$window.removeEventListener('focusin', this._eventHandler, true);
+        this.$element[0].removeEventListener('focus', this._onFocus, true);
         if (this.parent) this.parent.children.splice(this.parent.children.indexOf(this), 1);
-        this.$element = this.$window = this.eventHandler = null;
+        this.$element = this.$window = this._eventHandler = this._onFocus = null;
     }
     shouldPropagate(e) {
         return !this.targetHasIgnoredClasses(e) && this.targetIsOutOfElement(e);
@@ -42,6 +66,9 @@ class Controller {
     targetHasIgnoredClasses(e) {
         return this.ignoredClasses.some((c) => e.target.classList.contains(c));
     }
+    /**
+     * @param {ng.IOnChangesObject} changes [description]
+     */
     $onChanges(changes) {
         if (
             'ignoredClasses' in changes &&
@@ -53,14 +80,18 @@ class Controller {
         if (this.parent) this.parent.children.push(this);
     }
     $postLink() {
-        this.$window.addEventListener('click', this.eventHandler, true);
-        this.$window.addEventListener('focusin', this.eventHandler, true);
+        this.$window.addEventListener('click', this._eventHandler, true);
+        this.$window.addEventListener('focusin', this._eventHandler, true);
+        this.$element[0].addEventListener('focus', this._onFocus, true);
     }
 }
 
+/**
+ * @type {ng.IDirectiveFactory}
+ */
 export default function() {
     return {
-        controller: Controller,
+        controller: OnFocusOutController,
         require: {
             parent: '^^?igniteOnFocusOut'
         },
