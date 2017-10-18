@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-const dropIndex = require('./drop-index');
+'use strict';
 
-exports.up = function up(done) {
-    dropIndex(done, this('Igfs').collection, {name: 1, space: 1});
-};
-
-exports.down = function down(done) {
-    dropIndex(done, this('Igfs').collection, {name: 1, space: 1, clusters: 1});
+module.exports = function(done, model, oldIdx) {
+    model.indexExists(oldIdx)
+        .then((exists) => exists ? model.dropIndex(oldIdx) : {})
+        .then(() => done())
+        .catch(done);
 };

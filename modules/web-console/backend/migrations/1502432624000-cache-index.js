@@ -15,20 +15,12 @@
  * limitations under the License.
  */
 
-exports.up = function up(done) {
-    const caches = this('Cache').collection;
+const dropIndex = require('./drop-index');
 
-    caches.dropIndex({name: 1, space: 1})
-        .then(() => caches.createIndex({name: 1, space: 1, clusters: 1}, {unique: true}))
-        .then(() => done())
-        .catch(done);
+exports.up = function up(done) {
+    dropIndex(done, this('Cache').collection, {name: 1, space: 1});
 };
 
 exports.down = function down(done) {
-    const caches = this('Cache').collection;
-
-    caches.dropIndex({name: 1, space: 1, clusters: 1})
-        .then(() => caches.createIndex({name: 1, space: 1}, {unique: true}))
-        .then(() => done())
-        .catch(done);
+    dropIndex(done, this('Cache').collection, {name: 1, space: 1, clusters: 1});
 };

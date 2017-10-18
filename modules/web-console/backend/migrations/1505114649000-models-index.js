@@ -15,20 +15,12 @@
  * limitations under the License.
  */
 
-exports.up = function up(done) {
-    const models = this('DomainModel').collection;
+const dropIndex = require('./drop-index');
 
-    models.dropIndex({valueType: 1, space: 1})
-        .then(() => models.createIndex({valueType: 1, space: 1, clusters: 1}, {unique: true}))
-        .then(() => done())
-        .catch(done);
+exports.up = function up(done) {
+    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1});
 };
 
 exports.down = function down(done) {
-    const models = this('DomainModel').collection;
-
-    models.dropIndex({valueType: 1, space: 1, clusters: 1})
-        .then(() => models.createIndex({valueType: 1, space: 1}, {unique: true}))
-        .then(() => done())
-        .catch(done);
+    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1, clusters: 1});
 };
