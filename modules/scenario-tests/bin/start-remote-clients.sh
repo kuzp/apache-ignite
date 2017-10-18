@@ -11,4 +11,4 @@ read_properties $1
 
 deploy_configs ${CLIENT_HOSTS}
 
-start_client_nodes ${CLIENT_HOSTS}
+start_client_nodes ${CLIENT_HOSTS} $2

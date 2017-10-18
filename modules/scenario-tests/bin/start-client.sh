@@ -17,4 +17,4 @@ for lib in $libs; do
 
 done
 
-java -cp ${CP} org.apache.ignite.scenario.${MAIN_CLASS} -cfg $SCRIPT_HOME/../config/ignite-remote-client-config.xml -c ${CACHE_NAME} -s ${DATASET_SIZE} -f ${FIELDS_PER_ENTRY} -fs ${FIELD_SIZE}
+java -cp ${CP} org.apache.ignite.scenario.${MAIN_CLASS} $SCRIPT_HOME/$1 $0

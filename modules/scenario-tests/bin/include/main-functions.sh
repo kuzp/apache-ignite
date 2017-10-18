@@ -40,6 +40,8 @@ function deploy_to_hosts()
             scp -o StrictHostKeyChecking=no $IGNITE_ZIP_FILE $ip:$REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME
 
             ssh -o StrictHostKeyChecking=no $ip unzip -q $REMOTE_WORK_DIR/$IGNITE_ZIP_BASENAME -d $REMOTE_WORK_DIR
+
+            ssh -o StrictHostKeyChecking=no $ip cp $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/libs/optional/ignite-rest-http/*.jar $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/libs
         fi
     done
 }
@@ -107,7 +109,7 @@ function start_client_nodes()
         then
             echo "<"$(date +"%H:%M:%S")"> Starting client node on the host ${ip}"
 
-            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-client.sh $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/config/test.properties &
+            ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ${ip} $REMOTE_WORK_DIR/$IGNITE_DIR_NAME/scenario-tests/bin/start-client.sh $2 &
         fi
     done
 }
@@ -127,7 +129,7 @@ function kill_java()
 
 function read_properties()
 {
-    CONFIG_INCLUDE=$1
+    CONFIG_INCLUDE=$SCRIPT_HOME/$1
 
     CONFIG_TMP=`mktemp tmp.XXXXXXXX`
 

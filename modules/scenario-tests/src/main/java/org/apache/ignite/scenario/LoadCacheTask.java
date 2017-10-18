@@ -18,6 +18,10 @@
 package org.apache.ignite.scenario;
 
 import com.beust.jcommander.Parameter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Properties;
 import java.util.UUID;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteDataStreamer;
@@ -40,15 +44,15 @@ public class LoadCacheTask extends AbstractTask {
 
     /** */
     @Parameter(names = "-s", description = "Dataset size.")
-    private int size = 100_000;
+    private Integer size = 100_000;
 
     /** */
     @Parameter(names = "-f", description = "Fields per entry.")
-    private int fields = 25;
+    private Integer fields = 25;
 
     /** */
     @Parameter(names = "-fs", description = "Field size.")
-    private int fieldSize = 50;
+    private Integer fieldSize = 50;
 
     /** */
     private Ignite ignite;
@@ -59,7 +63,14 @@ public class LoadCacheTask extends AbstractTask {
     public static void main(String[] args) {
         LoadCacheTask task = new LoadCacheTask();
 
-        task.parseArgs(args);
+        try {
+            task.parseProperties(args);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        task.setStartDir(args[1]);
 
         task.run();
     }
@@ -67,7 +78,8 @@ public class LoadCacheTask extends AbstractTask {
     /** {@inheritDoc} */
     @Override protected void setUp() {
         super.setUp();
-        ignite = Ignition.start(config);
+
+        ignite = Ignition.start(startDir + sep + config);
     }
 
     /** {@inheritDoc} */
@@ -91,5 +103,56 @@ public class LoadCacheTask extends AbstractTask {
                 streamer.addData(UUID.randomUUID(), builder.build());
             }
         }
+    }
+
+    public Properties parseProperties(String[] args) throws IOException {
+        Properties properties = new Properties();
+
+        properties.load(new FileInputStream(args[0]));
+
+        for (Object property : properties.keySet()){
+
+            switch (property.toString()) {
+
+                case "config":
+
+                    config=properties.getProperty(property.toString());
+
+                    break;
+
+                case "cacheName":
+
+                    cacheName=properties.getProperty(property.toString());
+
+                    break;
+
+                case "size":
+
+                    size=Integer.valueOf(properties.getProperty(property.toString()));
+
+                    break;
+
+                case "fields":
+
+                    fields=Integer.valueOf(properties.getProperty(property.toString()));
+
+                    break;
+
+                case "fieldSize":
+
+                    fieldSize=Integer.valueOf(properties.getProperty(property.toString()));
+
+                    break;
+
+
+                default:
+
+                    break;
+
+            }
+
+        }
+
+        return properties;
     }
 }

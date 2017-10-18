@@ -19,29 +19,47 @@ package org.apache.ignite.scenario.internal;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Properties;
 
 /**
  * Abstract task class.
  */
 public abstract class AbstractTask implements Runnable {
+
+    protected String startDir;
+
+    protected String sep = "/";
+
     /** */
-    public void parseArgs(String[] args) {
-        JCommander jCommander = new JCommander();
+    public Properties parseArgs(String[] args) throws IOException, IllegalAccessException {
+        Properties properties = new Properties();
 
-        jCommander.setProgramName(getClass().getSimpleName());
+        properties.load(new FileInputStream(args[0]));
 
-        jCommander.addObject(this);
+        Field[] myFields = this.getClass().getDeclaredFields();
 
-        try {
-            jCommander.parse(args);
+        for (Field field : myFields){
+            String fieldName  = field.getName();
+
+            if (properties.getProperty(fieldName) != null){
+                field.setAccessible(true);
+                field.set(this, properties.getProperty(fieldName));
+            }
         }
-        catch (ParameterException ex) {
-            jCommander.usage();
 
-            System.out.flush();
+        return properties;
+    }
 
-            throw ex;
-        }
+    protected void setStartDir(String path){
+
+        File script = new File(path);
+
+        startDir=script.getParent();
     }
 
     /** {@inheritDoc} */

@@ -9,4 +9,4 @@ check_properties $1
 
 read_properties $1
 
-deploy_configs "${SERVER_HOSTS},${ClIENT_HOSTS}"
+deploy_configs "${SERVER_HOSTS},${CLIENT_HOSTS}"
