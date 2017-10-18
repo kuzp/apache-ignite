@@ -37,7 +37,7 @@ import pcFormFieldSize from './components/pc-form-field-size';
 import pcListEditable from './components/pc-list-editable';
 import isInCollection from './components/pcIsInCollection';
 import pcValidation from './components/pcValidation';
-import fakeUiCanExit from './components/fakeUiCanExit';
+import fakeUiCanExit from './components/fakeUICanExit';
 import formUICanExitGuard from './components/formUICanExitGuard';
 import modalImportModels from './components/modal-import-models';
 import buttonImportModels from './components/button-import-models';
