@@ -17,8 +17,13 @@
 
 package org.apache.ignite.internal.processors.query.h2.database;
 
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +37,7 @@ import org.h2.value.ValueBoolean;
 import org.h2.value.ValueByte;
 import org.h2.value.ValueBytes;
 import org.h2.value.ValueDate;
+import org.h2.value.ValueDecimal;
 import org.h2.value.ValueDouble;
 import org.h2.value.ValueFloat;
 import org.h2.value.ValueInt;
@@ -49,7 +55,74 @@ import org.h2.value.ValueUuid;
  * Helper class for in-page indexes.
  */
 public class InlineIndexHelper {
+    /** */
     private static final Charset CHARSET = StandardCharsets.UTF_8;
+
+    /** */
+    private static final long INFLATED = Long.MIN_VALUE;
+
+    /** */
+    private static final long compactOff;
+
+    static {
+        try {
+            compactOff = GridUnsafe.objectFieldOffset(AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Field>() {
+                    @Override public Field run() throws NoSuchFieldException {
+                        return BigDecimal.class.getDeclaredField("intCompact");
+                    }
+                }));
+        }
+        catch (PrivilegedActionException e) {
+            throw new RuntimeException(e.getCause());
+        }
+    }
+
+    /** */
+    private static final long[] LONG_TEN_POWERS_TABLE = {
+        1,                     // 0 / 10^0
+        10,                    // 1 / 10^1
+        100,                   // 2 / 10^2
+        1000,                  // 3 / 10^3
+        10000,                 // 4 / 10^4
+        100000,                // 5 / 10^5
+        1000000,               // 6 / 10^6
+        10000000,              // 7 / 10^7
+        100000000,             // 8 / 10^8
+        1000000000,            // 9 / 10^9
+        10000000000L,          // 10 / 10^10
+        100000000000L,         // 11 / 10^11
+        1000000000000L,        // 12 / 10^12
+        10000000000000L,       // 13 / 10^13
+        100000000000000L,      // 14 / 10^14
+        1000000000000000L,     // 15 / 10^15
+        10000000000000000L,    // 16 / 10^16
+        100000000000000000L,   // 17 / 10^17
+        1000000000000000000L   // 18 / 10^18
+    };
+
+    /** */
+    private static final long THRESHOLDS_TABLE[] = {
+        Long.MAX_VALUE,                     // 0
+        Long.MAX_VALUE/10L,                 // 1
+        Long.MAX_VALUE/100L,                // 2
+        Long.MAX_VALUE/1000L,               // 3
+        Long.MAX_VALUE/10000L,              // 4
+        Long.MAX_VALUE/100000L,             // 5
+        Long.MAX_VALUE/1000000L,            // 6
+        Long.MAX_VALUE/10000000L,           // 7
+        Long.MAX_VALUE/100000000L,          // 8
+        Long.MAX_VALUE/1000000000L,         // 9
+        Long.MAX_VALUE/10000000000L,        // 10
+        Long.MAX_VALUE/100000000000L,       // 11
+        Long.MAX_VALUE/1000000000000L,      // 12
+        Long.MAX_VALUE/10000000000000L,     // 13
+        Long.MAX_VALUE/100000000000000L,    // 14
+        Long.MAX_VALUE/1000000000000000L,   // 15
+        Long.MAX_VALUE/10000000000000000L,  // 16
+        Long.MAX_VALUE/100000000000000000L, // 17
+        Long.MAX_VALUE/1000000000000000000L // 18
+    };
 
     /** PageContext for use in IO's */
     private static final ThreadLocal<List<InlineIndexHelper>> currentIndex = new ThreadLocal<>();
@@ -61,7 +134,7 @@ public class InlineIndexHelper {
         Value.SHORT,
         Value.INT,
         Value.LONG,
-        Value.LONG,
+        Value.DECIMAL,
         Value.FLOAT,
         Value.DOUBLE,
         Value.DATE,
@@ -140,6 +213,10 @@ public class InlineIndexHelper {
 
             case Value.TIME:
                 this.size = 8;
+                break;
+
+            case Value.DECIMAL:
+                this.size = 12;
                 break;
 
             case Value.TIMESTAMP:
@@ -287,6 +364,12 @@ public class InlineIndexHelper {
             case Value.UUID:
                 return ValueUuid.get(PageUtils.getLong(pageAddr, off + 1), PageUtils.getLong(pageAddr, off + 9));
 
+            case Value.DECIMAL:
+                long unscaledVal = PageUtils.getLong(pageAddr, off + 1);
+
+                // don't compare partial values.
+                return unscaledVal == INFLATED ? null : ValueDecimal.get(BigDecimal.valueOf(unscaledVal, PageUtils.getInt(pageAddr, off + 9)));
+
             case Value.STRING:
                 return ValueString.get(new String(readBytes(pageAddr, off), CHARSET));
 
@@ -376,8 +459,8 @@ public class InlineIndexHelper {
         int type;
 
         if ((size > 0 && size + 1 > maxSize)
-                || maxSize < 1
-                || (type = PageUtils.getByte(pageAddr, off)) == Value.UNKNOWN)
+            || maxSize < 1
+            || (type = PageUtils.getByte(pageAddr, off)) == Value.UNKNOWN)
             return -2;
 
         if (type == Value.NULL)
@@ -400,6 +483,9 @@ public class InlineIndexHelper {
             case Value.FLOAT:
             case Value.DOUBLE:
                 return compareAsPrimitive(pageAddr, off, v, type);
+
+            case Value.DECIMAL:
+                return compareAsBigDecimal(pageAddr, off, v);
 
             case Value.TIME:
             case Value.DATE:
@@ -430,7 +516,7 @@ public class InlineIndexHelper {
      */
     private int compareAsDateTime(long pageAddr, int off, Value v, int type) {
         // only compatible types are supported now.
-        if(PageUtils.getByte(pageAddr, off) == type) {
+        if(this.type == type) {
             switch (type) {
                 case Value.TIME:
                     long nanos1 = PageUtils.getLong(pageAddr, off + 1);
@@ -475,7 +561,7 @@ public class InlineIndexHelper {
      */
     private int compareAsPrimitive(long pageAddr, int off, Value v, int type) {
         // only compatible types are supported now.
-        if(PageUtils.getByte(pageAddr, off) == type) {
+        if(this.type == type) {
             switch (type) {
                 case Value.BOOLEAN:
                     boolean bool1 = PageUtils.getByte(pageAddr, off + 1) != 0;
@@ -522,6 +608,126 @@ public class InlineIndexHelper {
         }
 
         return Integer.MIN_VALUE;
+    }
+
+    private int compareAsBigDecimal(long pageAddr, int off, Value v) {
+        // only compatible types are supported now.
+        if(type == Value.DECIMAL) {
+            BigDecimal dec = v.getBigDecimal();
+
+            long compact1 = PageUtils.getLong(pageAddr, off + 1);
+            long compact2 = compactValFor(dec);
+
+            int scale1 = PageUtils.getInt(pageAddr, off + 9);
+            int scale2 = dec.scale();
+
+            if (scale1 == scale2) {
+                if (compact1 != INFLATED && compact2 != INFLATED)
+                    return compact1 != compact2 ? ((compact1 > compact2) ? 1 : -1) : 0;
+                if(compact1 == INFLATED && compact2 != INFLATED)
+                    return 1;
+                if(compact1 != INFLATED && compact2 == INFLATED)
+                    return -1;
+            }
+
+            if(compact1 == INFLATED || compact2 == INFLATED) {
+                long sdiff = (long)scale1 - scale2;
+
+                if(sdiff > 0 && compact1 == INFLATED && compact2 != INFLATED)
+                    return 1;
+
+                if(sdiff < 0 && compact2 == INFLATED && compact1 != INFLATED)
+                    return -1;
+
+                return -2;
+            }
+
+            int sign1 = Long.signum(compact1);
+            int sign2 = Long.signum(compact2);
+            if (sign1 != sign2)
+                return (sign1 > sign2) ? 1 : -1;
+            if (sign1 == 0)
+                return 0;
+
+            int cmp;
+
+            if (compact1 == 0)
+                cmp = (compact2 == 0) ? 0 : -1;
+            else if (compact2 == 0)
+                cmp = 1;
+            else {
+                long exp1 = (long)longDigitLength(compact1) - scale1;
+                long exp2 = (long)longDigitLength(compact2) - scale2;
+
+                if (exp1 < exp2)
+                    cmp = -1;
+                else if (exp1 > exp2)
+                    cmp = 1;
+                else {
+                    long sdiff = (long)scale1 - scale2;
+
+                    if (sdiff < 0) {
+                        if (sdiff > Integer.MIN_VALUE
+                            && (compact1 = longMultiplyPowerTen(compact1, (int)-sdiff)) == INFLATED) {
+                            return -2;
+                        }
+                    }
+                    else {
+                        if (sdiff <= Integer.MAX_VALUE
+                            && (compact2 = longMultiplyPowerTen(compact2, (int)sdiff)) == INFLATED) {
+                            return -2;
+                        }
+                    }
+
+                    if (compact1 < 0)
+                        compact1 = -compact1;
+                    if (compact2 < 0)
+                        compact2 = -compact2;
+                    cmp = Long.compare(compact1, compact2);
+                }
+            }
+
+            return (sign1 > 0) ? cmp : -cmp;
+        }
+
+        return Integer.MIN_VALUE;
+    }
+
+    /**
+     * Returns the length of the absolute value of a {@code long}, in decimal
+     * digits.
+     *
+     * @param x the {@code long}
+     * @return the length of the unscaled value, in deciaml digits.
+     */
+    private static int longDigitLength(long x) {
+        if (x < 0)
+            x = -x;
+        if (x < 10) // must screen for 0, might as well 10
+            return 1;
+        int r = ((64 - Long.numberOfLeadingZeros(x) + 1) * 1233) >>> 12;
+        long[] tab = LONG_TEN_POWERS_TABLE;
+        // if r >= length, must have max possible digits for long
+        return (r >= tab.length || x < tab[r]) ? r : r + 1;
+    }
+
+    /**
+     * Compute val * 10 ^ n; return this product if it is
+     * representable as a long, INFLATED otherwise.
+     */
+    private static long longMultiplyPowerTen(long val, int n) {
+        if (val == 0 || n <= 0)
+            return val;
+        long[] tab = LONG_TEN_POWERS_TABLE;
+        long[] bounds = THRESHOLDS_TABLE;
+        if (n < tab.length && n < bounds.length) {
+            long tenpower = tab[n];
+            if (val == 1)
+                return tenpower;
+            if (Math.abs(val) <= bounds[n])
+                return val * tenpower;
+        }
+        return INFLATED;
     }
 
     /**
@@ -698,7 +904,7 @@ public class InlineIndexHelper {
                     c4 = (int) GridUnsafe.getByte(addr++) & 0xFF;
 
                     if (((c & 0xF8) != 0xf0) || ((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80) || ((c4 & 0xC0) != 0x80))
-                    throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 4));
+                        throw new IllegalStateException("Malformed input around byte: " + (cntr1 - 4));
 
                     c = c & 0x07;
                     c = (c << 6) | (c2 & 0x3F);
@@ -842,6 +1048,13 @@ public class InlineIndexHelper {
                 PageUtils.putLong(pageAddr, off + 9, ((ValueUuid)val).getLow());
                 return size + 1;
 
+            case Value.DECIMAL:
+                PageUtils.putByte(pageAddr, off, (byte)val.getType());
+                PageUtils.putLong(pageAddr, off + 1, compactValFor(val.getBigDecimal()));
+                PageUtils.putInt(pageAddr, off + 9, val.getScale());
+
+                return size + 1;
+
             case Value.STRING:
             case Value.STRING_FIXED:
             case Value.STRING_IGNORECASE: {
@@ -890,6 +1103,13 @@ public class InlineIndexHelper {
             default:
                 throw new UnsupportedOperationException("no get operation for fast index type " + type);
         }
+    }
+
+    /**
+     * Returns the compact value for given {@code BigInteger}, or {@code InlineIndexHelper.INFLATED} if too big.
+     */
+    private static long compactValFor(BigDecimal b) {
+        return GridUnsafe.getLongField(b, compactOff);
     }
 
     /**
