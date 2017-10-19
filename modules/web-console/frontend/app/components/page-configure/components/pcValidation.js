@@ -3,6 +3,11 @@ import angular from 'angular';
 export default angular.module('ignite-console.page-configure.validation', [])
     .directive('pcNotInCollection', function() {
         class Controller {
+            /** @type {ng.INgModelController} */
+            ngModel;
+            /** @type {Array} */
+            items;
+
             $onInit() {
                 this.ngModel.$validators.notInCollection = (item) => {
                     if (!this.items) return true;
@@ -23,6 +28,57 @@ export default angular.module('ignite-console.page-configure.validation', [])
             bindToController: {
                 items: '<pcNotInCollection'
             }
+        };
+    })
+    .directive('pcInCollection', function() {
+        class Controller {
+            /** @type {ng.INgModelController} */
+            ngModel;
+            /** @type {Array} */
+            items;
+            /** @type {string} */
+            pluck;
+
+            $onInit() {
+                this.ngModel.$validators.inCollection = (item) => {
+                    if (!this.items) return false;
+                    return (this.pluck ? this.items.map((i) => i[this.pluck]) : this.items).includes(item);
+                };
+            }
+
+            $onChanges() {
+                this.ngModel.$validate();
+            }
+        }
+
+        return {
+            controller: Controller,
+            require: {
+                ngModel: 'ngModel'
+            },
+            bindToController: {
+                items: '<pcInCollection',
+                pluck: '@?pcInCollectionPluck'
+            }
+        };
+    })
+    .directive('pcPowerOfTwo', function() {
+        class Controller {
+            /** @type {ng.INgModelController} */
+            ngModel;
+            $onInit() {
+                this.ngModel.$validators.powerOfTwo = (value) => {
+                    return !value || ((value & -value) === value);
+                };
+            }
+        }
+
+        return {
+            controller: Controller,
+            require: {
+                ngModel: 'ngModel'
+            },
+            bindToController: true
         };
     })
     .directive('bsCollapseTarget', function() {
