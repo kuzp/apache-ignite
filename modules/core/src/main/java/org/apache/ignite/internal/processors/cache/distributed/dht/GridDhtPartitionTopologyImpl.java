@@ -1380,29 +1380,14 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                             if (locPart == null || locPart.state() == EVICTED)
                                 locPart = createPartition(p);
 
+                            locPart.reload(partsToReload.contains(p));
+
                             if (locPart.state() == OWNING) {
                                 locPart.moving();
 
                                 changed = true;
                             }
-                        }
-                        else if (state == RENTING && partsToReload.contains(p)) {
-                            GridDhtLocalPartition locPart = locParts.get(p);
 
-                            if (locPart == null || locPart.state() == EVICTED) {
-                                createPartition(p);
-
-                                changed = true;
-                            }
-                            else if (locPart.state() == OWNING || locPart.state() == MOVING) {
-                                locPart.reload(true);
-
-                                locPart.rent(false);
-
-                                changed = true;
-                            }
-                            else
-                                locPart.reload(true);
                         }
                     }
                 }
@@ -1938,11 +1923,9 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
             if (locPart != null) {
                 if (locPart.state() == OWNING && !owners.contains(ctx.localNodeId())) {
-                    if (haveHistory)
-                        locPart.moving();
-                    else {
-                        locPart.rent(false);
+                    locPart.moving();
 
+                    if (!haveHistory) {
                         locPart.reload(true);
 
                         result.add(ctx.localNodeId());
@@ -1962,9 +1945,9 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                     continue;
 
                 if (partMap.get(p) == OWNING && !owners.contains(e.getKey())) {
-                    if (haveHistory)
-                        partMap.put(p, MOVING);
-                    else {
+                    partMap.put(p, MOVING);
+
+                    if (!haveHistory) {
                         partMap.put(p, RENTING);
 
                         result.add(e.getKey());
@@ -2018,8 +2001,6 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
                     // If all affinity nodes are owners, then evict partition from local node.
                     if (nodeIds.containsAll(F.nodeIds(affNodes))) {
-                        part.reload(false);
-
                         part.rent(false);
 
                         updateSeq = updateLocal(part.id(), part.state(), updateSeq, aff.topologyVersion());
@@ -2043,8 +2024,6 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                                 ClusterNode n = nodes.get(i);
 
                                 if (locId.equals(n.id())) {
-                                    part.reload(false);
-
                                     part.rent(false);
 
                                     updateSeq = updateLocal(part.id(),

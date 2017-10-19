@@ -168,7 +168,7 @@ public class GridCachePreloaderAdapter implements GridCachePreloader {
     }
 
     /** {@inheritDoc} */
-    @Override public void evictPartitionAsync(GridDhtLocalPartition part) {
+    @Override public void clearPartitionAsync(GridDhtLocalPartition part) {
         // No-op.
     }
 

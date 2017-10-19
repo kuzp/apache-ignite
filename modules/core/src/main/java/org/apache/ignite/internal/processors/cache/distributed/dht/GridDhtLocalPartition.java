@@ -154,7 +154,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     private volatile boolean shouldBeRenting;
 
     /** Set if partition must be re-created and preloaded after eviction. */
-    private boolean reload;
+    private volatile boolean reload;
 
     /**
      * @param ctx Context.
@@ -537,6 +537,8 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
             assert partState == MOVING || partState == LOST;
 
             if (casState(state, OWNING)) {
+                reload = false;
+
                 if (log.isDebugEnabled())
                     log.debug("Owned partition: " + this);
 
@@ -596,8 +598,12 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     /**
      * @param value {@code reload} flag value.
      */
-    public void reload(boolean value) {
+    public boolean reload(boolean value) {
+        boolean res = (reload != value);
+
         reload = value;
+
+        return res;
     }
 
     /**
@@ -616,6 +622,8 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
 
         if (getReservations(state) == 0 && casState(state, RENTING)) {
             shouldBeRenting = false;
+
+            reload = false;
 
             if (log.isDebugEnabled())
                 log.debug("Moved partition to RENTING state: " + this);
@@ -646,7 +654,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
                 finishDestroy(updateSeq);
         }
         else if (partState == RENTING || shouldBeRenting())
-            grp.preloader().evictPartitionAsync(this);
+            grp.preloader().clearPartitionAsync(this);
     }
 
     /**

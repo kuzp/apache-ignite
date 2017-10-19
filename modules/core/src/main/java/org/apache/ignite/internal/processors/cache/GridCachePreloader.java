@@ -182,7 +182,7 @@ public interface GridCachePreloader {
      *
      * @param part Partition.
      */
-    public void evictPartitionAsync(GridDhtLocalPartition part);
+    public void clearPartitionAsync(GridDhtLocalPartition part);
 
     /**
      * @param lastFut Last future.

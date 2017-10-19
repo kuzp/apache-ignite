@@ -50,7 +50,6 @@ import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridPlainRunnable;
 import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.F;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.GPC;
 import org.apache.ignite.internal.util.typedef.internal.LT;
@@ -91,10 +90,10 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
     private final ReadWriteLock demandLock = new ReentrantReadWriteLock();
 
     /** */
-    private final ConcurrentHashMap<Integer, GridDhtLocalPartition> partsToEvict = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, GridDhtLocalPartition> partsToClear = new ConcurrentHashMap<>();
 
     /** */
-    private final AtomicInteger partsEvictOwning = new AtomicInteger();
+    private final AtomicInteger partsClearOwning = new AtomicInteger();
 
     /** */
     private boolean stopped;
@@ -576,29 +575,34 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
     }
 
     /** {@inheritDoc} */
-    @Override public void evictPartitionAsync(GridDhtLocalPartition part) {
-        partsToEvict.putIfAbsent(part.id(), part);
+    @Override public void clearPartitionAsync(GridDhtLocalPartition part) {
+        partsToClear.putIfAbsent(part.id(), part);
 
-        if (partsEvictOwning.get() == 0 && partsEvictOwning.compareAndSet(0, 1)) {
+        if (partsClearOwning.get() == 0 && partsClearOwning.compareAndSet(0, 1)) {
             ctx.kernalContext().closure().callLocalSafe(new GPC<Boolean>() {
                 @Override public Boolean call() {
                     boolean locked = true;
 
-                    while (locked || !partsToEvict.isEmpty()) {
-                        if (!locked && !partsEvictOwning.compareAndSet(0, 1))
+                    while (locked || !partsToClear.isEmpty()) {
+                        if (!locked && !partsClearOwning.compareAndSet(0, 1))
                             return false;
 
                         try {
-                            for (GridDhtLocalPartition part : partsToEvict.values()) {
+                            for (GridDhtLocalPartition part : partsToClear.values()) {
                                 try {
-                                    partsToEvict.remove(part.id());
+                                    partsToClear.remove(part.id());
 
-                                    part.tryEvict();
+                                    if (part.state() == RENTING)
+                                        part.tryEvict();
+                                    else if (part.state() == MOVING && part.reload())
+                                        throw new UnsupportedOperationException("Not implemented");
 
                                     GridDhtPartitionState state = part.state();
 
-                                    if (state == RENTING || ((state == MOVING || state == OWNING) && part.shouldBeRenting()))
-                                        partsToEvict.put(part.id(), part);
+                                    if (state == RENTING ||
+                                        ((state == MOVING || state == OWNING) && part.shouldBeRenting()) ||
+                                        (state == MOVING && part.reload()))
+                                        partsToClear.put(part.id(), part);
                                 }
                                 catch (Throwable ex) {
                                     if (ctx.kernalContext().isStopping()) {
@@ -606,7 +610,7 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                                             false,
                                             true);
 
-                                        partsToEvict.clear();
+                                        partsToClear.clear();
 
                                         return true;
                                     }
@@ -616,9 +620,9 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                             }
                         }
                         finally {
-                            if (!partsToEvict.isEmpty()) {
+                            if (!partsToClear.isEmpty()) {
                                 if (ctx.kernalContext().isStopping()) {
-                                    partsToEvict.clear();
+                                    partsToClear.clear();
 
                                     locked = false;
                                 }
@@ -626,7 +630,7 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                                     locked = true;
                             }
                             else {
-                                boolean res = partsEvictOwning.compareAndSet(1, 0);
+                                boolean res = partsClearOwning.compareAndSet(1, 0);
 
                                 assert res;
 
