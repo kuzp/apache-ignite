@@ -466,11 +466,13 @@ public class GridDhtPartitionsExchangeFuture extends GridFutureAdapter<AffinityT
         assert !dummy && !forcePreload : this;
 
         try {
-            srvNodes = new ArrayList<>(discoCache.serverNodes());
+            synchronized (mux) {
+                srvNodes = new ArrayList<>(discoCache.serverNodes());
 
-            remaining.addAll(F.nodeIds(F.view(srvNodes, F.remoteNodes(cctx.localNodeId()))));
+                remaining.addAll(F.nodeIds(F.view(srvNodes, F.remoteNodes(cctx.localNodeId()))));
 
-            crd = srvNodes.isEmpty() ? null : srvNodes.get(0);
+                crd = srvNodes.isEmpty() ? null : srvNodes.get(0);
+            }
 
             boolean crdNode = crd != null && crd.isLocal();
 
