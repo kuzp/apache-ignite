@@ -24,9 +24,7 @@ mixin ignite-form-field-input(name, model, disabled, required, placeholder)
 
         data-ng-required=required && `${required}`
         data-ng-disabled=disabled && `${disabled}`
-        data-ng-focus='tableReset()'
 
-        data-ignite-form-panel-field=''
     )&attributes(attributes ? attributes.attributes ? attributes.attributes : attributes : {})
 
 mixin ignite-form-field-text(lbl, model, name, disabled, required, placeholder, tip)

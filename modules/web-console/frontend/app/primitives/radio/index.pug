@@ -30,10 +30,6 @@ mixin form-field-radio(label, model, name, value, disabled, required, tip)
                         data-ng-value=value
                         data-ng-required=required && `${required}`
                         data-ng-disabled=disabled && `${disabled}`
-
-                        data-ng-focus='tableReset()'
-
-                        data-ignite-form-panel-field=''
                     )
                     div
             span #{label}
