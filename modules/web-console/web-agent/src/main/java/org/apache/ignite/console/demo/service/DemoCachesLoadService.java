@@ -194,7 +194,6 @@ public class DemoCachesLoadService implements Service {
         }, 10, 3, TimeUnit.SECONDS);
     }
 
-
     /**
      * Create base cache configuration.
      *

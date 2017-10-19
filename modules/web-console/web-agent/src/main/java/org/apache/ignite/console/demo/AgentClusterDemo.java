@@ -137,8 +137,11 @@ public class AgentClusterDemo {
         MemoryPolicyConfiguration memPlc = new MemoryPolicyConfiguration();
         memPlc.setName("demo");
         memPlc.setMetricsEnabled(true);
+        memPlc.setMaxSize(MemoryConfiguration.DFLT_MEMORY_POLICY_INITIAL_SIZE);
 
         memCfg.setMemoryPolicies(memPlc);
+
+        memCfg.setDefaultMemoryPolicyName("demo");
 
         cfg.setMemoryConfiguration(memCfg);
 
@@ -157,10 +160,10 @@ public class AgentClusterDemo {
         services.deployMultiple("Demo service: Multiple instances", new DemoServiceMultipleInstances(), 7, 3);
         services.deployNodeSingleton("Demo service: Node singleton", new DemoServiceNodeSingleton());
         services.deployClusterSingleton("Demo service: Cluster singleton", new DemoServiceClusterSingleton());
+        services.deployClusterSingleton("Demo caches load service", new DemoCachesLoadService(20));
         services.deployKeyAffinitySingleton("Demo service: Key affinity singleton",
             new DemoServiceKeyAffinity(), DemoCachesLoadService.CAR_CACHE_NAME, "id");
 
-        services.deployClusterSingleton("Demo caches load service", new DemoCachesLoadService(20));
         services.deployNodeSingleton("RandomCache load service", new DemoRandomCacheLoadService(20));
 
         services.deployMultiple("Demo service: Compute load", new DemoComputeLoadService(), 2, 1);
@@ -195,8 +198,10 @@ public class AgentClusterDemo {
                     int idx = cnt.incrementAndGet();
                     int port = basePort.get();
 
+                    IgniteEx ignite = null;
+
                     try {
-                        IgniteEx ignite = (IgniteEx)Ignition.start(igniteConfiguration(port, idx, false));
+                        ignite = (IgniteEx)Ignition.start(igniteConfiguration(port, idx, false));
 
                         if (idx == 0) {
                             Collection<String> jettyAddrs = ignite.localNode().attribute(ATTR_REST_JETTY_ADDRS);
@@ -219,8 +224,6 @@ public class AgentClusterDemo {
                             demoUrl = String.format("http://%s:%d", jettyHost, jettyPort);
 
                             initLatch.countDown();
-
-                            deployServices(ignite.services(ignite.cluster().forServers()));
                         }
                     }
                     catch (Throwable e) {
@@ -234,13 +237,15 @@ public class AgentClusterDemo {
                     }
                     finally {
                         if (idx == NODE_CNT) {
+                            deployServices(ignite.services(ignite.cluster().forServers()));
+
                             log.info("DEMO: All embedded nodes for demo successfully started");
 
                             execSrv.shutdown();
                         }
                     }
                 }
-            }, 1, 10, TimeUnit.SECONDS);
+            }, 1, 5, TimeUnit.SECONDS);
         }
 
         return initLatch;
