@@ -49,9 +49,6 @@ mixin pcb-form-field-size(label, model, name, disabled, required, placeholder, m
 
             data-ng-required=required && `${required}`
             data-ng-disabled=disabled && `${disabled}`
-            data-ng-focus='tableReset()'
-
-            data-ignite-form-panel-field=''
         )&attributes(attributes.attributes)
 
     .ignite-form-field.pcb-form-field-size

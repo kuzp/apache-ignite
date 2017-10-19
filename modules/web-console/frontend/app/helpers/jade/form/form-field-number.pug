@@ -32,9 +32,6 @@ mixin ignite-form-field-number(label, model, name, disabled, required, placehold
 
             data-ng-required=required && `${required}`
             data-ng-disabled=disabled && `${disabled}`
-            data-ng-focus='tableReset()'
-
-            data-ignite-form-panel-field=''
         )&attributes(attributes.attributes)
 
     .ignite-form-field
