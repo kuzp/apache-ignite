@@ -215,7 +215,7 @@ mixin text-enabled(lbl, model, name, enabled, required, placeholder, tip)
 mixin text-enabled-autofocus(lbl, model, name, enabled, required, placeholder, tip)
     +ignite-form-field-text(lbl, model, name, enabledToDisabled(enabled), required, placeholder, tip)(
         data-ignite-form-field-input-autofocus='true'
-    )
+    )&attributes(attributes)
         if  block
             block
 
