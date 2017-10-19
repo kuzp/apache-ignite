@@ -18,24 +18,22 @@
 package org.apache.ignite.benchmark;
 
 import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 
 /**
- * Benchmark.
+ * Benchmark runner.
  */
-public class Benchmark {
-    /** Local node. */
-    private final Ignite ignite;
-
+public class BenchmarkRunner {
     /**
-     * Constructor.
-     *
-     * @param ignite Local node.
+     * Entry point.
      */
-    public Benchmark(Ignite ignite) {
-        this.ignite = ignite;
-    }
+    public static void main(String[] args) {
+        String cfgPath = args[0];
 
-    public Object run() {
-        return null;
+        Ignition.setClientMode(true);
+
+        try (Ignite client = Ignition.start(cfgPath)) {
+            System.out.println(client);
+        }
     }
 }
