@@ -79,6 +79,11 @@ export default class AbstractTransformer {
     }
 
     // Generate collision group.
+    static clusterClientConnector(cluster, available) {
+        return this.toSection(this.generator.clusterClientConnector(cluster, available));
+    }
+
+    // Generate collision group.
     static clusterCollision(collision) {
         return this.toSection(this.generator.clusterCollision(collision));
     }

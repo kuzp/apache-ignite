@@ -26,9 +26,9 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.configuration.BinaryConfiguration;
+import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.HadoopConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.configuration.SqlConnectorConfiguration;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -122,6 +122,9 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
     /** Configuration of data storage. */
     private VisorDataStorageConfiguration dataStorage;
 
+    /** Client connector configuration */
+    private VisorClientConnectorConfiguration cliConnCfg;
+
     /**
      * Default constructor.
      */
@@ -177,10 +180,10 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         if (hc != null)
             hadoopCfg = new VisorHadoopConfiguration(hc);
 
-        SqlConnectorConfiguration scc = c.getSqlConnectorConfiguration();
+        ClientConnectorConfiguration ccc = c.getClientConnectorConfiguration();
 
-        if (scc != null)
-            sqlConnCfg = new VisorSqlConnectorConfiguration(scc);
+        if (ccc != null)
+            cliConnCfg = new VisorClientConnectorConfiguration(ccc);
 
         srvcCfgs = VisorServiceConfiguration.list(c.getServiceConfiguration());
 
@@ -355,6 +358,10 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         return sqlConnCfg;
     }
 
+    public VisorClientConnectorConfiguration getClientConnectorConfiguration() {
+        return cliConnCfg;
+    }
+
     /**
      * @return List of service configurations
      */
@@ -371,7 +378,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
 
     /** {@inheritDoc} */
     @Override public byte getProtocolVersion() {
-        return V2;
+        return V3;
     }
 
     /** {@inheritDoc} */
@@ -402,6 +409,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         out.writeObject(sqlConnCfg);
         U.writeCollection(out, srvcCfgs);
         out.writeObject(dataStorage);
+        out.writeObject(cliConnCfg);
     }
 
     /** {@inheritDoc} */
@@ -432,8 +440,11 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         sqlConnCfg = (VisorSqlConnectorConfiguration) in.readObject();
         srvcCfgs = U.readList(in);
 
-        if (protoVer == V2)
+        if (protoVer >= V2)
             dataStorage = (VisorDataStorageConfiguration)in.readObject();
+
+        if (protoVer >= V3)
+            cliConnCfg = (VisorClientConnectorConfiguration)in.readObject();
     }
 
     /** {@inheritDoc} */
