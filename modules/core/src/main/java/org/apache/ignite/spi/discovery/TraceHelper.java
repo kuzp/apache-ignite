@@ -66,6 +66,7 @@ public class TraceHelper {
         }
     }
 
+    /** */
     public static class TraceStep {
         /** Delta nanos. */
         final long delta;
@@ -100,8 +101,12 @@ public class TraceHelper {
         }
     }
 
-    public List<TraceStep> getTraces() {
-        return traces;
+    public List<TraceStep> getAndClear() {
+        List<TraceStep> cpy = new ArrayList<>(traces);
+
+        traces.clear();
+
+        return cpy;
     }
 
     public static TraceHelper get() {

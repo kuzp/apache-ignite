@@ -71,18 +71,22 @@ import org.apache.ignite.internal.managers.GridManagerAdapter;
 import org.apache.ignite.internal.managers.communication.GridIoManager;
 import org.apache.ignite.internal.managers.eventstorage.GridLocalEventListener;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.cache.CacheAffinityChangeMessage;
 import org.apache.ignite.internal.processors.cache.CacheGroupDescriptor;
 import org.apache.ignite.internal.processors.cache.ClientCacheChangeDummyDiscoveryMessage;
+import org.apache.ignite.internal.processors.cache.DynamicCacheChangeBatch;
 import org.apache.ignite.internal.processors.cache.DynamicCacheChangeRequest;
 import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.GridCacheAdapter;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager;
+import org.apache.ignite.internal.processors.cache.persistence.snapshot.SnapshotDiscoveryMessage;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMessage;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
 import org.apache.ignite.internal.processors.cluster.GridClusterStateProcessor;
 import org.apache.ignite.internal.processors.jobmetrics.GridJobMetrics;
+import org.apache.ignite.internal.processors.query.schema.message.SchemaAbstractDiscoveryMessage;
 import org.apache.ignite.internal.processors.security.SecurityContext;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutProcessor;
 import org.apache.ignite.internal.util.GridBoundedConcurrentLinkedHashMap;
@@ -100,6 +104,7 @@ import org.apache.ignite.internal.util.typedef.internal.LT;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.internal.util.worker.GridWorker;
+import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgnitePredicate;
@@ -233,7 +238,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
     /** Topology version. */
     private final AtomicReference<Snapshot> topSnap =
-        new AtomicReference<>(new Snapshot(AffinityTopologyVersion.ZERO, null));
+        new AtomicReference<>(new Snapshot(AffinityTopologyVersion.ZERO, null, false));
 
     /** Minor topology version. */
     private int minorTopVer;
@@ -595,7 +600,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 if (snapshots != null)
                     topHist = snapshots;
 
-                boolean verChanged;
+                boolean verChanged, incMinorTopVer = false, reusable = true, preventDiscoCacheReuse = false;
 
                 if (type == EVT_NODE_METRICS_UPDATED)
                     verChanged = false;
@@ -640,34 +645,42 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
                 final AffinityTopologyVersion nextTopVer;
 
+                final Snapshot snapshot = topSnap.get();
+
                 if (type == EVT_DISCOVERY_CUSTOM_EVT) {
                     assert customMsg != null;
-
-                    boolean incMinorTopVer;
 
                     if (customMsg instanceof ChangeGlobalStateMessage) {
                         incMinorTopVer = ctx.state().onStateChangeMessage(
                             new AffinityTopologyVersion(topVer, minorTopVer),
                             (ChangeGlobalStateMessage)customMsg,
                             discoCache());
+
+                        reusable = false;
                     }
                     else if (customMsg instanceof ChangeGlobalStateFinishMessage) {
                         ctx.state().onStateFinishMessage((ChangeGlobalStateFinishMessage)customMsg);
 
-                        discoCache = createDiscoCache(topSnap.get().topVer,
+                        discoCache = createDiscoCache(snapshot.topVer,
                             ctx.state().clusterState(),
                             locNode,
                             topSnapshot);
 
-                        topSnap.set(new Snapshot(topSnap.get().topVer, discoCache));
-
-                        incMinorTopVer = false;
+                        topSnap.set(new Snapshot(snapshot.topVer, discoCache, true));
                     }
+                    else if (customMsg instanceof SnapshotDiscoveryMessage)
+                        incMinorTopVer = ((SnapshotDiscoveryMessage)customMsg).needExchange();
                     else {
+                        // Cache events require discovery cache rebuild.
                         incMinorTopVer = ctx.cache().onCustomEvent(
                             customMsg,
                             new AffinityTopologyVersion(topVer, minorTopVer),
                             node);
+
+                        // Disco cache can be reused only for CacheAffinityChangeMessage.
+                        reusable = customMsg instanceof CacheAffinityChangeMessage;
+
+                        preventDiscoCacheReuse = customMsg instanceof DynamicCacheChangeBatch;
                     }
 
                     if (incMinorTopVer) {
@@ -713,19 +726,22 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 // event notifications, since SPI notifies manager about all events from this listener.
                 if (verChanged) {
                     if (discoCache == null) {
-                        discoCache = createDiscoCache(nextTopVer,
-                            ctx.state().clusterState(),
-                            locNode,
-                            topSnapshot);
+                        discoCache =
+                            incMinorTopVer && snapshot.reusable && !preventDiscoCacheReuse ?
+                            snapshot.discoCache.copy(nextTopVer) :
+                                createDiscoCache(nextTopVer,
+                                    ctx.state().clusterState(),
+                                    locNode,
+                                    topSnapshot);
                     }
 
                     discoCacheHist.put(nextTopVer, discoCache);
 
-                    boolean set = updateTopologyVersionIfGreater(nextTopVer, discoCache);
-
-                    assert set || topVer == 0 : "Topology version has not been updated [this.topVer=" +
-                        topSnap + ", topVer=" + topVer + ", node=" + node +
+                    assert snapshot.topVer.compareTo(nextTopVer) < 0: "Topology version out of order [this.topVer=" +
+                        topSnap + ", topVer=" + topVer + ", node=" + node + ", nextTopVer=" + nextTopVer +
                         ", evt=" + U.gridEventName(type) + ']';
+
+                    topSnap.set(new Snapshot(nextTopVer, discoCache, reusable));
                 }
                 else
                     // Current version.
@@ -742,8 +758,10 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                     if (gridStartTime == 0)
                         gridStartTime = getSpi().getGridStartTime();
 
-                    updateTopologyVersionIfGreater(new AffinityTopologyVersion(locNode.order()),
-                        discoCache);
+                    final AffinityTopologyVersion locTopVer = new AffinityTopologyVersion(locNode.order());
+
+                    if (topSnap.get().topVer.compareTo(locTopVer) < 0)
+                        topSnap.set(new Snapshot(locTopVer, discoCache, true));
 
                     startLatch.countDown();
 
@@ -796,7 +814,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                     topHist.clear();
 
                     topSnap.set(new Snapshot(AffinityTopologyVersion.ZERO,
-                        createDiscoCache(AffinityTopologyVersion.ZERO, ctx.state().clusterState(), locNode, Collections.<ClusterNode>singleton(locNode))));
+                        createDiscoCache(AffinityTopologyVersion.ZERO, ctx.state().clusterState(), locNode,
+                            Collections.<ClusterNode>singleton(locNode)),
+                        true));
 
                     TraceHelper.get().finish(customMsg);
                 }
@@ -832,15 +852,11 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                     return;
                 }
 
-                TraceHelper.get().start(customMsg);
-
                 if (type == EVT_CLIENT_NODE_DISCONNECTED || type == EVT_NODE_SEGMENTED || !ctx.clientDisconnected())
                     discoWrk.addEvent(type, nextTopVer, node, discoCache, topSnapshot, customMsg);
 
                 if (stateFinishMsg != null)
                     discoWrk.addEvent(EVT_DISCOVERY_CUSTOM_EVT, nextTopVer, node, discoCache, topSnapshot, stateFinishMsg);
-
-                TraceHelper.get().finish(customMsg);
             }
         });
 
@@ -2364,7 +2380,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             Collections.unmodifiableMap(allCacheNodes),
             Collections.unmodifiableMap(cacheGrpAffNodes),
             Collections.unmodifiableMap(nodeMap),
-            alives);
+            alives,
+            null);
     }
 
     /**
@@ -2384,26 +2401,6 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
         }
 
         cacheNodes.add(rich);
-    }
-
-    /**
-     * Updates topology version if current version is smaller than updated.
-     *
-     * @param updated Updated topology version.
-     * @param discoCache Discovery cache.
-     * @return {@code True} if topology was updated.
-     */
-    private boolean updateTopologyVersionIfGreater(AffinityTopologyVersion updated, DiscoCache discoCache) {
-        while (true) {
-            Snapshot cur = topSnap.get();
-
-            if (updated.compareTo(cur.topVer) >= 0) {
-                if (topSnap.compareAndSet(cur, new Snapshot(updated, discoCache)))
-                    return true;
-            }
-            else
-                return false;
-        }
     }
 
     /** Stops local node. */
@@ -2970,13 +2967,18 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
         @GridToStringExclude
         private final DiscoCache discoCache;
 
+        /** */
+        private final boolean reusable;
+
         /**
          * @param topVer Topology version.
          * @param discoCache Disco cache.
+         * @param reusable Discovery cache can be reused between topology changes.
          */
-        private Snapshot(AffinityTopologyVersion topVer, DiscoCache discoCache) {
+        private Snapshot(AffinityTopologyVersion topVer, DiscoCache discoCache, boolean reusable) {
             this.topVer = topVer;
             this.discoCache = discoCache;
+            this.reusable = reusable;
         }
 
         /** {@inheritDoc} */

@@ -5472,7 +5472,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                         DiscoveryCustomMessage delegate = U.field(msgObj, "delegate");
 
                         if ("StartSnapshotOperationAckDiscoveryMessage".equals(delegate.getClass().getSimpleName())) {
-                            List<TraceHelper.TraceStep> traces = helper.getTraces();
+                            List<TraceHelper.TraceStep> traces = helper.getAndClear();
 
                             for (TraceHelper.TraceStep trace : traces)
                                 log.info("Custom message: [id="+msg.id().shortString()+ ", trace=" + trace.getFileName()+':' + trace.getLine() + ", time=" + trace.getDelta()/1000/1000. + " ms]");
