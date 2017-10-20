@@ -2594,7 +2594,9 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
      * @param sql SQL flag.
      */
     private void saveCacheConfiguration(CacheConfiguration<?, ?> cfg, boolean sql) {
-        if (cctx.pageStore() != null && cctx.database().persistenceEnabled() && !cctx.kernalContext().clientNode()) {
+        if (cctx.pageStore() != null && cctx.database().persistenceEnabled() &&
+            CU.isPersistentCache(cfg, cctx.gridConfig().getDataStorageConfiguration()) &&
+            !cctx.kernalContext().clientNode()) {
             try {
                 StoredCacheData data = new StoredCacheData(cfg);
 
