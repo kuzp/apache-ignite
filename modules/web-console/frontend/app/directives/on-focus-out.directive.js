@@ -28,21 +28,25 @@ class OnFocusOutController {
     /** @type {function} */
     igniteOnFocusOut;
 
-    static $inject = ['$element', '$window'];
+    static $inject = ['$element', '$window', '$scope'];
     /**
      * @param {JQLite} $element
      * @param {ng.IWindowService} $window 
+     * @param {ng.IScope} $scope
      */
-    constructor($element, $window) {
+    constructor($element, $window, $scope) {
         this.$element = $element;
         this.$window = $window;
+        this.$scope = $scope;
 
         /** @param {MouseEvent|FocusEvent} e */
         this._eventHandler = (e) => {
             this.children.forEach((c) => c._eventHandler(e));
             if (this.shouldPropagate(e) && this.isFocused) {
-                this.igniteOnFocusOut();
-                this.isFocused = false;
+                this.$scope.$applyAsync(() => {
+                    this.igniteOnFocusOut();
+                    this.isFocused = false;
+                });
             }
         };
         /** @param {FocusEvent} e */
