@@ -17,7 +17,52 @@
 
 import angular from 'angular';
 import component from './component';
+import {default as ListEditableController} from './controller';
+const CUSTOM_EVENT_TYPE = '$ngModel.change';
 
 export default angular
     .module('ignite-console.page-configure.pc-list-editable', [])
-    .component('pcListEditable', component);
+    .component('pcListEditable', component)
+    // Emits $ngModel.change event on every ngModel.$viewValue change
+    .directive('ngModel', function() {
+        return {
+            /**
+             * @param {ng.IScope} scope
+             * @param {JQLite} el
+             * @param {ng.IAttributes} attr
+             * @param {ng.INgModelController} ngModel
+             */
+            link(scope, el, attr, ngModel) {
+                ngModel.$viewChangeListeners.push(() => {
+                    el[0].dispatchEvent(new CustomEvent(CUSTOM_EVENT_TYPE, {bubbles: true, cancelable: true}));
+                });
+            },
+            require: 'ngModel'
+        };
+    })
+    // Triggers $ctrl.save when any ngModel emits $ngModel.change event
+    .directive('pcListEditableItemEdit', function() {
+        return {
+            /**
+             * @param {ng.IScope} scope
+             * @param {JQLite} el
+             * @param {ng.IAttributes} attr
+             * @param {ListEditableController} list
+             */
+            link(scope, el, attr, list) {
+                if (!list) return;
+                let listener = (e) => {
+                    e.stopPropagation();
+                    scope.$evalAsync(() => {
+                        if (scope.$parent.form.$valid) list.save(scope.$parent.item, scope.$parent.$index);
+                    });
+                };
+                el[0].addEventListener(CUSTOM_EVENT_TYPE, listener);
+                scope.$on('$destroy', () => {
+                    el[0].removeEventListener(CUSTOM_EVENT_TYPE, listener);
+                    listener = null;
+                });
+            },
+            require: '?^pcListEditable'
+        };
+    });
