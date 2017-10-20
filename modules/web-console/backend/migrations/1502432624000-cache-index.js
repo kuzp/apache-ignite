@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-const dropIndex = require('./drop-index');
+const recreateIndex = require('./recreate-index');
 
 exports.up = function up(done) {
-    dropIndex(done, this('Cache').collection, {name: 1, space: 1});
+    recreateIndex(done, this('Cache').collection, {name: 1, space: 1}, {name: 1, space: 1, clusters: 1});
 };
 
 exports.down = function down(done) {
-    dropIndex(done, this('Cache').collection, {name: 1, space: 1, clusters: 1});
+    recreateIndex(done, this('Cache').collection, {name: 1, space: 1, clusters: 1}, {name: 1, space: 1});
 };

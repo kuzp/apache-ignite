@@ -17,9 +17,14 @@
 
 'use strict';
 
-module.exports = function(done, model, oldIdx) {
+module.exports = function(done, model, oldIdx, newIdx) {
     model.indexExists(oldIdx)
-        .then((exists) => exists ? model.dropIndex(oldIdx) : {})
+        .then((exists) => {
+            if (exists) {
+                return model.dropIndex(oldIdx)
+                    .then(() => model.createIndex(newIdx, {unique: true}));
+            }
+        })
         .then(() => done())
         .catch(done);
 };

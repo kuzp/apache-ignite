@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-const dropIndex = require('./drop-index');
+const dropIndex = require('./recreate-index');
 
 exports.up = function up(done) {
-    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1});
+    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1}, {valueType: 1, space: 1, clusters: 1});
 };
 
 exports.down = function down(done) {
-    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1, clusters: 1});
+    dropIndex(done, this('DomainModel').collection, {valueType: 1, space: 1, clusters: 1}, {valueType: 1, space: 1});
 };
