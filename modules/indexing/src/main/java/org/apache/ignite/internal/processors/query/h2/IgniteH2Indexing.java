@@ -107,8 +107,10 @@ import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Table;
+import org.apache.ignite.internal.processors.query.h2.parser.GridExperimentalSqlParser;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlQueryParser;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlQuerySplitter;
+import org.apache.ignite.internal.processors.query.h2.sql.GridSqlStatement;
 import org.apache.ignite.internal.processors.query.h2.twostep.GridMapQueryExecutor;
 import org.apache.ignite.internal.processors.query.h2.twostep.GridReduceQueryExecutor;
 import org.apache.ignite.internal.processors.query.h2.twostep.MapQueryLazyWorker;
@@ -1350,6 +1352,14 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             boolean cachesCreated = false;
 
             try {
+                if (tryExperimentalParser(res, remainingSql)) {
+                    remainingSql = null;
+
+                    GridH2QueryContext.clearThreadLocal();
+
+                    continue;
+                }
+
                 try {
                     while (true) {
                         try {
@@ -1455,7 +1465,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
                     if (DdlStatementsProcessor.isDdlStatement(prepared)) {
                         try {
-                            res.add(ddlProc.runDdlStatement(sqlQry, prepared));
+                            res.add(ddlProc.runDdlStatement(sqlQry, prepared, null));
 
                             continue;
                         }
@@ -1501,6 +1511,41 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         }
 
         return res;
+    }
+
+    /**
+     * Try to use experimental parser to parse certain commands.
+     *
+     * @param res Results.
+     * @param sql SQL text.
+     * @return {@code true} on success.
+     */
+    private boolean tryExperimentalParser(List<FieldsQueryCursor<List<?>>> res, String sql) {
+        String low = sql.substring(0, Math.min(12, sql.length())).toLowerCase();
+
+        if (!(low.contains("drop") && low.contains("index")))
+            return false;
+
+        GridExperimentalSqlParser parser = new GridExperimentalSqlParser(sql);
+
+        try {
+            List<GridSqlStatement> stmts = parser.parse();
+
+            for (GridSqlStatement s: stmts) {
+                res.add(ddlProc.runDdlStatement(s.getSQL(), null, s));
+            }
+
+            return true;
+        }
+        catch (IgniteSQLException e) {
+            // Just ignore for now
+
+            log.error("Experimental parser error: " + e.getMessage());
+            return false;
+        }
+        catch (IgniteCheckedException e) {
+            throw new IgniteSQLException("Failed to execute DDL statement [stmt=" + sql + ']', e);
+        }
     }
 
     /**

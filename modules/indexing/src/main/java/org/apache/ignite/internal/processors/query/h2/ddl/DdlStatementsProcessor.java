@@ -60,6 +60,7 @@ import org.h2.command.ddl.DropIndex;
 import org.h2.command.ddl.DropTable;
 import org.h2.table.Column;
 import org.h2.value.DataType;
+import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing.UPDATE_RESULT_META;
 import static org.apache.ignite.internal.processors.query.h2.sql.GridSqlQueryParser.PARAM_WRAP_VALUE;
@@ -91,17 +92,19 @@ public class DdlStatementsProcessor {
      *
      * @param sql SQL.
      * @param prepared Prepared.
+     * @param readyMadeStmt Ready-made statement.
      * @return Cursor on query results.
      * @throws IgniteCheckedException On error.
      */
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-    public FieldsQueryCursor<List<?>> runDdlStatement(String sql, Prepared prepared)
+    public FieldsQueryCursor<List<?>> runDdlStatement(String sql, Prepared prepared, GridSqlStatement readyMadeStmt)
         throws IgniteCheckedException {
 
         IgniteInternalFuture fut = null;
 
         try {
-            GridSqlStatement stmt0 = new GridSqlQueryParser(false).parse(prepared);
+            GridSqlStatement stmt0 = (readyMadeStmt == null) ?
+                new GridSqlQueryParser(false).parse(prepared) : readyMadeStmt;
 
             if (stmt0 instanceof GridSqlCreateIndex) {
                 GridSqlCreateIndex cmd = (GridSqlCreateIndex)stmt0;
