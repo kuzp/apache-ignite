@@ -457,6 +457,14 @@
                                 <title>RocketMQ integration</title>
                                 <packages>org.apache.ignite.rocketmq*</packages>
                             </group>
+                            <group>
+                                <title>Ignite Development Utils</title>
+                                <packages>org.apache.ignite.development.utils*</packages>
+                            </group>
+                            <group>
+                                <title>Ignite ML</title>
+                                <packages>org.apache.ignite.ml*</packages>
+                            </group>
                         </groups>
                         <header>
                             <![CDATA[
@@ -879,6 +887,7 @@
                                         <exclude>**/*.FxCop</exclude>
                                         <exclude>**/*.ruleset</exclude>
                                         <exclude>**/*.csproj</exclude>
+                                        <exclude>**/*.ndproj</exclude>
                                         <exclude>**/*.csprojrel</exclude>
                                         <exclude>**/*.vcxproj</exclude>
                                         <exclude>**/*.vcxprojrel</exclude>

@@ -89,6 +89,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiPredicate;
 import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.lang.IgniteFuture;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.marshaller.Marshaller;
 import org.apache.ignite.plugin.security.SecurityException;
@@ -263,15 +264,8 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
 
         ServiceConfiguration[] cfgs = ctx.config().getServiceConfiguration();
 
-        if (cfgs != null) {
-            for (ServiceConfiguration c : cfgs) {
-                // Deploy only on server nodes by default.
-                if (c.getNodeFilter() == null)
-                    c.setNodeFilter(ctx.cluster().get().forServers().predicate());
-            }
-
-            deployAll(Arrays.asList(cfgs), true).get();
-        }
+        if (cfgs != null)
+            deployAll(Arrays.asList(cfgs), ctx.cluster().get().forServers().predicate()).get();
 
         if (log.isDebugEnabled())
             log.debug("Started service processor.");
@@ -316,7 +310,16 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
             Service svc = ctx.service();
 
             if (svc != null)
-                svc.cancel(ctx);
+                try {
+                    svc.cancel(ctx);
+                }
+                catch (Throwable e) {
+                    log.error("Failed to cancel service (ignoring) [name=" + ctx.name() +
+                        ", execId=" + ctx.executionId() + ']', e);
+
+                    if (e instanceof Error)
+                        throw e;
+                }
 
             ctx.executor().shutdownNow();
         }
@@ -465,9 +468,8 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
         cfg.setService(svc);
         cfg.setTotalCount(totalCnt);
         cfg.setMaxPerNodeCount(maxPerNodeCnt);
-        cfg.setNodeFilter(F.<ClusterNode>alwaysTrue() == prj.predicate() ? null : prj.predicate());
 
-        return deploy(cfg);
+        return deployAll(prj, Collections.singleton(cfg));
     }
 
     /**
@@ -490,15 +492,17 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
         cfg.setTotalCount(1);
         cfg.setMaxPerNodeCount(1);
 
-        return deploy(cfg);
+        // Ignore projection here.
+        return deployAll(Collections.singleton(cfg), null);
     }
 
     /**
      * @param cfgs Service configurations.
-     * @param allOrNone Failure processing policy.
+     * @param dfltNodeFilter Default NodeFilter.
      * @return Configurations to deploy.
      */
-    private PreparedConfigurations prepareServiceConfigurations(Collection<ServiceConfiguration> cfgs, boolean allOrNone) {
+    private PreparedConfigurations prepareServiceConfigurations(Collection<ServiceConfiguration> cfgs,
+        IgnitePredicate<ClusterNode> dfltNodeFilter) {
         List<ServiceConfiguration> cfgsCp = new ArrayList<>(cfgs.size());
 
         Marshaller marsh = ctx.config().getMarshaller();
@@ -507,6 +511,11 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
 
         for (ServiceConfiguration cfg : cfgs) {
             Exception err = null;
+
+            // Deploy to projection node by default
+            // or only on server nodes if no projection .
+            if (cfg.getNodeFilter() == null && dfltNodeFilter != null)
+                cfg.setNodeFilter(dfltNodeFilter);
 
             try {
                 validate(cfg);
@@ -545,40 +554,46 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
             }
 
             if (err != null) {
-                if (allOrNone) {
-                    return new PreparedConfigurations(null,
-                        null,
-                        new IgniteCheckedException(
-                            new ServiceDeploymentException("None of the provided services were deplyed.", err, cfgs)));
-                }
-                else {
-                    if (failedFuts == null)
-                        failedFuts = new ArrayList<>();
+                if (failedFuts == null)
+                    failedFuts = new ArrayList<>();
 
-                    GridServiceDeploymentFuture fut = new GridServiceDeploymentFuture(cfg);
+                GridServiceDeploymentFuture fut = new GridServiceDeploymentFuture(cfg);
 
-                    fut.onDone(err);
+                fut.onDone(err);
 
-                    failedFuts.add(fut);
-                }
+                failedFuts.add(fut);
             }
         }
 
-        return new PreparedConfigurations(cfgsCp, failedFuts, null);
+        return new PreparedConfigurations(cfgsCp, failedFuts);
+    }
+
+    /**
+     * @param prj Grid projection.
+     * @param cfgs Service configurations.
+     * @return Future for deployment.
+     */
+    public IgniteInternalFuture<?> deployAll(ClusterGroup prj, Collection<ServiceConfiguration> cfgs) {
+        if (prj == null)
+            // Deploy to servers by default if no projection specified.
+            return deployAll(cfgs,  ctx.cluster().get().forServers().predicate());
+        else if (prj.predicate() == F.<ClusterNode>alwaysTrue())
+            return deployAll(cfgs,  null);
+        else
+            // Deploy to predicate nodes by default.
+            return deployAll(cfgs,  prj.predicate());
     }
 
     /**
      * @param cfgs Service configurations.
-     * @param allOrNone Failure processing policy.
+     * @param dfltNodeFilter Default NodeFilter.
      * @return Future for deployment.
      */
-    public IgniteInternalFuture<?> deployAll(Collection<ServiceConfiguration> cfgs, boolean allOrNone) {
+    private IgniteInternalFuture<?> deployAll(Collection<ServiceConfiguration> cfgs,
+        @Nullable IgnitePredicate<ClusterNode> dfltNodeFilter) {
         assert cfgs != null;
 
-        PreparedConfigurations srvCfg = prepareServiceConfigurations(cfgs, allOrNone);
-
-        if (srvCfg.err != null)
-            return new GridFinishedFuture<>(srvCfg.err);
+        PreparedConfigurations srvCfg = prepareServiceConfigurations(cfgs, dfltNodeFilter);
 
         List<ServiceConfiguration> cfgsCp = srvCfg.cfgs;
 
@@ -593,7 +608,7 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
         GridServiceDeploymentCompoundFuture res;
 
         while (true) {
-            res = new GridServiceDeploymentCompoundFuture(allOrNone, ctx);
+            res = new GridServiceDeploymentCompoundFuture();
 
             if (ctx.deploy().enabled())
                 ctx.cache().context().deploy().ignoreOwnership(true);
@@ -610,16 +625,8 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
                             catch (IgniteCheckedException e) {
                                 if (X.hasCause(e, ClusterTopologyCheckedException.class))
                                     throw e; // Retry.
-
-                                if (allOrNone) {
-                                    for (String name : res.servicesToRollback())
-                                        depFuts.remove(name).onDone(e);
-
-                                    res.onDone(new IgniteCheckedException(new ServiceDeploymentException(
-                                        "Failed to deploy provided services.", e, cfgs)));
-
-                                    return res;
-                                }
+                                else
+                                    U.error(log, e.getMessage());
                             }
                         }
 
@@ -653,7 +660,7 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
         if (ctx.clientDisconnected()) {
             IgniteClientDisconnectedCheckedException err =
                 new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),
-                "Failed to deploy services, client node disconnected: " + cfgs);
+                    "Failed to deploy services, client node disconnected: " + cfgs);
 
             for (String name : res.servicesToRollback()) {
                 GridServiceDeploymentFuture fut = depFuts.remove(name);
@@ -670,7 +677,7 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
                 res.add(fut, false);
         }
 
-        res.serviceDeploymentMarkInitialized();
+        res.markInitialized();
 
         return res;
     }
@@ -707,12 +714,8 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
 
             if (dep != null) {
                 if (!dep.configuration().equalsIgnoreNodeFilter(cfg)) {
-                    String err = "Failed to deploy service (service already exists with different " +
-                        "configuration) [deployed=" + dep.configuration() + ", new=" + cfg + ']';
-
-                    U.error(log, err);
-
-                    throw new IgniteCheckedException(err);
+                    throw new IgniteCheckedException("Failed to deploy service (service already exists with " +
+                        "different configuration) [deployed=" + dep.configuration() + ", new=" + cfg + ']');
                 }
                 else {
                     res.add(fut, false);
@@ -749,16 +752,6 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
     }
 
     /**
-     * @param cfg Service configuration.
-     * @return Future for deployment.
-     */
-    public IgniteInternalFuture<?> deploy(ServiceConfiguration cfg) {
-        A.notNull(cfg, "cfg");
-
-        return deployAll(Collections.singleton(cfg), false);
-    }
-
-    /**
      * @param name Service name.
      * @return Future.
      */
@@ -771,7 +764,8 @@ public class GridServiceProcessor extends GridProcessorAdapter implements Ignite
                 if (X.hasCause(e, ClusterTopologyCheckedException.class)) {
                     if (log.isDebugEnabled())
                         log.debug("Topology changed while cancelling service (will retry): " + e.getMessage());
-                } else {
+                }
+                else {
                     U.error(log, "Failed to undeploy service: " + name, e);
 
                     return new GridFinishedFuture<>(e);

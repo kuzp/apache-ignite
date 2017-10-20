@@ -21,6 +21,7 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
     using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using Apache.Ignite.Core.Cache.Query;
     using Apache.Ignite.Core.Impl.Binary;
     using Apache.Ignite.Core.Impl.Binary.IO;
@@ -54,35 +55,47 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
         /** Disposed flag. */
         private volatile bool _disposed;
 
+        /** Whether next batch is available. */
+        private bool _hasNext = true;
+
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="marsh">Marshaller.</param>
         /// <param name="keepBinary">Keep binary flag.</param>
-        protected QueryCursorBase(Marshaller marsh, bool keepBinary)
+        /// <param name="initialBatchStream">Optional stream with initial batch.</param>
+        [SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors",
+            Justification = "ConvertGetBatch calls Read, which does not rely on constructor being run.")]
+        protected QueryCursorBase(Marshaller marsh, bool keepBinary, IBinaryStream initialBatchStream = null)
         {
             Debug.Assert(marsh != null);
 
             _keepBinary = keepBinary;
             _marsh = marsh;
+
+            if (initialBatchStream != null)
+            {
+                _batch = ConvertGetBatch(initialBatchStream);
+            }
         }
 
         /** <inheritdoc /> */
         public IList<T> GetAll()
         {
-            ThrowIfDisposed();
+            if (_getAllCalled)
+                throw new InvalidOperationException("Failed to get all entries because GetAll() " +
+                                                    "method has already been called.");
 
             if (_iterCalled)
-                throw new InvalidOperationException("Failed to get all entries because GetEnumerator() " + 
-                    "method has already been called.");
+                throw new InvalidOperationException("Failed to get all entries because GetEnumerator() " +
+                                                    "method has already been called.");
 
-            if (_getAllCalled)
-                throw new InvalidOperationException("Failed to get all entries because GetAll() " + 
-                    "method has already been called.");
+            ThrowIfDisposed();
 
             var res = GetAllInternal();
 
             _getAllCalled = true;
+            _hasNext = false;
 
             return res;
         }
@@ -92,7 +105,11 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
         /** <inheritdoc /> */
         public IEnumerator<T> GetEnumerator()
         {
-            ThrowIfDisposed();
+            if (_getAllCalled)
+            {
+                throw new InvalidOperationException("Failed to get enumerator entries because " +
+                                                    "GetAll() method has already been called.");
+            }
 
             if (_iterCalled)
             {
@@ -100,11 +117,7 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
                                                     "GetEnumerator() method has already been called.");
             }
 
-            if (_getAllCalled)
-            {
-                throw new InvalidOperationException("Failed to get enumerator entries because " +
-                                                    "GetAll() method has already been called.");
-            }
+            ThrowIfDisposed();
 
             InitIterator();
 
@@ -196,7 +209,7 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
         /// </summary>
         private void RequestBatch()
         {
-            _batch = GetBatch();
+            _batch = _hasNext ? GetBatch() : null;
 
             _batchPos = 0;
         }
@@ -237,12 +250,19 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
             var size = reader.ReadInt();
 
             if (size == 0)
+            {
+                _hasNext = false;
                 return null;
+            }
 
             var res = new T[size];
 
             for (var i = 0; i < size; i++)
+            {
                 res[i] = Read(reader);
+            }
+
+            _hasNext = stream.ReadBool();
 
             return res;
         }
@@ -253,9 +273,14 @@ namespace Apache.Ignite.Core.Impl.Cache.Query
             lock (this)
             {
                 if (_disposed)
+                {
                     return;
+                }
 
-                Dispose(true);
+                if (_hasNext)
+                {
+                    Dispose(true);
+                }
 
                 GC.SuppressFinalize(this);
 

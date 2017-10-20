@@ -48,7 +48,7 @@ import org.apache.ignite.internal.processors.cache.extras.GridCacheObsoleteEntry
 import org.apache.ignite.internal.processors.cache.extras.GridCacheTtlEntryExtras;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
-import org.apache.ignite.internal.processors.cache.persistence.MemoryPolicy;
+import org.apache.ignite.internal.processors.cache.persistence.DataRegion;
 import org.apache.ignite.internal.processors.cache.query.continuous.CacheContinuousQueryListener;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
@@ -1419,6 +1419,9 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                         updated0 = cctx.unwrapTemporary(entry.getValue());
 
                         updated = cctx.toCacheObject(updated0);
+
+                        if (updated != null) // no validation for remove case
+                            cctx.validateKeyAndValue(key, updated);
                     }
                     else
                         updated = old;
@@ -2460,7 +2463,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
     /** {@inheritDoc} */
     @Nullable @Override public CacheObject peek(@Nullable IgniteCacheExpiryPolicy plc)
         throws GridCacheEntryRemovedException, IgniteCheckedException {
-        IgniteInternalTx tx = cctx.tm().localTxx();
+        IgniteInternalTx tx = cctx.tm().localTx();
 
         AffinityTopologyVersion topVer = tx != null ? tx.topologyVersion() : cctx.affinity().affinityTopologyVersion();
 
@@ -2540,7 +2543,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             boolean update;
 
-            boolean walEnabled = !cctx.isNear() && cctx.shared().wal() != null;
+            boolean walEnabled = !cctx.isNear() && cctx.group().persistenceEnabled();
 
             if (cctx.shared().database().persistenceEnabled()) {
                 unswap(false);
@@ -3107,10 +3110,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
      * @return Current transaction.
      */
     private IgniteTxLocalAdapter currentTx() {
-        if (cctx.isDht())
-            return cctx.dht().near().context().tm().localTx();
-        else
-            return cctx.tm().localTx();
+        return cctx.tm().localTx();
     }
 
     /** {@inheritDoc} */
@@ -3204,7 +3204,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         assert cctx.atomic();
 
         try {
-            if (cctx.shared().wal() != null)
+            if (cctx.group().persistenceEnabled())
                 cctx.shared().wal().log(new DataRecord(new DataEntry(
                     cctx.cacheId(),
                     key,
@@ -3300,7 +3300,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
     }
 
     /** {@inheritDoc} */
-    @Override public void updateIndex(SchemaIndexCacheVisitorClosure clo, long link) throws IgniteCheckedException,
+    @Override public void updateIndex(SchemaIndexCacheVisitorClosure clo) throws IgniteCheckedException,
         GridCacheEntryRemovedException {
         synchronized (this) {
             if (isInternal())
@@ -3308,10 +3308,10 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             checkObsolete();
 
-            unswap(false);
+            CacheDataRow row = cctx.offheap().read(this);
 
-            if (val != null)
-                clo.apply(key, partition(), val, ver, expireTimeUnlocked(), link);
+            if (row != null)
+                clo.apply(row);
         }
     }
 
@@ -3326,13 +3326,13 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
     }
 
     /**
-     * Evicts necessary number of data pages if per-page eviction is configured in current {@link MemoryPolicy}.
+     * Evicts necessary number of data pages if per-page eviction is configured in current {@link DataRegion}.
      */
     private void ensureFreeSpace() throws IgniteCheckedException {
         // Deadlock alert: evicting data page causes removing (and locking) all entries on the page one by one.
         assert !Thread.holdsLock(this);
 
-        cctx.shared().database().ensureFreeSpace(cctx.memoryPolicy());
+        cctx.shared().database().ensureFreeSpace(cctx.dataRegion());
     }
 
     /**
@@ -3488,7 +3488,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             }
         }
 
-        IgniteInternalTx tx = cctx.tm().localTxx();
+        IgniteInternalTx tx = cctx.tm().localTx();
 
         if (tx != null) {
             IgniteTxEntry e = tx.entry(txKey());
@@ -4165,6 +4165,26 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
                     return;
                 }
+                else if ((invokeRes == null || invokeRes.getValue() == null) && writeObj != null) {
+                    try {
+                        cctx.validateKeyAndValue(entry.key, (CacheObject)writeObj);
+                    }
+                    catch (Exception e) {
+                        initResultOnCancelUpdate(null, true);
+
+                        updateRes = new GridCacheUpdateAtomicResult(UpdateOutcome.INVOKE_NO_OP,
+                            oldVal,
+                            null,
+                            new IgniteBiTuple<>(null, e),
+                            CU.TTL_ETERNAL,
+                            CU.EXPIRE_TIME_ETERNAL,
+                            null,
+                            null,
+                            0);
+
+                        return;
+                    }
+                }
 
                 op = writeObj == null ? DELETE : UPDATE;
             }
@@ -4465,6 +4485,8 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             if (updateCntr != null)
                 updateCntr0 = updateCntr;
+
+            entry.logUpdate(op, null, newVer, 0, updateCntr0);
 
             if (oldVal != null) {
                 assert !entry.deletedUnlocked();

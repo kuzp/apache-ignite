@@ -227,7 +227,7 @@ public class CacheMetricsImpl implements CacheMetrics {
     /** {@inheritDoc} */
     @Override public long getHeapEntriesCount() {
         try {
-            return cctx.cache().localSize(ONHEAP_PEEK_MODES);
+            return cctx.cache().localSizeLong(ONHEAP_PEEK_MODES);
         }
         catch (IgniteCheckedException ignored) {
             return 0;
@@ -328,7 +328,7 @@ public class CacheMetricsImpl implements CacheMetrics {
 
     /** {@inheritDoc} */
     @Override public int getTxDhtThreadMapSize() {
-        return cctx.isNear() && dhtCtx != null ? dhtCtx.tm().threadMapSize() : -1;
+        return cctx.tm().threadMapSize();
     }
 
     /** {@inheritDoc} */
@@ -808,6 +808,16 @@ public class CacheMetricsImpl implements CacheMetrics {
 
     /** {@inheritDoc} */
     @Override public long estimateRebalancingFinishTime() {
+        return getEstimatedRebalancingFinishTime();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long rebalancingStartTime() {
+        return rebalanceStartTime.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getEstimatedRebalancingFinishTime() {
         long rate = rebalancingKeysRate.getRate();
 
         return rate <= 0 ? -1L :
@@ -815,7 +825,7 @@ public class CacheMetricsImpl implements CacheMetrics {
     }
 
     /** {@inheritDoc} */
-    @Override public long rebalancingStartTime() {
+    @Override public long getRebalancingStartTime() {
         return rebalanceStartTime.get();
     }
 

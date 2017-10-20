@@ -37,7 +37,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
+import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
+import org.apache.ignite.internal.processors.odbc.ClientListenerResponse;
+import org.apache.ignite.internal.processors.odbc.SqlStateCode;
+import org.apache.ignite.internal.processors.odbc.jdbc.JdbcRequest;
+import org.apache.ignite.internal.processors.odbc.jdbc.JdbcResponse;
+import org.apache.ignite.internal.processors.odbc.jdbc.JdbcResult;
+import org.apache.ignite.internal.processors.query.QueryUtils;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.lang.IgniteProductVersion;
 
 import static java.sql.ResultSet.CLOSE_CURSORS_AT_COMMIT;
 import static java.sql.ResultSet.CONCUR_READ_ONLY;
@@ -54,6 +62,7 @@ import static org.apache.ignite.internal.jdbc.thin.JdbcThinUtils.PROP_REPLICATED
 import static org.apache.ignite.internal.jdbc.thin.JdbcThinUtils.PROP_SOCK_RCV_BUF;
 import static org.apache.ignite.internal.jdbc.thin.JdbcThinUtils.PROP_SOCK_SND_BUF;
 import static org.apache.ignite.internal.jdbc.thin.JdbcThinUtils.PROP_TCP_NO_DELAY;
+import static org.apache.ignite.internal.jdbc.thin.JdbcThinUtils.PROP_SKIP_REDUCER_ON_UPDATE;
 
 /**
  * JDBC connection implementation.
@@ -112,7 +121,7 @@ public class JdbcThinConnection implements Connection {
         autoCommit = true;
         txIsolation = Connection.TRANSACTION_NONE;
 
-        this.schema = schema == null ? "PUBLIC" : schema;
+        this.schema = normalizeSchema(schema);
 
         String host = extractHost(props);
         int port = extractPort(props);
@@ -128,17 +137,19 @@ public class JdbcThinConnection implements Connection {
         int sockRcvBuf = extractIntNonNegative(props, PROP_SOCK_RCV_BUF, 0);
 
         boolean tcpNoDelay  = extractBoolean(props, PROP_TCP_NO_DELAY, true);
+        boolean skipReducerOnUpdate  = extractBoolean(props, PROP_SKIP_REDUCER_ON_UPDATE, false);
 
         try {
             cliIo = new JdbcThinTcpIo(host, port, distributedJoins, enforceJoinOrder, collocated, replicatedOnly,
-                autoCloseServerCursor, lazyExec, sockSndBuf, sockRcvBuf, tcpNoDelay);
+                autoCloseServerCursor, lazyExec, sockSndBuf, sockRcvBuf, tcpNoDelay, skipReducerOnUpdate);
 
             cliIo.start();
         }
         catch (Exception e) {
             cliIo.close();
 
-            throw new SQLException("Failed to connect to Ignite node [host=" + host + ", port=" + port + ']', e);
+            throw new SQLException("Failed to connect to Ignite cluster [host=" + host + ", port=" + port + ']',
+                SqlStateCode.CLIENT_CONNECTION_FAILED, e);
         }
     }
 
@@ -159,7 +170,7 @@ public class JdbcThinConnection implements Connection {
 
         checkCursorOptions(resSetType, resSetConcurrency, resSetHoldability);
 
-        JdbcThinStatement stmt  = new JdbcThinStatement(this, resSetHoldability);
+        JdbcThinStatement stmt  = new JdbcThinStatement(this, resSetHoldability, schema);
 
         if (timeout > 0)
             stmt.timeout(timeout);
@@ -188,7 +199,7 @@ public class JdbcThinConnection implements Connection {
         if (sql == null)
             throw new SQLException("SQL string cannot be null.");
 
-        JdbcThinPreparedStatement stmt = new JdbcThinPreparedStatement(this, sql, resSetHoldability);
+        JdbcThinPreparedStatement stmt = new JdbcThinPreparedStatement(this, sql, resSetHoldability, schema);
 
         if (timeout > 0)
             stmt.timeout(timeout);
@@ -347,7 +358,7 @@ public class JdbcThinConnection implements Connection {
                 break;
 
             default:
-                throw new SQLException("Invalid transaction isolation level.");
+                throw new SQLException("Invalid transaction isolation level.", SqlStateCode.INVALID_TRANSACTION_LEVEL);
         }
 
         txIsolation = level;
@@ -583,7 +594,7 @@ public class JdbcThinConnection implements Connection {
     @Override public void setSchema(String schema) throws SQLException {
         ensureNotClosed();
 
-        this.schema = schema;
+        this.schema = normalizeSchema(schema);
     }
 
     /** {@inheritDoc} */
@@ -626,16 +637,49 @@ public class JdbcThinConnection implements Connection {
      *
      * @throws SQLException If connection is closed.
      */
-    private void ensureNotClosed() throws SQLException {
+    public void ensureNotClosed() throws SQLException {
         if (closed)
-            throw new SQLException("Connection is closed.");
+            throw new SQLException("Connection is closed.", SqlStateCode.CONNECTION_CLOSED);
     }
 
     /**
-     * @return Ignite endpoint and I/O protocol.
+     * @return Ignite server version.
      */
-    public JdbcThinTcpIo io() {
-        return cliIo;
+    IgniteProductVersion igniteVersion() {
+        return cliIo.igniteVersion();
+    }
+
+    /**
+     * @return Auto close server cursors flag.
+     */
+    boolean autoCloseServerCursor() {
+        return cliIo.autoCloseServerCursor();
+    }
+
+    /**
+     * Send request for execution via {@link #cliIo}.
+     * @param req Request.
+     * @return Server response.
+     * @throws SQLException On any error.
+     */
+    @SuppressWarnings("unchecked")
+    <R extends JdbcResult> R sendRequest(JdbcRequest req) throws SQLException {
+        try {
+            JdbcResponse res = cliIo.sendRequest(req);
+
+            if (res.status() != ClientListenerResponse.STATUS_SUCCESS)
+                throw new SQLException(res.error(), IgniteQueryErrorCode.codeToSqlState(res.status()));
+
+            return (R)res.response();
+        }
+        catch (SQLException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            close();
+
+            throw new SQLException("Failed to communicate with Ignite cluster.", SqlStateCode.CONNECTION_FAILURE, e);
+        }
     }
 
     /**
@@ -652,7 +696,7 @@ public class JdbcThinConnection implements Connection {
             host = host.trim();
 
         if (F.isEmpty(host))
-            throw new SQLException("Host name is empty.");
+            throw new SQLException("Host name is empty.", SqlStateCode.CLIENT_CONNECTION_FAILED);
 
         return host;
     }
@@ -676,10 +720,10 @@ public class JdbcThinConnection implements Connection {
             port = Integer.parseInt(portStr);
 
             if (port <= 0 || port > 0xFFFF)
-                throw new SQLException("Invalid port: " + portStr);
+                throw new SQLException("Invalid port: " + portStr, SqlStateCode.CLIENT_CONNECTION_FAILED);
         }
         catch (NumberFormatException e) {
-            throw new SQLException("Invalid port: " + portStr, e);
+            throw new SQLException("Invalid port: " + portStr, SqlStateCode.CLIENT_CONNECTION_FAILED);
         }
 
         return port;
@@ -706,7 +750,7 @@ public class JdbcThinConnection implements Connection {
             return false;
         else
             throw new SQLException("Failed to parse boolean property [name=" + JdbcThinUtils.trimPrefix(propName) +
-                    ", value=" + strVal + ']');
+                ", value=" + strVal + ']', SqlStateCode.CLIENT_CONNECTION_FAILED);
     }
 
     /**
@@ -723,7 +767,7 @@ public class JdbcThinConnection implements Connection {
 
         if (res < 0)
             throw new SQLException("Property cannot be negative [name=" + JdbcThinUtils.trimPrefix(propName) +
-                ", value=" + res + ']');
+                ", value=" + res + ']', SqlStateCode.CLIENT_CONNECTION_FAILED);
 
         return res;
     }
@@ -748,7 +792,7 @@ public class JdbcThinConnection implements Connection {
         }
         catch (NumberFormatException e) {
             throw new SQLException("Failed to parse int property [name=" + JdbcThinUtils.trimPrefix(propName) +
-                ", value=" + strVal + ']');
+                ", value=" + strVal + ']', SqlStateCode.CLIENT_CONNECTION_FAILED);
         }
     }
 
@@ -757,5 +801,25 @@ public class JdbcThinConnection implements Connection {
      */
     public String url() {
         return url;
+    }
+
+    /**
+     * Normalize schema name. If it is quoted - unquote and leave as is, otherwise - convert to upper case.
+     *
+     * @param schemaName Schema name.
+     * @return Normalized schema name.
+     */
+    private static String normalizeSchema(String schemaName) {
+        if (F.isEmpty(schemaName))
+            return QueryUtils.DFLT_SCHEMA;
+
+        String res;
+
+        if (schemaName.startsWith("\"") && schemaName.endsWith("\""))
+            res = schemaName.substring(1, schemaName.length() - 1);
+        else
+            res = schemaName.toUpperCase();
+
+        return res;
     }
 }

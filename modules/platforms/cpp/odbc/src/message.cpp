@@ -23,13 +23,14 @@ namespace ignite
     namespace odbc
     {
         HandshakeRequest::HandshakeRequest(const ProtocolVersion& version, bool distributedJoins,
-            bool enforceJoinOrder, bool replicatedOnly, bool collocated, bool lazy):
+            bool enforceJoinOrder, bool replicatedOnly, bool collocated, bool lazy, bool skipReducerOnUpdate):
             version(version),
             distributedJoins(distributedJoins),
             enforceJoinOrder(enforceJoinOrder),
             replicatedOnly(replicatedOnly),
             collocated(collocated),
-            lazy(lazy)
+            lazy(lazy),
+            skipReducerOnUpdate(skipReducerOnUpdate)
         {
             // No-op.
         }
@@ -53,7 +54,12 @@ namespace ignite
             writer.WriteBool(enforceJoinOrder);
             writer.WriteBool(replicatedOnly);
             writer.WriteBool(collocated);
-            writer.WriteBool(lazy);
+
+            if (version >= ProtocolVersion::VERSION_2_1_5)
+                writer.WriteBool(lazy);
+
+            if (version >= ProtocolVersion::VERSION_2_3_0)
+                writer.WriteBool(skipReducerOnUpdate);
         }
 
         QueryExecuteRequest::QueryExecuteRequest(const std::string& schema, const std::string& sql,
@@ -206,7 +212,9 @@ namespace ignite
             writer.WriteObject<std::string>(sqlQuery);
         }
 
-        Response::Response(): status(ResponseStatus::FAILED), error()
+        Response::Response() :
+            status(ResponseStatus::UNKNOWN_ERROR),
+            error()
         {
             // No-op.
         }
@@ -216,17 +224,20 @@ namespace ignite
             // No-op.
         }
 
-        void Response::Read(impl::binary::BinaryReaderImpl& reader)
+        void Response::Read(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion& ver)
         {
-            status = reader.ReadInt8();
+            if (ver < ProtocolVersion::VERSION_2_1_5)
+                status = reader.ReadInt8();
+            else
+                status = reader.ReadInt32();
 
             if (status == ResponseStatus::SUCCESS)
-                ReadOnSuccess(reader);
+                ReadOnSuccess(reader, ver);
             else
                 utility::ReadString(reader, error);;
         }
 
-        void Response::ReadOnSuccess(impl::binary::BinaryReaderImpl&)
+        void Response::ReadOnSuccess(impl::binary::BinaryReaderImpl&, const ProtocolVersion&)
         {
             // No-op.
         }
@@ -244,7 +255,7 @@ namespace ignite
             // No-op.
         }
 
-        void HandshakeResponse::Read(impl::binary::BinaryReaderImpl& reader)
+        void HandshakeResponse::Read(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             accepted = reader.ReadBool();
 
@@ -270,7 +281,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryCloseResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryCloseResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             queryId = reader.ReadInt64();
         }
@@ -288,7 +299,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryExecuteResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryExecuteResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             queryId = reader.ReadInt64();
 
@@ -300,7 +311,8 @@ namespace ignite
         QueryExecuteBatchResponse::QueryExecuteBatchResponse():
             affectedRows(0),
             errorSetIdx(-1),
-            errorMessage()
+            errorMessage(),
+            errorCode(1)
         {
             // No-op.
         }
@@ -310,7 +322,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryExecuteBatchResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryExecuteBatchResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion& ver)
         {
             bool success = reader.ReadBool();
             affectedRows = reader.ReadInt64();
@@ -319,6 +331,9 @@ namespace ignite
             {
                 errorSetIdx = reader.ReadInt64();
                 errorMessage = reader.ReadObject<std::string>();
+
+                if (ver >= ProtocolVersion::VERSION_2_1_5)
+                    errorCode = reader.ReadInt32();
             }
         }
 
@@ -332,7 +347,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryFetchResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryFetchResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             queryId = reader.ReadInt64();
 
@@ -349,7 +364,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryGetColumnsMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryGetColumnsMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             meta::ReadColumnMetaVector(reader, meta);
         }
@@ -364,7 +379,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryGetTablesMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryGetTablesMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             meta::ReadTableMetaVector(reader, meta);
         }
@@ -379,7 +394,7 @@ namespace ignite
             // No-op.
         }
 
-        void QueryGetParamsMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader)
+        void QueryGetParamsMetaResponse::ReadOnSuccess(impl::binary::BinaryReaderImpl& reader, const ProtocolVersion&)
         {
             utility::ReadByteArray(reader, typeIds);
         }

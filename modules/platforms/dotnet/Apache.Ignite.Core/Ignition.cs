@@ -28,11 +28,13 @@ namespace Apache.Ignite.Core
     using System.Threading;
     using Apache.Ignite.Core.Binary;
     using Apache.Ignite.Core.Cache.Affinity;
+    using Apache.Ignite.Core.Client;
     using Apache.Ignite.Core.Common;
     using Apache.Ignite.Core.Impl;
     using Apache.Ignite.Core.Impl.Binary;
     using Apache.Ignite.Core.Impl.Binary.IO;
     using Apache.Ignite.Core.Impl.Cache.Affinity;
+    using Apache.Ignite.Core.Impl.Client;
     using Apache.Ignite.Core.Impl.Common;
     using Apache.Ignite.Core.Impl.Handle;
     using Apache.Ignite.Core.Impl.Log;
@@ -210,6 +212,8 @@ namespace Apache.Ignite.Core
         public static unsafe IIgnite Start(IgniteConfiguration cfg)
         {
             IgniteArgumentCheck.NotNull(cfg, "cfg");
+
+            cfg = new IgniteConfiguration(cfg);  // Create a copy so that config can be modified and reused.
 
             lock (SyncRoot)
             {
@@ -450,6 +454,8 @@ namespace Apache.Ignite.Core
         /// </summary>
         /// <param name="interopProc">Interop processor.</param>
         /// <param name="stream">Stream.</param>
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
+            Justification = "PlatformJniTarget is passed further")]
         internal static void OnStart(IUnmanagedTarget interopProc, IBinaryStream stream)
         {
             try
@@ -727,6 +733,21 @@ namespace Apache.Ignite.Core
             }
 
             GC.Collect();
+        }
+
+        /// <summary>
+        /// Connects Ignite lightweight (thin) client to an Ignite node.
+        /// <para />
+        /// Thin client connects to an existing Ignite node with a socket and does not start JVM in process.
+        /// </summary>
+        /// <param name="clientConfiguration">The client configuration.</param>
+        /// <returns>Ignite instance.</returns>
+        public static IIgniteClient StartClient(IgniteClientConfiguration clientConfiguration)
+        {
+            IgniteArgumentCheck.NotNull(clientConfiguration, "clientConfiguration");
+            IgniteArgumentCheck.NotNull(clientConfiguration.Host, "clientConfiguration.Host");
+
+            return new IgniteClient(clientConfiguration);
         }
 
         /// <summary>
