@@ -53,6 +53,8 @@ import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.cache.store.CacheStoreSessionListener;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.DataRegionConfiguration;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.TransactionConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
@@ -120,6 +122,9 @@ public class GridCacheUtils {
     /** Each cache operation removes this amount of entries with expired TTL. */
     private static final int TTL_BATCH_SIZE = IgniteSystemProperties.getInteger(
         IgniteSystemProperties.IGNITE_TTL_EXPIRE_BATCH_SIZE, 5);
+
+    /** */
+    public static final int UNDEFINED_CACHE_ID = 0;
 
     /*
      *
@@ -438,59 +443,14 @@ public class GridCacheUtils {
     }
 
     /**
-     * Gets all nodes on which cache with the same name is started.
-     *
-     * @param ctx Cache context.
-     * @param topOrder Maximum allowed node order.
-     * @return All nodes on which cache with the same name is started (including nodes
-     *      that may have already left).
-     */
-    public static Collection<ClusterNode> allNodes(GridCacheContext ctx, AffinityTopologyVersion topOrder) {
-        return ctx.discovery().cacheNodes(ctx.cacheId(), topOrder);
-    }
-
-    /**
-     * Gets all nodes with at least one cache configured.
-     *
-     * @param ctx Shared cache context.
-     * @param topOrder Maximum allowed node order.
-     * @return All nodes on which cache with the same name is started (including nodes
-     *      that may have already left).
-     */
-    public static Collection<ClusterNode> allNodes(GridCacheSharedContext ctx, AffinityTopologyVersion topOrder) {
-        return ctx.discovery().cacheNodes(topOrder);
-    }
-
-    /**
-     * Gets remote nodes with at least one cache configured.
-     *
-     * @param ctx Cache shared context.
-     * @param topVer Topology version.
-     * @return Collection of remote nodes with at least one cache configured.
-     */
-    public static Collection<ClusterNode> remoteNodes(final GridCacheSharedContext ctx, AffinityTopologyVersion topVer) {
-        return ctx.discovery().remoteCacheNodes(topVer);
-    }
-
-    /**
-     * Gets all nodes on which cache with the same name is started and the local DHT storage is enabled.
-     *
-     * @param ctx Cache context.
-     * @return All nodes on which cache with the same name is started.
-     */
-    public static Collection<ClusterNode> affinityNodes(final GridCacheContext ctx) {
-        return ctx.discovery().cacheGroupAffinityNodes(ctx.groupId(), AffinityTopologyVersion.NONE);
-    }
-
-    /**
      * Gets DHT affinity nodes.
      *
      * @param ctx Cache context.
-     * @param topOrder Maximum allowed node order.
-     * @return Affinity nodes.
+     * @param topVer Topology version.
+     * @return Cache affinity nodes for given topology version.
      */
-    public static Collection<ClusterNode> affinityNodes(GridCacheContext ctx, AffinityTopologyVersion topOrder) {
-        return ctx.discovery().cacheGroupAffinityNodes(ctx.groupId(), topOrder);
+    public static Collection<ClusterNode> affinityNodes(GridCacheContext ctx, AffinityTopologyVersion topVer) {
+        return ctx.discovery().cacheGroupAffinityNodes(ctx.groupId(), topVer);
     }
 
     /**
@@ -1705,10 +1665,67 @@ public class GridCacheUtils {
         if (!F.isEmpty(entities)) {
             Collection<QueryEntity> normalEntities = new ArrayList<>(entities.size());
 
-            for (QueryEntity entity : entities)
+            for (QueryEntity entity : entities) {
+                if (!F.isEmpty(entity.getNotNullFields()))
+                    QueryUtils.checkNotNullAllowed(cfg);
+
                 normalEntities.add(QueryUtils.normalizeQueryEntity(entity, cfg.isSqlEscapeAll()));
+            }
 
             cfg.clearQueryEntities().setQueryEntities(normalEntities);
         }
+    }
+
+    /**
+     * Checks if cache configuration belongs to persistent cache.
+     *
+     * @param ccfg Cache configuration.
+     * @param dsCfg Data storage config.
+     */
+    public static boolean isPersistentCache(CacheConfiguration ccfg, DataStorageConfiguration dsCfg) {
+        if (dsCfg == null)
+            return false;
+
+        String regName = ccfg.getDataRegionName();
+
+        if (regName == null || regName.equals(dsCfg.getDefaultDataRegionConfiguration().getName()))
+            return dsCfg.getDefaultDataRegionConfiguration().isPersistenceEnabled();
+
+        if (dsCfg.getDataRegionConfigurations() != null) {
+            for (DataRegionConfiguration drConf : dsCfg.getDataRegionConfigurations()) {
+                if (regName.equals(drConf.getName()))
+                    return drConf.isPersistenceEnabled();
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return {@code true} if persistence is enabled for at least one data region, {@code false} if not.
+     */
+    public static boolean isPersistenceEnabled(IgniteConfiguration cfg) {
+        if (cfg.getDataStorageConfiguration() == null)
+            return false;
+
+        DataRegionConfiguration dfltReg = cfg.getDataStorageConfiguration().getDefaultDataRegionConfiguration();
+
+        if (dfltReg == null)
+            return false;
+
+        if (dfltReg.isPersistenceEnabled())
+            return true;
+
+        DataRegionConfiguration[] regCfgs = cfg.getDataStorageConfiguration().getDataRegionConfigurations();
+
+        if (regCfgs == null)
+            return false;
+
+        for (DataRegionConfiguration regCfg : regCfgs) {
+            if (regCfg.isPersistenceEnabled())
+                return true;
+        }
+
+        return false;
     }
 }

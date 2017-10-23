@@ -158,6 +158,9 @@ public class GridCacheSharedContext<K, V> {
     /** Concurrent DHT atomic updates counters. */
     private AtomicIntegerArray dhtAtomicUpdCnt;
 
+    /** Rebalance enabled flag. */
+    private boolean rebalanceEnabled = true;
+
     /** */
     private final List<IgniteChangeGlobalStateSupport> stateAwareMgrs;
 
@@ -301,6 +304,23 @@ public class GridCacheSharedContext<K, V> {
      */
     public IgniteLogger txRecoveryMessageLogger() {
         return txRecoveryMsgLog;
+    }
+
+    /**
+     * @return rebalance enabled flag.
+     */
+    public boolean isRebalanceEnabled() {
+        return this.rebalanceEnabled;
+    }
+
+    /**
+     * @param rebalanceEnabled rebalance enabled flag.
+     */
+    public void rebalanceEnabled(boolean rebalanceEnabled) {
+        this.rebalanceEnabled = rebalanceEnabled;
+
+        if (rebalanceEnabled)
+            cache().enableRebalance();
     }
 
     /**
@@ -910,7 +930,7 @@ public class GridCacheSharedContext<K, V> {
      * @throws IgniteCheckedException If failed.
      */
     public void endTx(GridNearTxLocal tx) throws IgniteCheckedException {
-        tx.txState().awaitLastFut(this);
+        tx.txState().awaitLastFuture(this);
 
         tx.close();
     }
@@ -924,7 +944,7 @@ public class GridCacheSharedContext<K, V> {
         GridCacheContext ctx = tx.txState().singleCacheContext(this);
 
         if (ctx == null) {
-            tx.txState().awaitLastFut(this);
+            tx.txState().awaitLastFuture(this);
 
             return tx.commitNearTxLocalAsync();
         }
@@ -938,7 +958,7 @@ public class GridCacheSharedContext<K, V> {
      * @return Rollback future.
      */
     public IgniteInternalFuture rollbackTxAsync(GridNearTxLocal tx) throws IgniteCheckedException {
-        tx.txState().awaitLastFut(this);
+        tx.txState().awaitLastFuture(this);
 
         return tx.rollbackNearTxLocalAsync();
     }
@@ -950,7 +970,7 @@ public class GridCacheSharedContext<K, V> {
      * @throws IgniteCheckedException If suspension failed.
      */
     public void suspendTx(GridNearTxLocal tx) throws IgniteCheckedException {
-        tx.txState().awaitLastFut(this);
+        tx.txState().awaitLastFuture(this);
 
         tx.suspend();
     }
@@ -962,7 +982,7 @@ public class GridCacheSharedContext<K, V> {
      * @throws IgniteCheckedException If resume failed.
      */
     public void resumeTx(GridNearTxLocal tx) throws IgniteCheckedException {
-        tx.txState().awaitLastFut(this);
+        tx.txState().awaitLastFuture(this);
 
         tx.resume();
     }

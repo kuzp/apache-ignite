@@ -27,6 +27,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
+    using System.Xml.Serialization;
     using Apache.Ignite.Core.Cache;
     using Apache.Ignite.Core.Cache.Affinity;
     using Apache.Ignite.Core.Cache.Affinity.Rendezvous;
@@ -34,6 +35,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
     using Apache.Ignite.Core.Cache.Expiry;
     using Apache.Ignite.Core.Cache.Store;
     using Apache.Ignite.Core.Common;
+    using Apache.Ignite.Core.Configuration;
     using Apache.Ignite.Core.Impl;
     using Apache.Ignite.Core.Impl.Binary;
     using Apache.Ignite.Core.Impl.Cache.Affinity;
@@ -81,6 +83,10 @@ namespace Apache.Ignite.Core.Cache.Configuration
         /// <summary> Default rebalance batch size in bytes. </summary>
         public const int DefaultRebalanceBatchSize = 512*1024; // 512K
 
+        /// <summary> Default value for <see cref="WriteSynchronizationMode"/> property.</summary>
+        public const CacheWriteSynchronizationMode DefaultWriteSynchronizationMode = 
+            CacheWriteSynchronizationMode.PrimarySync;
+
         /// <summary> Default value for eager ttl flag. </summary>
         public const bool DefaultEagerTtl = true;
 
@@ -112,7 +118,11 @@ namespace Apache.Ignite.Core.Cache.Configuration
         public static readonly TimeSpan DefaultLongQueryWarningTimeout = TimeSpan.FromMilliseconds(3000);
 
         /// <summary> Default value for keep portable in store behavior .</summary>
+        [Obsolete("Use DefaultKeepBinaryInStore instead.")]
         public const bool DefaultKeepVinaryInStore = true;
+
+        /// <summary> Default value for <see cref="KeepBinaryInStore"/> property.</summary>
+        public const bool DefaultKeepBinaryInStore = false;
 
         /// <summary> Default value for 'copyOnRead' flag. </summary>
         public const bool DefaultCopyOnRead = true;
@@ -128,6 +138,9 @@ namespace Apache.Ignite.Core.Cache.Configuration
 
         /// <summary> Default value for <see cref="PartitionLossPolicy"/>. </summary>
         public const PartitionLossPolicy DefaultPartitionLossPolicy = PartitionLossPolicy.Ignore;
+
+        /// <summary> Default value for <see cref="SqlIndexMaxInlineSize"/>. </summary>
+        public const int DefaultSqlIndexMaxInlineSize = -1;
 
         /// <summary>
         /// Gets or sets the cache name.
@@ -154,9 +167,10 @@ namespace Apache.Ignite.Core.Cache.Configuration
             AtomicityMode = DefaultAtomicityMode;
             CacheMode = DefaultCacheMode;
             CopyOnRead = DefaultCopyOnRead;
+            WriteSynchronizationMode = DefaultWriteSynchronizationMode;
             EagerTtl = DefaultEagerTtl;
             Invalidate = DefaultInvalidate;
-            KeepBinaryInStore = DefaultKeepVinaryInStore;
+            KeepBinaryInStore = DefaultKeepBinaryInStore;
             LoadPreviousValue = DefaultLoadPreviousValue;
             LockTimeout = DefaultLockTimeout;
 #pragma warning disable 618
@@ -175,6 +189,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
             WriteBehindFlushThreadCount= DefaultWriteBehindFlushThreadCount;
             WriteBehindCoalescing = DefaultWriteBehindCoalescing;
             PartitionLossPolicy = DefaultPartitionLossPolicy;
+            SqlIndexMaxInlineSize = DefaultSqlIndexMaxInlineSize;
         }
 
         /// <summary>
@@ -220,8 +235,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
                     Read(BinaryUtils.Marshaller.StartUnmarshal(stream));
                 }
 
-                // Plugins should be copied directly.
-                PluginConfigurations = other.PluginConfigurations;
+                CopyLocalProperties(other);
             }
         }
 
@@ -274,10 +288,11 @@ namespace Apache.Ignite.Core.Cache.Configuration
             ReadThrough = reader.ReadBoolean();
             WriteThrough = reader.ReadBoolean();
             EnableStatistics = reader.ReadBoolean();
-            MemoryPolicyName = reader.ReadString();
+            DataRegionName = reader.ReadString();
             PartitionLossPolicy = (PartitionLossPolicy) reader.ReadInt();
             GroupName = reader.ReadString();
             CacheStoreFactory = reader.ReadObject<IFactory<ICacheStore>>();
+            SqlIndexMaxInlineSize = reader.ReadInt();
 
             var count = reader.ReadInt();
             QueryEntities = count == 0
@@ -300,8 +315,9 @@ namespace Apache.Ignite.Core.Cache.Configuration
                     if (reader.ReadBoolean())
                     {
                         // FactoryId-based plugin: skip.
+                        reader.ReadInt();  // Skip factory id.
                         var size = reader.ReadInt();
-                        reader.Stream.Seek(size, SeekOrigin.Current);
+                        reader.Stream.Seek(size, SeekOrigin.Current);  // Skip custom data.
                     }
                     else
                     {
@@ -352,10 +368,11 @@ namespace Apache.Ignite.Core.Cache.Configuration
             writer.WriteBoolean(ReadThrough);
             writer.WriteBoolean(WriteThrough);
             writer.WriteBoolean(EnableStatistics);
-            writer.WriteString(MemoryPolicyName);
+            writer.WriteString(DataRegionName);
             writer.WriteInt((int) PartitionLossPolicy);
             writer.WriteString(GroupName);
             writer.WriteObject(CacheStoreFactory);
+            writer.WriteInt(SqlIndexMaxInlineSize);
 
             if (QueryEntities != null)
             {
@@ -404,7 +421,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
 
                         cachePlugin.WriteBinary(writer);
 
-                        writer.Stream.WriteInt(pos, writer.Stream.Position - pos);  // Write size.
+                        writer.Stream.WriteInt(pos, writer.Stream.Position - pos - 4);  // Write size.
                     }
                     else
                     {
@@ -417,6 +434,39 @@ namespace Apache.Ignite.Core.Cache.Configuration
             {
                 writer.WriteInt(0);
             }
+        }
+
+        /// <summary>
+        /// Copies the local properties (properties that are not written in Write method).
+        /// </summary>
+        internal void CopyLocalProperties(CacheConfiguration cfg)
+        {
+            Debug.Assert(cfg != null);
+
+            PluginConfigurations = cfg.PluginConfigurations;
+
+            if (QueryEntities != null && cfg.QueryEntities != null)
+            {
+                var entities = cfg.QueryEntities.Where(x => x != null).ToDictionary(x => GetQueryEntityKey(x), x => x);
+
+                foreach (var entity in QueryEntities.Where(x => x != null))
+                {
+                    QueryEntity src;
+
+                    if (entities.TryGetValue(GetQueryEntityKey(entity), out src))
+                    {
+                        entity.CopyLocalProperties(src);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the query entity key.
+        /// </summary>
+        private static string GetQueryEntityKey(QueryEntity x)
+        {
+            return x.KeyTypeName + "^" + x.ValueTypeName;
         }
 
         /// <summary>
@@ -438,6 +488,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
         /// Gets or sets write synchronization mode. This mode controls whether the main        
         /// caller should wait for update on other nodes to complete or not.
         /// </summary>
+        [DefaultValue(DefaultWriteSynchronizationMode)]
         public CacheWriteSynchronizationMode WriteSynchronizationMode { get; set; }
 
         /// <summary>
@@ -467,7 +518,7 @@ namespace Apache.Ignite.Core.Cache.Configuration
         /// Gets or sets the flag indicating whether <see cref="ICacheStore"/> is working with binary objects 
         /// instead of deserialized objects.
         /// </summary>
-        [DefaultValue(DefaultKeepVinaryInStore)]
+        [DefaultValue(DefaultKeepBinaryInStore)]
         public bool KeepBinaryInStore { get; set; }
 
         /// <summary>
@@ -698,7 +749,18 @@ namespace Apache.Ignite.Core.Cache.Configuration
         /// Gets or sets the name of the <see cref="MemoryPolicyConfiguration"/> for this cache.
         /// See <see cref="IgniteConfiguration.MemoryConfiguration"/>.
         /// </summary>
-        public string MemoryPolicyName { get; set; }
+        [Obsolete("Use DataRegionName.")]
+        [XmlIgnore]
+        public string MemoryPolicyName
+        {
+            get { return DataRegionName; }
+            set { DataRegionName = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the data region, see <see cref="DataRegionConfiguration"/>.
+        /// </summary>
+        public string DataRegionName { get; set; }
 
         /// <summary>
         /// Gets or sets write coalescing flag for write-behind cache store operations.
@@ -721,10 +783,17 @@ namespace Apache.Ignite.Core.Cache.Configuration
         /// <para />
         /// Since underlying cache is shared, the following configuration properties should be the same within group:
         /// <see cref="AffinityFunction"/>, <see cref="CacheMode"/>, <see cref="PartitionLossPolicy"/>,
-        /// <see cref="MemoryPolicyName"/>
+        /// <see cref="DataRegionName"/>
         /// <para />
         /// Grouping caches reduces overall overhead, since internal data structures are shared.
         /// </summary>
         public string GroupName { get;set; }
+
+        /// <summary>
+        /// Gets or sets maximum inline size in bytes for sql indexes. See also <see cref="QueryIndex.InlineSize"/>.
+        /// -1 for automatic.
+        /// </summary>
+        [DefaultValue(DefaultSqlIndexMaxInlineSize)]
+        public int SqlIndexMaxInlineSize { get; set; }
     }
 }

@@ -254,11 +254,7 @@ public class IgniteTxHandler {
     ) {
         req.txState(locTx.txState());
 
-        IgniteInternalFuture<GridNearTxPrepareResponse> fut = locTx.prepareAsyncLocal(
-            req.reads(),
-            req.writes(),
-            req.transactionNodes(),
-            req.last());
+        IgniteInternalFuture<GridNearTxPrepareResponse> fut = locTx.prepareAsyncLocal(req);
 
         if (locTx.isRollbackOnly())
             locTx.rollbackNearTxLocalAsync();
@@ -520,14 +516,7 @@ public class IgniteTxHandler {
             if (req.needReturnValue())
                 tx.needReturnValue(true);
 
-            IgniteInternalFuture<GridNearTxPrepareResponse> fut = tx.prepareAsync(
-                req.reads(),
-                req.writes(),
-                req.dhtVersions(),
-                req.messageId(),
-                req.miniId(),
-                req.transactionNodes(),
-                req.last());
+            IgniteInternalFuture<GridNearTxPrepareResponse> fut = tx.prepareAsync(req);
 
             if (tx.isRollbackOnly() && !tx.commitOnPrepare()) {
                 if (tx.state() != TransactionState.ROLLED_BACK && tx.state() != TransactionState.ROLLING_BACK)
@@ -649,7 +638,7 @@ public class IgniteTxHandler {
             txPrepareMsgLog.debug("Received near prepare response [txId=" + res.version() + ", node=" + nodeId + ']');
 
         GridNearTxPrepareFutureAdapter fut = (GridNearTxPrepareFutureAdapter)ctx.mvcc()
-            .<IgniteInternalTx>mvccFuture(res.version(), res.futureId());
+            .<IgniteInternalTx>versionedFuture(res.version(), res.futureId());
 
         if (fut == null) {
             U.warn(log, "Failed to find future for near prepare response [txId=" + res.version() +
@@ -698,7 +687,7 @@ public class IgniteTxHandler {
      * @param res Response.
      */
     private void processDhtTxPrepareResponse(UUID nodeId, GridDhtTxPrepareResponse res) {
-        GridDhtTxPrepareFuture fut = (GridDhtTxPrepareFuture)ctx.mvcc().mvccFuture(res.version(), res.futureId());
+        GridDhtTxPrepareFuture fut = (GridDhtTxPrepareFuture)ctx.mvcc().versionedFuture(res.version(), res.futureId());
 
         if (fut == null) {
             if (txPrepareMsgLog.isDebugEnabled()) {
@@ -788,7 +777,7 @@ public class IgniteTxHandler {
 
         IgniteInternalFuture<IgniteInternalTx> fut = finish(nodeId, null, req);
 
-        assert req.txState() != null || (fut != null && fut.error() != null) ||
+        assert req.txState() != null || fut == null || fut.error() != null ||
             (ctx.tm().tx(req.version()) == null && ctx.tm().nearTx(req.version()) == null) :
             "[req=" + req + ", fut=" + fut + "]";
 
@@ -968,28 +957,30 @@ public class IgniteTxHandler {
             }
         }
         catch (Throwable e) {
-            tx.commitError(e);
-
-            tx.systemInvalidate(true);
-
             U.error(log, "Failed completing transaction [commit=" + req.commit() + ", tx=" + tx + ']', e);
 
-            IgniteInternalFuture<IgniteInternalTx> res = null;
+            if (tx != null) {
+                tx.commitError(e);
 
-            try {
-                res = tx.rollbackDhtLocalAsync();
+                tx.systemInvalidate(true);
 
-                // Only for error logging.
-                res.listen(CU.errorLogger(log));
-            }
-            catch (Throwable e1) {
-                e.addSuppressed(e1);
+                try {
+                    IgniteInternalFuture<IgniteInternalTx> res = tx.rollbackDhtLocalAsync();
+
+                    // Only for error logging.
+                    res.listen(CU.errorLogger(log));
+
+                    return res;
+                }
+                catch (Throwable e1) {
+                    e.addSuppressed(e1);
+                }
             }
 
             if (e instanceof Error)
                 throw (Error)e;
 
-            return res;
+            return new GridFinishedFuture<>(e);
         }
     }
 
@@ -1174,8 +1165,8 @@ public class IgniteTxHandler {
         else
             sendReply(nodeId, req, res, dhtTx, nearTx);
 
-        assert req.txState() != null || res.error() != null ||
-            (ctx.tm().tx(req.version()) == null && ctx.tm().nearTx(req.version()) == null);
+        assert req.txState() != null || res.error() != null || (dhtTx == null && nearTx == null) :
+            req + " tx=" + dhtTx + " nearTx=" + nearTx;
     }
 
     /**
@@ -1277,11 +1268,7 @@ public class IgniteTxHandler {
         else
             sendReply(nodeId, req, true, null);
 
-        IgniteInternalTx tx0 = ctx.tm().tx(req.version());
-
-        IgniteInternalTx nearTx0 = ctx.tm().nearTx(req.version());
-
-        assert req.txState() != null || (tx0 == null && nearTx0 == null) : req + " tx=" + tx0 + " nearTx=" + nearTx0;
+        assert req.txState() != null || (dhtTx == null && nearTx == null) : req + " tx=" + dhtTx + " nearTx=" + nearTx;
     }
 
     /**
@@ -1642,39 +1629,39 @@ public class IgniteTxHandler {
                                 entry.op() == TRANSFORM &&
                                 entry.oldValueOnPrimary() &&
                                 !entry.hasValue()) {
-                                while (true) {
-                                    try {
-                                        GridCacheEntryEx cached = entry.cached();
+                                    while (true) {
+                                        try {
+                                            GridCacheEntryEx cached = entry.cached();
 
-                                        if (cached == null) {
-                                            cached = cacheCtx.cache().entryEx(entry.key(), req.topologyVersion());
+                                            if (cached == null) {
+                                                cached = cacheCtx.cache().entryEx(entry.key(), req.topologyVersion());
 
-                                            entry.cached(cached);
-                                        }
+                                                entry.cached(cached);
+                                            }
 
-                                        CacheObject val = cached.innerGet(
-                                            /*ver*/null,
-                                            tx,
-                                            /*readThrough*/false,
-                                            /*updateMetrics*/false,
-                                            /*evt*/false,
-                                            tx.subjectId(),
-                                            /*transformClo*/null,
-                                            tx.resolveTaskName(),
-                                            /*expiryPlc*/null,
-                                            /*keepBinary*/true);
+                                            CacheObject val = cached.innerGet(
+                                                /*ver*/null,
+                                                tx,
+                                                /*readThrough*/false,
+                                                /*updateMetrics*/false,
+                                                /*evt*/false,
+                                                tx.subjectId(),
+                                                /*transformClo*/null,
+                                                tx.resolveTaskName(),
+                                                /*expiryPlc*/null,
+                                                /*keepBinary*/true);
 
-                                        if (val == null)
-                                            val = cacheCtx.toCacheObject(cacheCtx.store().load(null, entry.key()));
+                                            if (val == null)
+                                                val = cacheCtx.toCacheObject(cacheCtx.store().load(null, entry.key()));
 
-                                        if (val != null)
-                                            entry.readValue(val);
+                                            if (val != null)
+                                                entry.readValue(val);
 
-                                    break;
-                                }
-                                catch (GridCacheEntryRemovedException ignored) {
-                                    if (log.isDebugEnabled())
-                                        log.debug("Got entry removed exception, will retry: " + entry.txKey());
+                                        break;
+                                    }
+                                    catch (GridCacheEntryRemovedException ignored) {
+                                        if (log.isDebugEnabled())
+                                            log.debug("Got entry removed exception, will retry: " + entry.txKey());
 
                                         entry.cached(cacheCtx.cache().entryEx(entry.key(), req.topologyVersion()));
                                     }

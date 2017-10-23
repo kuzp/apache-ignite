@@ -402,6 +402,15 @@ public class GridDhtPartitionDemander {
             return;
         }
 
+        if (!ctx.kernalContext().grid().isRebalanceEnabled()) {
+            if (log.isDebugEnabled())
+                log.debug("Cancel partition demand because rebalance disabled on current node.");
+
+            fut.cancel();
+
+            return;
+        }
+
         synchronized (fut) { // Synchronized to prevent consistency issues in case of parallel cancellation.
             if (fut.isDone())
                 return;
@@ -665,15 +674,6 @@ public class GridDhtPartitionDemander {
                         try {
                             // Loop through all received entries and try to preload them.
                             for (GridCacheEntryInfo entry : e.getValue().infos()) {
-                                if (!part.preloadingPermitted(entry.key(), entry.version())) {
-                                    if (log.isDebugEnabled())
-                                        log.debug("Preloading is not permitted for entry due to " +
-                                            "evictions [key=" + entry.key() +
-                                            ", ver=" + entry.version() + ']');
-
-                                    continue;
-                                }
-
                                 if (!preloadEntry(node, p, entry, topVer)) {
                                     if (log.isDebugEnabled())
                                         log.debug("Got entries for invalid partition during " +

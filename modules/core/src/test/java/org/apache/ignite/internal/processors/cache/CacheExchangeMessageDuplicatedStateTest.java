@@ -195,7 +195,7 @@ public class CacheExchangeMessageDuplicatedStateTest extends GridCommonAbstractT
 
         List<Object> msgs = commSpi0.recordedMessages(false);
 
-        assertTrue(msgs.size() > 0);
+        assertTrue(!msgs.isEmpty());
 
         for (Object msg : msgs) {
             assertTrue("Unexpected messages: " + msg, msg instanceof GridDhtPartitionsFullMessage);
@@ -219,7 +219,7 @@ public class CacheExchangeMessageDuplicatedStateTest extends GridCommonAbstractT
 
             List<Object> msgs = commSpi0.recordedMessages(false);
 
-            assertTrue(msgs.size() > 0);
+            assertTrue(!msgs.isEmpty());
 
             for (Object msg : msgs) {
                 assertTrue("Unexpected messages: " + msg, msg instanceof GridDhtPartitionsSingleMessage);

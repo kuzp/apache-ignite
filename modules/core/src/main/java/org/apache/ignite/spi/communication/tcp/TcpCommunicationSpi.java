@@ -321,6 +321,9 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
     /** Default value for {@code TCP_NODELAY} socket option (value is <tt>true</tt>). */
     public static final boolean DFLT_TCP_NODELAY = true;
 
+    /** Default value for {@code FILTER_REACHABLE_ADDRESSES} socket option (value is <tt>false</tt>). */
+    public static final boolean DFLT_FILTER_REACHABLE_ADDRESSES = false;
+
     /** Default received messages threshold for sending ack. */
     public static final int DFLT_ACK_SND_THRESHOLD = 32;
 
@@ -1051,6 +1054,9 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
     /** {@code TCP_NODELAY} option value for created sockets. */
     private boolean tcpNoDelay = DFLT_TCP_NODELAY;
 
+    /** {@code FILTER_REACHABLE_ADDRESSES} option value for created sockets. */
+    private boolean filterReachableAddresses = DFLT_FILTER_REACHABLE_ADDRESSES;
+
     /** Number of received messages after which acknowledgment is sent. */
     private int ackSndThreshold = DFLT_ACK_SND_THRESHOLD;
 
@@ -1658,6 +1664,33 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
      */
     public boolean isTcpNoDelay() {
         return tcpNoDelay;
+    }
+
+    /**
+     * Gets value for {@code FILTER_REACHABLE_ADDRESSES} socket option.
+     *
+     * @return {@code True} if needed to filter reachable addresses.
+     */
+    public boolean isFilterReachableAddresses() {
+        return filterReachableAddresses;
+    }
+
+    /**
+     * Setting this option to {@code true} enables filter for reachable
+     * addresses on creating tcp client.
+     * <p>
+     * Usually its advised to set this value to {@code false}.
+     * <p>
+     * If not provided, default value is {@link #DFLT_FILTER_REACHABLE_ADDRESSES}.
+     *
+     * @param filterReachableAddresses {@code True} to filter reachable addresses.
+     * @return {@code this} for chaining.
+     */
+    @IgniteSpiConfiguration(optional = true)
+    public TcpCommunicationSpi setFilterReachableAddresses(boolean filterReachableAddresses) {
+        this.filterReachableAddresses = filterReachableAddresses;
+
+        return this;
     }
 
     /**
@@ -2861,12 +2894,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
             }
 
             try {
-                safeHandshake(client,
-                    null,
-                    node.id(),
-                    timeoutHelper.nextTimeoutChunk(connTimeout0),
-                    null,
-                    null);
+                safeShmemHandshake(client, node.id(), timeoutHelper.nextTimeoutChunk(connTimeout0));
             }
             catch (HandshakeTimeoutException | IgniteSpiOperationTimeoutException e) {
                 client.forceClose();
@@ -2947,14 +2975,11 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
     }
 
     /**
-     * Establish TCP connection to remote node and returns client.
-     *
-     * @param node Remote node.
-     * @param connIdx Connection index.
-     * @return Client.
-     * @throws IgniteCheckedException If failed.
+     * @param node Node.
+     * @return Node addresses.
+     * @throws IgniteCheckedException If node does not have addresses.
      */
-    protected GridCommunicationClient createTcpClient(ClusterNode node, int connIdx) throws IgniteCheckedException {
+    private LinkedHashSet<InetSocketAddress> nodeAddresses(ClusterNode node) throws IgniteCheckedException {
         Collection<String> rmtAddrs0 = node.attribute(createSpiAttributeName(ATTR_ADDRS));
         Collection<String> rmtHostNames0 = node.attribute(createSpiAttributeName(ATTR_HOST_NAMES));
         Integer boundPort = node.attribute(createSpiAttributeName(ATTR_PORT));
@@ -2987,37 +3012,52 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
         if (isExtAddrsExist)
             addrs.addAll(extAddrs);
 
-        Set<InetAddress> allInetAddrs = U.newHashSet(addrs.size());
-
-        for (InetSocketAddress addr : addrs) {
-            // Skip unresolved as addr.getAddress() can return null.
-            if(!addr.isUnresolved())
-                allInetAddrs.add(addr.getAddress());
-        }
-
-        List<InetAddress> reachableInetAddrs = U.filterReachable(allInetAddrs);
-
-        if (reachableInetAddrs.size() < allInetAddrs.size()) {
-            LinkedHashSet<InetSocketAddress> addrs0 = U.newLinkedHashSet(addrs.size());
-
-            List<InetSocketAddress> unreachableInetAddr = new ArrayList<>(allInetAddrs.size() - reachableInetAddrs.size());
+        if (filterReachableAddresses) {
+            Set<InetAddress> allInetAddrs = U.newHashSet(addrs.size());
 
             for (InetSocketAddress addr : addrs) {
-                if (reachableInetAddrs.contains(addr.getAddress()))
-                    addrs0.add(addr);
-                else
-                    unreachableInetAddr.add(addr);
+                // Skip unresolved as addr.getAddress() can return null.
+                if (!addr.isUnresolved())
+                    allInetAddrs.add(addr.getAddress());
             }
 
-            addrs0.addAll(unreachableInetAddr);
+            List<InetAddress> reachableInetAddrs = U.filterReachable(allInetAddrs);
 
-            addrs = addrs0;
+            if (reachableInetAddrs.size() < allInetAddrs.size()) {
+                LinkedHashSet<InetSocketAddress> addrs0 = U.newLinkedHashSet(addrs.size());
+
+                List<InetSocketAddress> unreachableInetAddr = new ArrayList<>(allInetAddrs.size() - reachableInetAddrs.size());
+
+                for (InetSocketAddress addr : addrs) {
+                    if (reachableInetAddrs.contains(addr.getAddress()))
+                        addrs0.add(addr);
+                    else
+                        unreachableInetAddr.add(addr);
+                }
+
+                addrs0.addAll(unreachableInetAddr);
+
+                addrs = addrs0;
+            }
+
+            if (log.isDebugEnabled())
+                log.debug("Addresses to connect for node [rmtNode=" + node.id() + ", addrs=" + addrs.toString() + ']');
         }
 
-        if (log.isDebugEnabled())
-            log.debug("Addresses to connect for node [rmtNode=" + node.id() + ", addrs=" + addrs.toString() + ']');
+        return addrs;
+    }
 
-        boolean conn = false;
+    /**
+     * Establish TCP connection to remote node and returns client.
+     *
+     * @param node Remote node.
+     * @param connIdx Connection index.
+     * @return Client.
+     * @throws IgniteCheckedException If failed.
+     */
+    protected GridCommunicationClient createTcpClient(ClusterNode node, int connIdx) throws IgniteCheckedException {
+        LinkedHashSet<InetSocketAddress> addrs = nodeAddresses(node);
+
         GridCommunicationClient client = null;
         IgniteCheckedException errs = null;
 
@@ -3033,7 +3073,9 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
 
             int lastWaitingTimeout = 1;
 
-            while (!conn) { // Reconnection on handshake timeout.
+            while (client == null) { // Reconnection on handshake timeout.
+                boolean needWait = false;
+
                 try {
                     SocketChannel ch = SocketChannel.open();
 
@@ -3065,7 +3107,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                         return null;
                     }
 
-                    Long rcvCnt = null;
+                    Long rcvCnt;
 
                     Map<Integer, Object> meta = new HashMap<>();
 
@@ -3086,7 +3128,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
 
                         Integer handshakeConnIdx = connIdx;
 
-                        rcvCnt = safeHandshake(ch,
+                        rcvCnt = safeTcpHandshake(ch,
                             recoveryDesc,
                             node.id(),
                             timeoutHelper.nextTimeoutChunk(connTimeout0),
@@ -3094,52 +3136,42 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                             handshakeConnIdx);
 
                         if (rcvCnt == ALREADY_CONNECTED) {
-                            recoveryDesc.release();
-
                             return null;
                         }
                         else if (rcvCnt == NODE_STOPPING) {
-                            recoveryDesc.release();
-
                             throw new ClusterTopologyCheckedException("Remote node started stop procedure: " + node.id());
                         }
                         else if (rcvCnt == NEED_WAIT) {
-                            recoveryDesc.release();
-
-                            U.closeQuiet(ch);
-
-                            if (lastWaitingTimeout < 60000)
-                                lastWaitingTimeout *= 2;
-
-                            U.sleep(lastWaitingTimeout);
+                            needWait = true;
 
                             continue;
                         }
-                    }
-                    finally {
-                        if (recoveryDesc != null && rcvCnt == null)
-                            recoveryDesc.release();
-                    }
 
-                    try {
                         meta.put(CONN_IDX_META, connKey);
 
                         if (recoveryDesc != null) {
                             recoveryDesc.onHandshake(rcvCnt);
 
-                            meta.put(-1, recoveryDesc);
+                            meta.put(GridNioServer.RECOVERY_DESC_META_KEY, recoveryDesc);
                         }
 
-                        GridNioSession ses = nioSrvr.createSession(ch, meta).get();
+                        GridNioSession ses = nioSrvr.createSession(ch, meta, false, null).get();
 
                         client = new GridTcpNioCommunicationClient(connIdx, ses, log);
-
-                        conn = true;
                     }
                     finally {
-                        if (!conn) {
+                        if (client == null) {
+                            U.closeQuiet(ch);
+
                             if (recoveryDesc != null)
                                 recoveryDesc.release();
+
+                            if (needWait) {
+                                if (lastWaitingTimeout < 60000)
+                                    lastWaitingTimeout *= 2;
+
+                                U.sleep(lastWaitingTimeout);
+                            }
                         }
                     }
                 }
@@ -3261,7 +3293,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                 }
             }
 
-            if (conn)
+            if (client != null)
                 break;
         }
 
@@ -3274,14 +3306,17 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                     "operating system firewall is disabled on local and remote hosts) " +
                     "[addrs=" + addrs + ']');
 
-            if (enableForcibleNodeKill) {if (getSpiContext().node(node.id()) != null && (CU.clientNode(node) || !CU.clientNode(getLocalNode())) &&
-                X.hasCause(errs, ConnectException.class,HandshakeException.class, SocketTimeoutException.class, HandshakeTimeoutException.class,
-                    IgniteSpiOperationTimeoutException.class)) {String msg = "TcpCommunicationSpi failed to establish connection to node, node will be dropped from " +
+            if (enableForcibleNodeKill) {
+                if (getSpiContext().node(node.id()) != null
+                    && (CU.clientNode(node) ||  !CU.clientNode(getLocalNode())) &&
+                    connectionError(errs)) {
+                    String msg = "TcpCommunicationSpi failed to establish connection to node, node will be dropped from " +
                         "cluster [" + "rmtNode=" + node + ']';
 
-                if(enableTroubleshootingLog)U.error(log, msg, errs);
+                    if (enableTroubleshootingLog)
+                        U.error(log, msg, errs);
                     else
-                    U.warn(log, msg);
+                        U.warn(log, msg);
 
                     getSpiContext().failNode(node.id(), "TcpCommunicationSpi failed to establish connection to node [" +
                         "rmtNode=" + node +
@@ -3298,9 +3333,57 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
     }
 
     /**
+     * @param errs Error.
+     * @return {@code True} if error was caused by some connection IO error.
+     */
+    private static boolean connectionError(IgniteCheckedException errs) {
+        return X.hasCause(errs, ConnectException.class,
+            HandshakeException.class,
+            SocketTimeoutException.class,
+            HandshakeTimeoutException.class,
+            IgniteSpiOperationTimeoutException.class);
+    }
+
+    /**
      * Performs handshake in timeout-safe way.
      *
      * @param client Client.
+     * @param rmtNodeId Remote node.
+     * @param timeout Timeout for handshake.
+     * @throws IgniteCheckedException If handshake failed or wasn't completed withing timeout.
+     */
+    @SuppressWarnings("ThrowFromFinallyBlock")
+    private void safeShmemHandshake(
+        GridCommunicationClient client,
+        UUID rmtNodeId,
+        long timeout
+    ) throws IgniteCheckedException {
+        HandshakeTimeoutObject<GridCommunicationClient> obj = new HandshakeTimeoutObject<>(client,
+            U.currentTimeMillis() + timeout);
+
+        addTimeoutObject(obj);
+
+        try {
+            client.doHandshake(new HandshakeClosure(rmtNodeId));
+        }
+        finally {
+            boolean cancelled = obj.cancel();
+
+            if (cancelled)
+                removeTimeoutObject(obj);
+
+            // Ignoring whatever happened after timeout - reporting only timeout event.
+            if (!cancelled)
+                throw new HandshakeTimeoutException(
+                    new IgniteSpiOperationTimeoutException("Failed to perform handshake due to timeout " +
+                        "(consider increasing 'connectionTimeout' configuration property)."));
+        }
+    }
+
+    /**
+     * Performs handshake in timeout-safe way.
+     *
+     * @param ch Socket channel.
      * @param recovery Recovery descriptor if use recovery handshake, otherwise {@code null}.
      * @param rmtNodeId Remote node.
      * @param timeout Timeout for handshake.
@@ -3310,232 +3393,214 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
      * @return Handshake response.
      */
     @SuppressWarnings("ThrowFromFinallyBlock")
-    private <T> long safeHandshake(
-        T client,
+    private long safeTcpHandshake(
+        SocketChannel ch,
         @Nullable GridNioRecoveryDescriptor recovery,
         UUID rmtNodeId,
         long timeout,
         GridSslMeta sslMeta,
         @Nullable Integer handshakeConnIdx
     ) throws IgniteCheckedException {
-        HandshakeTimeoutObject<T> obj = new HandshakeTimeoutObject<>(client, U.currentTimeMillis() + timeout);
+        HandshakeTimeoutObject obj = new HandshakeTimeoutObject<>(ch, U.currentTimeMillis() + timeout);
 
         addTimeoutObject(obj);
 
         long rcvCnt = 0;
 
         try {
-            if (client instanceof GridCommunicationClient)
-                ((GridCommunicationClient)client).doHandshake(new HandshakeClosure(rmtNodeId));
+            BlockingSslHandler sslHnd = null;
+
+            ByteBuffer buf;
+
+            if (isSslEnabled()) {
+                assert sslMeta != null;
+
+                sslHnd = new BlockingSslHandler(sslMeta.sslEngine(), ch, directBuf, ByteOrder.nativeOrder(), log);
+
+                if (!sslHnd.handshake())
+                    throw new HandshakeException("SSL handshake is not completed.");
+
+                ByteBuffer handBuff = sslHnd.applicationBuffer();
+
+                if (handBuff.remaining() < NodeIdMessage.MESSAGE_FULL_SIZE) {
+                    buf = ByteBuffer.allocate(1000);
+
+                    int read = ch.read(buf);
+
+                    if (read == -1)
+                        throw new HandshakeException("Failed to read remote node ID (connection closed).");
+
+                    buf.flip();
+
+                    buf = sslHnd.decode(buf);
+                }
+                else
+                    buf = handBuff;
+            }
             else {
-                SocketChannel ch = (SocketChannel)client;
+                buf = ByteBuffer.allocate(NodeIdMessage.MESSAGE_FULL_SIZE);
 
-                boolean success = false;
+                for (int i = 0; i < NodeIdMessage.MESSAGE_FULL_SIZE; ) {
+                    int read = ch.read(buf);
 
-                try {
-                    BlockingSslHandler sslHnd = null;
+                    if (read == -1)
+                        throw new HandshakeException("Failed to read remote node ID (connection closed).");
 
-                    ByteBuffer buf;
+                    i += read;
+                }
+            }
 
-                    if (isSslEnabled()) {
-                        assert sslMeta != null;
+            UUID rmtNodeId0 = U.bytesToUuid(buf.array(), Message.DIRECT_TYPE_SIZE);
 
-                        sslHnd = new BlockingSslHandler(sslMeta.sslEngine(), ch, directBuf, ByteOrder.nativeOrder(), log);
+            if (!rmtNodeId.equals(rmtNodeId0))
+                throw new HandshakeException("Remote node ID is not as expected [expected=" + rmtNodeId +
+                    ", rcvd=" + rmtNodeId0 + ']');
+            else if (log.isDebugEnabled())
+                log.debug("Received remote node ID: " + rmtNodeId0);
 
-                        if (!sslHnd.handshake())
-                            throw new HandshakeException("SSL handshake is not completed.");
+            if (isSslEnabled()) {
+                assert sslHnd != null;
 
-                        ByteBuffer handBuff = sslHnd.applicationBuffer();
+                ch.write(sslHnd.encrypt(ByteBuffer.wrap(U.IGNITE_HEADER)));
+            }
+            else
+                ch.write(ByteBuffer.wrap(U.IGNITE_HEADER));
 
-                        if (handBuff.remaining() < NodeIdMessage.MESSAGE_FULL_SIZE) {
-                            buf = ByteBuffer.allocate(1000);
+            ClusterNode locNode = getLocalNode();
 
-                            int read = ch.read(buf);
+            if (locNode == null)
+                throw new IgniteCheckedException("Local node has not been started or " +
+                    "fully initialized [isStopping=" + getSpiContext().isStopping() + ']');
 
-                            if (read == -1)
-                                throw new HandshakeException("Failed to read remote node ID (connection closed).");
+            if (recovery != null) {
+                HandshakeMessage msg;
 
-                            buf.flip();
+                int msgSize = HandshakeMessage.MESSAGE_FULL_SIZE;
 
-                            buf = sslHnd.decode(buf);
-                        }
-                        else
-                            buf = handBuff;
-                    }
-                    else {
-                        buf = ByteBuffer.allocate(NodeIdMessage.MESSAGE_FULL_SIZE);
+                if (handshakeConnIdx != null) {
+                    msg = new HandshakeMessage2(locNode.id(),
+                        recovery.incrementConnectCount(),
+                        recovery.received(),
+                        handshakeConnIdx);
 
-                        for (int i = 0; i < NodeIdMessage.MESSAGE_FULL_SIZE; ) {
-                            int read = ch.read(buf);
+                    msgSize += 4;
+                }
+                else {
+                    msg = new HandshakeMessage(locNode.id(),
+                        recovery.incrementConnectCount(),
+                        recovery.received());
+                }
 
-                            if (read == -1)
-                                throw new HandshakeException("Failed to read remote node ID (connection closed).");
+                if (log.isDebugEnabled())
+                    log.debug("Writing handshake message [locNodeId=" + locNode.id() +
+                        ", rmtNode=" + rmtNodeId + ", msg=" + msg + ']');
 
-                            i += read;
-                        }
-                    }
+                buf = ByteBuffer.allocate(msgSize);
 
-                    UUID rmtNodeId0 = U.bytesToUuid(buf.array(), Message.DIRECT_TYPE_SIZE);
+                buf.order(ByteOrder.nativeOrder());
 
-                    if (!rmtNodeId.equals(rmtNodeId0))
-                        throw new HandshakeException("Remote node ID is not as expected [expected=" + rmtNodeId +
-                            ", rcvd=" + rmtNodeId0 + ']');
-                    else if (log.isDebugEnabled())
-                        log.debug("Received remote node ID: " + rmtNodeId0);
+                boolean written = msg.writeTo(buf, null);
 
-                    if (isSslEnabled()) {
-                        assert sslHnd != null;
+                assert written;
 
-                        ch.write(sslHnd.encrypt(ByteBuffer.wrap(U.IGNITE_HEADER)));
-                    }
-                    else
-                        ch.write(ByteBuffer.wrap(U.IGNITE_HEADER));
+                buf.flip();
 
-                    ClusterNode locNode = getLocalNode();
+                if (isSslEnabled()) {
+                    assert sslHnd != null;
 
-                    if (locNode == null)
-                        throw new IgniteCheckedException("Local node has not been started or " +
-                            "fully initialized [isStopping=" + getSpiContext().isStopping() + ']');
+                    ch.write(sslHnd.encrypt(buf));
+                }
+                else
+                    ch.write(buf);
+            }
+            else {
+                if (isSslEnabled()) {
+                    assert sslHnd != null;
 
-                    if (recovery != null) {
-                        HandshakeMessage msg;
+                    ch.write(sslHnd.encrypt(ByteBuffer.wrap(nodeIdMessage().nodeIdBytesWithType)));
+                }
+                else
+                    ch.write(ByteBuffer.wrap(nodeIdMessage().nodeIdBytesWithType));
+            }
 
-                        int msgSize = HandshakeMessage.MESSAGE_FULL_SIZE;
+            if (recovery != null) {
+                if (log.isDebugEnabled())
+                    log.debug("Waiting for handshake [rmtNode=" + rmtNodeId + ']');
 
-                        if (handshakeConnIdx != null) {
-                            msg = new HandshakeMessage2(locNode.id(),
-                                recovery.incrementConnectCount(),
-                                recovery.received(),
-                                handshakeConnIdx);
+                if (isSslEnabled()) {
+                    assert sslHnd != null;
 
-                            msgSize += 4;
-                        }
-                        else {
-                            msg = new HandshakeMessage(locNode.id(),
-                                recovery.incrementConnectCount(),
-                                recovery.received());
-                        }
+                    buf = ByteBuffer.allocate(1000);
+                    buf.order(ByteOrder.nativeOrder());
 
-                        if (log.isDebugEnabled())
-                            log.debug("Writing handshake message [locNodeId=" + locNode.id() +
-                                ", rmtNode=" + rmtNodeId + ", msg=" + msg + ']');
+                    ByteBuffer decode = ByteBuffer.allocate(2 * buf.capacity());
+                    decode.order(ByteOrder.nativeOrder());
 
-                        buf = ByteBuffer.allocate(msgSize);
+                    for (int i = 0; i < RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE; ) {
+                        int read = ch.read(buf);
 
-                        buf.order(ByteOrder.nativeOrder());
-
-                        boolean written = msg.writeTo(buf, null);
-
-                        assert written;
+                        if (read == -1)
+                            throw new HandshakeException("Failed to read remote node recovery handshake " +
+                                "(connection closed).");
 
                         buf.flip();
 
-                        if (isSslEnabled()) {
-                            assert sslHnd != null;
+                        ByteBuffer decode0 = sslHnd.decode(buf);
 
-                            ch.write(sslHnd.encrypt(buf));
-                        }
-                        else
-                            ch.write(buf);
-                    }
-                    else {
-                        if (isSslEnabled()) {
-                            assert sslHnd != null;
+                        i += decode0.remaining();
 
-                            ch.write(sslHnd.encrypt(ByteBuffer.wrap(nodeIdMessage().nodeIdBytesWithType)));
-                        }
-                        else
-                            ch.write(ByteBuffer.wrap(nodeIdMessage().nodeIdBytesWithType));
+                        decode = appendAndResizeIfNeeded(decode, decode0);
+
+                        buf.clear();
                     }
 
-                    if (recovery != null) {
-                        if (log.isDebugEnabled())
-                            log.debug("Waiting for handshake [rmtNode=" + rmtNodeId + ']');
+                    decode.flip();
 
-                        if (isSslEnabled()) {
-                            assert sslHnd != null;
+                    rcvCnt = decode.getLong(Message.DIRECT_TYPE_SIZE);
 
-                            buf = ByteBuffer.allocate(1000);
-                            buf.order(ByteOrder.nativeOrder());
+                    if (decode.limit() > RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE) {
+                        decode.position(RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE);
 
-                            ByteBuffer decode = ByteBuffer.allocate(2 * buf.capacity());
-                            decode.order(ByteOrder.nativeOrder());
-
-                            for (int i = 0; i < RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE; ) {
-                                int read = ch.read(buf);
-
-                                if (read == -1)
-                                    throw new HandshakeException("Failed to read remote node recovery handshake " +
-                                        "(connection closed).");
-
-                                buf.flip();
-
-                                ByteBuffer decode0 = sslHnd.decode(buf);
-
-                                i += decode0.remaining();
-
-                                decode = appendAndResizeIfNeeded(decode, decode0);
-
-                                buf.clear();
-                            }
-
-                            decode.flip();
-
-                            rcvCnt = decode.getLong(Message.DIRECT_TYPE_SIZE);
-
-                            if (decode.limit() > RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE) {
-                                decode.position(RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE);
-
-                                sslMeta.decodedBuffer(decode);
-                            }
-
-                            ByteBuffer inBuf = sslHnd.inputBuffer();
-
-                            if (inBuf.position() > 0)
-                                sslMeta.encodedBuffer(inBuf);
-                        }
-                        else {
-                            buf = ByteBuffer.allocate(RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE);
-
-                            buf.order(ByteOrder.nativeOrder());
-
-                            for (int i = 0; i < RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE; ) {
-                                int read = ch.read(buf);
-
-                                if (read == -1)
-                                    throw new HandshakeException("Failed to read remote node recovery handshake " +
-                                        "(connection closed).");
-
-                                i += read;
-                            }
-
-                            rcvCnt = buf.getLong(Message.DIRECT_TYPE_SIZE);
-                        }
-
-                        if (log.isDebugEnabled())
-                            log.debug("Received handshake message [rmtNode=" + rmtNodeId + ", rcvCnt=" + rcvCnt + ']');
-
-                        if (rcvCnt == -1) {
-                            if (log.isDebugEnabled())
-                                log.debug("Connection rejected, will retry client creation [rmtNode=" + rmtNodeId + ']');
-                        }
-                        else
-                            success = true;
+                        sslMeta.decodedBuffer(decode);
                     }
-                    else
-                        success = true;
+
+                    ByteBuffer inBuf = sslHnd.inputBuffer();
+
+                    if (inBuf.position() > 0)
+                        sslMeta.encodedBuffer(inBuf);
                 }
-                catch (IOException e) {
+                else {
+                    buf = ByteBuffer.allocate(RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE);
+
+                    buf.order(ByteOrder.nativeOrder());
+
+                    for (int i = 0; i < RecoveryLastReceivedMessage.MESSAGE_FULL_SIZE; ) {
+                        int read = ch.read(buf);
+
+                        if (read == -1)
+                            throw new HandshakeException("Failed to read remote node recovery handshake " +
+                                "(connection closed).");
+
+                        i += read;
+                    }
+
+                    rcvCnt = buf.getLong(Message.DIRECT_TYPE_SIZE);
+                }
+
+                if (log.isDebugEnabled())
+                    log.debug("Received handshake message [rmtNode=" + rmtNodeId + ", rcvCnt=" + rcvCnt + ']');
+
+                if (rcvCnt == -1) {
                     if (log.isDebugEnabled())
-                        log.debug("Failed to read from channel: " + e);
-
-                    throw new IgniteCheckedException("Failed to read from channel.", e);
-                }
-                finally {
-                    if (!success)
-                        U.closeQuiet(ch);
+                        log.debug("Connection rejected, will retry client creation [rmtNode=" + rmtNodeId + ']');
                 }
             }
+        }
+        catch (IOException e) {
+            if (log.isDebugEnabled())
+                log.debug("Failed to read from channel: " + e);
+
+            throw new IgniteCheckedException("Failed to read from channel.", e);
         }
         finally {
             boolean cancelled = obj.cancel();

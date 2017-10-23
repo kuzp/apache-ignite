@@ -987,7 +987,9 @@ public abstract class IgniteUtils {
      * @return Nearest power of 2.
      */
     public static int ceilPow2(int v) {
-        return Integer.highestOneBit(v - 1) << 1;
+        int i = v - 1;
+
+        return Integer.highestOneBit(i) << 1 - (i >>> 30 ^ v >> 31);
     }
 
     /**
@@ -3384,18 +3386,18 @@ public abstract class IgniteUtils {
      * @throws IOException If error occurred.
      */
     public static String readFileToString(String fileName, String charset) throws IOException {
-        Reader input = new InputStreamReader(new FileInputStream(fileName), charset);
+        try (Reader input = new InputStreamReader(new FileInputStream(fileName), charset)) {
+            StringWriter output = new StringWriter();
 
-        StringWriter output = new StringWriter();
+            char[] buf = new char[4096];
 
-        char[] buf = new char[4096];
+            int n;
 
-        int n;
+            while ((n = input.read(buf)) != -1)
+                output.write(buf, 0, n);
 
-        while ((n = input.read(buf)) != -1)
-            output.write(buf, 0, n);
-
-        return output.toString();
+            return output.toString();
+        }
     }
 
     /**
@@ -7396,6 +7398,15 @@ public abstract class IgniteUtils {
     }
 
     /**
+     * Awaits for condition ignoring interrupts.
+     *
+     * @param cond Condition to await for.
+     */
+    public static void awaitQuiet(Condition cond) {
+        cond.awaitUninterruptibly();
+    }
+
+    /**
      * Awaits for condition.
      *
      * @param cond Condition to await for.
@@ -9347,6 +9358,17 @@ public abstract class IgniteUtils {
     }
 
     /**
+     * @param col non-null collection with one element
+     * @return a SingletonList containing the element in the original collection
+     */
+    public static <T> Collection<T> convertToSingletonList(Collection<T> col) {
+        if (col.size() != 1) {
+            throw new IllegalArgumentException("Unexpected collection size for singleton list, expecting 1 but was: " + col.size());
+        }
+        return Collections.singletonList(col.iterator().next());
+    }
+
+    /**
      * Returns comparator that sorts remote node addresses. If remote node resides on the same host, then put
      * loopback addresses first, last otherwise.
      *
@@ -9385,24 +9407,43 @@ public abstract class IgniteUtils {
      * @param cls The class to search,
      * @param name Name of the method.
      * @param paramTypes Method parameters.
-     * @return Method or {@code null}
+     * @return Method or {@code null}.
      */
     @Nullable public static Method findNonPublicMethod(Class<?> cls, String name, Class<?>... paramTypes) {
         while (cls != null) {
-            try {
-                Method mtd = cls.getDeclaredMethod(name, paramTypes);
+            Method mtd = getNonPublicMethod(cls, name, paramTypes);
 
-                if (mtd.getReturnType() != void.class) {
-                    mtd.setAccessible(true);
-
-                    return mtd;
-                }
-            }
-            catch (NoSuchMethodException ignored) {
-                // No-op.
-            }
+            if (mtd != null)
+                return mtd;
 
             cls = cls.getSuperclass();
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets a method from the class.
+     *
+     * Method.getMethod() does not return non-public method.
+     *
+     * @param cls Target class.
+     * @param name Name of the method.
+     * @param paramTypes Method parameters.
+     * @return Method or {@code null}.
+     */
+    @Nullable public static Method getNonPublicMethod(Class<?> cls, String name, Class<?>... paramTypes) {
+        try {
+            Method mtd = cls.getDeclaredMethod(name, paramTypes);
+
+            if (mtd.getReturnType() != void.class) {
+                mtd.setAccessible(true);
+
+                return mtd;
+            }
+        }
+        catch (NoSuchMethodException ignored) {
+            // No-op.
         }
 
         return null;
@@ -10041,6 +10082,47 @@ public abstract class IgniteUtils {
         }
 
         return s.get();
+    }
+
+    /**
+     * @param path Path.
+     * @param name Name.
+     */
+    public static Path searchFileRecursively(Path path, @NotNull final String name) throws IgniteCheckedException {
+        final AtomicReference<Path> res = new AtomicReference<>();
+
+        try {
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (name.equals(file.getFileName().toString())) {
+                        res.set(file);
+
+                        return FileVisitResult.TERMINATE;
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    U.error(null, "file skipped during recursive search - " + file, exc);
+
+                    // Ignoring.
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    if (exc != null)
+                        U.error(null, "error during recursive search - " + dir, exc);
+
+                    // Ignoring.
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new IgniteCheckedException("walkFileTree will not throw IOException if the FileVisitor does not");
+        }
+
+        return res.get();
     }
 
     /**

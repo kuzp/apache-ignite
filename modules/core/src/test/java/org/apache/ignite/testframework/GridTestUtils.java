@@ -101,6 +101,7 @@ import org.apache.ignite.testframework.config.GridTestProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreManager.DFLT_STORE_DIR;
 import static org.springframework.util.FileSystemUtils.deleteRecursively;
 
 /**
@@ -1700,6 +1701,26 @@ public final class GridTestUtils {
     }
 
     /**
+     * Creates test-purposed SSL context factory from specified key store and trust store.
+     *
+     * @param keyStore Key store name.
+     * @param trustStore Trust store name.
+     * @return SSL context factory used in test.
+     */
+    public static Factory<SSLContext> sslTrustedFactory(String keyStore, String trustStore) {
+        SslContextFactory factory = new SslContextFactory();
+
+        factory.setKeyStoreFilePath(U.resolveIgnitePath(GridTestProperties.getProperty(
+            "ssl.keystore." + keyStore + ".path")).getAbsolutePath());
+        factory.setKeyStorePassword(GridTestProperties.getProperty("ssl.keystore.password").toCharArray());
+        factory.setTrustStoreFilePath(U.resolveIgnitePath(GridTestProperties.getProperty(
+            "ssl.keystore." + trustStore + ".path")).getAbsolutePath());
+        factory.setTrustStorePassword(GridTestProperties.getProperty("ssl.keystore.password").toCharArray());
+
+        return factory;
+    }
+
+    /**
      * @param o1 Object 1.
      * @param o2 Object 2.
      * @return Equals or not.
@@ -1909,6 +1930,6 @@ public final class GridTestUtils {
      * @throws Exception If failed.
      */
     public static void deleteDbFiles() throws Exception {
-        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "db", false));
+        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), DFLT_STORE_DIR, false));
     }
 }

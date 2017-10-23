@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import javax.net.ssl.HostnameVerifier;
 import org.apache.ignite.cluster.ClusterGroup;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.marshaller.optimized.OptimizedMarshaller;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.jetbrains.annotations.Nullable;
@@ -704,6 +705,43 @@ public final class IgniteSystemProperties {
      * connection.
      */
     public static final String IGNITE_ENABLE_FORCIBLE_NODE_KILL = "IGNITE_ENABLE_FORCIBLE_NODE_KILL";
+
+    /**
+     * Tasks stealing will be started if tasks queue size per data-streamer thread exceeds this threshold.
+     * <p>
+     * Default value is {@code 4}.
+     */
+    public static final String IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD =
+            "IGNITE_DATA_STREAMING_EXECUTOR_SERVICE_TASKS_STEALING_THRESHOLD";
+
+    /**
+     * If this property is set, then Ignite will use Async File IO factory by default.
+     */
+    public static final String IGNITE_USE_ASYNC_FILE_IO_FACTORY = "IGNITE_USE_ASYNC_FILE_IO_FACTORY";
+
+    /**
+     * If the property is set {@link org.apache.ignite.internal.pagemem.wal.record.TxRecord} records
+     * will be logged to WAL.
+     *
+     * Default value is {@code false}.
+     */
+    public static final String IGNITE_WAL_LOG_TX_RECORDS = "IGNITE_WAL_LOG_TX_RECORDS";
+
+    /** If this property is set, {@link DataStorageConfiguration#writeThrottlingEnabled} will be overridden to true
+     * independent of initial value in configuration. */
+    public static final String IGNITE_OVERRIDE_WRITE_THROTTLING_ENABLED = "IGNITE_OVERRIDE_WRITE_THROTTLING_ENABLED";
+
+    /**
+     * Property for setup WAL serializer version.
+     */
+    public static final String IGNITE_WAL_SERIALIZER_VERSION = "IGNITE_WAL_SERIALIZER_VERSION";
+
+    /**
+     * When set to {@code true}, Data store folders are generated only by consistent id, and no consistent ID will be
+     * set based on existing data store folders. This option also enables compatible folder generation mode as it was
+     * before 2.3.
+     */
+    public static final String IGNITE_DATA_STORAGE_FOLDER_BY_CONSISTENT_ID = "IGNITE_DATA_STORAGE_FOLDER_BY_CONSISTENT_ID";
 
     /**
      * Enforces singleton.

@@ -158,6 +158,16 @@ public class IgniteThread extends Thread {
     }
 
     /**
+     * @return IgniteThread or {@code null} if current thread is not an instance of IgniteThread.
+     */
+    public static IgniteThread current(){
+        Thread thread = Thread.currentThread();
+
+        return thread.getClass() == IgniteThread.class || thread instanceof IgniteThread ?
+            ((IgniteThread)thread) : null;
+    }
+
+    /**
      * Creates new thread name.
      *
      * @param num Thread number.
@@ -166,7 +176,7 @@ public class IgniteThread extends Thread {
      * @return New thread name.
      */
     protected static String createName(long num, String threadName, String igniteInstanceName) {
-        return threadName + "-#" + num + '%' + igniteInstanceName + '%';
+        return threadName + "-#" + num + (igniteInstanceName != null ? '%' + igniteInstanceName + '%' : "");
     }
 
     /** {@inheritDoc} */

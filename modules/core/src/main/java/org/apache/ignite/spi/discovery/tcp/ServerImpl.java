@@ -57,6 +57,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
@@ -463,7 +465,6 @@ class ServerImpl extends TcpDiscoveryImpl {
         U.interrupt(statsPrinter);
         U.join(statsPrinter, log);
 
-        Collection<TcpDiscoveryNode> rmts = null;
         Collection<TcpDiscoveryNode> nodes = null;
 
         if (!disconnect)
@@ -472,22 +473,23 @@ class ServerImpl extends TcpDiscoveryImpl {
             spi.getSpiContext().deregisterPorts();
 
             nodes = ring.visibleNodes();
-            rmts = F.view(nodes, F.remoteNodes(locNode.id()));
         }
 
         long topVer = ring.topologyVersion();
 
         ring.clear();
 
-        if (rmts != null && !rmts.isEmpty()) {
-            // This is restart/disconnection and remote nodes are not empty.
-            // We need to fire FAIL event for each.
+        if (nodes != null) {
+            // This is restart/disconnection and we need to fire FAIL event for each remote node.
             DiscoverySpiListener lsnr = spi.lsnr;
 
             if (lsnr != null) {
-                Collection<ClusterNode> processed = new HashSet<>();
+                Collection<ClusterNode> processed = new HashSet<>(nodes.size());
 
-                for (TcpDiscoveryNode n : rmts) {
+                for (TcpDiscoveryNode n : nodes) {
+                    if(n.isLocal())
+                        continue;
+
                     assert n.visible();
 
                     processed.add(n);
@@ -928,7 +930,8 @@ class ServerImpl extends TcpDiscoveryImpl {
                         " node is configured to use loopback address, but " + secondNode + " node is not " +
                         "(consider changing 'localAddress' configuration parameter) " +
                         "[locNodeAddrs=" + U.addressesAsString(locNode) + ", rmtNodeAddrs=" +
-                        U.addressesAsString(msg.addresses(), msg.hostNames()) + ']');
+                        U.addressesAsString(msg.addresses(), msg.hostNames()) +
+                        ", creatorNodeId=" + msg.creatorNodeId() + ']');
                 }
                 else
                     LT.warn(log, "Node has not been connected to topology and will repeat join process. " +
@@ -3532,7 +3535,7 @@ class ServerImpl extends TcpDiscoveryImpl {
 
                                 try {
                                     trySendMessageDirectly(node,
-                                        new TcpDiscoveryCheckFailedMessage(locNodeId, err.sendMessage()));
+                                        new TcpDiscoveryCheckFailedMessage(err.nodeId(), err.sendMessage()));
                                 }
                                 catch (IgniteSpiException e) {
                                     if (log.isDebugEnabled())
@@ -5577,8 +5580,14 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             for (port = spi.locPort; port <= lastPort; port++) {
                 try {
-                    if (spi.isSslEnabled())
-                        srvrSock = spi.sslSrvSockFactory.createServerSocket(port, 0, spi.locHost);
+                    if (spi.isSslEnabled()) {
+                        SSLServerSocket sslSock = (SSLServerSocket)spi.sslSrvSockFactory
+                            .createServerSocket(port, 0, spi.locHost);
+
+                        sslSock.setNeedClientAuth(true);
+
+                        srvrSock = sslSock;
+                    }
                     else
                         srvrSock = new ServerSocket(port, 0, spi.locHost);
 
@@ -5785,7 +5794,8 @@ class ServerImpl extends TcpDiscoveryImpl {
 
                             spi.writeToSocket(sock, res, timeoutHelper.nextTimeoutChunk(spi.getSocketTimeout()));
 
-                            sock.shutdownOutput();
+                            if (!(sock instanceof SSLSocket))
+                                sock.shutdownOutput();
 
                             if (log.isInfoEnabled())
                                 log.info("Finished writing ping response " + "[rmtNodeId=" + msg.creatorNodeId() +
@@ -6064,6 +6074,20 @@ class ServerImpl extends TcpDiscoveryImpl {
                                 else {
                                     ignored = true;
 
+                                    ClientMessageWorker worker = clientMsgWorkers.get(msg.creatorNodeId());
+
+                                    if (worker != null) {
+                                        msg.verify(getLocalNodeId());
+
+                                        worker.addMessage(msg);
+                                    }
+                                    else {
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("Failed to find client message worker " +
+                                                "[clientNode=" + msg.creatorNodeId() + ']');
+                                        }
+                                    }
+
                                     state = spiState;
                                 }
                             }
@@ -6267,7 +6291,7 @@ class ServerImpl extends TcpDiscoveryImpl {
             else {
                 spi.stats.onMessageProcessingStarted(msg);
 
-                Integer res;
+                int res;
 
                 SocketAddress rmtAddr = sock.getRemoteSocketAddress();
 

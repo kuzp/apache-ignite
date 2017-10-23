@@ -772,7 +772,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         Set<Integer> gprs = new HashSet<>();
 
         for (ExchangeActions.CacheActionData action : exchActions.cacheStartRequests()) {
-            Integer grpId = action.descriptor().groupId();
+            int grpId = action.descriptor().groupId();
 
             if (gprs.add(grpId)) {
                 if (crd)
@@ -1091,7 +1091,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         if (grpDesc.config().getCacheMode() == LOCAL)
             return;
 
-        Integer grpId = grpDesc.groupId();
+        int grpId = grpDesc.groupId();
 
         CacheGroupHolder grpHolder = grpHolders.get(grpId);
 
@@ -1525,7 +1525,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         for (int i = 0; i < fetchFuts.size(); i++) {
             GridDhtAssignmentFetchFuture fetchFut = fetchFuts.get(i);
 
-            Integer grpId = fetchFut.groupId();
+            int grpId = fetchFut.groupId();
 
             fetchAffinity(topVer,
                 fut.events().lastEvent(),
@@ -1638,7 +1638,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                     return;
 
                 // Need initialize holders and affinity if this node became coordinator during this exchange.
-                final Integer grpId = desc.groupId();
+                int grpId = desc.groupId();
 
                 CacheGroupContext grp = cctx.cache().cacheGroup(grpId);
 
@@ -1659,7 +1659,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                         if (!aff.lastVersion().equals(topVer))
                             calculateAndInit(fut.events(), aff, topVer);
 
-                        grpHolder.topology().beforeExchange(fut, true, false);
+                        grpHolder.topology(fut.context().events().discoveryCache()).beforeExchange(fut, true, false);
                     }
                     else {
                         List<GridDhtPartitionsExchangeFuture> exchFuts = cctx.exchange().exchangeFutures();
@@ -1715,7 +1715,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                         if (!aff.lastVersion().equals(topVer))
                             calculateAndInit(fut.events(), aff, topVer);
 
-                        grpHolder.topology().beforeExchange(fut, true, false);
+                        grpHolder.topology(fut.context().events().discoveryCache()).beforeExchange(fut, true, false);
                     }
                 }
 
@@ -1833,7 +1833,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                         Map<UUID, GridDhtPartitionMap> map = affinityFullMap(aff);
 
                         for (GridDhtPartitionMap map0 : map.values())
-                            cache.topology().update(fut.exchangeId(), map0, true);
+                            cache.topology(fut.context().events().discoveryCache()).update(fut.exchangeId(), map0, true);
                     }
                 }
             });
@@ -2059,7 +2059,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
                 List<List<ClusterNode>> newAssignment0 = initAff ? new ArrayList<>(newAssignment) : null;
 
-                GridDhtPartitionTopology top = grpHolder.topology();
+                GridDhtPartitionTopology top = grpHolder.topology(fut.context().events().discoveryCache());
 
                 Map<Integer, List<T>> cacheAssignment = null;
 
@@ -2277,9 +2277,10 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         }
 
         /**
+         * @param discoCache Discovery data cache.
          * @return Cache topology.
          */
-        abstract GridDhtPartitionTopology topology();
+        abstract GridDhtPartitionTopology topology(DiscoCache discoCache);
 
         /**
          * @return Affinity.
@@ -2314,7 +2315,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         }
 
         /** {@inheritDoc} */
-        @Override public GridDhtPartitionTopology topology() {
+        @Override public GridDhtPartitionTopology topology(DiscoCache discoCache) {
             return grp.topology();
         }
     }
@@ -2390,8 +2391,8 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         }
 
         /** {@inheritDoc} */
-        @Override public GridDhtPartitionTopology topology() {
-            return cctx.exchange().clientTopology(groupId());
+        @Override public GridDhtPartitionTopology topology(DiscoCache discoCache) {
+            return cctx.exchange().clientTopology(groupId(), discoCache);
         }
     }
 
@@ -2499,7 +2500,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
          * @param desc Description.
          */
         private DynamicCacheDescriptor registerCache(DynamicCacheDescriptor desc) {
-            saveCacheConfiguration(desc.cacheConfiguration());
+            saveCacheConfiguration(desc.cacheConfiguration(), desc.sql());
 
             return registeredCaches.put(desc.cacheId(), desc);
         }
@@ -2508,8 +2509,6 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
          * @param grpDesc Group description.
          */
         private CacheGroupDescriptor registerGroup(CacheGroupDescriptor grpDesc) {
-            saveCacheConfiguration(grpDesc.config());
-
             return registeredGrps.put(grpDesc.groupId(), grpDesc);
         }
 
@@ -2590,13 +2589,18 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
     /**
      * @param cfg cache configuration
+     * @param sql SQL flag.
      */
-    private void saveCacheConfiguration(CacheConfiguration<?, ?> cfg) {
-        if (cctx.pageStore() != null && cctx.database().persistenceEnabled() && !cctx.kernalContext().clientNode()) {
+    private void saveCacheConfiguration(CacheConfiguration<?, ?> cfg, boolean sql) {
+        if (cctx.pageStore() != null && cctx.database().persistenceEnabled() &&
+            CU.isPersistentCache(cfg, cctx.gridConfig().getDataStorageConfiguration()) &&
+            !cctx.kernalContext().clientNode()) {
             try {
-                cctx.pageStore().storeCacheData(
-                    new StoredCacheData(cfg)
-                );
+                StoredCacheData data = new StoredCacheData(cfg);
+
+                data.sql(sql);
+
+                cctx.pageStore().storeCacheData(data, false);
             }
             catch (IgniteCheckedException e) {
                 U.error(log(), "Error while saving cache configuration on disk, cfg = " + cfg, e);
