@@ -1252,7 +1252,7 @@ public class PageMemoryImpl implements PageMemoryEx {
         boolean markDirty,
         boolean restore
     ) {
-        boolean dirty = isDirty(page);
+        final boolean dirty = isDirty(page);
 
         //if page is for restore, we shouldn't mark it as changed
         if (!restore && markDirty && !dirty)
@@ -1262,8 +1262,8 @@ public class PageMemoryImpl implements PageMemoryEx {
 
         assert GridUnsafe.getInt(page + PAGE_OVERHEAD + 4) == 0; //TODO GG-11480
 
-        if (markDirty)
-            setDirty(fullId, page, markDirty, false);
+        if (markDirty && !dirty)
+            setDirty(fullId, page, true, false);
 
         beforeReleaseWrite(fullId, page + PAGE_OVERHEAD, pageWalRec);
 
