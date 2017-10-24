@@ -76,9 +76,13 @@ public class BaselineTopology implements Serializable {
 
     /**
      * @param aliveNodes Sorted list of currently alive nodes.
+     * @param nodeFilter Node filter.
      * @return Sorted list of baseline topology nodes.
      */
-    public List<ClusterNode> createBaselineView(List<ClusterNode> aliveNodes, IgnitePredicate<ClusterNode> nodeFilter)  {
+    public List<ClusterNode> createBaselineView(
+        List<ClusterNode> aliveNodes,
+        @Nullable IgnitePredicate<ClusterNode> nodeFilter)
+    {
         List<ClusterNode> res = new ArrayList<>(nodeMap.size());
 
         for (ClusterNode node : aliveNodes) {
@@ -160,9 +164,8 @@ public class BaselineTopology implements Serializable {
 
         Map<Object, Map<String, Object>> nodeMap = new HashMap<>();
 
-        for (ClusterNode node : nodes) {
+        for (ClusterNode node : nodes)
             nodeMap.put(node.consistentId(), node.attributes());
-        }
 
         return new BaselineTopology(nodeMap);
     }

@@ -18,8 +18,10 @@
 package org.apache.ignite.internal.processors.cluster;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
@@ -38,7 +40,7 @@ public class DiscoveryDataClusterState implements Serializable {
     private final boolean active;
 
     /** */
-    @Nullable private final BaselineTopology baselineTop;
+    @Nullable private final BaselineTopology baselineTopology;
 
     /** */
     private final UUID transitionReqId;
@@ -70,7 +72,7 @@ public class DiscoveryDataClusterState implements Serializable {
      * @return State instance.
      */
     static DiscoveryDataClusterState createTransitionState(boolean active,
-        @Nullable BaselineTopology baselineTop,
+        @Nullable BaselineTopology baselineTopology,
         UUID transitionReqId,
         AffinityTopologyVersion transitionTopVer,
         Set<UUID> transitionNodes) {
@@ -78,7 +80,7 @@ public class DiscoveryDataClusterState implements Serializable {
         assert transitionTopVer != null;
         assert !F.isEmpty(transitionNodes) : transitionNodes;
 
-        return new DiscoveryDataClusterState(active, baselineTop, transitionReqId, transitionTopVer, transitionNodes);
+        return new DiscoveryDataClusterState(active, baselineTopology, transitionReqId, transitionTopVer, transitionNodes);
     }
 
     /**
@@ -88,12 +90,12 @@ public class DiscoveryDataClusterState implements Serializable {
      * @param transitionNodes Nodes participating in state change exchange.
      */
     private DiscoveryDataClusterState(boolean active,
-        @Nullable BaselineTopology baselineTop,
+        @Nullable BaselineTopology baselineTopology,
         @Nullable UUID transitionReqId,
         @Nullable AffinityTopologyVersion transitionTopVer,
         @Nullable Set<UUID> transitionNodes) {
         this.active = active;
-        this.baselineTop = baselineTop;
+        this.baselineTopology = baselineTopology;
         this.transitionReqId = transitionReqId;
         this.transitionTopVer = transitionTopVer;
         this.transitionNodes = transitionNodes;
@@ -153,7 +155,7 @@ public class DiscoveryDataClusterState implements Serializable {
      * @return Baseline topology.
      */
     @Nullable public BaselineTopology baselineTopology() {
-        return baselineTop;
+        return baselineTopology;
     }
 
     /**
