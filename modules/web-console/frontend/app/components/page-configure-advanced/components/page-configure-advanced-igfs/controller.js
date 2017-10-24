@@ -3,6 +3,9 @@ import {combineLatest} from 'rxjs/observable/combineLatest';
 import naturalCompare from 'natural-compare-lite';
 import {merge} from 'rxjs/observable/merge';
 import get from 'lodash/get';
+import {
+    removeClusterItems
+} from 'app/components/page-configure/store/actionCreators';
 
 export default class PageConfigureAdvancedIGFS {
     static $inject = ['ConfigSelectors', 'ConfigureState', '$uiRouter', 'IGFSs', '$state', 'conf', 'configSelectionManager'];
@@ -94,6 +97,8 @@ export default class PageConfigureAdvancedIGFS {
         this.conf.saveAdvanced({igfs});
     }
     remove(itemIDs) {
-        this.conf.removeItem({itemIDs, type: 'igfss', andSave: true});
+        this.ConfigureState.dispatchAction(
+            removeClusterItems(this.$uiRouter.globals.params.clusterID, 'igfss', itemIDs, true, true)
+        );
     }
 }

@@ -22,6 +22,9 @@ import get from 'lodash/get';
 import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
 import {combineLatest} from 'rxjs/observable/combineLatest';
+import {
+    removeClusterItems
+} from 'app/components/page-configure/store/actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
 import ConfigSelectors from 'app/components/page-configure/store/selectors';
@@ -99,15 +102,13 @@ export default class Controller {
     }
 
     $onInit() {
-        const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID').publishReplay(1).refCount()
-        .debug('cacheID$');
+        const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID').publishReplay(1).refCount();
 
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
         this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue());
         this.originalCache$ = cacheID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
-        })
-        .debug('originalCache$');
+        });
 
         this.isNew$ = cacheID$.map((id) => id === 'new');
         this.itemEditTitle$ = combineLatest(this.isNew$, this.originalCache$, (isNew, cache) => {
@@ -145,7 +146,9 @@ export default class Controller {
     }
 
     remove(itemIDs) {
-        this.conf.removeItem({itemIDs, type: 'caches', andSave: true});
+        this.ConfigureState.dispatchAction(
+            removeClusterItems(this.$uiRouter.globals.params.clusterID, 'caches', itemIDs, true, true)
+        );
     }
 
     $onDestroy() {

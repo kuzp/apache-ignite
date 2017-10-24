@@ -55,14 +55,6 @@ export default angular
             item
         });
     }
-    removeItem({type, itemIDs, andSave}) {
-        this.ConfigureState.dispatchAction({
-            type: 'REMOVE_CLUSTER_ITEMS',
-            itemType: type,
-            itemIDs
-        });
-        if (andSave) this.saveAdvanced();
-    }
     upsertCluster(cluster) {
         return this.ConfigureState.dispatchAction({
             type: 'UPSERT_CLUSTER',

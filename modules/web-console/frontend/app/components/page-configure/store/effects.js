@@ -17,6 +17,17 @@ import {
     igfssActionTypes
 } from './../reducer';
 
+import {
+    REMOVE_CLUSTER_ITEMS,
+    REMOVE_CLUSTER_ITEMS_CONFIRMED,
+    SAVE_ADVANCED
+} from './actionTypes';
+
+import {
+    removeClusterItemsConfirmed,
+    advancedSaveCompleteConfiguration
+} from './actionCreators';
+
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
 import ConfigSelectors from 'app/components/page-configure/store/selectors';
 import Clusters from 'app/services/Clusters';
@@ -394,6 +405,30 @@ export default class ConfigEffects {
                 }
             })
             .ignoreElements();
+
+        this.removeClusterItemsEffect$ = this.ConfigureState.actions$
+            .let(ofType(REMOVE_CLUSTER_ITEMS))
+            .exhaustMap((a) => {
+                return a.confirm
+                    // TODO: list items to remove in confirmation
+                    ? fromPromise(this.Confirm.confirm('Are you sure want to remove these items?'))
+                        .mapTo(a)
+                        .catch(() => empty())
+                    : of(a);
+            })
+            .map((a) => removeClusterItemsConfirmed(a.itemType, a.itemIDs));
+
+        this.persistRemovedClusterItemsEffect$ = this.ConfigureState.actions$
+            .let(ofType(REMOVE_CLUSTER_ITEMS_CONFIRMED))
+            .withLatestFrom(this.ConfigureState.actions$.let(ofType(REMOVE_CLUSTER_ITEMS)))
+            .filter(([a, b]) => {
+                return a.itemType === b.itemType
+                    && b.save
+                    && JSON.stringify(a.itemIDs) === JSON.stringify(b.itemIDs);
+            })
+            .pluck('0')
+            .withLatestFrom(this.ConfigureState.state$.pluck('edit'))
+            .map(([action, edit]) => advancedSaveCompleteConfiguration(edit));
     }
 
     /**

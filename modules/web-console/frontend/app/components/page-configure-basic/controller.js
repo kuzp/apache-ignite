@@ -19,6 +19,9 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
+import {
+    removeClusterItems
+} from 'app/components/page-configure/store/actionCreators';
 
 export default class PageConfigureBasicController {
     static $inject = [
@@ -120,7 +123,9 @@ export default class PageConfigureBasicController {
     }
 
     removeCache(cache) {
-        this.conf.removeItem({type: 'caches', itemIDs: [cache._id]});
+        this.ConfigureState.dispatchAction(
+            removeClusterItems(this.$uiRouter.globals.params.clusterID, 'caches', [cache._id], false, false)
+        );
     }
 
     changeCache(cache) {

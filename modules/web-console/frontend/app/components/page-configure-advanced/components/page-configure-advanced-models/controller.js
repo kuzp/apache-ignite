@@ -7,6 +7,10 @@ import get from 'lodash/get';
 import keyCellTemplate from './keyCell.template.pug';
 import valueCellTemplate from './valueCell.template.pug';
 
+import {
+    removeClusterItems
+} from 'app/components/page-configure/store/actionCreators';
+
 export default class PageConfigureAdvancedModels {
     static $inject = ['ConfigSelectors', 'ConfigureState', '$uiRouter', 'Models', '$state', 'conf', 'configSelectionManager'];
     constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager) {
@@ -88,6 +92,8 @@ export default class PageConfigureAdvancedModels {
         this.conf.saveAdvanced({model});
     }
     remove(itemIDs) {
-        this.conf.removeItem({itemIDs, type: 'models', andSave: true});
+        this.ConfigureState.dispatchAction(
+            removeClusterItems(this.$uiRouter.globals.params.clusterID, 'models', itemIDs, true, true)
+        );
     }
 }
