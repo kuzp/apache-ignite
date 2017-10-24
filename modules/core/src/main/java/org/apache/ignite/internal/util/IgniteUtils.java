@@ -3434,7 +3434,6 @@ public abstract class IgniteUtils {
 
         return e;
     }
-
     /**
      * Deletes file or directory with all sub-directories and files.
      *
