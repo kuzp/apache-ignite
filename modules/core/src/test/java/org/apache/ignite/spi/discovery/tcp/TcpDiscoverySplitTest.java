@@ -23,6 +23,7 @@ import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.distributed.dht.IgniteCacheTopologySplitAbstractTest;
+import org.apache.ignite.internal.util.typedef.internal.U;
 
 import static org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi.DFLT_PORT;
 
@@ -38,7 +39,7 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     private static final long DISCO_TIMEOUT = 1000L;
 
     /** */
-    private static final long SPLIT_TIME = 2 * DISCO_TIMEOUT + DISCO_TIMEOUT / 2;
+    private static final long SPLIT_TIME = 3 * DISCO_TIMEOUT + DISCO_TIMEOUT / 2;
 
     /** */
     private static final String NODE_IDX_ATTR = "nodeIdx";
@@ -102,80 +103,102 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     protected void testSplitRestore(int[] startSeq, long splitTime) throws Exception {
         IgniteEx[] grids = new IgniteEx[startSeq.length];
 
-        for (int i = 0; i < startSeq.length; i++) {
-            int idx = startSeq[i];
+        try {
+            for (int i = 0; i < startSeq.length; i++) {
+                int idx = startSeq[i];
 
-            grids[i] = startGrid(idx);
+                grids[i] = startGrid(idx);
 
-            awaitPartitionMapExchange();
+                awaitPartitionMapExchange();
+            }
+
+            split();
+
+            Thread.sleep(splitTime);
+
+            unsplit(false);
+
+            Thread.sleep(DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT);
+
+            Set[] segs = {new HashSet(), new HashSet()};
+
+            for (int i = 0; i < startSeq.length; i++) {
+                int idx = startSeq[i];
+
+                int segIdx = idx < SEG_0_SIZE ? 0 : 1;
+
+                try {
+                    IgniteEx g = grids[i];
+
+                    if (!g.context().isStopping())
+                        segs[segIdx].add(idx);
+                }
+                catch (Exception e) {
+                    U.warn(log, "Error checking grid is live [idx=" + idx + ']', e);
+                }
+            }
+            if (log.isInfoEnabled())
+                for (int i = 0; i < segs.length; ++i) {
+                    Set seg = segs[i];
+
+                    log.info(seg.isEmpty() ? "No live grids [segment=" + i + ']' :
+                        "Live grids [segment=" + i + ", size=" + seg.size() + ", indices=" + seg + ']');
+                }
+            int[] liveExp = startSeq;
+
+            for (int idx : liveExp) {
+                int segIdx = idx < SEG_0_SIZE ? 0 : 1;
+
+                if (!segs[segIdx].contains(idx))
+                    fail("Grid is stopped, but expected to live [idx=" + idx + ']');
+            }
         }
-
-        split();
-
-        Thread.sleep(splitTime);
-
-        unsplit(false);
-
-        Thread.sleep(DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT);
-
-        Set[] segs = {new HashSet(), new HashSet()};
-
-        for (int i = 0; i < startSeq.length; i++) {
-            int idx = startSeq[i];
-
-            int segIdx = idx < SEG_0_SIZE ? 0 : 1;
-
-            try {
-                IgniteEx g = grids[i];
-
-                if (!g.context().isStopping())
-                    segs[segIdx].add(idx);
+        finally {
+            for (int i = 0; i < startSeq.length; ++i) {
+                int idx = startSeq[i];
+                if (grids[i] != null)
+                    try {
+                        stopGrid(idx);
+                    }
+                    catch (Throwable e) {
+                        U.warn(log, "Stop grid error", e);
+                    }
             }
-            catch (Exception e) {
-                log.warning("Error checking grid is live [idx=" + idx + ']', e);
-            }
-        }
-        if (log.isInfoEnabled())
-            for (int i = 0; i < segs.length; ++i) {
-                Set seg = segs[i];
-
-                log.info(seg.isEmpty() ? "No live grids [segment=" + i + ']' :
-                    "Live grids [segment=" + i + ", size=" + seg.size() + ", indices=" + seg + ']');
-            }
-        int[] liveExp = startSeq;
-
-        for (int idx : liveExp) {
-            int segIdx = idx < SEG_0_SIZE ? 0 : 1;
-
-            if (!segs[segIdx].contains(idx))
-                fail("Grid is stopped, but expected to live [idx=" + idx + ']');
         }
     }
 
     /** */
-    public void testFullSplit() throws Exception {
-        int[] grids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    protected void testFullSplitThenPartial(int[] startSeq) throws Exception {
 
-        testSplitRestore(grids, (grids.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
+        try {
+            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
+        }
+        catch (AssertionError e) {
+            U.error(log, e.getMessage(), e.getCause());
+
+            fail("Full split failed");
+        }
+
+        testSplitRestore(startSeq, SPLIT_TIME);
     }
 
     /** */
     public void testConsecutiveCoordSeg0() throws Exception {
-        testSplitRestore(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, SPLIT_TIME);
+        testFullSplitThenPartial(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
     }
 
     /** */
     public void testConsecutiveCoordSeg1() throws Exception {
-        testSplitRestore(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3}, SPLIT_TIME);
+        testFullSplitThenPartial(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3});
     }
 
     /** */
     public void testShuffledCoordSeg0() throws Exception {
-        testSplitRestore(new int[] {0, 4, 5, 1, 6, 7, 2, 8, 9, 3, 10, 11}, SPLIT_TIME);
+        testFullSplitThenPartial(new int[] {0, 4, 5, 1, 6, 7, 2, 8, 9, 3, 10, 11});
     }
 
     /** */
     public void testShuffledCoordSeg1() throws Exception {
-        testSplitRestore(new int[] {4, 5, 0, 6, 7, 1, 8, 9, 2, 10, 11, 3}, SPLIT_TIME);
+        testFullSplitThenPartial(new int[] {4, 5, 0, 6, 7, 1, 8, 9, 2, 10, 11, 3});
     }
 }
