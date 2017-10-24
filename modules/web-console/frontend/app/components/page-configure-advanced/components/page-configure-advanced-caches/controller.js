@@ -23,11 +23,41 @@ import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 
+import ConfigureState from 'app/components/page-configure/services/ConfigureState';
+import ConfigSelectors from 'app/components/page-configure/store/selectors';
+import Caches from 'app/services/Caches';
+
 // Controller for Caches screen.
 export default class Controller {
-    static $inject = ['conf', 'ConfigSelectors', 'configSelectionManager', '$uiRouter', '$transitions', 'ConfigureState', '$scope', '$http', '$state', '$filter', '$timeout', '$modal', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteConfirm', 'IgniteInput', 'IgniteLoading', 'IgniteModelNormalizer', 'IgniteUnsavedChangesGuard', 'IgniteConfigurationResource', 'IgniteErrorPopover', 'IgniteFormUtils', 'IgniteLegacyTable', 'IgniteVersion', '$q', 'Caches'];
-    constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $scope, $http, $state, $filter, $timeout, $modal, LegacyUtils, Messages, Confirm, Input, Loading, ModelNormalizer, UnsavedChangesGuard, Resource, ErrorPopover, FormUtils, LegacyTable, Version, $q, Caches) {
-        Object.assign(this, {conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $scope, $state, Confirm, Caches, FormUtils});
+    static $inject = [
+        'conf',
+        ConfigSelectors.name,
+        'configSelectionManager',
+        '$uiRouter',
+        '$transitions',
+        ConfigureState.name,
+        '$state',
+        'IgniteFormUtils',
+        'IgniteVersion',
+        Caches.name
+    ];
+    /**
+     * @param {object} conf
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {object} configSelectionManager
+     * @param {object} $uiRouter
+     * @param {object} $transitions
+     * @param {ConfigureState} ConfigureState
+     * @param {object} $state
+     * @param {object} FormUtils
+     * @param {object} Version
+     * @param {Caches} Caches
+     */
+    constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $state, FormUtils, Version, Caches) {
+        Object.assign(this, {conf, configSelectionManager, $uiRouter, $transitions, $state, FormUtils});
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigureState = ConfigureState;
+        this.Caches = Caches;
 
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();

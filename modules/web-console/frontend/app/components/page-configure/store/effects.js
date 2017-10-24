@@ -17,12 +17,52 @@ import {
     igfssActionTypes
 } from './../reducer';
 
+import ConfigureState from 'app/components/page-configure/services/ConfigureState';
+import ConfigSelectors from 'app/components/page-configure/store/selectors';
+import Clusters from 'app/services/Clusters';
+import Caches from 'app/services/Caches';
+import Models from 'app/services/Models';
+import IGFSs from 'app/services/IGFSs';
+import {Confirm} from 'app/services/Confirm.service';
+
 export const ofType = (type) => (s) => s.filter((a) => a.type === type);
 
 export default class ConfigEffects {
-    static $inject = ['ConfigureState', 'Caches', 'IGFSs', 'Models', 'ConfigSelectors', 'Clusters', '$state', 'IgniteMessages'];
-    constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages) {
-        Object.assign(this, {ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages});
+    static $inject = [
+        ConfigureState.name,
+        Caches.name,
+        IGFSs.name,
+        Models.name,
+        ConfigSelectors.name,
+        Clusters.name,
+        '$state',
+        'IgniteMessages',
+        'IgniteConfirm',
+        Confirm.name
+    ];
+    /**
+     * @param {ConfigureState} ConfigureState
+     * @param {Caches} Caches
+     * @param {IGFSs} IGFSs
+     * @param {Models} Models
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {Clusters} Clusters
+     * @param {object} $state
+     * @param {object} IgniteMessages
+     * @param {object} IgniteConfirm
+     * @param {Confirm} Confirm
+     */
+    constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages, IgniteConfirm, Confirm) {
+        this.ConfigureState = ConfigureState;
+        this.ConfigSelectors = ConfigSelectors;
+        this.IGFSs = IGFSs;
+        this.Models = Models;
+        this.Caches = Caches;
+        this.Clusters = Clusters;
+        this.$state = $state;
+        this.IgniteMessages = IgniteMessages;
+        this.IgniteConfirm = IgniteConfirm;
+        this.Confirm = Confirm;
 
         this.loadConfigurationEffect$ = this.ConfigureState.actions$
             .let(ofType('LOAD_COMPLETE_CONFIGURATION'))
