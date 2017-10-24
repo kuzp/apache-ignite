@@ -29,6 +29,10 @@ export const UPDATE_CACHE = Symbol('UPDATE_CACHE');
 export const UPSERT_CACHES = Symbol('UPSERT_CACHES');
 export const REMOVE_CACHE = Symbol('REMOVE_CACHE');
 
+import {
+    REMOVE_CLUSTER_ITEMS_CONFIRMED
+} from './store/actionTypes';
+
 const defaults = {clusters: new Map(), caches: new Map(), spaces: new Map()};
 const mapByID = (items) => {
     return Array.isArray(items) ? new Map(items.map((item) => [item._id, item])) : new Map(items);
@@ -339,7 +343,7 @@ export const editReducer2 = (state = editReducer2.getDefaults(), action) => {
                 }
             };
         }
-        case 'REMOVE_CLUSTER_ITEMS': {
+        case REMOVE_CLUSTER_ITEMS_CONFIRMED: {
             const {itemType, itemIDs} = action;
             return {
                 ...state,
