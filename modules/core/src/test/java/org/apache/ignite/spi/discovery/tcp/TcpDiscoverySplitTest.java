@@ -116,7 +116,7 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
 
         unsplit(false);
 
-        Thread.sleep(DISCO_TIMEOUT);
+        Thread.sleep(DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT);
 
         Set[] segs = {new HashSet(), new HashSet()};
 
@@ -128,10 +128,8 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
             try {
                 IgniteEx g = grids[i];
 
-                awaitPartitionMapExchange(false, false,
-                    Collections.singleton(g.localNode()));
-
-                segs[segIdx].add(idx);
+                if (!g.context().isStopping())
+                    segs[segIdx].add(idx);
             }
             catch (Exception e) {
                 log.warning("Error checking grid is live [idx=" + idx + ']', e);
@@ -142,7 +140,7 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
                 Set seg = segs[i];
 
                 log.info(seg.isEmpty() ? "No live grids [segment=" + i + ']' :
-                    "Live grids [segment=" + i + ", indices=" + seg + ']');
+                    "Live grids [segment=" + i + ", size=" + seg.size() + ", indices=" + seg + ']');
             }
         int[] liveExp = startSeq;
 
@@ -156,26 +154,28 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
 
     /** */
     public void testFullSplit() throws Exception {
-        testSplitRestore(new int[] {0, 1, 2, 3, 4, 5, 6, 7}, DISCO_TIMEOUT * 4 + DISCO_TIMEOUT / 2);
+        int[] grids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+
+        testSplitRestore(grids, (grids.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
     }
 
     /** */
     public void testConsecutiveCoordSeg0() throws Exception {
-        testSplitRestore(new int[] {0, 1, 2, 3, 4, 5, 6, 7}, SPLIT_TIME);
+        testSplitRestore(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, SPLIT_TIME);
     }
 
     /** */
     public void testConsecutiveCoordSeg1() throws Exception {
-        testSplitRestore(new int[] {4, 5, 6, 7, 0, 1, 2, 3}, SPLIT_TIME);
+        testSplitRestore(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3}, SPLIT_TIME);
     }
 
     /** */
     public void testShuffledCoordSeg0() throws Exception {
-        testSplitRestore(new int[] {0, 4, 1, 5, 2, 6, 3, 7}, SPLIT_TIME);
+        testSplitRestore(new int[] {0, 4, 5, 1, 6, 7, 2, 8, 9, 3, 10, 11}, SPLIT_TIME);
     }
 
     /** */
     public void testShuffledCoordSeg1() throws Exception {
-        testSplitRestore(new int[] {4, 0, 5, 1, 6, 2, 7, 3}, SPLIT_TIME);
+        testSplitRestore(new int[] {4, 5, 0, 6, 7, 1, 8, 9, 2, 10, 11, 3}, SPLIT_TIME);
     }
 }
