@@ -97,11 +97,13 @@ const init = ([settings, apiSrv, agentsHnd, browsersHnd]) => {
  * @param dbConnectionUri Mongo connection url.
  * @param group Migrations group.
  * @param migrationsPath Migrations path.
+ * @param collectionName Name of collection where migrations write info about applied scripts.
  */
-const migrate = (dbConnectionUri, group, migrationsPath) => {
+const migrate = (dbConnectionUri, group, migrationsPath, collectionName) => {
     const migrator = new MigrateMongoose({
         migrationsPath,
         dbConnectionUri,
+        collectionName,
         autosync: true
     });
 
@@ -125,7 +127,7 @@ const migrate = (dbConnectionUri, group, migrationsPath) => {
 Promise.all([injector('settings'), injector('mongo')])
     .then(([{mongoUrl}]) => {
         return migrate(mongoUrl, 'Ignite', path.join(__dirname, 'migrations'))
-            .then(() => migrate(mongoUrl, 'Ignite Modules', path.join(igniteModules, 'migrations')));
+            .then(() => migrate(mongoUrl, 'Ignite Modules', path.join(igniteModules, 'migrations'), 'migrationsModules'));
     })
     .then(() => Promise.all([injector('settings'), injector('api-server'), injector('agents-handler'), injector('browsers-handler')]))
     .then(init)
