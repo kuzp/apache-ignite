@@ -2695,6 +2695,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      * @param sql If the cache needs to be destroyed only if it was created as the result of SQL {@code CREATE TABLE}
      * command.
      * @param checkThreadTx If {@code true} checks that current thread does not have active transactions.
+     * @param restart New restart flag.
      * @return Future that will be completed when cache is destroyed.
      */
     public IgniteInternalFuture<Boolean> dynamicDestroyCache(String cacheName, boolean sql, boolean checkThreadTx,
@@ -2716,6 +2717,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
     /**
      * @param cacheNames Collection of cache names to destroy.
      * @param checkThreadTx If {@code true} checks that current thread does not have active transactions.
+     * @param restart New restart flag.
      * @return Future that will be completed when cache is destroyed.
      */
     public IgniteInternalFuture<?> dynamicDestroyCaches(Collection<String> cacheNames, boolean checkThreadTx,
@@ -2726,6 +2728,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
     /**
      * @param cacheNames Collection of cache names to destroy.
      * @param checkThreadTx If {@code true} checks that current thread does not have active transactions.
+     * @param restart New restart flag.
+     * @param destroy Destroy flag.
      * @return Future that will be completed when cache is destroyed.
      */
     public IgniteInternalFuture<?> dynamicDestroyCaches(Collection<String> cacheNames, boolean checkThreadTx,
