@@ -78,7 +78,7 @@ export default class AbstractTransformer {
         return this.toSection(this.generator.clusterCacheKeyConfiguration(keyCfgs));
     }
 
-    // Generate collision group.
+    // Generate client connector configuration.
     static clusterClientConnector(cluster, available) {
         return this.toSection(this.generator.clusterClientConnector(cluster, available));
     }

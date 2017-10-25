@@ -123,7 +123,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
     private VisorDataStorageConfiguration dataStorage;
 
     /** Client connector configuration */
-    private VisorClientConnectorConfiguration cliConnCfg;
+    private VisorClientConnectorConfiguration clnConnCfg;
 
     /**
      * Default constructor.
@@ -183,7 +183,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         ClientConnectorConfiguration ccc = c.getClientConnectorConfiguration();
 
         if (ccc != null)
-            cliConnCfg = new VisorClientConnectorConfiguration(ccc);
+            clnConnCfg = new VisorClientConnectorConfiguration(ccc);
 
         srvcCfgs = VisorServiceConfiguration.list(c.getServiceConfiguration());
 
@@ -358,8 +358,11 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         return sqlConnCfg;
     }
 
+    /**
+     * @return Client connector configuration.
+     */
     public VisorClientConnectorConfiguration getClientConnectorConfiguration() {
-        return cliConnCfg;
+        return clnConnCfg;
     }
 
     /**
@@ -409,7 +412,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
         out.writeObject(sqlConnCfg);
         U.writeCollection(out, srvcCfgs);
         out.writeObject(dataStorage);
-        out.writeObject(cliConnCfg);
+        out.writeObject(clnConnCfg);
     }
 
     /** {@inheritDoc} */
@@ -444,7 +447,7 @@ public class VisorGridConfiguration extends VisorDataTransferObject {
             dataStorage = (VisorDataStorageConfiguration)in.readObject();
 
         if (protoVer >= V3)
-            cliConnCfg = (VisorClientConnectorConfiguration)in.readObject();
+            clnConnCfg = (VisorClientConnectorConfiguration)in.readObject();
     }
 
     /** {@inheritDoc} */
