@@ -474,7 +474,7 @@ public class TcpDiscoveryNodesRing {
      *
      * @param excluded Nodes to exclude from the search (optional). If provided,
      * cannot contain local node.
-     * @return Previous node or {@code null} if all nodes were filtered out or
+     * @return Next node or {@code null} if all nodes were filtered out or
      * topology contains less than two nodes.
      */
     @Nullable public TcpDiscoveryNode nextNode(@Nullable Collection<TcpDiscoveryNode> excluded) {
@@ -531,7 +531,7 @@ public class TcpDiscoveryNodesRing {
      *
      * @param excluded Nodes to exclude from the search (optional). If provided,
      * cannot contain local node.
-     * @return Next node or {@code null} if all nodes were filtered out or
+     * @return Previous node or {@code null} if all nodes were filtered out or
      * topology contains less than two nodes.
      */
     @Nullable public TcpDiscoveryNode prevNode(@Nullable Collection<TcpDiscoveryNode> excluded) {

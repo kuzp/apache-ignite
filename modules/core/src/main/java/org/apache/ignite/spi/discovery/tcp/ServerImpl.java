@@ -1963,8 +1963,10 @@ class ServerImpl extends TcpDiscoveryImpl {
      * Adds failed nodes specified in the received message to the local failed nodes list.
      *
      * @param msg Message.
+     *
+     * @return {@code true} if sender node is not alive or in failed nodes list
      */
-    private void processMessageFailedNodes(TcpDiscoveryAbstractMessage msg) {
+    private boolean processMessageFailedNodes(TcpDiscoveryAbstractMessage msg) {
         Collection<UUID> msgFailedNodes = msg.failedNodes();
 
         if (msgFailedNodes != null) {
@@ -1977,7 +1979,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                             ", failedNodes=" + msgFailedNodes + ']');
                     }
 
-                    return;
+                    return true;
                 }
 
                 synchronized (mux) {
@@ -1988,7 +1990,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                                     ", failedNodes=" + msgFailedNodes + ']');
                             }
 
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -2015,6 +2017,8 @@ class ServerImpl extends TcpDiscoveryImpl {
                 }
             }
         }
+
+        return false;
     }
 
     protected void updateLastTimePrevNodeRcvd(TcpDiscoveryAbstractMessage msg) {
@@ -2542,7 +2546,7 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             initConnectionCheckFrequency();
 
-            connCheckTimer = new Timer("tcp-disco-conn-check", true);
+            connCheckTimer = new Timer("tcp-disco-conn-check%" + igniteInstanceName, true);
 
             connCheckTimer.schedule(new TimerTask() {
                 @Override public void run() {
@@ -2682,9 +2686,11 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             spi.stats.onMessageProcessingStarted(msg);
 
-            processMessageFailedNodes(msg);
+            if(processMessageFailedNodes(msg))
+                log.debug("Ignore message from failed node [msg=" + msg +
+                    ", senderNodeId=" + msg.senderNodeId() + ']');
 
-            if (msg instanceof TcpDiscoveryJoinRequestMessage)
+            else if (msg instanceof TcpDiscoveryJoinRequestMessage)
                 processJoinRequestMessage((TcpDiscoveryJoinRequestMessage)msg);
 
             else if (msg instanceof TcpDiscoveryClientReconnectMessage)
@@ -2994,10 +3000,11 @@ class ServerImpl extends TcpDiscoveryImpl {
                                 errs.add(e);
 
                                 if (log.isDebugEnabled())
-                                    U.error(log, "Failed to connect to next node [msg=" + msg
-                                        + ", err=" + e.getMessage() + ']', e);
+                                    U.error(log, "Failed to connect to next node [node=" + next + ", msg="
+                                        + msg + ", err=" + e.getMessage() + ']', e);
 
-                                onException("Failed to connect to next node [msg=" + msg + ", err=" + e + ']', e);
+                                onException("Failed to connect to next node [node=" + next + ", msg=" + msg + ", err="
+                                    + e.getMessage() + ']', e);
 
                                 if (!openSock)
                                     break; // Don't retry if we can not establish connection.

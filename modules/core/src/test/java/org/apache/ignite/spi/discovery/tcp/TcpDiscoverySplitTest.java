@@ -181,7 +181,7 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     protected void testFullSplitThenPartial(int[] startSeq) throws Exception {
 
         try {
-//            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
+            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
         }
         catch (AssertionError e) {
             U.error(log, e.getMessage(), e.getCause());
@@ -193,11 +193,6 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     }
 
     /** */
-    public void testSmallShuffledCoordSeg0() throws Exception {
-        testSplitRestore(new int[] {0, 1, 4, 2, 3, 5}, SPLIT_TIME);
-    }
-
-    /** */
     public void testConsecutiveCoordSeg0() throws Exception {
         testFullSplitThenPartial(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
     }
@@ -205,6 +200,16 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     /** */
     public void testConsecutiveCoordSeg1() throws Exception {
         testFullSplitThenPartial(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3});
+    }
+
+    /** */
+    public void testMixedCoordSeg0() throws Exception {
+        testFullSplitThenPartial(new int[] {0, 1, 4, 5, 6, 7, 2, 3, 8, 9, 10, 11});
+    }
+
+    /** */
+    public void testMixedCoordSeg1() throws Exception {
+        testFullSplitThenPartial(new int[] {4, 5, 6, 7, 0, 1, 8, 9, 10, 11, 2, 3});
     }
 
     /** */
