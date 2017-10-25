@@ -79,7 +79,8 @@ export default angular
             this.ConfigureState.dispatchAction({
                 type: 'BASIC_SAVE_CLUSTER_AND_CACHES',
                 changedItems: this._applyChangedIDs(edit),
-                prevActions
+                prevActions,
+                download
             });
         }).subscribe();
     }

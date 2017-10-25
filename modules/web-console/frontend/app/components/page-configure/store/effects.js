@@ -29,6 +29,7 @@ import {
 } from './actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
+import ConfigurationDownload from 'app/components/page-configure/services/ConfigurationDownload';
 import ConfigSelectors from 'app/components/page-configure/store/selectors';
 import Clusters from 'app/services/Clusters';
 import Caches from 'app/services/Caches';
@@ -49,7 +50,8 @@ export default class ConfigEffects {
         '$state',
         'IgniteMessages',
         'IgniteConfirm',
-        Confirm.name
+        Confirm.name,
+        ConfigurationDownload.name
     ];
     /**
      * @param {ConfigureState} ConfigureState
@@ -62,8 +64,9 @@ export default class ConfigEffects {
      * @param {object} IgniteMessages
      * @param {object} IgniteConfirm
      * @param {Confirm} Confirm
+     * @param {ConfigurationDownload} ConfigurationDownload
      */
-    constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages, IgniteConfirm, Confirm) {
+    constructor(ConfigureState, Caches, IGFSs, Models, ConfigSelectors, Clusters, $state, IgniteMessages, IgniteConfirm, Confirm, ConfigurationDownload) {
         this.ConfigureState = ConfigureState;
         this.ConfigSelectors = ConfigSelectors;
         this.IGFSs = IGFSs;
@@ -74,6 +77,7 @@ export default class ConfigEffects {
         this.IgniteMessages = IgniteMessages;
         this.IgniteConfirm = IgniteConfirm;
         this.Confirm = Confirm;
+        this.configurationDownload = ConfigurationDownload;
 
         this.loadConfigurationEffect$ = this.ConfigureState.actions$
             .let(ofType('LOAD_COMPLETE_CONFIGURATION'))
@@ -351,6 +355,14 @@ export default class ConfigEffects {
         this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
             .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id, justIDUpdate: true}, {location: 'replace'}))
+            .ignoreElements();
+
+        this.basicDownloadAfterSaveEffect$ = this.ConfigureState.actions$
+            .let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
+            .withLatestFrom(this.ConfigureState.actions$.let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES')))
+            .pluck('1')
+            .filter((a) => a.download)
+            .do((a) => this.configurationDownload.downloadClusterConfiguration(a.changedItems.cluster))
             .ignoreElements();
 
         this.advancedSaveRedirectEffect$ = this.ConfigureState.actions$

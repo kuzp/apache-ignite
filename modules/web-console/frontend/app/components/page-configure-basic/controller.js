@@ -30,6 +30,9 @@ import Caches from 'app/services/Caches';
 import Clusters from 'app/services/Clusters';
 
 export default class PageConfigureBasicController {
+    /** @type {ng.IFormController} */
+    form;
+
     static $inject = [
         Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, 'conf', Clusters.name, Caches.name, 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
     ];
@@ -160,9 +163,9 @@ export default class PageConfigureBasicController {
         this.conf.changeItem('caches', cache);
     }
 
-    save(andDownload = false) {
+    save(download = false) {
         if (this.form.$invalid) return this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
-        this.conf.saveBasic({andDownload, cluster: cloneDeep(this.clonedCluster)});
+        this.conf.saveBasic({download, cluster: cloneDeep(this.clonedCluster)});
     }
 
     reset() {
