@@ -196,6 +196,8 @@ class ServerImpl extends TcpDiscoveryImpl {
     @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
     private RingMessageWorker msgWorker;
 
+    private ConnChecker connChecker;
+
     /** Client message workers. */
     protected ConcurrentMap<UUID, ClientMessageWorker> clientMsgWorkers = new ConcurrentHashMap8<>();
 
@@ -334,6 +336,9 @@ class ServerImpl extends TcpDiscoveryImpl {
         msgWorker = new RingMessageWorker();
         msgWorker.start();
 
+        connChecker = new ConnChecker();
+        connChecker.start();
+
         if (tcpSrvr == null)
             tcpSrvr = new TcpServer();
 
@@ -456,6 +461,9 @@ class ServerImpl extends TcpDiscoveryImpl {
 
         U.interrupt(ipFinderCleaner);
         U.join(ipFinderCleaner, log);
+
+        U.interrupt(connChecker);
+        U.join(connChecker, log);
 
         U.interrupt(msgWorker);
         U.join(msgWorker, log);
@@ -1966,7 +1974,7 @@ class ServerImpl extends TcpDiscoveryImpl {
      *
      * @return {@code true} if sender node is not alive or in failed nodes list
      */
-    private boolean processMessageFailedNodes(TcpDiscoveryAbstractMessage msg) {
+    private void processMessageFailedNodes(TcpDiscoveryAbstractMessage msg) {
         Collection<UUID> msgFailedNodes = msg.failedNodes();
 
         if (msgFailedNodes != null) {
@@ -1979,7 +1987,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                             ", failedNodes=" + msgFailedNodes + ']');
                     }
 
-                    return true;
+                    return;
                 }
 
                 synchronized (mux) {
@@ -1990,7 +1998,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                                     ", failedNodes=" + msgFailedNodes + ']');
                             }
 
-                            return true;
+                            return;
                         }
                     }
                 }
@@ -2017,10 +2025,9 @@ class ServerImpl extends TcpDiscoveryImpl {
                 }
             }
         }
-
-        return false;
     }
 
+    /** */
     protected void updateLastTimePrevNodeRcvd(TcpDiscoveryAbstractMessage msg) {
         if (msg.senderNodeId() != null) {
             TcpDiscoveryNode prevNode = ring.prevNode();
@@ -2545,15 +2552,6 @@ class ServerImpl extends TcpDiscoveryImpl {
             super("tcp-disco-msg-worker", 10);
 
             initConnectionCheckFrequency();
-
-            connCheckTimer = new Timer("tcp-disco-conn-check%" + igniteInstanceName, true);
-
-            connCheckTimer.schedule(new TimerTask() {
-                @Override public void run() {
-                    if (ring.hasRemoteServerNodes())
-                        sendMessageAcrossRing(new TcpDiscoveryConnectionCheckMessage(locNode));
-                }
-            }, connCheckFreq, connCheckFreq);
         }
 
         /**
@@ -2686,11 +2684,7 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             spi.stats.onMessageProcessingStarted(msg);
 
-            if(processMessageFailedNodes(msg))
-                log.debug("Ignore message from failed node [msg=" + msg +
-                    ", senderNodeId=" + msg.senderNodeId() + ']');
-
-            else if (msg instanceof TcpDiscoveryJoinRequestMessage)
+            if (msg instanceof TcpDiscoveryJoinRequestMessage)
                 processJoinRequestMessage((TcpDiscoveryJoinRequestMessage)msg);
 
             else if (msg instanceof TcpDiscoveryClientReconnectMessage)
@@ -4803,6 +4797,7 @@ class ServerImpl extends TcpDiscoveryImpl {
             }
 
             UUID failedNodeId = msg.failedNodeId();
+
             long order = msg.order();
 
             TcpDiscoveryNode failedNode = ring.node(failedNodeId);
@@ -5481,7 +5476,7 @@ class ServerImpl extends TcpDiscoveryImpl {
             if (joiningEmpty && isLocalNodeCoordinator()) {
                 TcpDiscoveryCustomEventMessage msg;
 
-                while ((msg = pollPendingCustomeMessage()) != null) {
+                while ((msg = pollPendingCustomMessage()) != null) {
                     processCustomMessage(msg);
 
                     if (msg.verified())
@@ -5493,7 +5488,7 @@ class ServerImpl extends TcpDiscoveryImpl {
         /**
          * @return Pending custom message.
          */
-        @Nullable private TcpDiscoveryCustomEventMessage pollPendingCustomeMessage() {
+        @Nullable private TcpDiscoveryCustomEventMessage pollPendingCustomMessage() {
             synchronized (mux) {
                 return pendingCustomMsgs.poll();
             }
@@ -5613,6 +5608,26 @@ class ServerImpl extends TcpDiscoveryImpl {
                             prevNode.internalOrder()));
                     }
                 }
+            }
+        }
+    }
+
+    /** Keeps connection to a next node be alive */
+    private class ConnChecker extends IgniteSpiThread {
+
+        /**
+         **/
+        public ConnChecker() {
+            super(spi.ignite().name(), "tcp-disco-conn-checker", log);
+        }
+
+        /** {@inheritDoc} */
+        @Override protected void body() throws InterruptedException {
+            while (true) {
+                Thread.sleep(msgWorker.connCheckFreq);
+
+                if (ring.hasRemoteServerNodes())
+                    msgWorker.sendMessageAcrossRing(new TcpDiscoveryConnectionCheckMessage(locNode));
             }
         }
     }
@@ -5880,6 +5895,17 @@ class ServerImpl extends TcpDiscoveryImpl {
 
                     this.nodeId = nodeId;
 
+                    for (TcpDiscoveryNode n : failedNodes.keySet()) {
+                        if (n.id().equals(nodeId)) {
+                            if (log.isInfoEnabled())
+                                log.info("Ignoring handshake request from failed node [nodeId=" + nodeId + ']');
+
+                            U.closeQuiet(sock);
+
+                            return ;
+                        }
+                    }
+
                     TcpDiscoveryHandshakeResponse res =
                         new TcpDiscoveryHandshakeResponse(locNodeId, locNode.internalOrder());
 
@@ -6022,14 +6048,7 @@ class ServerImpl extends TcpDiscoveryImpl {
                         if (debugMode && recordable(msg))
                             debugLog(msg, "Message has been received: " + msg);
 
-                        if (msg instanceof TcpDiscoveryConnectionCheckMessage) {
-                            updateLastTimePrevNodeRcvd(msg);
-
-                            spi.writeToSocket(msg, sock, RES_OK, sockTimeout);
-
-                            continue;
-                        }
-                        else if (msg instanceof TcpDiscoveryJoinRequestMessage) {
+                        if (msg instanceof TcpDiscoveryJoinRequestMessage) {
                             TcpDiscoveryJoinRequestMessage req = (TcpDiscoveryJoinRequestMessage)msg;
 
                             if (!req.responded()) {
@@ -6212,10 +6231,29 @@ class ServerImpl extends TcpDiscoveryImpl {
 
                         TcpDiscoveryClientMetricsUpdateMessage metricsUpdateMsg = null;
 
+                        if (!(msg instanceof TcpDiscoveryNodeAddedMessage) &&
+                            ring.node(msg.senderNodeId()) == null) {
+
+                            if (log.isDebugEnabled())
+                                log.debug("Ignore message from unknown node [msg=" + msg +
+                                    ", senderNodeId=" + msg.senderNodeId() + ']');
+                            break;
+                        }
+
+                        if (msg instanceof TcpDiscoveryConnectionCheckMessage) {
+                            updateLastTimePrevNodeRcvd(msg);
+
+                            spi.writeToSocket(msg, sock, RES_OK, sockTimeout);
+
+                            continue;
+                        }
                         if (msg instanceof TcpDiscoveryClientMetricsUpdateMessage)
                             metricsUpdateMsg = (TcpDiscoveryClientMetricsUpdateMessage)msg;
-                        else
+                        else {
+                            processMessageFailedNodes(msg);
+
                             msgWorker.addMessage(msg);
+                        }
 
                         // Send receipt back.
                         if (clientMsgWrk != null) {

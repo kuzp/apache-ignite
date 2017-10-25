@@ -55,6 +55,10 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
         return port >= DFLT_PORT && port <= (DFLT_PORT + TcpDiscoverySpi.DFLT_PORT_RANGE);
     }
 
+    @Override protected long getTestTimeout() {
+        return 120_000L;
+    }
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
@@ -88,13 +92,6 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     }
 
     /** {@inheritDoc} */
-    @Override protected void beforeTest() throws Exception {
-        super.beforeTest();
-
-        stopAllGrids();
-    }
-
-    /** {@inheritDoc} */
     @Override protected void afterTest() throws Exception {
         stopAllGrids();
 
@@ -119,16 +116,20 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
                 awaitPartitionMapExchange();
             }
 
+            long beforeSplitTime = U.currentTimeMillis();
+
             split();
 
             Thread.sleep(splitTime);
 
             unsplit(false);
 
-            long restoreDelay = DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT;
+            awaitSegmentation();
 
-            if (restoreDelay > 0)
-                Thread.sleep(restoreDelay);
+            long exchangeEndTime = U.currentTimeMillis();
+
+            if (log.isInfoEnabled())
+                log.info("Split with exchange finished in " + (exchangeEndTime - beforeSplitTime) + " ms");
 
             Set[] segs = {new HashSet(), new HashSet()};
 
@@ -164,61 +165,52 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
             }
         }
         finally {
-            for (int i = 0; i < startSeq.length; ++i) {
-                int idx = startSeq[i];
-                if (grids[i] != null)
-                    try {
-                        stopGrid(idx);
-                    }
-                    catch (Throwable e) {
-                        U.warn(log, "Stop grid error", e);
-                    }
-            }
+//            for (int i = 0; i < startSeq.length; ++i) {
+//                int idx = startSeq[i];
+//                if (grids[i] != null)
+//                    try {
+//                        stopGrid(idx);
+//                    }
+//                    catch (Throwable e) {
+//                        U.warn(log, "Stop grid error", e);
+//                    }
+//            }
         }
     }
 
     /** */
-    protected void testFullSplitThenPartial(int[] startSeq) throws Exception {
-
-        try {
-            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
-        }
-        catch (AssertionError e) {
-            U.error(log, e.getMessage(), e.getCause());
-
-            fail("Full split failed");
-        }
-
-        testSplitRestore(startSeq, SPLIT_TIME);
+    public void testFullSplit() throws Exception {
+        int[] startSeq = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        testSplitRestore(startSeq, startSeq.length * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
     }
 
     /** */
     public void testConsecutiveCoordSeg0() throws Exception {
-        testFullSplitThenPartial(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+        testSplitRestore(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, SPLIT_TIME);
     }
 
     /** */
     public void testConsecutiveCoordSeg1() throws Exception {
-        testFullSplitThenPartial(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3});
+        testSplitRestore(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3}, SPLIT_TIME);
     }
 
     /** */
     public void testMixedCoordSeg0() throws Exception {
-        testFullSplitThenPartial(new int[] {0, 1, 4, 5, 6, 7, 2, 3, 8, 9, 10, 11});
+        testSplitRestore(new int[] {0, 1, 4, 5, 6, 7, 2, 3, 8, 9, 10, 11}, SPLIT_TIME);
     }
 
     /** */
     public void testMixedCoordSeg1() throws Exception {
-        testFullSplitThenPartial(new int[] {4, 5, 6, 7, 0, 1, 8, 9, 10, 11, 2, 3});
+        testSplitRestore(new int[] {4, 5, 6, 7, 0, 1, 8, 9, 10, 11, 2, 3}, SPLIT_TIME);
     }
 
     /** */
     public void testShuffledCoordSeg0() throws Exception {
-        testFullSplitThenPartial(new int[] {0, 4, 5, 1, 6, 7, 2, 8, 9, 3, 10, 11});
+        testSplitRestore(new int[] {0, 4, 5, 1, 6, 7, 2, 8, 9, 3, 10, 11}, SPLIT_TIME);
     }
 
     /** */
     public void testShuffledCoordSeg1() throws Exception {
-        testFullSplitThenPartial(new int[] {4, 5, 0, 6, 7, 1, 8, 9, 2, 10, 11, 3});
+        testSplitRestore(new int[] {4, 5, 0, 6, 7, 1, 8, 9, 2, 10, 11, 3}, SPLIT_TIME);
     }
 }
