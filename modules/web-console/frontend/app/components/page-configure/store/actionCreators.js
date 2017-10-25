@@ -34,19 +34,22 @@ export const removeClusterItems = (clusterID, itemType, itemIDs, save = false, c
 
 /**
  * @typedef {object} IRemoveClusterItemsConfirmed
+ * @prop {string} clusterID
  * @prop {'REMOVE_CLUSTER_ITEMS_CONFIRMED'} type
  * @prop {('caches'|'igfss'|'models')} itemType
  * @prop {Array<string>} itemIDs
  */
 
 /**
+ * @param {string} clusterID
  * @param {(('caches'|'igfss'|'models'))} itemType
  * @param {Array<string>} itemIDs
  * @returns {IRemoveClusterItemsConfirmed}
  */
-export const removeClusterItemsConfirmed = (itemType, itemIDs) => ({
+export const removeClusterItemsConfirmed = (clusterID, itemType, itemIDs) => ({
     type: REMOVE_CLUSTER_ITEMS_CONFIRMED,
     itemType,
+    clusterID,
     itemIDs
 });
 
