@@ -22,10 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,7 +38,6 @@ import org.apache.ignite.console.agent.rest.RestResult;
 import org.apache.ignite.internal.processors.rest.client.message.GridClientNodeBean;
 import org.apache.ignite.internal.processors.rest.protocols.http.jetty.GridJettyObjectMapper;
 import org.apache.ignite.internal.util.typedef.F;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteProductVersion;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import static org.apache.ignite.console.agent.AgentUtils.toJSON;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_BUILD_VER;
 import static org.apache.ignite.internal.processors.rest.GridRestResponse.STATUS_SUCCESS;
+import static org.apache.ignite.internal.visor.util.VisorTaskUtils.sortAddresses;
 
 /**
  * API to transfer topology from Ignite cluster available by node-uri.
@@ -59,7 +61,7 @@ public class ClusterListener {
 
     /** */
     private static final String EVENT_CLUSTER_TOPOLOGY = "cluster:topology";
-    
+
     /** */
     private static final String EVENT_CLUSTER_DISCONNECTED = "cluster:disconnected";
 
@@ -77,17 +79,6 @@ public class ClusterListener {
 
     /** */
     private final BroadcastTask broadcastTask = new BroadcastTask();
-
-    /** */
-    private static final IgniteClosure<GridClientNodeBean, UUID> NODE2ID = new IgniteClosure<GridClientNodeBean, UUID>() {
-        @Override public UUID apply(GridClientNodeBean n) {
-            return n.getNodeId();
-        }
-
-        @Override public String toString() {
-            return "Node bean to node ID transformer closure.";
-        }
-    };
 
     /** */
     private static final IgniteClosure<UUID, String> ID2ID8 = new IgniteClosure<UUID, String>() {
@@ -171,7 +162,7 @@ public class ClusterListener {
             @Override public void call(Object... args) {
                 safeStopRefresh();
 
-                final long timeout = args.length > 1  && args[1] instanceof Long ? (long)args[1] : DFLT_TIMEOUT;
+                final long timeout = args.length > 1 && args[1] instanceof Long ? (long)args[1] : DFLT_TIMEOUT;
 
                 refreshTask = pool.scheduleWithFixedDelay(broadcastTask, 0L, timeout, TimeUnit.MILLISECONDS);
             }
@@ -197,38 +188,66 @@ public class ClusterListener {
         private Collection<UUID> nids;
 
         /** */
-        private String clusterVer;
+        private Map<UUID, String> addrs;
+
+        /** */
+        private String clusterVerStr;
+
+        /** */
+        private IgniteProductVersion clusterVer;
+
+        /** */
+        private boolean active;
 
         /**
          * @param nodes Nodes.
          */
         TopologySnapshot(Collection<GridClientNodeBean> nodes) {
-            nids = F.viewReadOnly(nodes, NODE2ID);
+            int sz = nodes.size();
 
-            Collection<T2<String, IgniteProductVersion>> vers = F.transform(nodes,
-                new IgniteClosure<GridClientNodeBean, T2<String, IgniteProductVersion>>() {
-                    @Override public T2<String, IgniteProductVersion> apply(GridClientNodeBean bean) {
-                        String ver = (String)bean.getAttributes().get(ATTR_BUILD_VER);
+            nids = new ArrayList<>(sz);
+            addrs = new HashMap<>(sz);
+            active = false;
 
-                        return new T2<>(ver, IgniteProductVersion.fromString(ver));
-                    }
-                });
+            for (GridClientNodeBean node : nodes) {
+                UUID nid = node.getNodeId();
 
-            T2<String, IgniteProductVersion> min = Collections.min(vers, new Comparator<T2<String, IgniteProductVersion>>() {
-                @SuppressWarnings("ConstantConditions")
-                @Override public int compare(T2<String, IgniteProductVersion> o1, T2<String, IgniteProductVersion> o2) {
-                    return o1.get2().compareTo(o2.get2());
+                nids.add(nid);
+
+                String firstIP = F.first(sortAddresses(node.getTcpAddresses()));
+
+                addrs.put(nid, firstIP);
+
+                String nodeVerStr = (String)node.getAttributes().get(ATTR_BUILD_VER);
+
+                IgniteProductVersion nodeVer = IgniteProductVersion.fromString(nodeVerStr);
+
+                if (clusterVer == null || clusterVer.compareTo(nodeVer) > 0) {
+                    clusterVer = nodeVer;
+                    clusterVerStr = nodeVerStr;
                 }
-            });
-
-            clusterVer = min.get1();
+            }
         }
 
         /**
          * @return Cluster version.
          */
         public String getClusterVersion() {
-            return clusterVer;
+            return clusterVerStr;
+        }
+
+        /**
+         * @return Cluster active flag.
+         */
+        public boolean isActive() {
+            return active;
+        }
+
+        /**
+         * @param active New cluster active state.
+         */
+        public void setActive(boolean active) {
+            this.active = active;
         }
 
         /**
@@ -238,14 +257,33 @@ public class ClusterListener {
             return nids;
         }
 
-        /**  */
+        /**
+         * @return Cluster nodes with IPs.
+         */
+        public Map<UUID, String> getAddresses() {
+            return addrs;
+        }
+
+        /**
+         * @return Cluster version.
+         */
+        public IgniteProductVersion clusterVer() {
+            return clusterVer;
+        }
+
+        /**
+         * @return Collection of short UUIDs.
+         */
         Collection<String> nid8() {
             return F.viewReadOnly(nids, ID2ID8);
         }
 
-        /**  */
-        boolean differentCluster(TopologySnapshot old) {
-            return old == null || F.isEmpty(old.nids) || Collections.disjoint(nids, old.nids);
+        /**
+         * @param prev Previous topology.
+         * @return {@code true} in case if current topology is a new cluster.
+         */
+        boolean differentCluster(TopologySnapshot prev) {
+            return prev == null || F.isEmpty(prev.nids) || Collections.disjoint(nids, prev.nids);
         }
     }
 
@@ -259,12 +297,28 @@ public class ClusterListener {
                 switch (res.getStatus()) {
                     case STATUS_SUCCESS:
                         List<GridClientNodeBean> nodes = MAPPER.readValue(res.getData(),
-                            new TypeReference<List<GridClientNodeBean>>() {});
+                            new TypeReference<List<GridClientNodeBean>>() {
+                            });
 
                         TopologySnapshot newTop = new TopologySnapshot(nodes);
 
                         if (newTop.differentCluster(top))
                             log.info("Connection successfully established to cluster with nodes: {}", newTop.nid8());
+
+//                        RestResult resActive = restExecutor.active();
+//
+//                        switch (resActive.getStatus()) {
+//                            case STATUS_SUCCESS:
+//                                top.setActive(true /*resActive.getData()*/);
+//
+//                                break;
+//
+//                            default:
+//                                log.warn(res.getError());
+//
+//                                clusterDisconnect();
+//
+//                        }
 
                         top = newTop;
 
@@ -288,7 +342,7 @@ public class ClusterListener {
             }
         }
     }
-    
+
     /** */
     private class BroadcastTask implements Runnable {
         /** {@inheritDoc} */

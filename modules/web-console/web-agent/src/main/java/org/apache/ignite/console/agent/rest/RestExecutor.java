@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.ConnectException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -208,7 +209,9 @@ public class RestExecutor {
     }
 
     /**
-     * @param demo Is demo node request.
+     * @param demo {@code true} in case of demo mode.
+     * @param full Flag indicating whether to collect metrics or not.
+     * @throws IOException If failed to collect topology.
      */
     public RestResult topology(boolean demo, boolean full) throws IOException {
         Map<String, Object> params = new HashMap<>(3);
@@ -218,6 +221,18 @@ public class RestExecutor {
         params.put("mtr", full);
 
         return sendRequest(demo, "ignite", params, null, null);
+    }
+
+    /**
+     * @return Cluster active state.
+     * @throws IOException If failed to collect cluster active state.
+     */
+    public RestResult active() throws IOException {
+        Map<String, Object> params = new HashMap<>(1);
+
+        params.put("cmd", "currentState");
+
+        return sendRequest(false, "ignite", params, null, null);
     }
 
     /**
