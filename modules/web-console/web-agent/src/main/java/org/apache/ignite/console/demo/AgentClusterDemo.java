@@ -139,8 +139,7 @@ public class AgentClusterDemo {
         dataRegCfg.setMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
 
         DataStorageConfiguration dataStorageCfg = new DataStorageConfiguration();
-        dataStorageCfg.setDataRegionConfigurations(dataRegCfg);
-        dataStorageCfg.setDataRegionConfigurations(dataRegCfg);
+        dataStorageCfg.setDefaultDataRegionConfiguration(dataRegCfg);
         dataStorageCfg.setSystemRegionMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
 
         cfg.setDataStorageConfiguration(dataStorageCfg);
