@@ -27,9 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteServices;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.DataRegionConfiguration;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.configuration.MemoryConfiguration;
-import org.apache.ignite.configuration.MemoryPolicyConfiguration;
 import org.apache.ignite.console.demo.service.DemoCachesLoadService;
 import org.apache.ignite.console.demo.service.DemoComputeLoadService;
 import org.apache.ignite.console.demo.service.DemoRandomCacheLoadService;
@@ -53,6 +53,7 @@ import static org.apache.ignite.IgniteSystemProperties.IGNITE_NO_ASCII;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_PERFORMANCE_SUGGESTIONS_DISABLED;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_QUIET;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_UPDATE_NOTIFIER;
+import static org.apache.ignite.configuration.DataStorageConfiguration.DFLT_DATA_REGION_INITIAL_SIZE;
 import static org.apache.ignite.console.demo.AgentDemoUtils.newScheduledThreadPool;
 import static org.apache.ignite.events.EventType.EVTS_DISCOVERY;
 import static org.apache.ignite.internal.visor.util.VisorTaskUtils.VISOR_TASK_EVTS;
@@ -132,18 +133,17 @@ public class AgentClusterDemo {
         cfg.setGridLogger(new Slf4jLogger(log));
         cfg.setMetricsLogFrequency(0);
 
-        MemoryConfiguration memCfg = new MemoryConfiguration();
+        DataRegionConfiguration dataRegCfg = new DataRegionConfiguration();
+        dataRegCfg.setName("demo");
+        dataRegCfg.setMetricsEnabled(true);
+        dataRegCfg.setMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
 
-        MemoryPolicyConfiguration memPlc = new MemoryPolicyConfiguration();
-        memPlc.setName("demo");
-        memPlc.setMetricsEnabled(true);
-        memPlc.setMaxSize(MemoryConfiguration.DFLT_MEMORY_POLICY_INITIAL_SIZE);
+        DataStorageConfiguration dataStorageCfg = new DataStorageConfiguration();
+        dataStorageCfg.setDataRegionConfigurations(dataRegCfg);
+        dataStorageCfg.setDataRegionConfigurations(dataRegCfg);
+        dataStorageCfg.setSystemRegionMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
 
-        memCfg.setMemoryPolicies(memPlc);
-
-        memCfg.setDefaultMemoryPolicyName("demo");
-
-        cfg.setMemoryConfiguration(memCfg);
+        cfg.setDataStorageConfiguration(dataStorageCfg);
 
         if (client)
             cfg.setClientMode(true);
