@@ -23,18 +23,46 @@ import {
     removeClusterItems
 } from 'app/components/page-configure/store/actionCreators';
 
+import {Confirm} from 'app/services/Confirm.service';
+import ConfigureState from 'app/components/page-configure/services/ConfigureState';
+import ConfigSelectors from 'app/components/page-configure/store/selectors';
+import Caches from 'app/services/Caches';
+import Clusters from 'app/services/Clusters';
+
 export default class PageConfigureBasicController {
     static $inject = [
-        'IgniteConfirm', '$uiRouter', 'ConfigureState', 'ConfigSelectors', 'conf', 'Clusters', 'Caches', 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
+        Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, 'conf', Clusters.name, Caches.name, 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
     ];
 
-    constructor(IgniteConfirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {IgniteConfirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope});
+    /**
+     * @param {Confirm} Confirm
+     * @param {object} $uiRouter
+     * @param {ConfigureState} ConfigureState
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {object} conf
+     * @param {Clusters} Clusters
+     * @param {Caches} Caches
+     * @param {object} IgniteVersion
+     * @param {JQLite} $element
+     * @param {object} ConfigChangesGuard
+     * @param {object} IgniteFormUtils
+     * @param {ng.IScope} $scope
+     */
+    constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
+        Object.assign(this, {$uiRouter, conf, IgniteVersion, ConfigChangesGuard, IgniteFormUtils});
+        this.$scope = $scope;
+        this.$element = $element;
+        this.Caches = Caches;
+        this.Clusters = Clusters;
+        this.Confirm = Confirm;
+        this.ConfigureState = ConfigureState;
+        this.ConfigSelectors = ConfigSelectors;
     }
 
     $onDestroy() {
         this.subscription.unsubscribe();
         if (this.onBeforeTransition) this.onBeforeTransition();
+        this.$element = null;
     }
 
     $postLink() {
@@ -145,9 +173,8 @@ export default class PageConfigureBasicController {
     }
 
     confirmAndReset() {
-        return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current cluster?')
-        .then((forReal = true) => {
-            if (forReal) this.reset();
-        });
+        return this.Confirm.confirm('Are you sure you want to undo all changes for current cluster?')
+        .then(() => this.reset())
+        .catch(() => {});
     }
 }
