@@ -416,7 +416,7 @@ export default class ConfigEffects {
                         .catch(() => empty())
                     : of(a);
             })
-            .map((a) => removeClusterItemsConfirmed(a.itemType, a.itemIDs));
+            .map((a) => removeClusterItemsConfirmed(a.clusterID, a.itemType, a.itemIDs));
 
         this.persistRemovedClusterItemsEffect$ = this.ConfigureState.actions$
             .let(ofType(REMOVE_CLUSTER_ITEMS_CONFIRMED))
