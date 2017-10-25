@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -255,8 +256,12 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         if (msg.requestId().equals(globalState.transitionRequestId())) {
             log.info("Received state change finish message: " + msg.clusterActive());
 
-            if (msg.clusterActive())
-                saveBaselineTopology(new BaselineTopologyImpl(ctx.discovery().topology(ctx.discovery().topologyVersion())));
+            if (msg.clusterActive()) {
+                if (blt == null)
+                    saveBaselineTopology(new BaselineTopologyImpl(ctx.discovery().topology(ctx.discovery().topologyVersion())));
+                else
+                    updateBaselineTopology(blt, ctx.discovery().topology(ctx.discovery().topologyVersion()));
+            }
 
             globalState = DiscoveryDataClusterState.createState(msg.clusterActive());
 
@@ -269,6 +274,28 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
         }
         else
             U.warn(log, "Received state finish message with unexpected ID: " + msg);
+    }
+
+    private void updateBaselineTopology(BaselineTopologyImpl blt, Collection<ClusterNode> topology) {
+        try {
+            int hash = 0;
+            for (ClusterNode clusterNode : topology)
+                hash += clusterNode.consistentId().hashCode();
+
+            if (blt.addHistoryItem(hash)) {
+                File file = new File(workDir, "blt.bin");
+
+                try (FileOutputStream out = new FileOutputStream(file, false)) {
+                    byte[] bltBin = U.marshal(ctx, blt);
+
+                    out.write(bltBin);
+                }
+            }
+        }
+        catch (Exception e) {
+            U.warn(log, "Failed to save BaselineTopology");
+            e.printStackTrace();
+        }
     }
 
     @Nullable private BaselineTopologyImpl restoreBaselineTopology() {

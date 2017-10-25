@@ -16,25 +16,40 @@
  */
 package org.apache.ignite.internal.processors.cluster;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import org.apache.ignite.cluster.ClusterNode;
 import org.jetbrains.annotations.NotNull;
 
 /**
  *
  */
-public class BaselineTopologyImpl {
+public class BaselineTopologyImpl implements Serializable {
     private Collection<Object> nodeIds;
+
+    private int currentHash = 0;
+
+    private List<Integer> history;
+
+    private BaselineTopologyImpl parent;
 
     public BaselineTopologyImpl(Collection<ClusterNode> nodes) {
         nodeIds = new ArrayList(nodes.size());
 
+        history = new ArrayList<>(10);
+
         Iterator<ClusterNode> iter = nodes.iterator();
 
-        while (iter.hasNext())
-            nodeIds.add(iter.next().consistentId());
+        while (iter.hasNext()) {
+            ClusterNode nextNode = iter.next();
+
+            nodeIds.add(nextNode.consistentId());
+
+            currentHash += nextNode.consistentId().hashCode();
+        }
     }
 
     public boolean isSatisfied(@NotNull Collection<ClusterNode> presentedNodes) {
@@ -58,5 +73,20 @@ public class BaselineTopologyImpl {
         }
 
         return false;
+    }
+
+    public boolean addHistoryItem(int hash) {
+        System.out.println("-->>-->> [" + Thread.currentThread().getName() + "] "  + System.currentTimeMillis() + " adding historyItem to blt[currentHash=" + currentHash + "]; new hash = " + hash);
+        if (currentHash == hash)
+            return false;
+        else {
+            currentHash = hash;
+
+
+
+            history.add(hash);
+
+            return true;
+        }
     }
 }
