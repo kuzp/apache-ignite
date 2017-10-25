@@ -17,6 +17,8 @@
 
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
+import Worker from 'worker!./decompress.worker';
+import SimpleWorkerPool from '../../utils/SimpleWorkerPool';
 import maskNull from 'app/core/utils/maskNull';
 
 const State = {
@@ -87,11 +89,9 @@ export default class IgniteAgentManager {
 
         this.promises = new Set();
 
-        /**
-         * Connection to backend.
-         * @type {Socket}
-         */
-        this.socket = null;
+        this.pool = new SimpleWorkerPool('decompressor', Worker, 4);
+
+        this.socket = null; // Connection to backend.
 
         let cluster;
 
@@ -372,7 +372,13 @@ export default class IgniteAgentManager {
      * @private
      */
     _rest(event, ...args) {
-        return this._emit(event, _.get(this.connectionSbj.getValue(), 'cluster.id'), ...args);
+        return this._emit(event, _.get(this.connectionSbj.getValue(), 'cluster.id'), ...args)
+            .then((data) => {
+                if (data.zipped)
+                    return this.pool.postMessage(data.data);
+
+                return data;
+            });
     }
 
     /**
@@ -385,11 +391,10 @@ export default class IgniteAgentManager {
     }
 
     /**
-     * @param {String} [cacheName] Cache name.
      * @returns {Promise}
      */
-    metadata(cacheName) {
-        return this._rest('node:rest', {cmd: 'metadata', cacheName: maskNull(cacheName)})
+    metadata() {
+        return this._rest('node:rest', {cmd: 'metadata'})
             .then((caches) => {
                 let types = [];
 
@@ -598,7 +603,7 @@ export default class IgniteAgentManager {
                 nid + '=' + queryId);
         }
 
-        return this.visorTask('queryClose', nid, queryId);
+        return this.visorTask('queryClose', nid, nid, queryId);
     }
 
     /**

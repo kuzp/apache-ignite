@@ -72,7 +72,9 @@ import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.apache.ignite.transactions.Transaction;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 
 import static org.apache.ignite.events.EventType.EVT_WAL_SEGMENT_ARCHIVED;
 import static org.apache.ignite.internal.processors.cache.GridCacheOperation.DELETE;
@@ -341,6 +343,23 @@ public class IgniteWalReaderTest extends GridCommonAbstractTest {
 
         for (int i = 0; i < recordsToWrite; i++)
             cache0.put(i, new IndexedObject(i));
+    }
+
+    /**
+     * Puts provided number of records to fill WAL
+     *
+     * @param ignite ignite instance
+     * @param recordsToWrite count
+     */
+    private void putAllDummyRecords(Ignite ignite, int recordsToWrite) {
+        IgniteCache<Object, Object> cache0 = ignite.cache(CACHE_NAME);
+
+        Map<Object, Object> values = new HashMap<>();
+
+        for (int i = 0; i < recordsToWrite; i++)
+            values.put(i, new IndexedObject(i));
+
+        cache0.putAll(values);
     }
 
     /**
@@ -720,6 +739,78 @@ public class IgniteWalReaderTest extends GridCommonAbstractTest {
     }
 
     /**
+     * Tests archive completed event is fired
+     *
+     * @throws Exception if failed
+     */
+    public void testFillWalForExactSegmentsCount() throws Exception {
+        customWalMode = WALMode.DEFAULT;
+
+        final CountDownLatch reqSegments = new CountDownLatch(15);
+        final Ignite ignite = startGrid("node0");
+
+        ignite.active(true);
+
+        final IgniteEvents evts = ignite.events();
+
+        if (!evts.isEnabled(EVT_WAL_SEGMENT_ARCHIVED))
+            assertTrue("nothing to test", false);
+
+        evts.localListen(new IgnitePredicate<Event>() {
+            @Override public boolean apply(Event e) {
+                WalSegmentArchivedEvent archComplEvt = (WalSegmentArchivedEvent)e;
+                long idx = archComplEvt.getAbsWalSegmentIdx();
+                log.info("Finished archive for segment [" + idx + ", " +
+                    archComplEvt.getArchiveFile() + "]: [" + e + "]");
+
+                reqSegments.countDown();
+                return true;
+            }
+        }, EVT_WAL_SEGMENT_ARCHIVED);
+
+
+        int totalEntries = 0;
+        while (reqSegments.getCount() > 0) {
+            final int write = 500;
+            putAllDummyRecords(ignite, write);
+            totalEntries += write;
+            Assert.assertTrue("Too much entries generated, but segments was not become available",
+                totalEntries < 10000);
+        }
+        final String subfolderName = U.maskForFileName(ignite.cluster().localNode().consistentId().toString());
+
+        stopGrid("node0");
+
+        final String workDir = U.defaultWorkDirectory();
+        final IgniteWalIteratorFactory factory = createWalIteratorFactory(subfolderName, workDir);
+
+        scanIterateAndCount(factory, workDir, subfolderName, totalEntries, 0, null, null);
+    }
+
+    /**
+     * Tests reading of empty WAL from non filled cluster
+     *
+     * @throws Exception if failed.
+     */
+    public void testReadEmptyWal() throws Exception {
+        customWalMode = WALMode.DEFAULT;
+
+        final Ignite ignite = startGrid("node0");
+
+        ignite.active(true);
+        ignite.active(false);
+
+        final String subfolderName = U.maskForFileName(ignite.cluster().localNode().consistentId().toString());
+
+        stopGrid("node0");
+
+        final String workDir = U.defaultWorkDirectory();
+        final IgniteWalIteratorFactory factory = createWalIteratorFactory(subfolderName, workDir);
+
+        scanIterateAndCount(factory, workDir, subfolderName, 0, 0, null, null);
+    }
+
+    /**
      * Creates and fills cache with data.
      *
      * @param ig Ignite instance.
@@ -831,12 +922,14 @@ public class IgniteWalReaderTest extends GridCommonAbstractTest {
 
     /**
      * @param subfolderName Subfolder name.
-     * @param workDir Work dir.
+     * @param workDir Work directory.
      * @return WAL iterator factory.
      * @throws IgniteCheckedException If failed.
      */
-    private IgniteWalIteratorFactory createWalIteratorFactory(String subfolderName,
-        String workDir) throws IgniteCheckedException {
+    @NotNull private IgniteWalIteratorFactory createWalIteratorFactory(
+        String subfolderName,
+        String workDir
+    ) throws IgniteCheckedException {
         final File binaryMeta = U.resolveWorkDirectory(workDir, "binary_meta", false);
         final File binaryMetaWithConsId = new File(binaryMeta, subfolderName);
         final File marshallerMapping = U.resolveWorkDirectory(workDir, "marshaller", false);
@@ -846,7 +939,6 @@ public class IgniteWalReaderTest extends GridCommonAbstractTest {
             binaryMetaWithConsId,
             marshallerMapping);
     }
-
 
     /**
      * @param values collection with numbers

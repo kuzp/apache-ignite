@@ -64,6 +64,7 @@ import org.h2.table.Column;
 import org.h2.value.DataType;
 
 import static org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing.UPDATE_RESULT_META;
+import static org.apache.ignite.internal.processors.query.h2.sql.GridSqlQueryParser.PARAM_WRAP_VALUE;
 
 /**
  * DDL statements processor.<p>
@@ -183,9 +184,9 @@ public class DdlStatementsProcessor {
                     if (err != null)
                         throw err;
 
-                    ctx.query().dynamicTableCreate(cmd.schemaName(), e, cmd.templateName(), cmd.cacheGroup(),
-                        cmd.affinityKey(), cmd.atomicityMode(), cmd.writeSynchronizationMode(), cmd.backups(),
-                        cmd.ifNotExists());
+                    ctx.query().dynamicTableCreate(cmd.schemaName(), e, cmd.templateName(), cmd.cacheName(),
+                        cmd.cacheGroup(),cmd.affinityKey(), cmd.atomicityMode(),
+                        cmd.writeSynchronizationMode(), cmd.backups(), cmd.ifNotExists());
                 }
             }
             else if (stmt0 instanceof GridSqlDropTable) {
@@ -228,6 +229,10 @@ public class DdlStatementsProcessor {
                             cmd.tableName());
                 }
                 else {
+                    if (QueryUtils.isSqlType(tbl.rowDescriptor().type().valueClass()))
+                        throw new SchemaOperationException("Cannot add column(s) because table was created " +
+                            "with " + PARAM_WRAP_VALUE + "=false option.");
+
                     List<QueryField> cols = new ArrayList<>(cmd.columns().length);
 
                     for (GridSqlColumn col : cmd.columns()) {
@@ -359,10 +364,43 @@ public class DdlStatementsProcessor {
         String valTypeName = QueryUtils.createTableValueTypeName(createTbl.schemaName(), createTbl.tableName());
         String keyTypeName = QueryUtils.createTableKeyTypeName(valTypeName);
 
+        if (!F.isEmpty(createTbl.keyTypeName()))
+            keyTypeName = createTbl.keyTypeName();
+
+        if (!F.isEmpty(createTbl.valueTypeName()))
+            valTypeName = createTbl.valueTypeName();
+
+        assert createTbl.wrapKey() != null;
+        assert createTbl.wrapValue() != null;
+
+        if (!createTbl.wrapKey()) {
+            GridSqlColumn pkCol = createTbl.columns().get(createTbl.primaryKeyColumns().iterator().next());
+
+            keyTypeName = DataType.getTypeClassName(pkCol.column().getType());
+
+            res.setKeyFieldName(pkCol.columnName());
+        }
+        else
+            res.setKeyFields(createTbl.primaryKeyColumns());
+
+        if (!createTbl.wrapValue()) {
+            GridSqlColumn valCol = null;
+
+            for (Map.Entry<String, GridSqlColumn> e : createTbl.columns().entrySet()) {
+                if (!createTbl.primaryKeyColumns().contains(e.getKey())) {
+                    valCol = e.getValue();
+
+                    break;
+                }
+            }
+
+            valTypeName = DataType.getTypeClassName(valCol.column().getType());
+
+            res.setValueFieldName(valCol.columnName());
+        }
+
         res.setValueType(valTypeName);
         res.setKeyType(keyTypeName);
-
-        res.setKeyFields(createTbl.primaryKeyColumns());
 
         if (!F.isEmpty(notNullFields)) {
             QueryEntityEx res0 = new QueryEntityEx(res);
