@@ -42,7 +42,10 @@ export default angular.module('ignite-console.page-configure.validation', [])
             $onInit() {
                 this.ngModel.$validators.inCollection = (item) => {
                     if (!this.items) return false;
-                    return (this.pluck ? this.items.map((i) => i[this.pluck]) : this.items).includes(item);
+                    const items = this.pluck ? this.items.map((i) => i[this.pluck]) : this.items;
+                    return Array.isArray(item)
+                        ? item.every((i) => items.includes(i))
+                        : items.includes(item);
                 };
             }
 
