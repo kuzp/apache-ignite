@@ -16,6 +16,7 @@
  */
 package org.apache.ignite.spi.discovery.tcp;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,11 +59,13 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
 
+        int idx = getTestIgniteInstanceIndex(gridName);
+
         SplitTcpDiscoverySpi disco = (SplitTcpDiscoverySpi)cfg.getDiscoverySpi();
 
-        disco.setSocketTimeout(DISCO_TIMEOUT);
+        disco.setLocalPort(getDiscoPort(idx));
 
-        int idx = getTestIgniteInstanceIndex(gridName);
+        disco.setSocketTimeout(DISCO_TIMEOUT);
 
         cfg.setUserAttributes(Collections.singletonMap(NODE_IDX_ATTR, idx));
 
@@ -101,6 +104,10 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     /** */
     @SuppressWarnings("unchecked")
     protected void testSplitRestore(int[] startSeq, long splitTime) throws Exception {
+        if (log.isInfoEnabled())
+            log.info("Start sequence [size=" + startSeq.length + ", indices=" + Arrays.toString(startSeq) +
+                ", splitTime=" + splitTime);
+
         IgniteEx[] grids = new IgniteEx[startSeq.length];
 
         try {
@@ -118,7 +125,10 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
 
             unsplit(false);
 
-            Thread.sleep(DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT);
+            long restoreDelay = DISCO_TIMEOUT * startSeq.length - splitTime + DISCO_TIMEOUT;
+
+            if (restoreDelay > 0)
+                Thread.sleep(restoreDelay);
 
             Set[] segs = {new HashSet(), new HashSet()};
 
@@ -171,7 +181,7 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     protected void testFullSplitThenPartial(int[] startSeq) throws Exception {
 
         try {
-            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
+//            testSplitRestore(startSeq, (startSeq.length - SEG_0_SIZE) * DISCO_TIMEOUT + DISCO_TIMEOUT / 2);
         }
         catch (AssertionError e) {
             U.error(log, e.getMessage(), e.getCause());
@@ -180,6 +190,11 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
         }
 
         testSplitRestore(startSeq, SPLIT_TIME);
+    }
+
+    /** */
+    public void testSmallShuffledCoordSeg0() throws Exception {
+        testSplitRestore(new int[] {0, 1, 4, 2, 3, 5}, SPLIT_TIME);
     }
 
     /** */

@@ -47,6 +47,8 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
@@ -55,6 +57,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
@@ -240,6 +243,9 @@ class ServerImpl extends TcpDiscoveryImpl {
     /** Map with proceeding ping requests. */
     private final ConcurrentMap<InetSocketAddress, GridPingFutureAdapter<IgniteBiTuple<UUID, Boolean>>> pingMap =
         new ConcurrentHashMap8<>();
+
+    /** Time when the last message from previous node was received. */
+    private final AtomicLong lastTimePrevNodeRcvd = new AtomicLong();
 
     /**
      * @param adapter Adapter.
@@ -1959,8 +1965,36 @@ class ServerImpl extends TcpDiscoveryImpl {
      * @param msg Message.
      */
     private void processMessageFailedNodes(TcpDiscoveryAbstractMessage msg) {
-        if (msg.failedNodes() != null) {
-            for (UUID nodeId : msg.failedNodes()) {
+        Collection<UUID> msgFailedNodes = msg.failedNodes();
+
+        if (msgFailedNodes != null) {
+            UUID sndId = msg.senderNodeId();
+
+            if (sndId != null) {
+                if (ring.node(sndId) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Ignore message failed nodes, sender node is not alive [nodeId=" + sndId +
+                            ", failedNodes=" + msgFailedNodes + ']');
+                    }
+
+                    return;
+                }
+
+                synchronized (mux) {
+                    for (TcpDiscoveryNode failedNode : failedNodes.keySet()) {
+                        if (failedNode.id().equals(sndId)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Ignore message failed nodes, sender node is in fail list [nodeId=" + sndId +
+                                    ", failedNodes=" + msgFailedNodes + ']');
+                            }
+
+                            return;
+                        }
+                    }
+                }
+            }
+
+            for (UUID nodeId : msgFailedNodes) {
                 TcpDiscoveryNode failedNode = ring.node(nodeId);
 
                 if (failedNode != null) {
@@ -1980,6 +2014,15 @@ class ServerImpl extends TcpDiscoveryImpl {
                     }
                 }
             }
+        }
+    }
+
+    protected void updateLastTimePrevNodeRcvd(TcpDiscoveryAbstractMessage msg) {
+        if (msg.senderNodeId() != null) {
+            TcpDiscoveryNode prevNode = ring.prevNode();
+
+            if (prevNode != null && prevNode.id().equals(msg.senderNodeId()))
+                lastTimePrevNodeRcvd.set(U.currentTimeMillis());
         }
     }
 
@@ -2468,6 +2511,9 @@ class ServerImpl extends TcpDiscoveryImpl {
         /** Output stream. */
         private OutputStream out;
 
+        /**  */
+        private Timer connCheckTimer;
+
         /** Last time status message has been sent. */
         private long lastTimeStatusMsgSent;
 
@@ -2476,9 +2522,6 @@ class ServerImpl extends TcpDiscoveryImpl {
 
         /** Last time metrics update message has been sent. */
         private long lastTimeMetricsUpdateMsgSent;
-
-        /** Time when the last status message has been sent. */
-        private long lastTimeConnCheckMsgSent;
 
         /** Flag that keeps info on whether the threshold is reached or not. */
         private boolean failureThresholdReached;
@@ -2498,6 +2541,15 @@ class ServerImpl extends TcpDiscoveryImpl {
             super("tcp-disco-msg-worker", 10);
 
             initConnectionCheckFrequency();
+
+            connCheckTimer = new Timer("tcp-disco-conn-check", true);
+
+            connCheckTimer.schedule(new TimerTask() {
+                @Override public void run() {
+                    if (ring.hasRemoteServerNodes())
+                        sendMessageAcrossRing(new TcpDiscoveryConnectionCheckMessage(locNode));
+                }
+            }, connCheckFreq, connCheckFreq);
         }
 
         /**
@@ -2591,6 +2643,8 @@ class ServerImpl extends TcpDiscoveryImpl {
         @Override protected void processMessage(TcpDiscoveryAbstractMessage msg) {
             spi.startMessageProcess(msg);
 
+            checkConnection();
+
             sendMetricsUpdateMessage();
 
             DebugLogger log = messageLogger(msg);
@@ -2603,8 +2657,12 @@ class ServerImpl extends TcpDiscoveryImpl {
 
             boolean ensured = spi.ensured(msg);
 
-            if (!locNode.id().equals(msg.senderNodeId()) && ensured)
-                lastRingMsgTime = U.currentTimeMillis();
+            if (!locNode.id().equals(msg.senderNodeId())) {
+                updateLastTimePrevNodeRcvd(msg);
+
+                if (ensured)
+                    lastRingMsgTime = U.currentTimeMillis();
+            }
 
             if (locNode.internalOrder() == 0) {
                 boolean proc = false;
@@ -2748,7 +2806,7 @@ class ServerImpl extends TcpDiscoveryImpl {
          * @param msg Message to send
          */
         @SuppressWarnings({"BreakStatementWithLabel", "LabeledStatement", "ContinueStatementWithLabel"})
-        private void sendMessageAcrossRing(TcpDiscoveryAbstractMessage msg) {
+        private synchronized void sendMessageAcrossRing(TcpDiscoveryAbstractMessage msg) {
             assert msg != null;
 
             assert ring.hasRemoteNodes();
@@ -2817,9 +2875,6 @@ class ServerImpl extends TcpDiscoveryImpl {
                     log.trace("Next node remains the same [nextId=" + next.id() +
                         ", nextOrder=" + next.internalOrder() + ']');
 
-                // Flag that shows whether next node exists and accepts incoming connections.
-                boolean nextNodeExists = sock != null;
-
                 final boolean sameHost = U.sameMacs(locNode, next);
 
                 List<InetSocketAddress> locNodeAddrs = U.arrayList(locNode.socketAddresses());
@@ -2843,8 +2898,6 @@ class ServerImpl extends TcpDiscoveryImpl {
                         if (sock == null) {
                             if (timeoutHelper == null)
                                 timeoutHelper = new IgniteSpiOperationTimeoutHelper(spi, true);
-
-                            nextNodeExists = false;
 
                             boolean success = false;
 
@@ -2974,8 +3027,6 @@ class ServerImpl extends TcpDiscoveryImpl {
                                     sock = null;
                                 }
                                 else {
-                                    // Next node exists and accepts incoming messages.
-                                    nextNodeExists = true;
                                     // Resetting timeout control object to let the code below to use a new one
                                     // for the next bunch of operations.
                                     timeoutHelper = null;
@@ -3067,7 +3118,11 @@ class ServerImpl extends TcpDiscoveryImpl {
                                 if (latencyCheck && log.isInfoEnabled())
                                     log.info("Latency check message has been written to socket: " + msg.id());
 
-                                spi.writeToSocket(sock, out, msg, timeoutHelper.nextTimeoutChunk(spi.getSocketTimeout()));
+                                spi.writeToSocket(newNextNode ? newNext : next,
+                                    sock,
+                                    out,
+                                    msg,
+                                    timeoutHelper.nextTimeoutChunk(spi.getSocketTimeout()));
 
                                 long tstamp0 = U.currentTimeMillis();
 
@@ -5520,12 +5575,9 @@ class ServerImpl extends TcpDiscoveryImpl {
          * Check connection aliveness status.
          */
         private void checkConnection() {
-            Boolean hasRemoteSrvNodes = null;
-
             if (spi.failureDetectionTimeoutEnabled() && !failureThresholdReached &&
                 U.currentTimeMillis() - locNode.lastExchangeTime() >= connCheckThreshold &&
-                spiStateCopy() == CONNECTED &&
-                (hasRemoteSrvNodes = ring.hasRemoteServerNodes())) {
+                spiStateCopy() == CONNECTED && ring.hasRemoteServerNodes()) {
 
                 if (log.isInfoEnabled())
                     log.info("Local node seems to be disconnected from topology (failure detection timeout " +
@@ -5533,23 +5585,27 @@ class ServerImpl extends TcpDiscoveryImpl {
                         ", connCheckFreq=" + connCheckFreq + ']');
 
                 failureThresholdReached = true;
-
-                // Reset sent time deliberately to force sending connection check message.
-                lastTimeConnCheckMsgSent = 0;
             }
 
-            long elapsed = (lastTimeConnCheckMsgSent + connCheckFreq) - U.currentTimeMillis();
+            long lastTimeRcvd = lastTimePrevNodeRcvd.get();
 
-            if (elapsed > 0)
-                return;
+            if (lastTimeRcvd > 0) {
+                long prevElapsed = U.currentTimeMillis() - lastTimeRcvd;
 
-            if (hasRemoteSrvNodes == null)
-                hasRemoteSrvNodes = ring.hasRemoteServerNodes();
+                if (prevElapsed > connCheckThreshold * 3) {
 
-            if (hasRemoteSrvNodes) {
-                sendMessageAcrossRing(new TcpDiscoveryConnectionCheckMessage(locNode));
+                    TcpDiscoveryNode prevNode = ring.prevNode();
 
-                lastTimeConnCheckMsgSent = U.currentTimeMillis();
+                    if (prevNode != null) {
+                        lastTimePrevNodeRcvd.set(0);
+
+                        U.warn(log, "No message from previous node in configured timeout [prevNode=" + prevNode +
+                            " ,timeout=" + connCheckThreshold + ']');
+
+                        msgWorker.addMessage(new TcpDiscoveryNodeFailedMessage(getLocalNodeId(), prevNode.id(),
+                            prevNode.internalOrder()));
+                    }
+                }
             }
         }
     }
@@ -5960,6 +6016,8 @@ class ServerImpl extends TcpDiscoveryImpl {
                             debugLog(msg, "Message has been received: " + msg);
 
                         if (msg instanceof TcpDiscoveryConnectionCheckMessage) {
+                            updateLastTimePrevNodeRcvd(msg);
+
                             spi.writeToSocket(msg, sock, RES_OK, sockTimeout);
 
                             continue;
