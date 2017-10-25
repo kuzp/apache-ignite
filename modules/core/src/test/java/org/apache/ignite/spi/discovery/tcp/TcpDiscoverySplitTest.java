@@ -16,6 +16,7 @@
  */
 package org.apache.ignite.spi.discovery.tcp;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,11 +59,13 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
 
+        int idx = getTestIgniteInstanceIndex(gridName);
+
         SplitTcpDiscoverySpi disco = (SplitTcpDiscoverySpi)cfg.getDiscoverySpi();
 
-        disco.setSocketTimeout(DISCO_TIMEOUT);
+        disco.setLocalPort(getDiscoPort(idx));
 
-        int idx = getTestIgniteInstanceIndex(gridName);
+        disco.setSocketTimeout(DISCO_TIMEOUT);
 
         cfg.setUserAttributes(Collections.singletonMap(NODE_IDX_ATTR, idx));
 
@@ -101,6 +104,10 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     /** */
     @SuppressWarnings("unchecked")
     protected void testSplitRestore(int[] startSeq, long splitTime) throws Exception {
+        if (log.isInfoEnabled())
+            log.info("Start sequence [size=" + startSeq.length + ", indices=" + Arrays.toString(startSeq) +
+                ", splitTime=" + splitTime);
+
         IgniteEx[] grids = new IgniteEx[startSeq.length];
 
         try {
@@ -190,6 +197,16 @@ public class TcpDiscoverySplitTest extends IgniteCacheTopologySplitAbstractTest 
     /** */
     public void testConsecutiveCoordSeg1() throws Exception {
         testFullSplitThenPartial(new int[] {4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3});
+    }
+
+    /** */
+    public void testMixedCoordSeg0() throws Exception {
+        testFullSplitThenPartial(new int[] {0, 1, 4, 5, 6, 7, 2, 3, 8, 9, 10, 11});
+    }
+
+    /** */
+    public void testMixedCoordSeg1() throws Exception {
+        testFullSplitThenPartial(new int[] {4, 5, 6, 7, 0, 1, 8, 9, 10, 11, 2, 3});
     }
 
     /** */
