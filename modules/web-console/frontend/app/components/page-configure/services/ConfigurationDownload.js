@@ -35,6 +35,10 @@ export default class ConfigurationDownload {
         this.saver = saver;
     }
 
+    /**
+     * @param {{_id: string, name: string}} cluster
+     * @returns {Promise}
+     */
     downloadClusterConfiguration(cluster) {
         this.activitiesData.post({action: '/configuration/download'});
 
