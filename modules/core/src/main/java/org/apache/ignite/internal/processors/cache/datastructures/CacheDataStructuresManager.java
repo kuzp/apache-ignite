@@ -40,6 +40,7 @@ import org.apache.ignite.IgniteSet;
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.cache.CacheEntryEventSerializableFilter;
 import org.apache.ignite.cluster.ClusterNode;
+import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
@@ -472,7 +473,10 @@ public class CacheDataStructuresManager extends GridCacheManagerAdapter {
         GridCacheAffinityManager aff = cctx.affinity();
 
         if (!loc) {
-            aff.affinityReadyFuture(topVer).get();
+            IgniteInternalFuture<AffinityTopologyVersion> fut = cctx.shared().exchange().affinityReadyFuture(topVer);
+
+            if (fut != null)
+                fut.get();
 
             cctx.preloader().syncFuture().get();
         }
