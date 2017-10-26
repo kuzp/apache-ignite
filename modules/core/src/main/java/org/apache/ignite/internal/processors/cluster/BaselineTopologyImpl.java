@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 public class BaselineTopologyImpl implements Serializable {
     private Collection<Object> nodeIds;
 
-    private int currentHash = 0;
+    public int currentHash = 0;
 
     private List<Integer> history;
 
@@ -76,17 +76,26 @@ public class BaselineTopologyImpl implements Serializable {
     }
 
     public boolean addHistoryItem(int hash) {
-        System.out.println("-->>-->> [" + Thread.currentThread().getName() + "] "  + System.currentTimeMillis() + " adding historyItem to blt[currentHash=" + currentHash + "]; new hash = " + hash);
         if (currentHash == hash)
             return false;
         else {
             currentHash = hash;
 
-
-
             history.add(hash);
 
             return true;
         }
+    }
+
+    public boolean isCompatibleWith(BaselineTopologyImpl thatBlt) {
+        if (currentHash != thatBlt.currentHash)
+            return false;
+
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return "blt[hash=" + currentHash + "]";
     }
 }

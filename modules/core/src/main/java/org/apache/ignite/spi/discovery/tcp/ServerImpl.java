@@ -99,6 +99,7 @@ import org.apache.ignite.spi.IgniteSpiContext;
 import org.apache.ignite.spi.IgniteSpiException;
 import org.apache.ignite.spi.IgniteSpiOperationTimeoutHelper;
 import org.apache.ignite.spi.IgniteSpiThread;
+import org.apache.ignite.spi.discovery.DiscoveryDataBag;
 import org.apache.ignite.spi.discovery.DiscoverySpiCustomMessage;
 import org.apache.ignite.spi.discovery.DiscoverySpiListener;
 import org.apache.ignite.spi.discovery.tcp.internal.DiscoveryDataPacket;
@@ -3506,11 +3507,19 @@ class ServerImpl extends TcpDiscoveryImpl {
                     }
                 }
 
-                final IgniteNodeValidationResult err = spi.getSpiContext().validateNode(node);
+                IgniteNodeValidationResult err0 = spi.getSpiContext().validateNode(node);
 
-                if (err != null) {
+                if (err0 == null) {
+                    DiscoveryDataBag discoData = msg.gridDiscoveryData().unmarshalJoiningNodeData(spi.marshaller(), U.resolveClassLoader(spi.ignite().configuration()), false, log);
+
+                    err0 = spi.getSpiContext().validateNode(node, discoData);
+                }
+
+                if (err0 != null) {
                     if (log.isDebugEnabled())
-                        log.debug("Node validation failed [res=" + err + ", node=" + node + ']');
+                        log.debug("Node validation failed [res=" + err0 + ", node=" + node + ']');
+
+                    final IgniteNodeValidationResult err = err0;
 
                     utilityPool.execute(
                         new Runnable() {

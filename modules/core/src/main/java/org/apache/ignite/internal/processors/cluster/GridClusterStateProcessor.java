@@ -64,11 +64,13 @@ import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.lang.IgniteRunnable;
 import org.apache.ignite.resources.IgniteInstanceResource;
+import org.apache.ignite.spi.IgniteNodeValidationResult;
 import org.apache.ignite.spi.discovery.DiscoveryDataBag;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.events.EventType.EVT_NODE_FAILED;
 import static org.apache.ignite.events.EventType.EVT_NODE_LEFT;
+import static org.apache.ignite.internal.GridComponent.DiscoveryDataExchangeType.CLUSTER_PROC;
 import static org.apache.ignite.internal.GridComponent.DiscoveryDataExchangeType.STATE_PROC;
 import static org.apache.ignite.internal.managers.communication.GridIoPolicy.SYSTEM_POOL;
 
@@ -504,8 +506,26 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
     /** {@inheritDoc} */
     @Override public void collectGridNodeData(DiscoveryDataBag dataBag) {
-        if (!dataBag.commonDataCollectedFor(STATE_PROC.ordinal()))
-            dataBag.addGridCommonData(STATE_PROC.ordinal(), globalState);
+        if (!dataBag.commonDataCollectedFor(discoveryDataType().ordinal()))
+            dataBag.addGridCommonData(discoveryDataType().ordinal(), globalState);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void collectJoiningNodeData(DiscoveryDataBag dataBag) {
+        System.out.println("-->>-->> [" + Thread.currentThread().getName() + "] "  + System.currentTimeMillis() + " collecting blt on joining node: " + blt);
+        dataBag.addJoiningNodeData(STATE_PROC.ordinal(), blt);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public IgniteNodeValidationResult validateNode(ClusterNode node, DiscoveryDataBag.JoiningNodeDiscoveryData discoData) {
+        BaselineTopologyImpl joiningNodeBlt = (BaselineTopologyImpl) discoData.joiningNodeData();
+
+        if (blt != null && joiningNodeBlt != null) {
+            if (!blt.isCompatibleWith(joiningNodeBlt))
+                return new IgniteNodeValidationResult(node.id(), "Blt is not compatible", "Blt is not compatible: local " + blt.currentHash + ", joining " + joiningNodeBlt.currentHash);
+        }
+
+        return null;
     }
 
     /** {@inheritDoc} */

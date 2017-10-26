@@ -91,6 +91,32 @@ public class IgniteAutoActivationTest extends GridCommonAbstractTest {
         checkDataInCache(srv);
     }
 
+    public void testBaselineVersioning() throws Exception {
+        startGrid("A"); startGrid("B"); startGrid("C");
+
+        IgniteEx srv = grid("A");
+
+        srv.active(true);
+
+        createAndFillCache(srv);
+
+        stopAllGrids();
+
+        startGrid("A"); startGrid("B").active(true);
+
+        stopAllGrids();
+
+        startGrid("C").active(true);
+
+        stopAllGrids();
+
+        startGrid("A");
+
+        startGrid("B");
+
+        startGrid("C");
+    }
+
     /**
      * Verifies scenario when user activates grid manually before reaching previously established BaselineTopology.
      */
