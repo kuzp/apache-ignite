@@ -18,6 +18,13 @@
 import 'rxjs/add/operator/startWith';
 import map from 'lodash/fp/map';
 
+const mapper = map((cluster) => {
+    cluster.label = `Cluster ${_.id8(cluster.id)}`;
+    cluster.active = cluster.active || false;
+
+    return cluster;
+});
+
 export default class {
     static $inject = ['AgentManager', 'IgniteConfirm'];
 
@@ -25,14 +32,9 @@ export default class {
         Object.assign(this, { agentMgr, Confirm });
 
         this.clusters = [];
+    }
 
-        const _map = map((cluster) => {
-            cluster.label = `Cluster ${_.id8(cluster.id)}`;
-            cluster.active = false;
-
-            return cluster;
-        });
-
+    $onInit() {
         this.clusters$ = this.agentMgr
             .connectionSbj
             .startWith({ clusters: [] })
@@ -45,7 +47,7 @@ export default class {
             .do(({ clusters }) => {
                 const added = _.differenceBy(clusters, this.clusters, 'id');
 
-                this.clusters.push(..._map(added));
+                this.clusters.push(...mapper(added));
             })
             .do(({ cluster }) => {
                 if (cluster)
@@ -53,11 +55,8 @@ export default class {
             })
             .map(() => {
                 return this.clusters;
-            });
-    }
-
-    $onInit() {
-        this.clusters$.subscribe(() => {});
+            })
+            .subscribe(() => {});
     }
 
     $onDestroy() {
