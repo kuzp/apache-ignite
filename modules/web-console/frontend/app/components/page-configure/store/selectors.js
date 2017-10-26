@@ -12,7 +12,7 @@ const selectValues = (s) => s.map((v) => v && [...v.value.values()]);
 export const selectMapItem = (mapPath, key) => (s) => s.pluck(mapPath).map((v) => v && v.get(key));
 const selectMapItems = (mapPath, keys) => (s) => s.pluck(mapPath).map((v) => v && keys.map((key) => v.get(key)));
 const selectItemToEdit = ({items, itemFactory, defaultName, itemID}) => (s) => s.switchMap((item) => {
-    if (item) return of(item);
+    if (item) return of(Object.assign(itemFactory(), item));
     if (itemID === 'new') return items.take(1).map((items) => Object.assign(itemFactory(), {name: uniqueName(defaultName, items)}));
     if (!itemID) return of(null);
     return empty();
