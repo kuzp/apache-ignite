@@ -141,6 +141,9 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
     /** */
     private boolean skipCheckOrder;
 
+    /** */
+    private int backupsCnt = 0;
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
@@ -203,7 +206,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
         ccfg.setNodeFilter(cacheNodeFilter);
         ccfg.setAffinity(affinityFunction(null));
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
-        ccfg.setBackups(0);
+        ccfg.setBackups(backupsCnt);
 
         return ccfg;
     }
@@ -217,8 +220,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
             parts == null ? RendezvousAffinityFunction.DFLT_PARTITION_COUNT : parts);
     }
 
-    @Override
-    protected void beforeTest() throws Exception {
+    @Override protected void beforeTest() throws Exception {
         super.beforeTest();
     }
 
@@ -319,6 +321,34 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
         checkAffinity(3, topVer(3, 1), true);
 
         awaitPartitionMapExchange();
+    }
+
+    /**
+     * Simple test, node join.
+     *
+     * @throws Exception If failed.
+     */
+    public void testAssignmentDelayRebalancing() throws Exception {
+        backupsCnt = 4;
+
+        Ignite ignite0 = startServer(0, 1);
+
+        TestRecordingCommunicationSpi spi =
+            (TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
+
+        blockSupplySend(spi, CACHE_NAME1);
+
+        int majorVer = 1;
+
+        int joinCnt = 2;
+
+        for (int i = 0; i < joinCnt; i++) {
+            majorVer++;
+
+            startServer(i + 1, majorVer);
+
+            checkAffinity(majorVer, topVer(majorVer, 0), false);
+        }
     }
 
     /**
