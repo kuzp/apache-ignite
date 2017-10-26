@@ -156,6 +156,8 @@ export default class Clusters {
             swapSpaceSpi: {},
             transactionConfiguration: {},
             dataStorageConfiguration: {
+                pageSize: null,
+                concurrencyLevel: null,
                 defaultDataRegionConfiguration: {
                     name: 'default'
                 },
@@ -219,6 +221,64 @@ export default class Clusters {
             DB2: 'http://www-01.ibm.com/support/docview.wss?uid=swg21363866',
             SQLServer: 'https://www.microsoft.com/en-us/download/details.aspx?id=11774'
         })[get(cluster, 'discovery.Jdbc.dialect')];
+    }
+
+    dataRegion = {
+        name: {
+            default: 'default',
+            invalidValues: ['sysMemPlc']
+        },
+        initialSize: {
+            default: 268435456,
+            min: 10485760
+        },
+        maxSize: {
+            default: '0.2 * totalMemoryAvailable',
+            min: (dataRegion) => {
+                if (!dataRegion) return;
+                return dataRegion.initialSize || this.dataRegion.initialSize.default;
+            }
+        },
+        evictionThreshold: {
+            step: 0.05,
+            max: 0.999,
+            min: 0.5,
+            default: 0.9
+        },
+        emptyPagesPoolSize: {
+            default: 100,
+            min: 11,
+            max: (cluster, dataRegion) => {
+                if (!cluster || !dataRegion || !dataRegion.maxSize) return;
+                const perThreadLimit = 10; // Took from Ignite
+                const maxSize = dataRegion.maxSize;
+                const pageSize = cluster.dataStorageConfiguration.pageSize || this.dataStorageConfiguration.pageSize.default;
+                const maxPoolSize = Math.floor(maxSize / pageSize / perThreadLimit);
+                return maxPoolSize;
+            }
+        },
+        subIntervals: {
+            default: 5,
+            min: 1,
+            step: 1
+        },
+        rateTimeInterval: {
+            min: 1000,
+            default: 60000,
+            step: 1000
+        }
+    };
+
+    makeBlankDataRegionConfiguration() {
+        return {_id: ObjectID.generate()};
+    }
+
+    addDataRegionConfiguration(cluster) {
+        const dataRegionConfigurations = get(cluster, 'dataStorageConfiguration.dataRegionConfigurations');
+        if (!dataRegionConfigurations) return;
+        return dataRegionConfigurations.push(Object.assign(this.makeBlankDataRegionConfiguration(), {
+            name: uniqueName('New data region', dataRegionConfigurations.concat(cluster.dataStorageConfiguration.defaultDataRegionConfiguration))
+        }));
     }
 
     memoryPolicy = {
@@ -332,6 +392,7 @@ export default class Clusters {
         }));
     }
 
+    // For versions 2.1-2.2, use dataStorageConfiguration since 2.3
     memoryConfiguration = {
         pageSize: {
             default: 1024 * 2,
@@ -352,6 +413,31 @@ export default class Clusters {
             default: 104857600,
             min: (cluster) => {
                 return get(cluster, 'memoryConfiguration.systemCacheInitialSize') || this.memoryConfiguration.systemCacheInitialSize.default;
+            }
+        }
+    };
+
+    // Added in 2.3
+    dataStorageConfiguration = {
+        pageSize: {
+            default: 1024 * 4,
+            values: [
+                {value: null, label: 'Default (4kb)'},
+                {value: 1024 * 1, label: '1 kb'},
+                {value: 1024 * 2, label: '2 kb'},
+                {value: 1024 * 4, label: '4 kb'},
+                {value: 1024 * 8, label: '8 kb'},
+                {value: 1024 * 16, label: '16 kb'}
+            ]
+        },
+        systemRegionInitialSize: {
+            default: 41943040,
+            min: 10485760
+        },
+        systemRegionMaxSize: {
+            default: 104857600,
+            min: (cluster) => {
+                return get(cluster, 'dataStorageConfiguration.systemRegionInitialSize') || this.dataStorageConfiguration.systemRegionInitialSize.default;
             }
         }
     };
