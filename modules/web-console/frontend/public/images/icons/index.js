@@ -30,5 +30,4 @@ export info from './info.svg';
 export structure from './structure.svg';
 export expand from './expand.svg';
 export collapse from './collapse.svg';
-export sort from './sort.svg';
 export attention from './attention.svg';
