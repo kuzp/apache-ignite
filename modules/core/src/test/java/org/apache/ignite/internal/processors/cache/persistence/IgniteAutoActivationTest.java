@@ -35,9 +35,15 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
  *
  */
 public class IgniteAutoActivationTest extends GridCommonAbstractTest {
+    /** */
+    private String consId;
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
+
+        if (consId != null)
+            cfg.setConsistentId(consId);
 
         MemoryConfiguration memCfg = new MemoryConfiguration();
         memCfg.setPageSize(1024);
@@ -92,7 +98,9 @@ public class IgniteAutoActivationTest extends GridCommonAbstractTest {
     }
 
     public void testBaselineVersioning() throws Exception {
-        startGrid("A"); startGrid("B"); startGrid("C");
+        startGridWithConsistentId("A");
+        startGridWithConsistentId("B");
+        startGridWithConsistentId("C");
 
         IgniteEx srv = grid("A");
 
@@ -102,19 +110,31 @@ public class IgniteAutoActivationTest extends GridCommonAbstractTest {
 
         stopAllGrids();
 
-        startGrid("A"); startGrid("B").active(true);
+        startGridWithConsistentId("A");
+
+        startGridWithConsistentId("B").active(true);
 
         stopAllGrids();
 
-        startGrid("C").active(true);
+        startGridWithConsistentId("C").active(true);
 
         stopAllGrids();
 
-        startGrid("A");
+        startGridWithConsistentId("A");
+        startGridWithConsistentId("B");
 
-        startGrid("B");
+        try {
+            startGridWithConsistentId("C");
+        }
+        catch (Exception e) {
+            System.out.println("-->>-->> [" + Thread.currentThread().getName() + "] "  + System.currentTimeMillis() + " exception is thrown: " + e);
+        }
+    }
 
-        startGrid("C");
+    private Ignite startGridWithConsistentId(String id) throws Exception {
+        consId = id;
+
+        return startGrid(consId);
     }
 
     /**

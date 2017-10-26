@@ -98,6 +98,9 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
     /** */
     private File workDir;
 
+    /** */
+    private volatile BaselineTopologyImpl blt;
+
     /** Listener. */
     private final GridLocalEventListener lsr = new GridLocalEventListener() {
         @Override public void onEvent(Event evt) {
@@ -171,8 +174,6 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
         blt = restoreBaselineTopology();
     }
-
-    private volatile BaselineTopologyImpl blt;
 
     /** {@inheritDoc} */
     @Override public void onKernalStop(boolean cancel) {
@@ -512,7 +513,6 @@ public class GridClusterStateProcessor extends GridProcessorAdapter {
 
     /** {@inheritDoc} */
     @Override public void collectJoiningNodeData(DiscoveryDataBag dataBag) {
-        System.out.println("-->>-->> [" + Thread.currentThread().getName() + "] "  + System.currentTimeMillis() + " collecting blt on joining node: " + blt);
         dataBag.addJoiningNodeData(STATE_PROC.ordinal(), blt);
     }
 
