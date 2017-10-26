@@ -73,7 +73,13 @@ export default class PCFormFieldSizeController {
         this.ngModel.$setViewValue(this.value ? this.value * this.sizeScale.value : this.value);
     }
 
-    chooseSizeScale(label = this.sizesMenu[1].label) {
+    _defaultLabel() {
+        if (!this.sizesMenu) return;
+        return this.sizesMenu[1].label;
+    }
+
+    chooseSizeScale(label = this._defaultLabel()) {
+        if (!label) return;
         return this.sizesMenu.find((option) => option.label.toLowerCase() === label.toLowerCase());
     }
 

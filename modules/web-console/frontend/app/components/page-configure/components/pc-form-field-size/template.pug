@@ -1,7 +1,8 @@
 include /app/helpers/jade/mixins
 
 +ignite-form-field__label('{{ ::$ctrl.label }}', '$ctrl.id', '$ctrl.required')
-    +tooltip('{{::$ctrl.tip}}')
+    span(ng-if='::$ctrl.tip')
+        +tooltip('{{::$ctrl.tip}}')
 .ignite-form-field__control(ng-form='$ctrl.innerForm')
     .input-tip
         input.form-control(
