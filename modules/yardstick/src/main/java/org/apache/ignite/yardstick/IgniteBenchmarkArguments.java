@@ -252,6 +252,17 @@ public class IgniteBenchmarkArguments {
     @Parameter(names = {"-stbs", "--streamerBufSize"}, description = "Data streamer buffer size")
     private int streamerBufSize = IgniteDataStreamer.DFLT_PER_NODE_BUFFER_SIZE;
 
+    /** */
+    @Parameter(names = {"-res", "--resultSetSize"}, description = "Result set size")
+    @GridToStringInclude
+    private int resultSetSize = 1_000;
+
+    /** */
+    @Parameter(names = {"-clidx", "--clientNodesAfterId"},
+        description = "Start client nodes when server ID greater then the parameter value")
+    @GridToStringInclude
+    private int clientNodesAfterId = -1;
+
     /**
      * @return {@code True} if need set {@link PersistentStoreConfiguration}.
      */
@@ -629,6 +640,20 @@ public class IgniteBenchmarkArguments {
      */
     public int streamerBufferSize() {
         return streamerBufSize;
+    }
+
+    /**
+     * @return Result set size.
+     */
+    public int resultSetSize() {
+        return resultSetSize;
+    }
+
+    /**
+     * @return Result set size.
+     */
+    public int clientNodesAfterId() {
+        return clientNodesAfterId;
     }
 
     /** {@inheritDoc} */
