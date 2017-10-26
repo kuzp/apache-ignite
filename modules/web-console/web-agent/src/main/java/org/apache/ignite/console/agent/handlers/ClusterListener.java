@@ -267,7 +267,7 @@ public class ClusterListener {
         /**
          * @return Cluster version.
          */
-        public IgniteProductVersion clusterVer() {
+        public IgniteProductVersion clusterVersion() {
             return clusterVer;
         }
 
@@ -305,20 +305,9 @@ public class ClusterListener {
                         if (newTop.differentCluster(top))
                             log.info("Connection successfully established to cluster with nodes: {}", newTop.nid8());
 
-//                        RestResult resActive = restExecutor.active();
-//
-//                        switch (resActive.getStatus()) {
-//                            case STATUS_SUCCESS:
-//                                top.setActive(true /*resActive.getData()*/);
-//
-//                                break;
-//
-//                            default:
-//                                log.warn(res.getError());
-//
-//                                clusterDisconnect();
-//
-//                        }
+                        boolean active = restExecutor.active(newTop.clusterVersion(), F.first(newTop.getNids()));
+
+                        newTop.setActive(active);
 
                         top = newTop;
 
