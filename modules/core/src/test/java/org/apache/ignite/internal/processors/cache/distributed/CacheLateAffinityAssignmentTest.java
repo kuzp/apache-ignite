@@ -141,9 +141,6 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
     /** */
     private boolean skipCheckOrder;
 
-    /** */
-    private int backupsCnt = 0;
-
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
@@ -206,7 +203,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
         ccfg.setNodeFilter(cacheNodeFilter);
         ccfg.setAffinity(affinityFunction(null));
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
-        ccfg.setBackups(backupsCnt);
+        ccfg.setBackups(0);
 
         return ccfg;
     }
@@ -329,9 +326,22 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testAssignmentDelayRebalancing() throws Exception {
-        backupsCnt = 4;
+        final int joinCnt = 2;
+
+        cacheC = new IgniteClosure<String, CacheConfiguration[]>() {
+            @Override public CacheConfiguration[] apply(String s) {
+                final CacheConfiguration ccfg = cacheConfiguration(CACHE_NAME1, TRANSACTIONAL, 1);
+
+                ccfg.setAffinity(new RendezvousAffinityFunction(false, joinCnt + 1));
+
+                return new CacheConfiguration[] {ccfg};
+            }
+        };
 
         Ignite ignite0 = startServer(0, 1);
+
+        for (Map.Entry<Long, Map<Integer, List<List<ClusterNode>>>> entry : idealAff.entrySet())
+            print(ignite0, new AffinityTopologyVersion(entry.getKey()), entry.getValue().get(CU.cacheId(CACHE_NAME1)));
 
         TestRecordingCommunicationSpi spi =
             (TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
@@ -340,15 +350,36 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
         int majorVer = 1;
 
-        int joinCnt = 2;
-
         for (int i = 0; i < joinCnt; i++) {
             majorVer++;
 
             startServer(i + 1, majorVer);
-
-            checkAffinity(majorVer, topVer(majorVer, 0), false);
         }
+
+        checkAffinity(majorVer, topVer(majorVer, 0), false);
+    }
+
+    public void print(Ignite ignite, AffinityTopologyVersion topVer, List<List<ClusterNode>> assignment) {
+        StringBuilder b = new StringBuilder();
+
+        b.append(ignite.name() + ": [assignment size=").append(assignment.size()).append(", topVer=").append(topVer).append(", ");
+
+        for (int i = 0; i < assignment.size(); i++) {
+            b.append(i).append('=');
+
+            b.append(F.transform(assignment.get(i), new IgniteClosure<ClusterNode, String>() {
+                @Override public String apply(ClusterNode node) {
+                    return U.id8(node.id());
+                }
+            }));
+
+            if (i != assignment.size() - 1)
+                b.append(", ");
+        }
+
+        b.append(']');
+
+        log.info(b.toString());
     }
 
     /**
@@ -2595,7 +2626,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
     private Map<String, List<List<ClusterNode>>> checkAffinity(int expNodes,
         AffinityTopologyVersion topVer,
         boolean expIdeal,
-        boolean checkPublicApi) throws Exception {
+        boolean checkPublicApi, IgnitePredicate<String>... exclude) throws Exception {
         List<Ignite> nodes = G.allGrids();
 
         Map<String, List<List<ClusterNode>>> aff = new HashMap<>();
@@ -2610,12 +2641,21 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
             if (fut != null)
                 fut.get();
 
-            for (GridCacheContext cctx : node0.context().cache().context().cacheContexts()) {
+            outer: for (GridCacheContext cctx : node0.context().cache().context().cacheContexts()) {
+                if (exclude != null) {
+                    for (IgnitePredicate<String> predicate : exclude) {
+                        if (predicate.apply(cctx.name()))
+                            continue outer;
+                    }
+                }
+
                 if (cctx.startTopologyVersion().compareTo(topVer) > 0)
                     continue;
 
                 List<List<ClusterNode>> aff1 = aff.get(cctx.name());
                 List<List<ClusterNode>> aff2 = cctx.affinity().assignments(topVer);
+
+                print(node, topVer, aff2);
 
                 if (aff1 == null)
                     aff.put(cctx.name(), aff2);
