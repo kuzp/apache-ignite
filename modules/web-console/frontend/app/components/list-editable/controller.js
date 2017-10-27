@@ -30,7 +30,7 @@ export default class {
      * @param {ng.ITranscludeFunction} $transclude
      */
     constructor($animate, $element, $transclude) {
-        $animate.enabled(false, $element);
+        $animate.enabled($element, false);
 
         this.hasItemView = $transclude.isSlotFilled('itemView');
 
