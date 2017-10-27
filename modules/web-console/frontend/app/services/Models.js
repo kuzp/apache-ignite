@@ -21,14 +21,24 @@ import omit from 'lodash/fp/omit';
 export default class Models {
     static $inject = ['$http'];
 
+    /**
+     * @param {ng.IHttpService} $http
+     */
     constructor($http) {
-        Object.assign(this, {$http});
+        this.$http = $http;
     }
 
+    /**
+     * @param {string} modelID
+     * @returns {ng.IPromise<ng.IHttpResponse<{data: ig.config.model.DomainModel}>>}
+     */
     getModel(modelID) {
         return this.$http.get(`/api/v1/configuration/domains/${modelID}`);
     }
 
+    /**
+     * @returns {ig.config.model.DomainModel}
+     */
     getBlankModel() {
         return {
             _id: ObjectID.generate(),
@@ -63,7 +73,24 @@ export default class Models {
 
     normalize = omit(['__v', 'space']);
 
+    /**
+     * @param {Array<ig.config.model.IndexField>} fields
+     */
     addIndexField(fields) {
         return fields[fields.push({direction: true}) - 1];
+    }
+
+    /**
+     * @param {ig.config.model.DomainModel} model
+     */
+    addIndex(model) {
+        if (!model) return;
+        if (!model.indexes) model.indexes = [];
+        model.indexes.push({
+            _id: ObjectID.generate(),
+            name: '',
+            indexType: null,
+            fields: []
+        });
     }
 }
