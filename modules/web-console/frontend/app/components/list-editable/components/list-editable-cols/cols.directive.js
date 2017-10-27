@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-// @ts-check
-/// <reference types="angular" />
-
 import template from './cols.template.pug';
 import './cols.style.scss';
 
