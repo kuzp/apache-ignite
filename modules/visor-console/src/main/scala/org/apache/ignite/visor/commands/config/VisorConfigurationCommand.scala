@@ -256,7 +256,7 @@ class VisorConfigurationCommand extends VisorConsoleCommand {
             cliConnTbl.render()
         }
         else
-            println(NA)
+            println("Client Connection is not configured")
 
         println("\nPeer-to-Peer:")
 
