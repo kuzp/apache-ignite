@@ -15,23 +15,10 @@
  * limitations under the License.
  */
 
-import template from './template.pug';
-import controller from './controller';
-import './style.scss';
+import angular from 'angular';
 
-export default {
-    controller,
-    controllerAs: '$ctrl',
-    template,
-    require: {
-        ngModel: '^ngModel'
-    },
-    bindings: {
+import directive from './directive';
 
-    },
-    transclude: {
-        noItems: '?pcListEditableNoItems',
-        itemView: '?pcListEditableItemView',
-        itemEdit: '?pcListEditableItemEdit'
-    }
-};
+export default angular
+    .module('ignite-console.list-editable.one-way', [])
+    .directive(directive.name, directive);

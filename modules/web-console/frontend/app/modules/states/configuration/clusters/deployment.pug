@@ -71,16 +71,16 @@ include /app/helpers/jade/mixins
                                     -let items = exclude
                                     -var uniqueTip = 'Such package already exists!'
 
-                                    pc-list-editable(ng-model=items name='localClassPathExclude')
-                                        pc-list-editable-item-view
+                                    list-editable(ng-model=items name='localClassPathExclude')
+                                        list-editable-item-view
                                             | {{ $parent.item }}
 
-                                        pc-list-editable-item-edit
+                                        list-editable-item-edit
                                             -let form = '$parent.form'
                                             +list-java-package-field('Package name', '$parent.item', '"packageName"', items)
                                                 +unique-feedback('"packageName"', uniqueTip)
 
-                                        pc-list-editable-no-items
+                                        list-editable-no-items
                                             | You have no packages.&nbsp;
                                             a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
@@ -118,16 +118,16 @@ include /app/helpers/jade/mixins
                                     -let items = uriListModel
                                     -var uniqueTip = 'Such URI already configured!'
 
-                                    pc-list-editable(ng-model=items name='uriList')
-                                        pc-list-editable-item-view
+                                    list-editable(ng-model=items name='uriList')
+                                        list-editable-item-view
                                             | {{ $parent.item }}
 
-                                        pc-list-editable-item-edit
+                                        list-editable-item-edit
                                             - form = '$parent.form'
                                             +list-url-field('URL', '$parent.item', '"url"', items)
                                                 +unique-feedback('"url"', uniqueTip)
 
-                                        pc-list-editable-no-items
+                                        list-editable-no-items
                                             | You have no URI.&nbsp;
                                             a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
@@ -147,16 +147,16 @@ include /app/helpers/jade/mixins
                                     -let items = scannerModel
                                     -var uniqueTip = 'Such scanner already configured!'
 
-                                    pc-list-editable(ng-model=items name='scannerModel')
-                                        pc-list-editable-item-view
+                                    list-editable(ng-model=items name='scannerModel')
+                                        list-editable-item-view
                                             | {{ $parent.item }}
 
-                                        pc-list-editable-item-edit
+                                        list-editable-item-edit
                                             - form = '$parent.form'
                                             +list-java-class-field('Scanner', '$parent.item', '"scanner"', items)
                                                 +unique-feedback('"scanner"', uniqueTip)
 
-                                        pc-list-editable-no-items
+                                        list-editable-no-items
                                             | You have no scanner.&nbsp;
                                             a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 

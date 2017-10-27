@@ -47,8 +47,8 @@ include /app/helpers/jade/mixins
                             .ignite-form-field__control
                                 -let items = failoverSpi
 
-                                pc-list-editable(ng-model=items name='failoverSpi')
-                                    pc-list-editable-item-edit
+                                list-editable(ng-model=items name='failoverSpi')
+                                    list-editable-item-edit
                                         - form = '$parent.form'
                                         .settings-row
                                             +dropdown-required-autofocus('Failover SPI:', '$parent.item.kind', '"failoverKind"', 'true', 'true', 'Choose Failover SPI', '[\
@@ -75,7 +75,7 @@ include /app/helpers/jade/mixins
                                             +java-class('SPI implementation', '$parent.item.Custom.class', '"failoverSpiClass"', 'true', failoverCustom,
                                                 'Custom FailoverSpi implementation class name.', failoverCustom)
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no failover SPI.&nbsp;
                                         a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 

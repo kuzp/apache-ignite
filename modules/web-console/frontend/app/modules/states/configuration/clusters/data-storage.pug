@@ -191,8 +191,8 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                     .ignite-form-field
                         .ignite-form-field__label Data region configurations
                         .ignite-form-field__control
-                            pc-list-editable(name='dataRegionConfigurations' ng-model=dataRegionConfigurations)
-                                pc-list-editable-item-edit.pc-form-grid-row
+                            list-editable(name='dataRegionConfigurations' ng-model=dataRegionConfigurations)
+                                list-editable-item-edit.pc-form-grid-row
                                     - form = '$parent.form'
                                     +data-region-form({
                                         modelAt: '$parent.item',
@@ -200,7 +200,7 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                                         dataRegionsAt: dataRegionConfigurations
                                     })
                                     - form = 'dataStorageConfiguration'
-                                pc-list-editable-no-items
+                                list-editable-no-items
                                     | You have no data region configurations.&nbsp;
                                     a.link-success(ng-click=`$ctrl.Clusters.addDataRegionConfiguration($ctrl.clonedCluster)`) Create one?
                             button.btn-ignite.btn-ignite--link(

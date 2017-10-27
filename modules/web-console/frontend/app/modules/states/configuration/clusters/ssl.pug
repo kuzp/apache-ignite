@@ -57,16 +57,16 @@ include /app/helpers/jade/mixins
                                     -let items = trust
                                     -var uniqueTip = 'Such trust manager already exists!'
 
-                                    pc-list-editable(ng-model=items name='trustManagers')
-                                        pc-list-editable-item-view
+                                    list-editable(ng-model=items name='trustManagers')
+                                        list-editable-item-view
                                             | {{ $parent.item }}
 
-                                        pc-list-editable-item-edit
+                                        list-editable-item-edit
                                             - form = '$parent.form'
                                             +list-java-class-field('Trust manager', '$parent.item', '"trustManager"', items)
                                                 +unique-feedback('"trustManager"', uniqueTip)
 
-                                        pc-list-editable-no-items
+                                        list-editable-no-items
                                             | You have no trust managers.&nbsp;
                                             a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
 
