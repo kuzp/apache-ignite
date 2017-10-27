@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -53,12 +54,14 @@ import org.apache.ignite.configuration.MemoryConfiguration;
 import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.GridNodeOrderComparator;
+import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.IgniteNodeAttributes;
 import org.apache.ignite.internal.TestRecordingCommunicationSpi;
 import org.apache.ignite.internal.cluster.ClusterTopologyServerNotFoundException;
 import org.apache.ignite.internal.managers.discovery.DiscoveryCustomMessage;
+import org.apache.ignite.internal.processors.affinity.AffinityAssignment;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.affinity.GridAffinityFunctionContextImpl;
 import org.apache.ignite.internal.processors.cache.CacheAffinityChangeMessage;
@@ -340,13 +343,16 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
         Ignite ignite0 = startServer(0, 1);
 
-        for (Map.Entry<Long, Map<Integer, List<List<ClusterNode>>>> entry : idealAff.entrySet())
-            print(ignite0, new AffinityTopologyVersion(entry.getKey()), entry.getValue().get(CU.cacheId(CACHE_NAME1)));
+        //for (Map.Entry<Long, Map<Integer, List<List<ClusterNode>>>> entry : idealAff.entrySet())
+
+        AffinityTopologyVersion ver = new AffinityTopologyVersion(1, 0);
+
+        printAll(ver);
 
         TestRecordingCommunicationSpi spi =
             (TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
 
-        blockSupplySend(spi, CACHE_NAME1);
+        //blockSupplySend(spi, CACHE_NAME1);
 
         int majorVer = 1;
 
@@ -354,15 +360,53 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
             majorVer++;
 
             startServer(i + 1, majorVer);
+
+            ver = new AffinityTopologyVersion(majorVer, 0);
+
+            awaitPartitionMapExchange();
+
+            printAll(ver);
         }
 
-        checkAffinity(majorVer, topVer(majorVer, 0), false);
+        //checkAffinity(majorVer, topVer(majorVer, 0), false);
+
+        //spi.stopBlock();
+//
+//        checkAffinity(majorVer, topVer(majorVer, 1), true);
     }
 
-    public void print(Ignite ignite, AffinityTopologyVersion topVer, List<List<ClusterNode>> assignment) {
+    public void printAll(AffinityTopologyVersion topVer) {
+        for (Ignite ignite : G.allGrids()) {
+            print(ignite, topVer, false);
+            print(ignite, topVer, true);
+        }
+    }
+
+    public void print(Ignite ignite, AffinityTopologyVersion topVer, boolean ideal) {
+        List<List<ClusterNode>> assignment;
+
+        final IgniteEx igniteEx = (IgniteEx)ignite;
+        final ClusterNode node = igniteEx.localNode();
+
+        GridCacheContext cctx = igniteEx.context().cache().context().cacheContext(CU.cacheId(CACHE_NAME1));
+
+        final AffinityAssignment ass = cctx.affinity().assignment(topVer);
+        assignment = ideal ? ass.idealAssignment() :
+            ass.assignment();
+
         StringBuilder b = new StringBuilder();
 
-        b.append(ignite.name() + ": [assignment size=").append(assignment.size()).append(", topVer=").append(topVer).append(", ");
+        b.append("[node id=" + U.id8(node.id()) + ", order=" + node.order() + ", assignment=" +
+            (ideal ? "ideal" : "current") + " size=").
+            append(assignment.size()).append(", topVer=").append(topVer);
+
+        final Set<Integer> prim = ass.primaryPartitions(node.id());
+
+        b.append(",\n    primary=").append(prim);
+
+        b.append(",\n    backups=").append(ass.backupPartitions(node.id()));
+
+        b.append(",\n    ");
 
         for (int i = 0; i < assignment.size(); i++) {
             b.append(i).append('=');
@@ -2654,8 +2698,6 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
                 List<List<ClusterNode>> aff1 = aff.get(cctx.name());
                 List<List<ClusterNode>> aff2 = cctx.affinity().assignments(topVer);
-
-                print(node, topVer, aff2);
 
                 if (aff1 == null)
                     aff.put(cctx.name(), aff2);
