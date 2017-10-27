@@ -1,10 +1,30 @@
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
+import {default as Models} from 'app/services/Models';
+import {default as ModalImportModels} from 'app/components/page-configure/components/modal-import-models/service';
+import {default as IgniteVersion} from 'app/services/Version.service';
+import {Confirm} from 'app/services/Confirm.service';
+
+/** @type {ng.IComponentController} */
 export default class ModelEditFormController {
-    static $inject = ['ModalImportModels', 'IgniteErrorPopover', 'IgniteLegacyUtils', 'IgniteConfirm', 'ConfigChangesGuard', 'IgniteVersion', '$scope', 'Models', 'IgniteFormUtils'];
-    constructor(ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, IgniteVersion, $scope, Models, IgniteFormUtils) {
-        Object.assign(this, {ModalImportModels, ErrorPopover, LegacyUtils, IgniteConfirm, ConfigChangesGuard, IgniteVersion, $scope, Models, IgniteFormUtils});
+    /** @type {ig.config.model.DomainModel} */
+    model;
+    static $inject = ['ModalImportModels', 'IgniteErrorPopover', 'IgniteLegacyUtils', Confirm.name, 'ConfigChangesGuard', IgniteVersion.name, '$scope', Models.name, 'IgniteFormUtils'];
+    /**
+     * @param {ModalImportModels} ModalImportModels
+     * @param {Confirm} Confirm
+     * @param {ng.IScope} $scope
+     * @param {Models} Models
+     * @param {IgniteVersion} IgniteVersion
+     */
+    constructor(ModalImportModels, ErrorPopover, LegacyUtils, Confirm, ConfigChangesGuard, IgniteVersion, $scope, Models, IgniteFormUtils) {
+        Object.assign(this, {ErrorPopover, LegacyUtils, ConfigChangesGuard, IgniteFormUtils});
+        this.ModalImportModels = ModalImportModels;
+        this.Confirm = Confirm;
+        this.$scope = $scope;
+        this.Models = Models;
+        this.IgniteVersion = IgniteVersion;
     }
     $onInit() {
         this.available = this.IgniteVersion.available.bind(this.IgniteVersion);
@@ -39,6 +59,9 @@ export default class ModelEditFormController {
         return this.ModalImportModels.open();
     }
 
+    /**
+     * @param {ig.config.model.DomainModel} item
+     */
     checkQueryConfiguration(item) {
         if (item.queryMetadata === 'Configuration' && this.LegacyUtils.domainForQueryConfigured(item)) {
             if (_.isEmpty(item.fields))
@@ -61,6 +84,9 @@ export default class ModelEditFormController {
         return true;
     }
 
+    /**
+     * @param {ig.config.model.DomainModel} item
+     */
     checkStoreConfiguration(item) {
         if (this.LegacyUtils.domainForStoreConfigured(item)) {
             if (this.LegacyUtils.isEmptyString(item.databaseSchema))
@@ -82,7 +108,10 @@ export default class ModelEditFormController {
         return true;
     }
 
-    // Check domain model logical consistency.
+    /**
+     * Check domain model logical consistency.
+     * @param {ig.config.model.DomainModel} item
+     */
     validate(item) {
         if (!this.checkQueryConfiguration(item))
             return false;
@@ -126,7 +155,8 @@ export default class ModelEditFormController {
     }
     reset = (forReal) => forReal ? this.$scope.backupItem = cloneDeep(this.model) : void 0;
     confirmAndReset() {
-        return this.IgniteConfirm.confirm('Are you sure you want to undo all changes for current model?')
-        .then(this.reset);
+        return this.Confirm.confirm('Are you sure you want to undo all changes for current model?').then(() => true)
+        .then(this.reset)
+        .catch(() => {});
     }
 }

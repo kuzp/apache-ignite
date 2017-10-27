@@ -11,10 +11,22 @@ import {
     removeClusterItems
 } from 'app/components/page-configure/store/actionCreators';
 
+import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
+import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
+import {default as Models} from 'app/services/Models';
+
 export default class PageConfigureAdvancedModels {
-    static $inject = ['ConfigSelectors', 'ConfigureState', '$uiRouter', 'Models', '$state', 'conf', 'configSelectionManager'];
+    static $inject = [ConfigSelectors.name, ConfigureState.name, '$uiRouter', Models.name, '$state', 'conf', 'configSelectionManager'];
+    /**
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {ConfigureState} ConfigureState
+     * @param {Models} Models
+     */
     constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager) {
-        Object.assign(this, {ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager});
+        Object.assign(this, {$uiRouter, $state, conf, configSelectionManager});
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigureState = ConfigureState;
+        this.Models = Models;
     }
     $onDestroy() {
         this.subscription.unsubscribe();
