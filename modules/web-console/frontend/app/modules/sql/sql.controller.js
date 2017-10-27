@@ -1626,8 +1626,18 @@ export default ['$rootScope', '$scope', '$http', '$q', '$timeout', '$interval', 
             LegacyUtils.download('application/octet-stream;charset=utf-8', fileName, escape(csvContent));
         };
 
+        /**
+         * Generate file name with query results.
+         *
+         * @param {Object} Paragraph Query.
+         * @param {Boolean} All result export flag.
+         */
+        const exportFileName = (paragraph, all) => {
+            return `${paragraph.name}${paragraph.queryArgs.type === 'SCAN' || paragraph.useAsDefaultSchema ? `-${paragraph.cacheName}` : ''}${all ? '-all' : ''}.csv`;
+        };
+
         $scope.exportCsv = function(paragraph) {
-            _export(paragraph.name + '.csv', paragraph.gridOptions.columnDefs, paragraph.meta, paragraph.rows);
+            _export(exportFileName(paragraph, false), paragraph.gridOptions.columnDefs, paragraph.meta, paragraph.rows);
 
             // paragraph.gridOptions.api.exporter.csvExport(uiGridExporterConstants.ALL, uiGridExporterConstants.VISIBLE);
         };
@@ -1643,7 +1653,7 @@ export default ['$rootScope', '$scope', '$http', '$q', '$timeout', '$interval', 
                 .then((nid) => args.type === 'SCAN'
                     ? agentMgr.queryScanGetAll(nid, args.cacheName, args.query, !!args.regEx, !!args.caseSensitive, !!args.near, !!args.localNid)
                     : agentMgr.querySqlGetAll(nid, args.cacheName, args.query, !!args.nonCollocatedJoins, !!args.enforceJoinOrder, false, !!args.localNid, !!args.lazy))
-                .then((res) => _export(paragraph.name + '-all.csv', paragraph.gridOptions.columnDefs, res.columns, res.rows))
+                .then((res) => _export(exportFileName(paragraph, true), paragraph.gridOptions.columnDefs, res.columns, res.rows))
                 .catch(Messages.showError)
                 .then(() => paragraph.ace && paragraph.ace.focus());
         };
