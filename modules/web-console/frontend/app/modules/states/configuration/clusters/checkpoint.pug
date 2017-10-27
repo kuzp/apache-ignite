@@ -35,8 +35,8 @@ include /app/helpers/jade/mixins
                     +ignite-form-field__label('Checkpoint SPI configurations:', '"checkpointSPIConfigurations"')
                         +tooltip(`Checkpoint SPI configurations`)
                     .ignite-form-field__control
-                        pc-list-editable(ng-model=model name='checkpointSPIConfigurations')
-                            pc-list-editable-item-edit
+                        list-editable(ng-model=model name='checkpointSPIConfigurations')
+                            list-editable-item-edit
                                 - form = '$parent.form'
                                 .settings-row
                                     +dropdown-required('Checkpoint SPI:', '$parent.item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
@@ -79,7 +79,7 @@ include /app/helpers/jade/mixins
                                     +java-class('Class name:', '$parent.item.Custom.className', '"checkpointCustomClassName"', 'true', CustomCheckpoint,
                                     'Custom CheckpointSpi implementation class', CustomCheckpoint)
 
-                            pc-list-editable-no-items
+                            list-editable-no-items
                                 | You have no checkpoint SPI configurations.&nbsp;
                                 a.link-success(ng-click=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`) Create one?
 

@@ -55,15 +55,15 @@ include /app/helpers/jade/mixins
                                 +tooltip(`Collection of name-to-type mappings to be queried, in addition to indexed fields`)
                             .ignite-form-field__control
                                 -let items = queryFields
-                                pc-list-editable(
+                                list-editable(
                                     ng-model=items
                                     name='queryFields'
                                     ng-change=`$ctrl.onQueryFieldsChange(${items})`
                                 )
-                                    pc-list-editable-item-view
+                                    list-editable-item-view
                                         | {{ $parent.item.name}} / {{ $parent.item.className}}
 
-                                    pc-list-editable-item-edit
+                                    list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
@@ -75,7 +75,7 @@ include /app/helpers/jade/mixins
                                             .pc-form-grid-col-30
                                                 +java-class-typeahead('Field full class name', `$parent.item.className`, '"className"', 'javaBuiltInClasses', true, true, 'Enter field full class name')
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no fields.&nbsp;
                                         a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
@@ -104,11 +104,11 @@ include /app/helpers/jade/mixins
                             .ignite-form-field__control
                                 -let items = queryAliases
 
-                                pc-list-editable(ng-model=items name='queryAliases')
-                                    pc-list-editable-item-view
+                                list-editable(ng-model=items name='queryAliases')
+                                    list-editable-item-view
                                         | {{ $parent.item.field }} &rarr; {{ $parent.item.alias }}
 
-                                    pc-list-editable-item-edit
+                                    list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
@@ -120,7 +120,7 @@ include /app/helpers/jade/mixins
                                             .pc-form-grid-col-30
                                                 +ignite-form-field-text('Field alias', '$parent.item.alias', '"alias"', false, true, 'Enter field alias')
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no aliases.&nbsp;
                                         a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
@@ -139,15 +139,15 @@ include /app/helpers/jade/mixins
                             .ignite-form-field__control
                                 -let items = queryIndexes
 
-                                pc-list-editable(ng-model=items name='queryIndexes')
-                                    pc-list-editable-item-view
+                                list-editable(ng-model=items name='queryIndexes')
+                                    list-editable-item-view
                                         div {{ $parent.item.name }} [{{ $parent.item.indexType }}]
                                         div(ng-repeat='field in $parent.item.fields')
                                             span {{ field.name }}
                                             span(ng-if='$parent.$parent.item.indexType == "SORTED"')
                                                 |  / {{ field.direction ? "ASC" : "DESC"}}
 
-                                    pc-list-editable-item-edit
+                                    list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
@@ -167,13 +167,13 @@ include /app/helpers/jade/mixins
                                                             +tooltip(`Fields in index`)
                                                         .ignite-form-field__control(ng-if='item = $parent.item')
                                                             -let items = 'item.fields'
-                                                            pc-list-editable(ng-model=items name='indexFields')
-                                                                pc-list-editable-item-view
+                                                            list-editable(ng-model=items name='indexFields')
+                                                                list-editable-item-view
                                                                     | {{ $parent.item.name }} 
                                                                     span(ng-if='item.indexType == "SORTED"')
                                                                         |  / {{ $parent.$parent.item.direction ? "ASC" : "DESC" }}
 
-                                                                pc-list-editable-item-edit
+                                                                list-editable-item-edit
                                                                     - form = '$parent.form'
                                                                     .pc-form-grid-row
                                                                         .pc-form-grid-col-60
@@ -199,7 +199,7 @@ include /app/helpers/jade/mixins
                                                                                 required: true,
                                                                                 options: '::$ctrl.Models.indexSortDirection.values'
                                                                             })
-                                                                pc-list-editable-no-items
+                                                                list-editable-no-items
                                                                     | You have no fields in index.&nbsp;
                                                                     a.link-success(
                                                                         ng-click=`ui.inputForm.query.form.indexFields.editListItem($ctrl.Models.addIndexField(${items}))`
@@ -213,11 +213,15 @@ include /app/helpers/jade/mixins
                                                                 | + Add new field to index
                                                 +domains-query-indexes-fields
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no fields.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                        a.link-success(ng-click=`$ctrl.Models.addIndex(${model})`) Create one?
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                button.btn-ignite.btn-ignite--link(
+                                    type='button'
+                                    ng-if=`${items}.length`
+                                    ng-click=`$ctrl.Models.addIndex(${model})`
+                                )
                                     | + Add new index
                     +domains-query-indexes
             .pca-form-column-6

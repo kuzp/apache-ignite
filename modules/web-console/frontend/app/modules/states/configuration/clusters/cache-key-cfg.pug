@@ -34,8 +34,8 @@ include /app/helpers/jade/mixins
                             +tooltip(`Cache key configuration`)
                         .ignite-form-field__control
                             -let items = model
-                            pc-list-editable(ng-model=items name='cacheKeyConfiguration')
-                                pc-list-editable-item-edit
+                            list-editable(ng-model=items name='cacheKeyConfiguration')
+                                list-editable-item-edit
                                     - form = '$parent.form'
                                     .settings-row
                                         +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
@@ -53,7 +53,7 @@ include /app/helpers/jade/mixins
                                         )
                                             +unique-feedback(`affinityKeyFieldName`, 'Affinity key field name should be unique.')
 
-                                pc-list-editable-no-items
+                                list-editable-no-items
                                     | You have no cache key configurations.&nbsp;
                                     a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 

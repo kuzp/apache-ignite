@@ -97,8 +97,8 @@ include /app/helpers/jade/mixins
                                 .ignite-form-field__control
                                     -let items = memoryPolicies
 
-                                    pc-list-editable(ng-model=items name='memoryPolicies')
-                                        pc-list-editable-item-edit.pc-form-grid-row
+                                    list-editable(ng-model=items name='memoryPolicies')
+                                        list-editable-item-edit.pc-form-grid-row
                                             - form = '$parent.form'
                                             .pc-form-grid-col-60
                                                 +sane-ignite-form-field-text({
@@ -181,7 +181,7 @@ include /app/helpers/jade/mixins
                                                 +checkbox('Metrics enabled', '$parent.item.metricsEnabled', '"MemoryPolicyMetricsEnabled"',
                                                 'Whether memory metrics are enabled by default on node startup')
 
-                                        pc-list-editable-no-items
+                                        list-editable-no-items
                                             | You have no memory policy configurations.&nbsp;
                                             a.link-success(ng-click=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`) Create one?
 

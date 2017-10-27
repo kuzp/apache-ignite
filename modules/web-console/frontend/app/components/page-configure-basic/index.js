@@ -21,13 +21,10 @@ import component from './component';
 import service from './service';
 import {reducer} from './reducer';
 
-import pcListEditableOneWay from './components/pcListEditableOneWay';
-
 export default angular
     .module('ignite-console.page-configure-basic', [])
     .run(['ConfigureState', (ConfigureState) => ConfigureState.addReducer((state, action) => Object.assign(state, {
         configureBasic: reducer(state.configureBasic, action, state)
     }))])
     .component('pageConfigureBasic', component)
-    .directive('pcListEditableOneWay', pcListEditableOneWay)
     .service('PageConfigureBasic', service);

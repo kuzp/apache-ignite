@@ -78,11 +78,11 @@ include /app/helpers/jade/mixins
                             .ignite-form-field__control
                                 -let items = pathModes
 
-                                pc-list-editable(ng-model=items)
-                                    pc-list-editable-item-view
+                                list-editable(ng-model=items)
+                                    list-editable-item-view
                                         | {{ $parent.item.path + " [" + $parent.item.mode + "]"}}
 
-                                    pc-list-editable-item-edit
+                                    list-editable-item-edit
                                         - form = '$parent.form'
 
                                         .pc-form-grid-row
@@ -100,7 +100,7 @@ include /app/helpers/jade/mixins
                                                     ng-model-options='{allowInvalid: true}'
                                                 )
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no path modes.&nbsp;
                                         a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
 

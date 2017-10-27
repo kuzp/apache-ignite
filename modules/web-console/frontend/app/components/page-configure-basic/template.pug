@@ -106,24 +106,26 @@ form(novalidate name=form)
             )
                 +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
 
-    pc-list-editable.pcb-caches-list(
+    list-editable.pcb-caches-list(
         ng-model='$ctrl.shortCaches'
-        pc-list-editable-one-way
+        list-editable-one-way
         on-item-change='$ctrl.changeCache($event)'
         on-item-remove='$ctrl.removeCache($event)'
-        pc-list-editable-cols='::$ctrl.cachesColDefs'
-        pc-list-editable-cols-row-class='pc-form-grid-row'
+        list-editable-cols='::$ctrl.cachesColDefs'
+        list-editable-cols-row-class='pc-form-grid-row pcb-row-no-margin'
     )
-        pc-list-editable-item-view
+        list-editable-item-view
             div {{ $parent.item.name }}
             div {{ $parent.item.cacheMode }}
             div {{ $parent.item.atomicityMode }}
             div {{ $parent.item.backups || '0' }}
-        pc-list-editable-item-edit
+        list-editable-item-edit
             div
                 +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
                     ignite-unique='$ctrl.shortCaches'
                     ignite-unique-property='name'
+                )(
+                    ignite-form-field-input-autofocus='true'
                 )
                     +unique-feedback('"name"', 'Cache name should be unqiue')
             div

@@ -43,8 +43,8 @@ include /app/helpers/jade/mixins
                             +tooltip(`Configuration properties for binary types`)
                         .ignite-form-field__control
                             -var items = model + '.typeConfigurations'
-                            pc-list-editable(ng-model=items name='typeСonfigurations')
-                                pc-list-editable-item-edit
+                            list-editable(ng-model=items name='typeСonfigurations')
+                                list-editable-item-edit
                                     - form = '$parent.form'
                                     .settings-row
                                         +java-class-autofocus('Type name:', '$parent.item.typeName', '"typeName"', 'true', 'true', 'true', 'Type name')(
@@ -69,7 +69,7 @@ include /app/helpers/jade/mixins
                                     .settings-row
                                         +checkbox('Enum', '$parent.item.enum', 'enum', 'Flag indicating that this type is the enum')
 
-                                pc-list-editable-no-items
+                                list-editable-no-items
                                     | You have no type configurations.&nbsp;
                                     a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
 

@@ -101,12 +101,12 @@ include /app/helpers/jade/mixins
                             .ignite-form-field__control
                                 -let items = executors
 
-                                pc-list-editable(ng-model=items name='executorConfigurations')
-                                    pc-list-editable-item-view
+                                list-editable(ng-model=items name='executorConfigurations')
+                                    list-editable-item-view
                                         | {{ $parent.item.name }} / 
                                         | {{ $parent.item.size || 'max(8, availableProcessors)'}}
 
-                                    pc-list-editable-item-edit
+                                    list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30
@@ -130,7 +130,7 @@ include /app/helpers/jade/mixins
                                             .pc-form-grid-col-30
                                                 +number('Pool size:', '$parent.item.size', '"ExecutorPoolSize"', 'true', 'max(8, availableProcessors)', '1', 'Thread pool size')
 
-                                    pc-list-editable-no-items
+                                    list-editable-no-items
                                         | You have no executor configurations.&nbsp;
                                         a.link-success(ng-click=`$ctrl.Clusters.addExecutorConfiguration(${model})`) Create one?
 

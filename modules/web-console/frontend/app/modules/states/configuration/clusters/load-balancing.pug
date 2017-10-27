@@ -39,8 +39,8 @@ include /app/helpers/jade/mixins
                         .ignite-form-field__control
                             -let items = loadBalancingSpi
 
-                            pc-list-editable(ng-model=items name='loadBalancingConfigurations')
-                                pc-list-editable-item-edit
+                            list-editable(ng-model=items name='loadBalancingConfigurations')
+                                list-editable-item-edit
                                     - form = '$parent.form'
                                     .settings-row
                                         +sane-ignite-form-field-dropdown({
@@ -105,7 +105,7 @@ include /app/helpers/jade/mixins
                                         +java-class('Load balancing SPI implementation:', '$parent.item.Custom.className', '"loadBalancingClass"', 'true', loadBalancingCustom,
                                             'Custom load balancing SPI implementation class name.', loadBalancingCustom)
 
-                                pc-list-editable-no-items
+                                list-editable-no-items
                                     | You have no load balancing configurations.&nbsp;
                                     a.link-success(ng-click=`$ctrl.Clusters.addLoadBalancingSpi(${model})`) Create one?
 

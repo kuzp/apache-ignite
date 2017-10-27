@@ -22,11 +22,11 @@ include /app/helpers/jade/mixins
 -var valueFields = `${model}.valueFields`
 
 mixin list-db-field-edit({ items, itemName, itemsName })
-    pc-list-editable(ng-model=items)
-        pc-list-editable-item-view
+    list-editable(ng-model=items)
+        list-editable-item-view
             | {{ $parent.item.databaseFieldName }} / {{ $parent.item.databaseFieldType }} / {{ $parent.item.javaFieldName }} / {{ $parent.item.javaFieldType }}
 
-        pc-list-editable-item-edit
+        list-editable-item-edit
             - form = '$parent.form'
 
             .pc-form-grid-row
@@ -39,7 +39,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
                 .pc-form-grid-col-30
                     +dropdown-required('Java type:', '$parent.item.javaFieldType', '"javaFieldType"', true, true, 'Choose Java type', 'supportedJavaTypes')
 
-        pc-list-editable-no-items
+        list-editable-no-items
             | You have no #{itemsName}.&nbsp;
             a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
 
