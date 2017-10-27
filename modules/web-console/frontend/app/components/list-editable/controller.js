@@ -49,6 +49,9 @@ export default class {
         this.ngModel.$isEmpty = (value) => {
             return !Array.isArray(value) || !value.length;
         };
+        this.ngModel.editListItem = (item) => {
+            this.startEditView(this.ngModel.$viewValue.indexOf(item));
+        };
     }
 
     save(data, idx) {
