@@ -1608,7 +1608,7 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
             shortFactoryCls = this.javaTypes.shortClassName(factoryCls);
         }
 
-        if ((_.nonEmpty(clientNearCaches) || demo) && shortFactoryCls)
+        if ((nonEmpty(clientNearCaches) || demo) && shortFactoryCls)
             imports.push('org.apache.ignite.Ignite');
 
         sb.append(`package ${pkg};`)
