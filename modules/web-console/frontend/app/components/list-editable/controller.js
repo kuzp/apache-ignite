@@ -17,9 +17,18 @@
 
 import _ from 'lodash';
 
+/** @type {ng.IComponentController} */
 export default class {
+    /** @type {ng.INgModelController} */
+    ngModel;
+
     static $inject = ['$animate', '$element', '$transclude'];
 
+    /**
+     * @param {ng.animate.IAnimateService} $animate
+     * @param {JQLite} $element
+     * @param {ng.ITranscludeFunction} $transclude
+     */
     constructor($animate, $element, $transclude) {
         $animate.enabled($element, false);
         this.$transclude = $transclude;
