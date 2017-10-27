@@ -20,16 +20,14 @@ package org.apache.ignite.visor.commands.config
 import org.apache.ignite.cluster.ClusterGroupEmptyException
 import org.apache.ignite.internal.util.scala.impl
 import org.apache.ignite.internal.util.{IgniteUtils => U}
-import org.apache.ignite.lang.IgniteBiTuple
 import org.apache.ignite.visor.VisorTag
 import org.apache.ignite.visor.commands.cache.VisorCacheCommand._
 import org.apache.ignite.visor.commands.common.{VisorConsoleCommand, VisorTextTable}
 import org.apache.ignite.visor.visor._
-
 import java.lang.System._
 import java.util.UUID
 
-import org.apache.ignite.internal.visor.node.{VisorSpiDescription, VisorGridConfiguration, VisorNodeConfigurationCollectorTask}
+import org.apache.ignite.internal.visor.node.{VisorGridConfiguration, VisorNodeConfigurationCollectorTask, VisorSpiDescription}
 import org.apache.ignite.internal.visor.util.VisorTaskUtils._
 
 import scala.collection.JavaConversions._
@@ -239,6 +237,26 @@ class VisorConfigurationCommand extends VisorConsoleCommand {
         spisT += ("Indexing", spisClass(spisCfg.getIndexingSpis))
 
         spisT.render()
+
+        println("\nClient connector configuration")
+
+        val cliConnCfg = cfg.getClientConnectorConfiguration
+        val cliConnTbl = VisorTextTable()
+
+        if (cliConnCfg != null) {
+            cliConnTbl += ("Host", safe(cliConnCfg.getHost, safe(basic.getLocalHost)))
+            cliConnTbl += ("Port", cliConnCfg.getPort)
+            cliConnTbl += ("Port range", cliConnCfg.getPortRange)
+            cliConnTbl += ("Socket send buffer size", formatMemory(cliConnCfg.getSocketSendBufferSize))
+            cliConnTbl += ("Socket receive buffer size", formatMemory(cliConnCfg.getSocketReceiveBufferSize))
+            cliConnTbl += ("Max connection cursors", cliConnCfg.getMaxOpenCursorsPerConnection)
+            cliConnTbl += ("Pool size", cliConnCfg.getThreadPoolSize)
+            cliConnTbl += ("TCP_NODELAY", bool2Str(cliConnCfg.isTcpNoDelay))
+
+            cliConnTbl.render()
+        }
+        else
+            println(NA)
 
         println("\nPeer-to-Peer:")
 
