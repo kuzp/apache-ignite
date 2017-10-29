@@ -2337,7 +2337,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                 hasPages = hasPageForWrite(cpPagesTuple.get1());
 
-                if (hasPages || curr.nextSnapshot) {
+                if (hasPages) {
                     // No page updates for this checkpoint are allowed from now on.
                     cpPtr = cctx.wal().log(cpRec);
 
