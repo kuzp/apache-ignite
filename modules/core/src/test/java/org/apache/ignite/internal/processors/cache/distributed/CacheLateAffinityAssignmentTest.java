@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -68,6 +67,9 @@ import org.apache.ignite.internal.processors.cache.CacheAffinityChangeMessage;
 import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtCacheAdapter;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtForceKeysRequest;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtForceKeysResponse;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionSupplyMessage;
@@ -329,7 +331,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testAssignmentDelayRebalancing() throws Exception {
-        final int joinCnt = 2;
+        final int joinCnt = 3;
 
         cacheC = new IgniteClosure<String, CacheConfiguration[]>() {
             @Override public CacheConfiguration[] apply(String s) {
@@ -352,7 +354,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
         TestRecordingCommunicationSpi spi =
             (TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
 
-        //blockSupplySend(spi, CACHE_NAME1);
+        blockSupplySend(spi, CACHE_NAME1);
 
         int majorVer = 1;
 
@@ -363,10 +365,20 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
             ver = new AffinityTopologyVersion(majorVer, 0);
 
-            awaitPartitionMapExchange();
-
             printAll(ver);
         }
+
+        majorVer++;
+
+        stopGrid(0);
+
+        ver = new AffinityTopologyVersion(majorVer, 0);
+
+        printAll(ver);
+
+        //GridCacheContext cctx = grid(1).context().cache().context().cacheContext(CU.cacheId(CACHE_NAME1));
+
+
 
         //checkAffinity(majorVer, topVer(majorVer, 0), false);
 
@@ -376,29 +388,24 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
     }
 
     public void printAll(AffinityTopologyVersion topVer) {
-        for (Ignite ignite : G.allGrids()) {
-            print(ignite, topVer, false);
-            print(ignite, topVer, true);
-        }
+        for (Ignite ignite : G.allGrids())
+            print(ignite, topVer);
     }
 
-    public void print(Ignite ignite, AffinityTopologyVersion topVer, boolean ideal) {
-        List<List<ClusterNode>> assignment;
-
+    public void print(Ignite ignite, AffinityTopologyVersion topVer) {
         final IgniteEx igniteEx = (IgniteEx)ignite;
         final ClusterNode node = igniteEx.localNode();
 
         GridCacheContext cctx = igniteEx.context().cache().context().cacheContext(CU.cacheId(CACHE_NAME1));
 
         final AffinityAssignment ass = cctx.affinity().assignment(topVer);
-        assignment = ideal ? ass.idealAssignment() :
-            ass.assignment();
+        List<List<ClusterNode>> assignment = ass.assignment();
+        List<List<ClusterNode>> idealAssignment = ass.idealAssignment();
 
         StringBuilder b = new StringBuilder();
 
-        b.append("[node id=" + U.id8(node.id()) + ", order=" + node.order() + ", assignment=" +
-            (ideal ? "ideal" : "current") + " size=").
-            append(assignment.size()).append(", topVer=").append(topVer);
+        b.append("node id=" + U.id8(node.id()) + ", order=" + node.order() + ", size=").append(assignment.size()).
+            append(", topVer=").append(topVer);
 
         final Set<Integer> prim = ass.primaryPartitions(node.id());
 
@@ -406,7 +413,7 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
         b.append(",\n    backups=").append(ass.backupPartitions(node.id()));
 
-        b.append(",\n    ");
+        b.append(",\n    assignment=[");
 
         for (int i = 0; i < assignment.size(); i++) {
             b.append(i).append('=');
@@ -423,7 +430,39 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
         b.append(']');
 
+        b.append(",\n    ideadAssignment=[");
+
+        for (int i = 0; i < idealAssignment.size(); i++) {
+            b.append(i).append('=');
+
+            b.append(F.transform(idealAssignment.get(i), new IgniteClosure<ClusterNode, String>() {
+                @Override public String apply(ClusterNode node) {
+                    return U.id8(node.id());
+                }
+            }));
+
+            if (i != idealAssignment.size() - 1)
+                b.append(", ");
+        }
+
+        b.append(']');
+
         log.info(b.toString());
+
+        GridDhtCacheAdapter ca = (GridDhtCacheAdapter)igniteEx.context().cache().internalCache(CACHE_NAME1);
+
+        GridDhtPartitionTopology top = ca.topology();
+
+        Set<Integer> prims = ass.primaryPartitions(node.id());
+
+        for (int i = 0; i < top.localPartitions().size(); i++) {
+            GridDhtLocalPartition part = top.localPartitions().get(i);
+
+            if (prims.contains(i))
+                assertTrue("Partition " + i + " must be primary for node " + ((IgniteEx)ignite).localNode(), part.primary(topVer));
+            else
+                assertFalse("Partition " + i + " must be not primary for node " + ((IgniteEx)ignite).localNode(), part.primary(topVer));
+        }
     }
 
     /**
