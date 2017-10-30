@@ -354,7 +354,7 @@ export default class ConfigEffects {
 
         this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
             .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
-            .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id, justIDUpdate: true}, {location: 'replace'}))
+            .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace', custom: {justIDUpdate: true}}))
             .ignoreElements();
 
         this.basicDownloadAfterSaveEffect$ = this.ConfigureState.actions$
@@ -378,7 +378,7 @@ export default class ConfigEffects {
             })
             .do(([type, value, cluster]) => {
                 const go = (state, params = {}) => this.$state.go(
-                    state, {...params, justIDUpdate: true, clusterID: cluster._id}, {location: 'replace'}
+                    state, {...params, clusterID: cluster._id}, {location: 'replace', custom: {justIDUpdate: true}}
                 );
                 switch (type) {
                     case 'models': {
