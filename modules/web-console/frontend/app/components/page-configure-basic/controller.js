@@ -75,7 +75,7 @@ export default class PageConfigureBasicController {
     }
 
     _uiCanExit($transition$) {
-        if ($transition$.params().justIDUpdate) return true;
+        if ($transition$.options().custom.justIDUpdate) return true;
         $transition$.onSuccess({}, () => this.reset());
         return Observable.forkJoin(
             this.ConfigureState.state$.pluck('edit', 'changes').take(1),

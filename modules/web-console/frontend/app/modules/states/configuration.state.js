@@ -84,12 +84,6 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             })
             .state('base.configuration.edit', {
                 url: `/{clusterID:${idRegex}}`,
-                params: {
-                    justIDUpdate: {
-                        type: 'bool',
-                        value: false
-                    }
-                },
                 permission: 'configuration',
                 component: 'pageConfigure',
                 resolve: {

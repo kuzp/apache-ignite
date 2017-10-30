@@ -15,7 +15,7 @@ class FormUICanExitGuardController {
         if (!controller) return;
 
         controller.uiCanExit = ($transition$) => {
-            if ($transition$.params().justIDUpdate) return true;
+            if ($transition$.options().custom.justIDUpdate) return true;
             $transition$.onSuccess({}, controller.reset);
             return this.ConfigChangesGuard.guard(...controller.getValuesToCompare());
         };
