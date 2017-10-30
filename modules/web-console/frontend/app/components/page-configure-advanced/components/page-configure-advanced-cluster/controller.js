@@ -16,13 +16,21 @@
  */
 
 import {Subject} from 'rxjs/Subject';
+import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
+import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
 
 // Controller for Clusters screen.
 export default class PageConfigureAdvancedCluster {
-    static $inject = ['$uiRouter', 'ConfigSelectors', 'ConfigureState', 'conf'];
+    static $inject = ['$uiRouter', ConfigSelectors.name, ConfigureState.name, 'conf'];
 
+    /**
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {ConfigureState} ConfigureState
+     */
     constructor($uiRouter, ConfigSelectors, ConfigureState, conf) {
-        Object.assign(this, {$uiRouter, ConfigSelectors, ConfigureState, conf});
+        Object.assign(this, {$uiRouter, conf});
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigureState = ConfigureState;
     }
 
     $onInit() {
