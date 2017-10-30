@@ -2652,7 +2652,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                         int curWrittenPages = writtenPagesCntr.incrementAndGet();
 
-                        snapshotMgr.onPageWrite(fullId, tmpWriteBuf, curWrittenPages, totalPagesToWrite);
+                        try {
+                            snapshotMgr.onPageWrite(fullId, tmpWriteBuf, curWrittenPages, totalPagesToWrite);
+                        }
+                        catch (Exception ex) {
+                            U.error(log, "Error while calling onPageWrite of SnapshotManager", ex);
+                        }
 
                         tmpWriteBuf.rewind();
 
