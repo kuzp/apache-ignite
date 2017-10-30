@@ -28,13 +28,14 @@ import ConfigureState from 'app/components/page-configure/services/ConfigureStat
 import ConfigSelectors from 'app/components/page-configure/store/selectors';
 import Caches from 'app/services/Caches';
 import Clusters from 'app/services/Clusters';
+import IgniteVersion from 'app/services/Version.service';
 
 export default class PageConfigureBasicController {
     /** @type {ng.IFormController} */
     form;
 
     static $inject = [
-        Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, 'conf', Clusters.name, Caches.name, 'IgniteVersion', '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
+        Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, 'conf', Clusters.name, Caches.name, IgniteVersion.name, '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
     ];
 
     /**
@@ -45,14 +46,14 @@ export default class PageConfigureBasicController {
      * @param {object} conf
      * @param {Clusters} Clusters
      * @param {Caches} Caches
-     * @param {object} IgniteVersion
+     * @param {IgniteVersion} IgniteVersion
      * @param {JQLite} $element
      * @param {object} ConfigChangesGuard
      * @param {object} IgniteFormUtils
      * @param {ng.IScope} $scope
      */
     constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {$uiRouter, conf, IgniteVersion, ConfigChangesGuard, IgniteFormUtils});
+        Object.assign(this, {$uiRouter, conf, ConfigChangesGuard, IgniteFormUtils});
         this.$scope = $scope;
         this.$element = $element;
         this.Caches = Caches;
@@ -60,6 +61,7 @@ export default class PageConfigureBasicController {
         this.Confirm = Confirm;
         this.ConfigureState = ConfigureState;
         this.ConfigSelectors = ConfigSelectors;
+        this.IgniteVersion = IgniteVersion;
     }
 
     $onDestroy() {
