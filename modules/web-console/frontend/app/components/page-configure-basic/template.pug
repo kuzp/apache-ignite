@@ -89,7 +89,13 @@ form(novalidate name=form)
     .settings-row.pcb-inner-padding(ng-show='!$ctrl.shortCaches.length').pcb-section-notification
         | You have no caches. Let’s create a new one.
 
-    .pcb-form-grid-row.pc-form-grid-row(ng-if='$ctrl.defaultMemoryPolicy && $ctrl.memorySizeInputVisible$|async:this')
+    .pcb-form-grid-row.pc-form-grid-row(
+        ng-if=`
+            $ctrl.defaultMemoryPolicy &&
+            $ctrl.IgniteVersion.available(['2.0.0', '2.3.0']) &&
+            $ctrl.memorySizeInputVisible$|async:this
+        `
+    )
         .pc-form-grid-col-60
             pc-form-field-size(
                 ng-model='$ctrl.defaultMemoryPolicy.maxSize'
@@ -105,6 +111,27 @@ form(novalidate name=form)
                 on-scale-change='scale = $event'
             )
                 +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
+
+    .pcb-form-grid-row.pc-form-grid-row(ng-if=`$ctrl.IgniteVersion.available('2.3.0')`)
+        .pc-form-grid-col-60
+            pc-form-field-size(
+                ng-model=`${model}.dataStorageConfiguration.defaultDataRegionConfiguration.maxSize`
+                ng-model-options='{allowInvalid: true}'
+                id='memory'
+                name='memory'
+                label='Total Off-heap Size:'
+                size-type='bytes'
+                size-scale-label='mb'
+                placeholder='{{ ::$ctrl.Clusters.dataRegion.maxSize.default }}'
+                min=`{{ ::$ctrl.Clusters.dataRegion.maxSize.min(${model}.dataStorageConfiguration.defaultDataRegionConfiguration) }}`
+                tip='Default data region off-heap max memory size. Leave empty to use 20% of physical memory available on current machine. Should be at least 10Mb.'
+                on-scale-change='scale = $event'
+            )
+                +form-field-feedback(
+                    _,
+                    'min',
+                    `Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.dataRegion.maxSize.min(${model}.dataStorageConfiguration.defaultDataRegionConfiguration) / scale.value}} {{scale.label}}).`
+                )
 
     list-editable.pcb-caches-list(
         ng-model='$ctrl.shortCaches'
