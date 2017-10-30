@@ -1,13 +1,19 @@
 import isEqual from 'lodash/isEqual';
 import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
+
+import {Confirm} from 'app/services/Confirm.service';
 // import {diff} from 'jsondiffpatch';
 
 export default class ConfigChangesGuard {
-    static $inject = ['ConfigureState', 'IgniteConfirm', 'IgniteModelNormalizer'];
+    static $inject = [Confirm.name, 'IgniteModelNormalizer'];
 
-    constructor(ConfigureState, IgniteConfirm, IgniteModelNormalizer) {
-        Object.assign(this, {ConfigureState, IgniteConfirm, IgniteModelNormalizer});
+    /**
+     * @param {Confirm} Confirm
+     */
+    constructor(Confirm, IgniteModelNormalizer) {
+        Object.assign(this, {IgniteModelNormalizer});
+        this.Confirm = Confirm;
     }
 
     _hasChanges(a, b) {
@@ -16,7 +22,7 @@ export default class ConfigChangesGuard {
     }
 
     _confirm(changes) {
-        return this.IgniteConfirm.confirm(`
+        return this.Confirm.confirm(`
             You have unsaved changes.
             Are you sure you want to discard them?
         `);
