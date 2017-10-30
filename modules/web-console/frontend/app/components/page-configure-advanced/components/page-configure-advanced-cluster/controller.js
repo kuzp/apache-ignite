@@ -38,8 +38,8 @@ export default class PageConfigureAdvancedCluster {
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue()).take(1)
         .debug('shortCaches$');
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
-            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id)).debug('clusterToEdit').take(1);
-        }).take(1).debug('originalCluster$');
+            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id));
+        }).distinctUntilChanged().publishReplay(1).refCount().debug('originalCluster$');
         this.isNew$ = this.$uiRouter.globals.params$.pluck('clusterID').map((id) => id === 'new');
         this.isBlocked$ = clusterID$;
     }
