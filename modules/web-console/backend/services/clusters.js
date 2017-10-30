@@ -137,7 +137,15 @@ module.exports.factory = (_, mongo, spacesService, cachesService, modelsService,
                     this.normalize(_.head(spaceIds), cluster, caches);
 
                     const query = _.pick(cluster, ['space', '_id']);
-                    const basicCluster = _.pick(cluster, ['space', '_id', 'name', 'discovery', 'caches', 'memoryConfiguration.memoryPolicies']);
+                    const basicCluster = _.pick(cluster, [
+                        'space',
+                        '_id',
+                        'name',
+                        'discovery',
+                        'caches',
+                        'memoryConfiguration.memoryPolicies',
+                        'dataStorageConfiguration.defaultDataRegionConfiguration.maxSize'
+                    ]);
 
                     return mongo.Cluster.findOneAndUpdate(query, {$set: basicCluster}, {projection: 'caches', upsert: true}).lean().exec()
                         .catch((err) => {
