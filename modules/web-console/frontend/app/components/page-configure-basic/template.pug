@@ -74,15 +74,15 @@ form(novalidate name=form)
             </ul>')
         .pc-form-grid__break
         .pc-form-group
-            +discovery-cloud(model)(ng-if=`${modelDiscoveryKind} === 'Cloud'` class='pcb-form-grid-row')
-            +discovery-google(model)(ng-if=`${modelDiscoveryKind} === 'GoogleStorage'` class='pcb-form-grid-row')
-            +discovery-jdbc(model)(ng-if=`${modelDiscoveryKind} === 'Jdbc'` class='pcb-form-grid-row')
-            +discovery-multicast(model)(ng-if=`${modelDiscoveryKind} === 'Multicast'` class='pcb-form-grid-row')
-            +discovery-s3(model)(ng-if=`${modelDiscoveryKind} === 'S3'` class='pcb-form-grid-row')
-            +discovery-shared(model)(ng-if=`${modelDiscoveryKind} === 'SharedFs'` class='pcb-form-grid-row')
-            +discovery-vm(model)(ng-if=`${modelDiscoveryKind} === 'Vm'` class='pcb-form-grid-row')
-            +discovery-zookeeper(model)(ng-if=`${modelDiscoveryKind} === 'ZooKeeper'` class='pcb-form-grid-row')
-            +discovery-kubernetes(model)(ng-if=`${modelDiscoveryKind} === 'Kubernetes'` class='pcb-form-grid-row')
+            +discovery-cloud(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Cloud'`)
+            +discovery-google(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'GoogleStorage'`)
+            +discovery-jdbc(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Jdbc'`)
+            +discovery-multicast(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Multicast'`)
+            +discovery-s3(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'S3'`)
+            +discovery-shared(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'SharedFs'`)
+            +discovery-vm(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Vm'`)
+            +discovery-zookeeper(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'ZooKeeper'`)
+            +discovery-kubernetes(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
 
     h2.pcb-section-header.pcb-inner-padding(style='margin-top:30px') Step 2. Caches Configuration
 
