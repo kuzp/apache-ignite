@@ -6,13 +6,12 @@ import {Confirm} from 'app/services/Confirm.service';
 // import {diff} from 'jsondiffpatch';
 
 export default class ConfigChangesGuard {
-    static $inject = [Confirm.name, 'IgniteModelNormalizer'];
+    static $inject = [Confirm.name];
 
     /**
      * @param {Confirm} Confirm
      */
-    constructor(Confirm, IgniteModelNormalizer) {
-        Object.assign(this, {IgniteModelNormalizer});
+    constructor(Confirm) {
         this.Confirm = Confirm;
     }
 
@@ -28,10 +27,16 @@ export default class ConfigChangesGuard {
         `);
     }
 
+    /**
+     * Compares values and asks user if he wants to continue.
+     * @template T
+     * @param {T} a - Left comparison value
+     * @param {T} b - Right comparison value
+     */
     guard(a, b) {
         if (!a && !b) return Promise.resolve(true);
         return of(this._hasChanges(a, b))
-        .switchMap((changes) => changes ? this._confirm(changes) : of(true))
+        .switchMap((changes) => changes ? this._confirm(changes).then(() => true) : of(true))
         .catch(() => of(false))
         .toPromise();
     }
