@@ -16,18 +16,9 @@
  */
 
 import angular from 'angular';
-
-import component from './component';
-import listEditableCols from './components/list-editable-cols';
-import transclude from './components/list-editable-transclude';
-import listEditableOneWay from './components/list-editable-one-way';
-import saveOnChanges from './components/list-editable-save-on-changes';
+import {ngModel, listEditableItemEdit} from './directives';
 
 export default angular
-    .module('ignite-console.list-editable', [
-        listEditableCols.name,
-        listEditableOneWay.name,
-        transclude.name,
-        saveOnChanges.name
-    ])
-    .component('listEditable', component);
+.module('list-editable.save-on-changes', [])
+.directive(ngModel.name, ngModel)
+.directive(listEditableItemEdit.name, listEditableItemEdit);
