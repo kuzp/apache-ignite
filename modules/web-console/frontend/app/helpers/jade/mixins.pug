@@ -367,8 +367,12 @@ mixin list-url-field(lbl, model, name, items)
         if block
             block
 
-mixin list-addresses({ items, name })
-    list-editable(ng-model=items name=name)&attributes(attributes)
+mixin list-addresses({ items, name, tip, withPortRange = true })
+    list-editable(
+        ng-model=items
+        name=name
+        list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
+    )&attributes(attributes)
         list-editable-item-view
             | {{ $parent.item }}
         list-editable-item-edit
@@ -376,7 +380,7 @@ mixin list-addresses({ items, name })
             +ignite-form-field-text('Address', '$parent.item', '"address"', false, true, 'IP address:port')(
                 data-ipaddress='true'
                 data-ipaddress-with-port='true'
-                data-ipaddress-with-port-range='true'
+                data-ipaddress-with-port-range=withPortRange
                 data-ignite-unique=items
                 data-ignite-form-field-input-autofocus='true'
             )
