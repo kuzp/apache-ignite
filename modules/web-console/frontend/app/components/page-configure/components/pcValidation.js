@@ -113,6 +113,8 @@ export default angular.module('ignite-console.page-configure.validation', [])
                             el[0].scrollIntoViewIfNeeded();
                         else
                             el[0].scrollIntoView();
+
+                        if (!attr.bsSelect) $timeout(() => el[0].focus());
                         igniteFormField && igniteFormField.notifyAboutError();
                     });
                     console.debug(target, el, bsCollapseTarget);
