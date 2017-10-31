@@ -1,7 +1,14 @@
+import {default as ConfigChangesGuard} from '../services/ConfigChangesGuard';
+
 class FormUICanExitGuardController {
-    static $inject = ['$element', 'ConfigChangesGuard'];
+    static $inject = ['$element', ConfigChangesGuard.name];
+    /**
+     * @param {JQLite} $element
+     * @param {ConfigChangesGuard} ConfigChangesGuard
+     */
     constructor($element, ConfigChangesGuard) {
-        Object.assign(this, {$element, ConfigChangesGuard});
+        this.$element = $element;
+        this.ConfigChangesGuard = ConfigChangesGuard;
     }
     $onDestroy() {
         this.$element = null;
