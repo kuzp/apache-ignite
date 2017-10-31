@@ -109,7 +109,10 @@ export default angular.module('ignite-console.page-configure.validation', [])
                     ngModel.$setTouched();
                     bsCollapseTarget && bsCollapseTarget.open();
                     $timeout(() => {
-                        el[0].scrollIntoViewIfNeeded();
+                        if (el[0].scrollIntoViewIfNeeded)
+                            el[0].scrollIntoViewIfNeeded();
+                        else
+                            el[0].scrollIntoView();
                         igniteFormField && igniteFormField.notifyAboutError();
                     });
                     console.debug(target, el, bsCollapseTarget);
