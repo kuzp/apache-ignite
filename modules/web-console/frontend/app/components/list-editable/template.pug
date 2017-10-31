@@ -38,7 +38,7 @@
                 ignite-on-focus-out='$ctrl.stopEditView(item, $index, form);'
                 ignite-on-focus-out-ignored-classes='bssm-click-overlay bssm-item-text bssm-item-button'
             )
-                .le-row-item-view(ng-show='$ctrl.hasItemView' ng-init='!$ctrl.hasItemView && $ctrl.startEditView($index);item = $ctrl.getEditView($index);')
+                .le-row-item-view(ng-show='$ctrl.hasItemView' ng-init='$ctrl.startEditView($index);item = $ctrl.getEditView($index);')
                     div(list-editable-transclude='itemView')
                 .le-row-item-edit(ng-form name='form')
                     div(list-editable-transclude='itemEdit')
