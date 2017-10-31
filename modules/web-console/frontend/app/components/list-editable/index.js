@@ -21,13 +21,13 @@ import component from './component';
 import listEditableCols from './components/list-editable-cols';
 import transclude from './components/list-editable-transclude';
 import listEditableOneWay from './components/list-editable-one-way';
-import saveOnChanges from './components/list-editable-save-on-changes';
+// import saveOnChanges from './components/list-editable-save-on-changes';
 
 export default angular
     .module('ignite-console.list-editable', [
         listEditableCols.name,
         listEditableOneWay.name,
-        transclude.name,
-        saveOnChanges.name
+        transclude.name
+        // saveOnChanges.name
     ])
     .component('listEditable', component);
