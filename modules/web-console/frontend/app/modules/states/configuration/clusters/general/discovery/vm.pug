@@ -22,9 +22,11 @@ mixin discovery-vm(modelAt = '$ctrl.clonedCluster')
 
     .pc-form-grid-row&attributes(attributes=attributes)
         .pc-form-grid-col-60
-            .ignite-form-field
-                +ignite-form-field__label('Addresses:', '"addresses"')
-                    +tooltip(`Addresses may be represented as follows:
+            div(style='width: 100%')
+                +list-addresses({
+                    items: addresses,
+                    name: 'vmAddresses',
+                    tip: `Addresses may be represented as follows:
                         <ul>
                             <li>IP address (e.g. 127.0.0.1, 9.9.9.9, etc)</li>
                             <li>IP address and port (e.g. 127.0.0.1:47500, 9.9.9.9:47501, etc)</li>
@@ -39,6 +41,5 @@ mixin discovery-vm(modelAt = '$ctrl.clonedCluster')
                         <ul>
                             <li> port1 &lt; port2 should be true</li>
                             <li> Both port1 and port2 should be greater than 0</li>
-                        </ul>`)
-                .ignite-form-field__control
-                    +list-addresses({ items: addresses, name: 'vmAddresses' })
+                        </ul>`
+                })
