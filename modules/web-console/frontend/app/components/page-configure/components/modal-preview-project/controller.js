@@ -32,12 +32,11 @@ export default class ModalPreviewProjectController {
         'IgniteVersion',
         '$scope',
         'ConfigurationDownload',
-        'IgniteLoading',
-        'IgniteMessages'
+        'IgniteLoading'
     ];
 
-    constructor(PageConfigure, IgniteConfigurationResource, summaryZipper, IgniteVersion, $scope, ConfigurationDownload, IgniteLoading, IgniteMessages) {
-        Object.assign(this, {PageConfigure, IgniteConfigurationResource, summaryZipper, IgniteVersion, $scope, ConfigurationDownload, IgniteLoading, IgniteMessages});
+    constructor(PageConfigure, IgniteConfigurationResource, summaryZipper, IgniteVersion, $scope, ConfigurationDownload, IgniteLoading) {
+        Object.assign(this, {PageConfigure, IgniteConfigurationResource, summaryZipper, IgniteVersion, $scope, ConfigurationDownload, IgniteLoading});
     }
 
     $onInit() {
@@ -115,8 +114,7 @@ export default class ModalPreviewProjectController {
             this.showPreview(this.selectedNode);
             this.IgniteLoading.finish('projectStructurePreview');
         })
-        .catch((e) => {
-            this.IgniteMessages.showError(`Failed to generate project files. ${e.message}`);
+        .catch(() => {
             this.onHide();
         });
     }
