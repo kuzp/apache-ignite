@@ -35,8 +35,6 @@ import {Observable} from 'rxjs/Observable';
 
 const idRegex = `new|[a-z0-9]+`;
 
-const getErrorMessage = (e) => get(e, 'error.data', e);
-
 const shortCachesResolve = ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
     return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
     .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
@@ -92,6 +90,9 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                             return etp('LOAD_AND_EDIT_CLUSTER', {clusterID: $transition$.params().clusterID});
                         });
                     }]
+                },
+                data: {
+                    errorState: 'base.configuration.overview'
                 },
                 redirectTo: ($transition$) => {
                     const [ConfigureState, ConfigSelectors] = ['ConfigureState', 'ConfigSelectors'].map((t) => $transition$.injector().get(t));
@@ -175,18 +176,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: `/{cacheID:${idRegex}}`,
                 permission: 'configuration',
                 resolve: {
-                    _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                    _cache: ['ConfigEffects', '$transition$', ({etp}, $transition$) => {
                         const {clusterID, cacheID} = $transition$.params();
                         if (cacheID === 'new') return Promise.resolve();
-                        return etp('LOAD_CACHE', {cacheID})
-                        .catch((e) => {
-                            $transition$.router.stateService.go('base.configuration.edit.advanced.caches', null, {
-                                location: 'replace'
-                            });
-                            IgniteMessages.showError(`Failed to load cache ${cacheID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
-                            return Promise.reject(e);
-                        });
+                        return etp('LOAD_CACHE', {cacheID});
                     }]
+                },
+                data: {
+                    errorState: 'base.configuration.edit.advanced.caches'
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
@@ -222,18 +219,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
             .state('base.configuration.edit.advanced.models.model', {
                 url: `/{modelID:${idRegex}}`,
                 resolve: {
-                    _cache: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                    _cache: ['ConfigEffects', '$transition$', ({etp}, $transition$) => {
                         const {clusterID, modelID} = $transition$.params();
                         if (modelID === 'new') return Promise.resolve();
-                        return etp('LOAD_MODEL', {modelID})
-                        .catch((e) => {
-                            $transition$.router.stateService.go('base.configuration.edit.advanced.models', null, {
-                                location: 'replace'
-                            });
-                            IgniteMessages.showError(`Failed to load model ${modelID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
-                            return Promise.reject(e);
-                        });
+                        return etp('LOAD_MODEL', {modelID});
                     }]
+                },
+                data: {
+                    errorState: 'base.configuration.edit.advanced.models'
                 },
                 permission: 'configuration',
                 resolvePolicy: {
@@ -267,19 +260,14 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 url: `/{igfsID:${idRegex}}`,
                 permission: 'configuration',
                 resolve: {
-                    _igfs: ['IgniteMessages', 'ConfigEffects', '$transition$', (IgniteMessages, {etp}, $transition$) => {
+                    _igfs: ['ConfigEffects', '$transition$', ({etp}, $transition$) => {
                         const {clusterID, igfsID} = $transition$.params();
                         if (igfsID === 'new') return Promise.resolve();
-                        return etp('LOAD_IGFS', {igfsID})
-                        .catch((e) => {
-                            $transition$.router.stateService.go('base.configuration.edit.advanced.igfs', null, {
-                                location: 'replace'
-                            });
-                            IgniteMessages.showError(`Failed to load IGFS ${igfsID} for cluster ${clusterID}. ${getErrorMessage(e)}`);
-                            console.debug(e);
-                            return Promise.reject(e);
-                        });
+                        return etp('LOAD_IGFS', {igfsID});
                     }]
+                },
+                data: {
+                    errorState: 'base.configuration.edit.advanced.igfs'
                 },
                 resolvePolicy: {
                     async: 'NOWAIT'
