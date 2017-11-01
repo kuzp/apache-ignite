@@ -182,7 +182,7 @@ export default class ConfigEffects {
             .ignoreElements();
 
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_USER_CLUSTERS')
+            .let(ofType('LOAD_USER_CLUSTERS'))
             .exhaustMap((a) => {
                 return fromPromise(this.Clusters.getClustersOverview())
                     .switchMap(({data}) => of(
@@ -205,7 +205,7 @@ export default class ConfigEffects {
             .map((a) => ({type: clustersActionTypes.UPSERT, items: [a.cluster]}));
 
         this.loadAndEditClusterEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_AND_EDIT_CLUSTER')
+            .let(ofType('LOAD_AND_EDIT_CLUSTER'))
             .exhaustMap((a) => {
                 if (a.clusterID === 'new') {
                     return of(
@@ -232,7 +232,7 @@ export default class ConfigEffects {
             });
 
         this.loadCacheEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_CACHE')
+            .let(ofType('LOAD_CACHE'))
             .exhaustMap((a) => {
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectCache(a.cacheID)).take(1)
                     .switchMap((cache) => {
@@ -247,11 +247,11 @@ export default class ConfigEffects {
             });
 
         this.storeCacheEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'CACHE')
+            .let(ofType('CACHE'))
             .map((a) => ({type: cachesActionTypes.UPSERT, items: [a.cache]}));
 
         this.loadShortCachesEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_SHORT_CACHES')
+            .let(ofType('LOAD_SHORT_CACHES'))
             .exhaustMap((a) => {
                 if (!(a.ids || []).length) return of({type: `${a.type}_OK`});
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCaches()).take(1)
@@ -269,7 +269,7 @@ export default class ConfigEffects {
             });
 
         this.loadIgfsEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_IGFS')
+            .let(ofType('LOAD_IGFS'))
             .exhaustMap((a) => {
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFS(a.igfsID)).take(1)
                     .switchMap((igfs) => {
@@ -284,11 +284,11 @@ export default class ConfigEffects {
             });
 
         this.storeIgfsEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'IGFS')
+            .let(ofType('IGFS'))
             .map((a) => ({type: igfssActionTypes.UPSERT, items: [a.igfs]}));
 
         this.loadShortIgfssEffect$ = ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_SHORT_IGFSS')
+            .let(ofType('LOAD_SHORT_IGFSS'))
             .exhaustMap((a) => {
                 if (!(a.ids || []).length) {
                     return of(
@@ -311,7 +311,7 @@ export default class ConfigEffects {
             });
 
         this.loadModelEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_MODEL')
+            .let(ofType('LOAD_MODEL'))
             .exhaustMap((a) => {
                 return this.ConfigureState.state$.let(this.ConfigSelectors.selectModel(a.modelID)).take(1)
                     .switchMap((model) => {
@@ -326,11 +326,11 @@ export default class ConfigEffects {
             });
 
         this.storeModelEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'MODEL')
+            .let(ofType('MODEL'))
             .map((a) => ({type: modelsActionTypes.UPSERT, items: [a.model]}));
 
         this.loadShortModelsEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_SHORT_MODELS')
+            .let(ofType('LOAD_SHORT_MODELS'))
             .exhaustMap((a) => {
                 if (!(a.ids || []).length) {
                     return of(
@@ -353,7 +353,7 @@ export default class ConfigEffects {
             });
 
         this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'BASIC_SAVE_CLUSTER_AND_CACHES_OK')
+            .let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
             .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace', custom: {justIDUpdate: true}}))
             .ignoreElements();
 
