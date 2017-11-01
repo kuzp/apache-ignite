@@ -73,3 +73,23 @@ namespace ig.config.model {
         generatePojo?: boolean
     }
 }
+namespace ig.config.cluster {
+    export type DiscoveryKinds = 'Vm'
+        | 'Multicast'
+        | 'S3'
+        | 'Cloud'
+        | 'GoogleStorage'
+        | 'Jdbc'
+        | 'SharedFs'
+        | 'ZooKeeper'
+        | 'Kubernetes'
+
+    export interface ShortCluster {
+        _id: string,
+        name: string,
+        discovery: DiscoveryKinds,
+        caches: number,
+        models: number,
+        igfs: number
+    }
+}

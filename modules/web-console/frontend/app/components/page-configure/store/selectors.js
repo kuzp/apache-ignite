@@ -75,10 +75,13 @@ export default class ConfigSelectors {
          */
         this.selectShortModels = () => selectItems('shortModels');
         this.selectShortModelsValue = () => (state$) => state$.let(this.selectShortModels()).let(selectValues);
+        /**
+         * @returns {(state$: Observable) => Observable<ig.config.cluster.ShortCluster>}
+         */
+        this.selectShortClustersValue = () => (state$) => state$.let(this.selectShortClusters()).let(selectValues);
     }
     selectCluster = (id) => selectMapItem('clusters', id);
     selectShortClusters = () => selectItems('shortClusters');
-    selectShortClustersValue = () => (state$) => state$.let(this.selectShortClusters()).let(selectValues);
     selectCache = (id) => selectMapItem('caches', id);
     selectIGFS = (id) => selectMapItem('igfss', id);
     selectShortCaches = () => selectItems('shortCaches');
