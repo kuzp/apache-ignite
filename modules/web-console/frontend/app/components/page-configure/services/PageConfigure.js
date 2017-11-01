@@ -47,13 +47,29 @@ import {
     REMOVE_CLUSTERS_LOCAL_REMOTE
 } from '../store/actionTypes';
 
+import {
+    ofType
+} from '../store/effects';
+
 export const CLONE_CLUSTERS = Symbol('CLONE_CLUSTERS');
 
-export default class PageConfigure {
-    static $inject = ['IgniteConfigurationResource', '$state', 'ConfigureState', 'Clusters', 'ConfigSelectors'];
+import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
+import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
+import {default as Clusters} from 'app/services/Clusters';
 
+export default class PageConfigure {
+    static $inject = ['IgniteConfigurationResource', '$state', ConfigureState.name, Clusters.name, ConfigSelectors.name];
+
+    /**
+     * @param {ConfigureState} ConfigureState
+     * @param {Clusters} Clusters
+     * @param {ConfigSelectors} ConfigSelectors
+     */
     constructor(configuration, $state, ConfigureState, Clusters, ConfigSelectors) {
-        Object.assign(this, {configuration, $state, ConfigureState, Clusters, ConfigSelectors});
+        Object.assign(this, {configuration, $state});
+        this.ConfigureState = ConfigureState;
+        this.Clusters = Clusters;
+        this.ConfigSelectors = ConfigSelectors;
 
         this.removeClusters$ = this.ConfigureState.actions$
             .filter(propEq('type', REMOVE_CLUSTERS_LOCAL_REMOTE))
