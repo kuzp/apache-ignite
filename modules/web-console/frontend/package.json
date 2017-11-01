@@ -117,6 +117,7 @@
     "@types/angular-strap": "^2.3.1",
     "@types/chai": "^4.0.4",
     "@types/lodash": "^4.14.77",
+    "@types/ui-grid": "0.0.38",
     "chai": "4.1.0",
     "copy-dir": "^0.3.0",
     "fs-extra": "^4.0.2",
