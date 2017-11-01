@@ -95,7 +95,9 @@ export default class PageConfigureBasic {
                         return Observable.of({
                             type: 'BASIC_SAVE_CLUSTER_AND_CACHES_ERR',
                             changedItems: action.changedItems,
-                            error: res
+                            error: {
+                                message: `Failed to save cluster "${action.changedItems.cluster.name}": ${res.data}.`
+                            }
                         }, {
                             type: 'UNDO_ACTIONS',
                             actions: action.prevActions.concat(actions)
@@ -108,11 +110,7 @@ export default class PageConfigureBasic {
             .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
             .do((action) => this.messages.showInfo(`Cluster ${action.changedItems.cluster.name} saved.`));
 
-        this.basicSaveErrMessages$ = this.ConfigureState.actions$
-            .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_ERR'))
-            .do((action) => this.messages.showError(`Failed to save cluster ${action.changedItems.cluster.name}.`));
-
-        Observable.merge(this.basicSaveOKMessages$, this.basicSaveErrMessages$).subscribe();
+        Observable.merge(this.basicSaveOKMessages$).subscribe();
         Observable.merge(this.saveClusterAndCaches$).subscribe((a) => ConfigureState.dispatchAction(a));
 
         this.clusterDiscoveries = clusters.discoveries;

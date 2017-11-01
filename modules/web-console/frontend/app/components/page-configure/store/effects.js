@@ -159,8 +159,7 @@ export default class ConfigEffects {
                             changedItems: action.changedItems,
                             action,
                             error: {
-                                title: `Failed to save cluster ${action.changedItems.cluster.name}`,
-                                message: res.data
+                                message: `Failed to save cluster "${action.changedItems.cluster.name}": ${res.data}.`
                             }
                         }, {
                             type: 'UNDO_ACTIONS',
@@ -188,7 +187,13 @@ export default class ConfigEffects {
                         {type: shortClustersActionTypes.SET, items: data},
                         {type: `${a.type}_OK`}
                     ))
-                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load clusters: ${error.data}`
+                        },
+                        action: a
+                    }));
             });
 
         this.loadAndEditClusterEffect$ = ConfigureState.actions$
@@ -214,7 +219,12 @@ export default class ConfigEffects {
                             {type: 'EDIT_CLUSTER', cluster: data},
                             {type: 'LOAD_AND_EDIT_CLUSTER_OK'}
                         ))
-                        .catch((error) => of({type: 'EDIT_CLUSTER_ERR', error}));
+                        .catch((error) => of({
+                            type: 'LOAD_AND_EDIT_CLUSTER_ERR',
+                            error: {
+                                message: `Failed to load cluster: ${error.data}.`
+                            }
+                        }));
                     });
             });
 
@@ -230,7 +240,12 @@ export default class ConfigEffects {
                             {type: `${a.type}_OK`, cache: data}
                         ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load cache: ${error.data}.`
+                        }
+                    }));
             });
 
         this.storeCacheEffect$ = this.ConfigureState.actions$
@@ -252,7 +267,13 @@ export default class ConfigEffects {
                                 {type: `${a.type}_OK`}
                             ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load caches: ${error.data}.`
+                        },
+                        action: a
+                    }));
             });
 
         this.loadIgfsEffect$ = this.ConfigureState.actions$
@@ -267,7 +288,12 @@ export default class ConfigEffects {
                             {type: `${a.type}_OK`, igfs: data}
                         ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load IGFS: ${error.data}.`
+                        }
+                    }));
             });
 
         this.storeIgfsEffect$ = this.ConfigureState.actions$
@@ -294,7 +320,13 @@ export default class ConfigEffects {
                                 {type: `${a.type}_OK`}
                             ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load IGFSs: ${error.data}.`
+                        },
+                        action: a
+                    }));
             });
 
         this.loadModelEffect$ = this.ConfigureState.actions$
@@ -309,7 +341,12 @@ export default class ConfigEffects {
                             {type: `${a.type}_OK`, model: data}
                         ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load domain model: ${error.data}.`
+                        }
+                    }));
             });
 
         this.storeModelEffect$ = this.ConfigureState.actions$
@@ -336,7 +373,13 @@ export default class ConfigEffects {
                                 {type: `${a.type}_OK`}
                             ));
                     })
-                    .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
+                    .catch((error) => of({
+                        type: `${a.type}_ERR`,
+                        error: {
+                            message: `Failed to load domain models: ${error.data}.`
+                        },
+                        action: a
+                    }));
             });
 
         this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
