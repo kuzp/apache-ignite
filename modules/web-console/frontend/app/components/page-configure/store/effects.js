@@ -19,8 +19,7 @@ import {
 
 import {
     REMOVE_CLUSTER_ITEMS,
-    REMOVE_CLUSTER_ITEMS_CONFIRMED,
-    SAVE_ADVANCED
+    REMOVE_CLUSTER_ITEMS_CONFIRMED
 } from './actionTypes';
 
 import {
