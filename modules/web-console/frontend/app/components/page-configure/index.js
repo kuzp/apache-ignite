@@ -43,6 +43,8 @@ import buttonImportModels from './components/button-import-models';
 import buttonDownloadProject from './components/button-download-project';
 import buttonPreviewProject from './components/button-preview-project';
 
+import {errorState} from './transitionHooks/errorState';
+
 import 'rxjs/add/operator/withLatestFrom';
 import 'rxjs/add/operator/skip';
 
@@ -151,4 +153,5 @@ export default angular
     .service('ConfigChangesGuard', ConfigChangesGuard)
     .service('PageConfigure', PageConfigure)
     .service('ConfigureState', ConfigureState)
-    .service('ConfigurationDownload', ConfigurationDownload);
+    .service('ConfigurationDownload', ConfigurationDownload)
+    .run(errorState);
