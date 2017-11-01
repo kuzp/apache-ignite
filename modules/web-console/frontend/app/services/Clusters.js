@@ -29,6 +29,7 @@ const uniqueNameValidator = (defaultName = '') => (a, items = []) => {
 export default class Clusters {
     static $inject = ['$http'];
 
+    /** @type {Array<{value: ig.config.cluster.DiscoveryKinds, label: string}>} */
     discoveries = [
         {value: 'Vm', label: 'Static IPs'},
         {value: 'Multicast', label: 'Multicast'},

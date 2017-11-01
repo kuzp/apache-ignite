@@ -23,6 +23,9 @@ export default class ModalPreviewProject {
     constructor($modal) {
         this.$modal = $modal;
     }
+    /**
+     * @param {ig.config.cluster.ShortCluster} cluster
+     */
     open(cluster) {
         this.modalInstance = this.$modal({
             locals: {

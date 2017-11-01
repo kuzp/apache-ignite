@@ -28,11 +28,38 @@ const cellTemplate = (state) => `
     </div>
 `;
 
-export default class PageConfigureOverviewController {
-    static $inject = ['ModalPreviewProject', 'PageConfigureOverviewService', 'Clusters', 'ConfigureState', 'ConfigSelectors', 'ConfigurationDownload'];
+import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
+import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
+import {default as Clusters} from 'app/services/Clusters';
+import {default as ModalPreviewProject} from 'app/components/page-configure/components/modal-preview-project/service';
+import {default as pageService} from './service';
+import {default as ConfigurationDownload} from 'app/components/page-configure/services/ConfigurationDownload';
 
+export default class PageConfigureOverviewController {
+    static $inject = [
+        ModalPreviewProject.name,
+        pageService.name,
+        Clusters.name,
+        ConfigureState.name,
+        ConfigSelectors.name,
+        ConfigurationDownload.name
+    ];
+
+    /**
+     * @param {ModalPreviewProject} ModalPreviewProject
+     * @param {pageService} pageService
+     * @param {Clusters} Clusters
+     * @param {ConfigureState} ConfigureState
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {ConfigurationDownload} ConfigurationDownload
+     */
     constructor(ModalPreviewProject, pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload) {
-        Object.assign(this, {ModalPreviewProject, pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload});
+        this.ModalPreviewProject = ModalPreviewProject;
+        this.pageService = pageService;
+        this.Clusters = Clusters;
+        this.ConfigureState = ConfigureState;
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigurationDownload = ConfigurationDownload;
     }
 
     $onDestroy() {
@@ -42,6 +69,7 @@ export default class PageConfigureOverviewController {
     $onInit() {
         this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
 
+        /** @type {Array<uiGrid.IColumnDefOf<ig.config.cluster.ShortCluster>>} */
         this.clustersColumnDefs = [
             {
                 name: 'name',
@@ -95,6 +123,7 @@ export default class PageConfigureOverviewController {
             }
         ];
 
+        /** @type {Subject<Array<ig.config.cluster.ShortCluster>>} */
         this.selectedRows$ = new Subject();
 
         this.actions$ = this.selectedRows$.map((selectedClusters) => [
