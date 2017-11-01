@@ -127,7 +127,6 @@ export default class Clusters {
     }
 
     saveBasic(changedItems) {
-        if (changedItems.cluster.name === 'New cluster 1') return Promise.reject('Invalid name');
         return this.$http.put('/api/v1/configuration/clusters/basic', changedItems);
     }
 

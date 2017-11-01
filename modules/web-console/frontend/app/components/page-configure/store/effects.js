@@ -82,18 +82,12 @@ export default class ConfigEffects {
         this.loadConfigurationEffect$ = this.ConfigureState.actions$
             .let(ofType('LOAD_COMPLETE_CONFIGURATION'))
             .exhaustMap((action) => {
-                // return this.ConfigureState.state$
-                // .let(this.ConfigSelectors.selectCompleteClusterConfiguration({clusterID: action.clusterID, isDemo: action.isDemo}))
-                // .take(1)
-                // .switchMap((configuration) => {
-                // if (configuration.__isComplete) return of({type: 'LOAD_COMPLETE_CONFIGURATION_OK', data: configuration});
                 return fromPromise(this.Clusters.getConfiguration(action.clusterID))
                     .switchMap(({data}) => of(
                         {type: 'COMPLETE_CONFIGURATION', configuration: data},
                         {type: 'LOAD_COMPLETE_CONFIGURATION_OK', data}
                     ))
                     .catch((error) => ({type: 'LOAD_COMPLETE_CONFIGURATION_ERR', error, action}));
-                // });
             });
 
         this.storlConfiguratiosEffect$ = this.ConfigureState.actions$
@@ -150,7 +144,6 @@ export default class ConfigEffects {
                     .switchMap((res) => {
                         return of(
                             {type: 'EDIT_CLUSTER', cluster: action.changedItems.cluster},
-                            // {type: 'RESET_EDIT_CHANGES'},
                             {type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION_OK', changedItems: action.changedItems}
                         );
                     })
@@ -191,18 +184,6 @@ export default class ConfigEffects {
                     ))
                     .catch((error) => of({type: `${a.type}_ERR`, error, action: a}));
             });
-
-        this.loadCluster$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_CLUSTER')
-            .exhaustMap((a) => {
-                return fromPromise(this.Clusters.getCluster(a.clusterID))
-                .map(({data}) => of({type: 'LOAD_CLUSTER_OK', cluster: data}))
-                .catch((error) => of({type: 'LOAD_CLUSTER_ERR', error}));
-            });
-
-        this.storeLoadedCluster$ = this.ConfigureState.actions$
-            .filter((a) => a.type === 'LOAD_CLUSTER_OK')
-            .map((a) => ({type: clustersActionTypes.UPSERT, items: [a.cluster]}));
 
         this.loadAndEditClusterEffect$ = ConfigureState.actions$
             .let(ofType('LOAD_AND_EDIT_CLUSTER'))
