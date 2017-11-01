@@ -175,9 +175,9 @@ export default class ConfigEffects {
             .switchMap(() => this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit('new')).take(1))
             .map((cache) => ({type: 'UPSERT_CLUSTER_ITEM', itemType: 'caches', item: cache}));
 
-        this.saveCompleteConfigurationErrEffect$ = this.ConfigureState.actions$
-            .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION_ERR'))
-            .do((action) => this.IgniteMessages.showError(action.error.title, action.error.message))
+        this.errorNotificationsEffect$ = this.ConfigureState.actions$
+            .filter((a) => a.error)
+            .do((action) => this.IgniteMessages.showError(action.error))
             .ignoreElements();
 
         this.loadUserClustersEffect$ = this.ConfigureState.actions$
