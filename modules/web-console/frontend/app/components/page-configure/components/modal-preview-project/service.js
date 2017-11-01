@@ -17,8 +17,11 @@
 
 export default class ModalPreviewProject {
     static $inject = ['$modal'];
+    /**
+     * @param {mgcrea.ngStrap.modal.IModalService} $modal
+     */
     constructor($modal) {
-        Object.assign(this, {$modal});
+        this.$modal = $modal;
     }
     open(cluster) {
         this.modalInstance = this.$modal({
