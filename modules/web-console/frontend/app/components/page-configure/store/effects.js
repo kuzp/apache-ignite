@@ -87,7 +87,13 @@ export default class ConfigEffects {
                         {type: 'COMPLETE_CONFIGURATION', configuration: data},
                         {type: 'LOAD_COMPLETE_CONFIGURATION_OK', data}
                     ))
-                    .catch((error) => ({type: 'LOAD_COMPLETE_CONFIGURATION_ERR', error, action}));
+                    .catch((error) => of({
+                        type: 'LOAD_COMPLETE_CONFIGURATION_ERR',
+                        error: {
+                            message: `Failed to load cluster configuration: ${error.data}.`
+                        },
+                        action
+                    }));
             });
 
         this.storlConfiguratiosEffect$ = this.ConfigureState.actions$
