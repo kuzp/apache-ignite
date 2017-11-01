@@ -26,8 +26,8 @@ export default class ActivitiesData {
     post(options = {}) {
         let { group, action } = options;
 
-        action = action || this.$state.$current.url.source;
-        group = group || action.match(/^\/([^/]+)/)[1];
+        action = action || this.$state.$current.url.source || '';
+        group = group || (action.match(/^\/([^/]+)/) || [])[1];
 
         return this.$http.post('/api/v1/activities/page', { group, action });
     }
