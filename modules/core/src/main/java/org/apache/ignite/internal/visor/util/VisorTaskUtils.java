@@ -1171,7 +1171,6 @@ public class VisorTaskUtils {
 
                     bits = bits.add(BigDecimal.valueOf(oct * pow));
                 }
-
             }
             catch (Exception ignore) {
                 // No-op.
@@ -1223,12 +1222,10 @@ public class VisorTaskUtils {
 
         List<SortableAddress> sorted = new ArrayList<>(sz);
 
-        if (!F.isEmpty(addrs)) {
-            for (String addr : addrs)
-                sorted.add(new SortableAddress(addr));
+        for (String addr : addrs)
+            sorted.add(new SortableAddress(addr));
 
-            Collections.sort(sorted);
-        }
+        Collections.sort(sorted);
 
         Collection<String> res = new ArrayList<>(sz);
 
@@ -1237,5 +1234,4 @@ public class VisorTaskUtils {
 
         return res;
     }
-
 }

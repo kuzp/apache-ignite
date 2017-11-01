@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-@import '../../../public/stylesheets/variables';
+@import 'public/stylesheets/variables';
 
 label.switcher--ignite {
     $width: 34px;
     $height: 20px;
 
-    $color-inactive-primary: #C5C5C5;
-    $color-inactive-secondary: #FFFFFF;
-    $color-active-primary: #EE2B27;
-    $color-active-secondary: #FF8485;
+    $color-inactive-primary: #c5c5c5;
+    $color-inactive-secondary: #ffffff;
+    $color-active-primary: $ignite-brand-primary;
+    $color-active-secondary: #ff8485;
 
     width: $width;
     max-width: $width !important;
@@ -110,10 +110,10 @@ label.switcher--ignite {
 }
 
 @keyframes switcher--animation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }

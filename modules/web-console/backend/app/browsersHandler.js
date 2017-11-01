@@ -123,9 +123,7 @@ module.exports.factory = (_, socketio, configure, errors, mongo) => {
                     return stat;
                 })
                 .catch(() => ({count: 0, hasDemo: false, clusters: []}))
-                .then((stat) => {
-                    _.forEach(socks, (sock) => sock.emit('agents:stat', stat))
-                });
+                .then((stat) => _.forEach(socks, (sock) => sock.emit('agents:stat', stat)));
         }
 
         emitNotification(sock) {

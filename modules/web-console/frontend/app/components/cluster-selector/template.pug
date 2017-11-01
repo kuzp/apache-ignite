@@ -26,7 +26,7 @@ button.btn-ignite.btn-ignite--primary(
 button.btn-ignite.btn-ignite--primary(
     data-ng-if='$ctrl.clusters.length == 1'
 )
-    | {{ $ctrl.cluster.label }}
+    | {{ $ctrl.cluster.name }}
 
 button.btn-ignite.btn-ignite--primary(
     data-ng-if='$ctrl.clusters.length > 1'
@@ -34,7 +34,7 @@ button.btn-ignite.btn-ignite--primary(
     data-ng-model='$ctrl.cluster'
 
     bs-select=''
-    bs-options='item as item.label for item in $ctrl.clusters'
+    bs-options='item as item.name for item in $ctrl.clusters'
     data-trigger='hover focus'
     data-container='self'
 
@@ -43,7 +43,7 @@ button.btn-ignite.btn-ignite--primary(
     protect-from-bs-select-render
 )
     span(ng-if='!$ctrl.cluster') No clusters available
-    span(ng-if='$ctrl.cluster') {{ $ctrl.cluster.label }}
+    span(ng-if='$ctrl.cluster') {{ $ctrl.cluster.name }}
         span.icon-right.fa.fa-caret-down
 
 .cluster-selector--state(ng-if='$ctrl.cluster')
