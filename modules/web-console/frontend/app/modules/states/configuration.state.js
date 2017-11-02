@@ -101,7 +101,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                     return Observable.fromPromise(Promise.all(waitFor)).switchMap(() => {
                         return Observable.combineLatest(
                             ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1),
-                            ConfigureState.state$.let(ConfigSelectors.selectShortCaches()).take(1)
+                            ConfigureState.state$.let(ConfigSelectors.selectShortClusters()).take(1)
                         );
                     })
                     .map(([cluster = {caches: []}, clusters]) => {
