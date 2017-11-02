@@ -434,7 +434,7 @@ export default class ConfigEffects {
                 switch (type) {
                     case 'models': {
                         const state = 'base.configuration.edit.advanced.models.model';
-                        this.IgniteMessages.showInfo(`Model ${value.valueType} saved`);
+                        this.IgniteMessages.showInfo(`Model "${value.valueType}" saved`);
                         if (
                             this.$state.is(state) && this.$state.params.modelID !== value._id
                         ) return go(state, {modelID: value._id});
@@ -442,7 +442,7 @@ export default class ConfigEffects {
                     }
                     case 'caches': {
                         const state = 'base.configuration.edit.advanced.caches.cache';
-                        this.IgniteMessages.showInfo(`Cache ${value.name} saved`);
+                        this.IgniteMessages.showInfo(`Cache "${value.name}" saved`);
                         if (
                             this.$state.is(state) && this.$state.params.cacheID !== value._id
                         ) return go(state, {cacheID: value._id});
@@ -450,7 +450,7 @@ export default class ConfigEffects {
                     }
                     case 'igfss': {
                         const state = 'base.configuration.edit.advanced.igfs.igfs';
-                        this.IgniteMessages.showInfo(`IGFS ${value.name} saved`);
+                        this.IgniteMessages.showInfo(`IGFS "${value.name}" saved`);
                         if (
                             this.$state.is(state) && this.$state.params.igfsID !== value._id
                         ) return go(state, {igfsID: value._id});
@@ -458,7 +458,7 @@ export default class ConfigEffects {
                     }
                     case 'cluster': {
                         const state = 'base.configuration.edit.advanced.cluster';
-                        this.IgniteMessages.showInfo(`Cluster ${value.name} saved`);
+                        this.IgniteMessages.showInfo(`Cluster "${value.name}" saved`);
                         if (
                             this.$state.is(state) && this.$state.params.clusterID !== value._id
                         ) return go(state);
