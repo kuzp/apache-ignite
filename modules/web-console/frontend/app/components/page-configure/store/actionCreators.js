@@ -18,7 +18,9 @@
 import {
     REMOVE_CLUSTER_ITEMS,
     REMOVE_CLUSTER_ITEMS_CONFIRMED,
-    ADVANCED_SAVE_COMPLETE_CONFIGURATION
+    ADVANCED_SAVE_COMPLETE_CONFIGURATION,
+    CONFIRM_CLUSTERS_REMOVAL,
+    CONFIRM_CLUSTERS_REMOVAL_OK
 } from './actionTypes';
 
 /**
@@ -109,3 +111,30 @@ export const advancedSaveCompleteConfiguration = (edit) => {
         changedItems: applyChangedIDs(edit)
     };
 };
+
+/**
+ * @typedef {object} IConfirmClustersRemovalAction
+ * @prop {'CONFIRM_CLUSTERS_REMOVAL'} type
+ * @prop {Array<string>} clusterIDs
+ */
+
+/**
+ * @param {Array<string>} clusterIDs
+ * @returns {IConfirmClustersRemovalAction}
+ */
+export const confirmClustersRemoval = (clusterIDs) => ({
+    type: CONFIRM_CLUSTERS_REMOVAL,
+    clusterIDs
+});
+
+/**
+ * @typedef {object} IConfirmClustersRemovalActionOK
+ * @prop {'CONFIRM_CLUSTERS_REMOVAL_OK'} type
+ */
+
+/**
+ * @returns {IConfirmClustersRemovalActionOK}
+ */
+export const confirmClustersRemovalOK = () => ({
+    type: CONFIRM_CLUSTERS_REMOVAL_OK
+});

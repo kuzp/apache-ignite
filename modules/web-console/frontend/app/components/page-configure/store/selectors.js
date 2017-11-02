@@ -51,6 +51,10 @@ const currentShortItems = ({changesKey, shortKey}) => (state$) => {
         .map((v) => v.filter((v) => v));
 };
 
+const selectNames = (itemIDs, nameAt = 'name') => (items) => items
+    .pluck('value')
+    .map((items) => itemIDs.map((id) => items.get(id)[nameAt]));
+
 export default class ConfigSelectors {
     static $inject = ['Caches', 'Clusters', 'IGFSs', 'Models'];
     /**
@@ -79,6 +83,12 @@ export default class ConfigSelectors {
          * @returns {(state$: Observable) => Observable<ig.config.cluster.ShortCluster>}
          */
         this.selectShortClustersValue = () => (state$) => state$.let(this.selectShortClusters()).let(selectValues);
+        /**
+         * @returns {(state$: Observable) => Observable<Array<string>>}
+         */
+        this.selectClusterNames = (clusterIDs) => (state$) => state$
+            .let(this.selectShortClusters())
+            .let(selectNames(clusterIDs));
     }
     selectCluster = (id) => selectMapItem('clusters', id);
     selectShortClusters = () => selectItems('shortClusters');

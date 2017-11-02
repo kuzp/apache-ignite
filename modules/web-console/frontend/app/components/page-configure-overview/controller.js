@@ -35,6 +35,8 @@ import {default as ModalPreviewProject} from 'app/components/page-configure/comp
 import {default as pageService} from './service';
 import {default as ConfigurationDownload} from 'app/components/page-configure/services/ConfigurationDownload';
 
+import {confirmClustersRemoval} from '../page-configure/store/actionCreators';
+
 export default class PageConfigureOverviewController {
     static $inject = [
         ModalPreviewProject.name,
@@ -64,6 +66,11 @@ export default class PageConfigureOverviewController {
 
     $onDestroy() {
         this.selectedRows$.complete();
+    }
+
+    /** @param {Array<ig.config.cluster.ShortCluster>} clusters */
+    removeClusters(clusters) {
+        this.ConfigureState.dispatchAction(confirmClustersRemoval(clusters.map((c) => c._id)));
     }
 
     $onInit() {
@@ -149,7 +156,7 @@ export default class PageConfigureOverviewController {
             },
             {
                 action: 'Delete',
-                click: () => this.pageService.removeClusters(selectedClusters),
+                click: () => this.removeClusters(selectedClusters),
                 available: true
             }
         ]);

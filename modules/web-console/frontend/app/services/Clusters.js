@@ -120,7 +120,7 @@ export default class Clusters {
     }
 
     removeCluster(cluster) {
-        return this.$http.post('/api/v1/configuration/clusters/remove', cluster);
+        return this.$http.post('/api/v1/configuration/clusters/remove', {_id: cluster});
     }
 
     removeCluster$(cluster) {
