@@ -26,6 +26,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ProgressBarPlugin from 'progress-bar-webpack-plugin';
+import AutoDllPlugin from 'autodll-webpack-plugin';
 
 import eslintFormatter from 'eslint-friendly-formatter';
 
@@ -42,8 +43,6 @@ export default {
     },
     // Entry points.
     entry: {
-        polyfill: 'babel-polyfill',
-        vendor: path.join(app, 'vendor.js'),
         app: path.join(app, 'app.js')
     },
 
@@ -169,13 +168,81 @@ export default {
         new webpack.ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery',
+            'window.jQuery': 'jquery',
             _: 'lodash',
             nv: 'nvd3',
             io: 'socket.io-client'
         }),
-        new webpack.optimize.AggressiveMergingPlugin({moveToParents: true}),
         new HtmlWebpackPlugin({
             template: './views/index.pug'
+        }),
+        new AutoDllPlugin({
+            inject: true, // will inject the DLL bundle to index.html
+            debug: true,
+            filename: '[name].[hash].js',
+            path: '',
+            context: __dirname,
+            plugins: [
+                new webpack.ProvidePlugin({
+                    $: 'jquery',
+                    jQuery: 'jquery',
+                    'window.jQuery': 'jquery',
+                    _: 'lodash',
+                    nv: 'nvd3',
+                    io: 'socket.io-client'
+                }),
+                new webpack.optimize.UglifyJsPlugin({
+                    beautify: false,
+                    mangle: {
+                        screw_ie8: true,
+                        keep_fnames: true
+                    },
+                    compress: {
+                        screw_ie8: true
+                    },
+                    comments: false
+                })
+            ],
+            entry: {
+                polyfill: ['babel-polyfill'],
+                vendor: [
+                    '@uirouter/angularjs',
+                    '@uirouter/angularjs/lib/legacy/stateEvents',
+                    'angular',
+                    'angular-acl',
+                    'angular-animate',
+                    'angular-drag-and-drop-lists',
+                    'angular-gridster',
+                    'angular-nvd3',
+                    'angular-retina',
+                    'angular-sanitize',
+                    'angular-smart-table',
+                    'angular-socket-io',
+                    'angular-strap',
+                    'angular-strap/dist/angular-strap.tpl',
+                    'angular-translate',
+                    'angular-tree-control',
+                    'angular-ui-grid/ui-grid',
+                    'bootstrap-sass/assets/javascripts/bootstrap/carousel',
+                    'bootstrap-sass/assets/javascripts/bootstrap/transition',
+                    'brace',
+                    'brace/ext/language_tools',
+                    'brace/ext/searchbox',
+                    'brace/mode/csharp',
+                    'brace/mode/dockerfile',
+                    'brace/mode/java',
+                    'brace/mode/snippets',
+                    'brace/mode/sql',
+                    'brace/mode/xml',
+                    'brace/theme/chrome',
+                    'file-saver',
+                    'jquery',
+                    'jszip',
+                    'lodash',
+                    'nvd3',
+                    'tf-metatags'
+                ]
+            }
         }),
         new ExtractTextPlugin({filename: 'assets/css/[name].[hash].css', allChunks: true}),
         new CopyWebpackPlugin([

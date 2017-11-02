@@ -44,11 +44,6 @@ export default merge(commonCfg, {
         ]
     },
     plugins: [
-        new webpack.optimize.CommonsChunkPlugin({name: 'vendor'}),
-        new webpack.LoaderOptionsPlugin({
-            minimize: true,
-            debug: false
-        }),
         new webpack.optimize.UglifyJsPlugin({
             beautify: false,
             mangle: {

@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import './vendor';
+
 import '../public/stylesheets/style.scss';
 import '../app/primitives';
 

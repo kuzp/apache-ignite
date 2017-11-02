@@ -91,7 +91,4 @@ export default merge(commonCfg, {
         host: devServerHost,
         port: devServerPort
     },
-    plugins: [
-        new webpack.optimize.CommonsChunkPlugin({name: 'vendor'})
-    ]
 });
