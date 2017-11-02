@@ -27,16 +27,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
+import javax.cache.Cache;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.MutableEntry;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteServices;
@@ -46,6 +50,8 @@ import org.apache.ignite.cache.affinity.Affinity;
 import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cache.affinity.AffinityFunctionContext;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
+import org.apache.ignite.cache.query.QueryCursor;
+import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -65,6 +71,7 @@ import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.affinity.GridAffinityFunctionContextImpl;
 import org.apache.ignite.internal.processors.cache.CacheAffinityChangeMessage;
 import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
+import org.apache.ignite.internal.processors.cache.GridCacheAffinityManager;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtCacheAdapter;
@@ -331,70 +338,98 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testAssignmentDelayRebalancing() throws Exception {
-        final int joinCnt = 3;
+        final int joinCnt = 4;
+
+        skipCheckOrder = true;
 
         cacheC = new IgniteClosure<String, CacheConfiguration[]>() {
             @Override public CacheConfiguration[] apply(String s) {
-                final CacheConfiguration ccfg = cacheConfiguration(CACHE_NAME1, TRANSACTIONAL, 1);
+                final CacheConfiguration ccfg = cacheConfiguration();
 
                 ccfg.setAffinity(new RendezvousAffinityFunction(false, joinCnt + 1));
+                ccfg.setBackups(1);
 
                 return new CacheConfiguration[] {ccfg};
             }
         };
 
-        Ignite ignite0 = startServer(0, 1);
+        IgniteEx ignite0 = (IgniteEx)startServer(0, 1);
+
+        for (int k = 0; k < joinCnt + 1; k++)
+            ignite0.cache(CACHE_NAME1).put(k, k);
 
         //for (Map.Entry<Long, Map<Integer, List<List<ClusterNode>>>> entry : idealAff.entrySet())
 
         AffinityTopologyVersion ver = new AffinityTopologyVersion(1, 0);
 
-        printAll(ver);
-
         TestRecordingCommunicationSpi spi =
             (TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
-
-        blockSupplySend(spi, CACHE_NAME1);
 
         int majorVer = 1;
 
         for (int i = 0; i < joinCnt; i++) {
             majorVer++;
 
+            final boolean lastTopChange = majorVer == joinCnt + 1;
+
+            if (lastTopChange)
+                for (int n = 0; n < joinCnt; n++)
+                    blockSupplySend((TestRecordingCommunicationSpi)grid(n).configuration().getCommunicationSpi(), CACHE_NAME1);
+
             startServer(i + 1, majorVer);
 
-            ver = new AffinityTopologyVersion(majorVer, 0);
-
-            printAll(ver);
+            if (!lastTopChange)
+                awaitPartitionMapExchange(true, true, null);
         }
+
+        printAll(topVer(majorVer, 0));
 
         majorVer++;
 
-        stopGrid(0);
+        stopNode(1, majorVer);
 
-        ver = new AffinityTopologyVersion(majorVer, 0);
+        printAll(topVer(majorVer, 0));
 
-        printAll(ver);
+        ((TestRecordingCommunicationSpi)grid(0).configuration().getCommunicationSpi()).stopBlock();
 
-        //GridCacheContext cctx = grid(1).context().cache().context().cacheContext(CU.cacheId(CACHE_NAME1));
-
-
-
-        //checkAffinity(majorVer, topVer(majorVer, 0), false);
-
-        //spi.stopBlock();
+//        spi.stopBlock();
 //
-//        checkAffinity(majorVer, topVer(majorVer, 1), true);
+//        for (int i = 0; i <= joinCnt; i++) {
+//            if (i == 1) // Skip stopped node.
+//                continue;
+//
+//            ((TestRecordingCommunicationSpi)grid(i).configuration().getCommunicationSpi()).stopBlock();
+//        }
+//
+//        printAll(topVer(majorVer, 1));
+
+
+
+        // order=4 // prim
+        // order=5 // prim
+
+        final QueryCursor<Cache.Entry<Object, Object>> query = ignite(0).cache(CACHE_NAME1).query(new ScanQuery<>());
+
+        final List<Cache.Entry<Object, Object>> all = query.getAll();
+
+        System.out.println(all.size());
+
+        printAll(topVer(majorVer, 1));
     }
 
-    public void printAll(AffinityTopologyVersion topVer) {
+    public void printAll(AffinityTopologyVersion topVer) throws IgniteCheckedException {
         for (Ignite ignite : G.allGrids())
             print(ignite, topVer);
     }
 
-    public void print(Ignite ignite, AffinityTopologyVersion topVer) {
+    public void print(Ignite ignite, AffinityTopologyVersion topVer) throws IgniteCheckedException {
         final IgniteEx igniteEx = (IgniteEx)ignite;
         final ClusterNode node = igniteEx.localNode();
+
+        IgniteInternalFuture<?> fut = igniteEx.context().cache().context().exchange().affinityReadyFuture(topVer);
+
+        if (fut != null)
+            fut.get();
 
         GridCacheContext cctx = igniteEx.context().cache().context().cacheContext(CU.cacheId(CACHE_NAME1));
 
@@ -455,13 +490,10 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
 
         Set<Integer> prims = ass.primaryPartitions(node.id());
 
-        for (int i = 0; i < top.localPartitions().size(); i++) {
-            GridDhtLocalPartition part = top.localPartitions().get(i);
+        for (GridDhtLocalPartition part : top.localPartitions()) {
+            final boolean primary = part.primary(topVer);
 
-            if (prims.contains(i))
-                assertTrue("Partition " + i + " must be primary for node " + ((IgniteEx)ignite).localNode(), part.primary(topVer));
-            else
-                assertFalse("Partition " + i + " must be not primary for node " + ((IgniteEx)ignite).localNode(), part.primary(topVer));
+            assertEquals("State mismatch: ver=" + topVer + ", partId=" + part.id(), prims.contains(part.id()), primary);
         }
     }
 
@@ -3211,4 +3243,35 @@ public class CacheLateAffinityAssignmentTest extends GridCommonAbstractTest {
             return null;
         }
     }
+
+//    private static class TableAffinityFunction implements AffinityFunction {
+//        public static final int CNT = 4;
+//
+//        @Override public void reset() {
+//
+//        }
+//
+//        @Override public int partitions() {
+//            return CNT;
+//        }
+//
+//        @Override public int partition(Object key) {
+//            return Math.abs(key.hashCode()) % CNT;
+//        }
+//
+//        @Override public List<List<ClusterNode>> assignPartitions(AffinityFunctionContext affCtx) {
+//            final List<ClusterNode> nodes = affCtx.currentTopologySnapshot();
+//
+//            if (nodes.isEmpty())
+//                return Collections.emptyList();
+//
+//
+//
+//            return nodes;
+//        }
+//
+//        @Override public void removeNode(UUID nodeId) {
+//
+//        }
+//    }
 }
