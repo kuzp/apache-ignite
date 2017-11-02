@@ -32,15 +32,14 @@ import {default as ConfigureState} from 'app/components/page-configure/services/
 import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
 import {default as Clusters} from 'app/services/Clusters';
 import {default as ModalPreviewProject} from 'app/components/page-configure/components/modal-preview-project/service';
-import {default as pageService} from './service';
 import {default as ConfigurationDownload} from 'app/components/page-configure/services/ConfigurationDownload';
 
 import {confirmClustersRemoval} from '../page-configure/store/actionCreators';
 
 export default class PageConfigureOverviewController {
     static $inject = [
+        '$uiRouter',
         ModalPreviewProject.name,
-        pageService.name,
         Clusters.name,
         ConfigureState.name,
         ConfigSelectors.name,
@@ -49,15 +48,14 @@ export default class PageConfigureOverviewController {
 
     /**
      * @param {ModalPreviewProject} ModalPreviewProject
-     * @param {pageService} pageService
      * @param {Clusters} Clusters
      * @param {ConfigureState} ConfigureState
      * @param {ConfigSelectors} ConfigSelectors
      * @param {ConfigurationDownload} ConfigurationDownload
      */
-    constructor(ModalPreviewProject, pageService, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload) {
+    constructor($uiRouter, ModalPreviewProject, Clusters, ConfigureState, ConfigSelectors, ConfigurationDownload) {
+        this.$uiRouter = $uiRouter;
         this.ModalPreviewProject = ModalPreviewProject;
-        this.pageService = pageService;
         this.Clusters = Clusters;
         this.ConfigureState = ConfigureState;
         this.ConfigSelectors = ConfigSelectors;
@@ -71,6 +69,11 @@ export default class PageConfigureOverviewController {
     /** @param {Array<ig.config.cluster.ShortCluster>} clusters */
     removeClusters(clusters) {
         this.ConfigureState.dispatchAction(confirmClustersRemoval(clusters.map((c) => c._id)));
+    }
+
+    /** @param {ig.config.cluster.ShortCluster} cluster */
+    editCluster(cluster) {
+        return this.$uiRouter.stateService.go('^.edit', {clusterID: cluster._id});
     }
 
     $onInit() {
@@ -136,13 +139,8 @@ export default class PageConfigureOverviewController {
         this.actions$ = this.selectedRows$.map((selectedClusters) => [
             {
                 action: 'Edit',
-                click: () => this.pageService.editCluster(selectedClusters[0]),
+                click: () => this.editCluster(selectedClusters[0]),
                 available: selectedClusters.length === 1
-            },
-            {
-                action: 'Clone',
-                click: () => this.pageService.cloneClusters(selectedClusters),
-                available: false
             },
             {
                 action: 'See project structure',

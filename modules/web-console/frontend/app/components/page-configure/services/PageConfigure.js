@@ -27,145 +27,24 @@ import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/observable/forkJoin';
-import get from 'lodash/fp/get';
-import propEq from 'lodash/fp/propEq';
 import cloneDeep from 'lodash/cloneDeep';
-
-import {
-    clustersActionTypes,
-    shortClustersActionTypes,
-    ADD_CLUSTER,
-    ADD_CLUSTERS,
-    UPDATE_CLUSTER,
-    UPSERT_CLUSTERS,
-    REMOVE_CLUSTERS,
-    UPSERT_CACHES,
-    uniqueName
-} from '../reducer';
-
-import {
-    REMOVE_CLUSTERS_LOCAL_REMOTE
-} from '../store/actionTypes';
 
 import {
     ofType
 } from '../store/effects';
 
-export const CLONE_CLUSTERS = Symbol('CLONE_CLUSTERS');
-
 import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
 import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
-import {default as Clusters} from 'app/services/Clusters';
 
 export default class PageConfigure {
-    static $inject = ['IgniteConfigurationResource', '$state', ConfigureState.name, Clusters.name, ConfigSelectors.name];
-
+    static $inject = [ConfigureState.name, ConfigSelectors.name];
     /**
      * @param {ConfigureState} ConfigureState
-     * @param {Clusters} Clusters
      * @param {ConfigSelectors} ConfigSelectors
      */
-    constructor(configuration, $state, ConfigureState, Clusters, ConfigSelectors) {
-        Object.assign(this, {configuration, $state});
+    constructor(ConfigureState, ConfigSelectors) {
         this.ConfigureState = ConfigureState;
-        this.Clusters = Clusters;
         this.ConfigSelectors = ConfigSelectors;
-
-        this.removeClusters$ = this.ConfigureState.actions$
-            .filter(propEq('type', REMOVE_CLUSTERS_LOCAL_REMOTE))
-            .withLatestFrom(this.ConfigureState.state$)
-            .switchMap(([{clusters}, state]) => {
-                const backup = {
-                    clusters: state.clusters,
-                    shortClusters: state.shortClusters
-                };
-                return Observable.of({
-                    type: shortClustersActionTypes.REMOVE,
-                    ids: clusters.map((c) => c._id)
-                }).merge(...clusters.map((cluster) => {
-                    return this.Clusters.removeCluster$(cluster)
-                    .switchMap(() => Observable.empty())
-                    .catch(() => Observable.of({
-                        type: shortClustersActionTypes.UPSERT,
-                        items: [backup.shortClusters.get(cluster._id)]
-                    }));
-                }));
-            });
-
-        this.cloneClusters$ = this.ConfigureState.actions$
-            .filter(propEq('type', CLONE_CLUSTERS))
-            .withLatestFrom(this.ConfigureState.state$)
-            .switchMap(([{clusters}, state]) => {
-                const sendRequest = (c) => this.Clusters.saveCluster$(Object.assign({}, c, {_id: void 0}));
-                const toAdd = clusters.map((c, i) => {
-                    return Object.assign(cloneDeep(state.list.clusters.get(c._id)), {
-                        _id: (i + 1) * -1,
-                        name: uniqueName(`${c.name} (clone)`, [...state.list.clusters.values()])
-                    });
-                });
-                return Observable.of({
-                    type: ADD_CLUSTERS,
-                    clusters: toAdd
-                })
-                .merge(...toAdd.map((c) => sendRequest(c)
-                    .map(({data}) => ({
-                        type: UPDATE_CLUSTER,
-                        _id: c._id,
-                        cluster: {_id: data}
-                    }))
-                    .catch((e) => {
-                        return Observable.of({
-                            type: REMOVE_CLUSTERS,
-                            clusterIDs: [c._id]
-                        });
-                    })
-                ));
-            });
-
-        this.removeClusters$.merge(this.cloneClusters$).subscribe((a) => ConfigureState.dispatchAction(a));
-    }
-
-    cloneClusters(clusters) {
-        this.ConfigureState.dispatchAction({type: CLONE_CLUSTERS, clusters});
-    }
-
-    addCluster(cluster) {
-        this.ConfigureState.dispatchAction({type: ADD_CLUSTER, cluster});
-    }
-
-    updateCluster(cluster) {
-        this.ConfigureState.dispatchAction({type: UPDATE_CLUSTER, cluster});
-    }
-
-    upsertCaches(caches) {
-        this.ConfigureState.dispatchAction({type: UPSERT_CACHES, caches});
-    }
-
-    upsertClusters(clusters) {
-        this.ConfigureState.dispatchAction({type: UPSERT_CLUSTERS, clusters});
-    }
-
-    removeClusters(clusterIDs) {
-        this.ConfigureState.dispatchAction({type: REMOVE_CLUSTERS, clusterIDs});
-    }
-
-    removeClustersLocalRemote(clusters) {
-        this.ConfigureState.dispatchAction({type: REMOVE_CLUSTERS_LOCAL_REMOTE, clusters});
-    }
-
-    editCluster(clusterID) {
-        return this.ConfigureState.state$
-        .take(1)
-        .switchMap((state) => {
-            const toClusterCachesAmount = get('caches.length', state.list.clusters.get(clusterID)) || 0;
-            return this.$state.go(
-                (state.list.clusters.size <= 1 && toClusterCachesAmount < 10)
-                    ? 'base.configuration.edit.basic'
-                    : 'base.configuration.edit.advanced.clusters',
-                {clusterID}
-            );
-        })
-        .subscribe();
     }
 
     getClusterConfiguration({clusterID, isDemo}) {

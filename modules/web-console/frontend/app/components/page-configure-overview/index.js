@@ -19,10 +19,8 @@ import angular from 'angular';
 
 import component from './component';
 import gridColumnCategories from './components/pco-grid-column-categories/directive';
-import service from './service';
 
 export default angular
     .module('ignite-console.page-configure-overview', [])
-    .service('PageConfigureOverviewService', service)
     .component('pageConfigureOverview', component)
     .directive('pcoGridColumnCategories', gridColumnCategories);
