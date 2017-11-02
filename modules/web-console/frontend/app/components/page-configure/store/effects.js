@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/ignoreElements';
 import {merge} from 'rxjs/observable/merge';
 import {empty} from 'rxjs/observable/empty';
@@ -36,12 +37,16 @@ import {
 
 import {
     REMOVE_CLUSTER_ITEMS,
-    REMOVE_CLUSTER_ITEMS_CONFIRMED
+    REMOVE_CLUSTER_ITEMS_CONFIRMED,
+    CONFIRM_CLUSTERS_REMOVAL,
+    CONFIRM_CLUSTERS_REMOVAL_OK
 } from './actionTypes';
 
 import {
     removeClusterItemsConfirmed,
-    advancedSaveCompleteConfiguration
+    advancedSaveCompleteConfiguration,
+    confirmClustersRemoval,
+    confirmClustersRemovalOK
 } from './actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
@@ -487,6 +492,58 @@ export default class ConfigEffects {
             .pluck('0')
             .withLatestFrom(this.ConfigureState.state$.pluck('edit'))
             .map(([action, edit]) => advancedSaveCompleteConfiguration(edit));
+
+        this.confirmClustersRemovalEffect$ = this.ConfigureState.actions$
+            .let(ofType(CONFIRM_CLUSTERS_REMOVAL))
+            .pluck('clusterIDs')
+            .switchMap((ids) => this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterNames(ids)).take(1))
+            .exhaustMap((names) => {
+                return fromPromise(this.Confirm.confirm(`
+                    <p>Are you sure want to remove these clusters?</p>
+                    <ul>${names.map((name) => `<li>${name}</li>`).join('')}</ul>
+                `))
+                .map(confirmClustersRemovalOK)
+                .catch(() => Observable.empty());
+            });
+
+        this.persistRemovedClustersLocallyEffect$ = this.ConfigureState.actions$
+            .let(ofType(CONFIRM_CLUSTERS_REMOVAL_OK))
+            .withLatestFrom(this.ConfigureState.actions$.let(ofType(CONFIRM_CLUSTERS_REMOVAL)))
+            .switchMap(([, {clusterIDs}]) => of(
+                {type: shortClustersActionTypes.REMOVE, ids: clusterIDs},
+                {type: clustersActionTypes.REMOVE, ids: clusterIDs}
+            ));
+
+        this.persistRemovedClustersRemotelyEffect$ = this.ConfigureState.actions$
+            .let(ofType(CONFIRM_CLUSTERS_REMOVAL_OK))
+            .withLatestFrom(
+                this.ConfigureState.actions$.let(ofType(CONFIRM_CLUSTERS_REMOVAL)),
+                this.ConfigureState.actions$.let(ofType(shortClustersActionTypes.REMOVE)),
+                this.ConfigureState.actions$.let(ofType(clustersActionTypes.REMOVE))
+            )
+            .switchMap(([, {clusterIDs}, ...backup]) => this.Clusters.removeCluster$(clusterIDs)
+                .mapTo({
+                    type: 'REMOVE_CLUSTERS_OK'
+                })
+                .catch((e) => of(
+                    {
+                        type: 'REMOVE_CLUSTERS_ERR',
+                        error: {
+                            message: `Failed to remove clusters: ${e.data}`
+                        }
+                    },
+                    {
+                        type: 'UNDO_ACTIONS',
+                        actions: backup
+                    }
+                ))
+            );
+
+        this.notifyRemoteClustersRemoveSuccessEffect$ = this.ConfigureState.actions$
+            .let(ofType('REMOVE_CLUSTERS_OK'))
+            .withLatestFrom(this.ConfigureState.actions$.let(ofType(CONFIRM_CLUSTERS_REMOVAL)))
+            .do(([, {clusterIDs}]) => this.IgniteMessages.showInfo(`Cluster(s) removed: ${clusterIDs.length}`))
+            .ignoreElements();
     }
 
     /**
