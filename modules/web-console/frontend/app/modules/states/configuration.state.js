@@ -36,6 +36,7 @@ import {Observable} from 'rxjs/Observable';
 const idRegex = `new|[a-z0-9]+`;
 
 const shortCachesResolve = ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+    if ($transition$.params().clusterID === 'new') return Promise.resolve();
     return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
     .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
     .switchMap((cluster) => {
@@ -154,6 +155,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 component: pageConfigureAdvancedCachesComponent.name,
                 resolve: {
                     _shortCachesAndModels: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        if ($transition$.params().clusterID === 'new') return Promise.resolve();
                         return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
                         .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
                         .map((cluster) => {
@@ -198,6 +200,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 resolve: {
                     _shortCachesAndModels: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        if ($transition$.params().clusterID === 'new') return Promise.resolve();
                         return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
                         .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
                         .map((cluster) => {
@@ -239,6 +242,7 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                 permission: 'configuration',
                 resolve: {
                     _shortIGFSs: ['ConfigSelectors', 'ConfigureState', 'ConfigEffects', '$transition$', (ConfigSelectors, ConfigureState, {etp}, $transition$) => {
+                        if ($transition$.params().clusterID === 'new') return Promise.resolve();
                         return Observable.fromPromise($transition$.injector().getAsync('_cluster'))
                         .switchMap(() => ConfigureState.state$.let(ConfigSelectors.selectCluster($transition$.params().clusterID)).take(1))
                         .map((cluster) => {
