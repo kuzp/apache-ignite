@@ -105,7 +105,7 @@ export default class ConfigSelectors {
         .let(selectItemToEdit({
             items: state$.let(this.selectCurrentShortCaches),
             itemFactory: () => this.Caches.getBlankCache(),
-            defaultName: 'New cache',
+            defaultName: 'Cache',
             itemID: cacheID
         }));
     selectIGFSToEdit = (itemID) => (state$) => state$
@@ -114,7 +114,7 @@ export default class ConfigSelectors {
         .let(selectItemToEdit({
             items: state$.let(this.selectShortIGFSsValue()),
             itemFactory: () => this.IGFSs.getBlankIGFS(),
-            defaultName: 'New IGFS',
+            defaultName: 'IGFS',
             itemID
         }));
     selectModelToEdit = (itemID) => (state$) => state$
@@ -125,7 +125,7 @@ export default class ConfigSelectors {
             itemFactory: () => this.Models.getBlankModel(),
             itemID
         }));
-    selectClusterToEdit = (clusterID, defaultName = 'New cluster') => (state$) => state$
+    selectClusterToEdit = (clusterID, defaultName = 'Cluster') => (state$) => state$
         .let(this.selectCluster(clusterID))
         .distinctUntilChanged()
         .debug('what')

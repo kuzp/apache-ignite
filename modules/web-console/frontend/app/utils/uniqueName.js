@@ -1,4 +1,4 @@
-export const uniqueName = (name, items, fn = ({name, i}) => `${name} (${i})`) => {
+export const uniqueName = (name, items, fn = ({name, i}) => `${name}${i}`) => {
     let i = 0;
     let newName = name;
     const isUnique = (item) => item.name === newName;
