@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// TODO implement borrow with reference to next item ( first.borrowable.length differs on 1 with second.borrowable.length
 public class BalancedSet {
     private final int segments;
     private final int backups;
@@ -43,6 +44,19 @@ public class BalancedSet {
 
             return i;
         }
+
+        public int borrow(BitSet exclude) {
+            for (int i = primary.nextSetBit(0); i >= 0; i = primary.nextSetBit(i+1)) {
+                if (!exclude.get(i)) {
+                    primary.clear(i);
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
 
         public void add(int part) {
             assert !primary.get(part);
@@ -88,16 +102,17 @@ public class BalancedSet {
         s.addOwner("owner3");
         System.out.println(s);
 
-        s.addOwner("owner4");
-        System.out.println(s);
+//        s.addOwner("owner4");
+//        System.out.println(s);
 
-        s.addOwner("owner5");
-        System.out.println(s);
-
-        s.addOwner("owner6");
-        System.out.println(s);
+//        s.addOwner("owner5");
+//        System.out.println(s);
 //
-//        s.removeOwner("owner0");
+//        s.addOwner("owner6");
+//        System.out.println(s);
+
+        s.removeOwner("owner1");
+        System.out.println(s);
 
 //        for (int i = 0; i < 9; i++) {
 //            s.addOwner("owner" + i);
@@ -112,10 +127,70 @@ public class BalancedSet {
     private void removeOwner(String owner) {
         final Mapping removed = map.remove(owner);
 
+        owners.remove(owner);
+
         if (removed == null)
             return;
 
+        // divide primary and backups on remaining nodes.
+        // old backups must become primary.
+        // backups are moved on most underloaded nodes.
 
+        final BitSet primary = removed.primary;
+
+        List<Mapping> affected = new ArrayList<>();
+
+        for (int i = primary.nextSetBit(0); i >= 0; i = primary.nextSetBit(i+1)) {
+            for (Mapping mapping : map.values()) {
+                if (mapping.backup.get(i)) {
+                    mapping.backup.clear(i);
+
+                    mapping.primary.set(i);
+
+                    if (!affected.contains(mapping))
+                        affected.add(mapping);
+                }
+            }
+        }
+
+        // Sort by cardinality desc.
+        Collections.sort(affected, new Comparator<Mapping>() {
+            @Override public int compare(Mapping o1, Mapping o2) {
+                return o2.primary.cardinality() - o1.primary.cardinality();
+            }
+        });
+
+        int cur = 0;
+
+        List<Object> other = new ArrayList<>(owners);
+
+        int div = segments / owners.size();
+
+        for (Mapping mapping : affected)
+            other.remove(mapping.owner);
+
+        // sort by cardinality
+        for (int i = 0; i < affected.size(); i++) {
+            final Mapping from = affected.get(i);
+
+            Object own = other.get(cur);
+
+            Mapping to = map.get(own);
+
+            int part = from.borrow(removed.primary);
+
+            if (part == -1)
+                continue;
+
+            to.add(part);
+
+            cur++;
+
+            cur %= other.size();
+
+            if (to.primary.cardinality() == div)
+                break;
+        }
     }
 
     private void addOwner(Object owner) {
