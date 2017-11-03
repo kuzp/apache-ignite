@@ -173,6 +173,8 @@ public class BalancedSet {
         for (int i = 0; i < affected.size(); i++) {
             final Mapping from = affected.get(i);
 
+            // TODO get more from affected if possible
+
             Object own = other.get(cur);
 
             Mapping to = map.get(own);
