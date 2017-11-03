@@ -39,14 +39,16 @@ import {
     REMOVE_CLUSTER_ITEMS,
     REMOVE_CLUSTER_ITEMS_CONFIRMED,
     CONFIRM_CLUSTERS_REMOVAL,
-    CONFIRM_CLUSTERS_REMOVAL_OK
+    CONFIRM_CLUSTERS_REMOVAL_OK,
+    COMPLETE_CONFIGURATION
 } from './actionTypes';
 
 import {
     removeClusterItemsConfirmed,
     advancedSaveCompleteConfiguration,
     confirmClustersRemoval,
-    confirmClustersRemovalOK
+    confirmClustersRemovalOK,
+    completeConfiguration
 } from './actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
@@ -105,7 +107,7 @@ export default class ConfigEffects {
             .exhaustMap((action) => {
                 return fromPromise(this.Clusters.getConfiguration(action.clusterID))
                     .switchMap(({data}) => of(
-                        {type: 'COMPLETE_CONFIGURATION', configuration: data},
+                        completeConfiguration(data),
                         {type: 'LOAD_COMPLETE_CONFIGURATION_OK', data}
                     ))
                     .catch((error) => of({
@@ -117,8 +119,8 @@ export default class ConfigEffects {
                     }));
             });
 
-        this.storlConfiguratiosEffect$ = this.ConfigureState.actions$
-            .let(ofType('COMPLETE_CONFIGURATION'))
+        this.storeConfigurationEffect$ = this.ConfigureState.actions$
+            .let(ofType(COMPLETE_CONFIGURATION))
             .exhaustMap(({configuration: {cluster, caches, models, igfss}}) => of(...[
                 cluster && {type: clustersActionTypes.UPSERT, items: [cluster]},
                 caches && caches.length && {type: cachesActionTypes.UPSERT, items: caches},
