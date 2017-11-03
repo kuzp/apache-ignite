@@ -20,7 +20,8 @@ import {
     REMOVE_CLUSTER_ITEMS_CONFIRMED,
     ADVANCED_SAVE_COMPLETE_CONFIGURATION,
     CONFIRM_CLUSTERS_REMOVAL,
-    CONFIRM_CLUSTERS_REMOVAL_OK
+    CONFIRM_CLUSTERS_REMOVAL_OK,
+    COMPLETE_CONFIGURATION
 } from './actionTypes';
 
 /**
@@ -137,4 +138,9 @@ export const confirmClustersRemoval = (clusterIDs) => ({
  */
 export const confirmClustersRemovalOK = () => ({
     type: CONFIRM_CLUSTERS_REMOVAL_OK
+});
+
+export const completeConfiguration = (configuration) => ({
+    type: COMPLETE_CONFIGURATION,
+    configuration
 });
