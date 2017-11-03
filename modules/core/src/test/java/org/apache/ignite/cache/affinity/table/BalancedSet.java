@@ -191,6 +191,8 @@ public class BalancedSet {
             if (to.primary.cardinality() == div)
                 break;
         }
+
+        // divide primary and backup from left node
     }
 
     private void addOwner(Object owner) {
