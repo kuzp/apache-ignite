@@ -13,6 +13,8 @@ public class BalancedSet {
     private final int segments;
     private final int backups;
 
+    private int movements = 0;
+
     private Map<Object, Mapping> map = new HashMap<>();
 
     private List<Object> owners = new ArrayList<>();
@@ -34,7 +36,7 @@ public class BalancedSet {
         }
 
         @Override public String toString() {
-            return "Mapping: [owner=" + owner + ", primary=" + primary + ", backup=" + backup + ']';
+            return "Mapping: [owner=" + owner + ", primary=" + primary + ", backup=" + backup + "" + ']';
         }
 
         public int borrow() {
@@ -111,8 +113,8 @@ public class BalancedSet {
 //        s.addOwner("owner6");
 //        System.out.println(s);
 
-        s.removeOwner("owner1");
-        System.out.println(s);
+//        s.removeOwner("owner1");
+//        System.out.println(s);
 
 //        for (int i = 0; i < 9; i++) {
 //            s.addOwner("owner" + i);
@@ -223,7 +225,10 @@ public class BalancedSet {
                 // Sort by cardinality to borrow first from largest cardinality.
                 Collections.sort(ordered, new Comparator<Object>() {
                     @Override public int compare(Object o1, Object o2) {
-                        return map.get(o2).primary.cardinality() - map.get(o1).primary.cardinality();
+                        final int c1 = map.get(o2).primary.cardinality();
+                        final int c2 = map.get(o1).primary.cardinality();
+
+                        return c1 - c2;
                     }
                 });
 
@@ -246,6 +251,8 @@ public class BalancedSet {
                 }
             }
 
+            // Process backups.
+
             if (owners.size() == 1) {
                 final Mapping first = map.get(owners.get(0));
 
@@ -259,7 +266,10 @@ public class BalancedSet {
                 // Sort by cardinality to borrow first from largest cardinality.
                 Collections.sort(ordered, new Comparator<Object>() {
                     @Override public int compare(Object o1, Object o2) {
-                        return map.get(o2).backup.cardinality() - map.get(o1).backup.cardinality();
+                        final int c1 = map.get(o2).backup.cardinality();
+                        final int c2 = map.get(o1).backup.cardinality();
+
+                        return c1 == c2 ? map.get(o2).primary.cardinality() - map.get(o1).primary.cardinality() : c1 - c2;
                     }
                 });
 
