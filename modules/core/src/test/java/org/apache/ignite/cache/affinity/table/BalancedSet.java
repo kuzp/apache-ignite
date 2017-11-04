@@ -104,8 +104,8 @@ public class BalancedSet {
         s.addOwner("owner3");
         System.out.println(s);
 
-//        s.addOwner("owner4");
-//        System.out.println(s);
+        s.addOwner("owner4");
+        System.out.println(s);
 
 //        s.addOwner("owner5");
 //        System.out.println(s);
