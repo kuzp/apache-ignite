@@ -60,6 +60,8 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
             app.use('/api/v1/notebooks', _mustAuthenticated, notebooksRoute);
             app.use('/api/v1/downloads', _mustAuthenticated, downloadsRoute);
             app.use('/api/v1/activities', _mustAuthenticated, activitiesRoute);
+
+
         }
     };
 };

@@ -21,8 +21,8 @@
 
 module.exports = {
     implements: 'api-server',
-    inject: ['require(fs)', 'require(path)', 'require(express)', 'configure', 'routes'],
-    factory(fs, path, Express, configure, routes) {
+    inject: ['require(fs)', 'require(path)', 'require(express)', 'settings', 'configure', 'routes'],
+    factory(fs, path, Express, settings, configure, routes) {
         /**
          * Connected agents manager.
          */
@@ -37,7 +37,7 @@ module.exports = {
 
                 routes.register(app);
 
-                if (__dirname.startsWith('/snapshot/') || __dirname.startsWith('C:\\snapshot\\')) {
+                if (settings.packaged) {
                     const staticDir = path.join(process.cwd(), 'libs/frontend');
 
                     try {

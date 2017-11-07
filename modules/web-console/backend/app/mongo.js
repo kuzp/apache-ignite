@@ -1172,7 +1172,7 @@ module.exports.factory = function(passportMongo, settings, mongoose) {
 
             let mongodRun;
 
-            if (__dirname.startsWith('/snapshot/') || __dirname.startsWith('C:\\snapshot\\')) {
+            if (settings.packaged) {
                 mongodRun = new Promise((resolve, reject) => {
                     helper.resolveLink = resolve;
                     helper.rejectLink = reject;

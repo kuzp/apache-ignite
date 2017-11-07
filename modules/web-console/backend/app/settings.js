@@ -57,6 +57,7 @@ module.exports = {
             agent: {
                 dists: nconf.get('agent:dists') || dfltAgentDists
             },
+            packaged,
             server: {
                 host: nconf.get('server:host') || dfltHost,
                 port: _normalizePort(nconf.get('server:port') || dfltPort),
