@@ -17,7 +17,9 @@
 
 package org.apache.ignite.internal.util.nio;
 
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.internal.managers.communication.GridIoMessageEx;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.plugin.extensions.communication.Message;
@@ -53,6 +55,15 @@ final class SessionWriteFuture extends NioOperationFuture<Void> implements Sessi
 
         this.msg = msg;
         this.skipRecovery = skipRecovery;
+    }
+
+    /** {@inheritDoc} */
+    @Override public <T> void prepare(GridNioWorker worker) throws IgniteCheckedException {
+        if (msg != null && msg.getClass() == GridIoMessageEx.class) {
+            assert worker.getClass() == DirectNioClientWorker.class;
+
+            ((GridIoMessageEx)msg).finishMarshalling(((DirectNioClientWorker)worker).handlerProvider());
+        }
     }
 
     /** {@inheritDoc} */

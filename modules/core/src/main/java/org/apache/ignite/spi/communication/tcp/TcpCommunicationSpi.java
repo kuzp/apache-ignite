@@ -64,6 +64,9 @@ import org.apache.ignite.internal.IgniteClientDisconnectedCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteInterruptedCheckedException;
 import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
+import org.apache.ignite.internal.direct.DataObject;
+import org.apache.ignite.internal.direct.MessageHandler;
+import org.apache.ignite.internal.direct.MessageHandlerProvider;
 import org.apache.ignite.internal.managers.eventstorage.GridLocalEventListener;
 import org.apache.ignite.internal.managers.eventstorage.HighPriorityListener;
 import org.apache.ignite.internal.util.GridConcurrentFactory;
@@ -112,6 +115,7 @@ import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.lang.IgniteProductVersion;
 import org.apache.ignite.lang.IgniteRunnable;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.marshaller.Marshaller;
 import org.apache.ignite.plugin.extensions.communication.Message;
 import org.apache.ignite.plugin.extensions.communication.MessageFactory;
 import org.apache.ignite.plugin.extensions.communication.MessageFormatter;
@@ -248,6 +252,8 @@ import static org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi.Recove
 @IgniteSpiMultipleInstancesSupport(true)
 @IgniteSpiConsistencyChecked(optional = false)
 public class TcpCommunicationSpi extends IgniteSpiAdapter implements CommunicationSpi<Message> {
+    /** */
+    public static final int META_IDX = IgniteThread.metaIdx();
     /** IPC error message. */
     public static final String OUT_OF_RESOURCES_TCP_MSG = "Failed to allocate shared memory segment " +
         "(switching to TCP, may be slower).";
@@ -2199,7 +2205,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
 
         for (int port = locPort; port <= lastPort; port++) {
             try {
-                MessageFactory msgFactory = new MessageFactory() {
+                final MessageFactory msgFactory = new MessageFactory() {
                     private MessageFactory impl;
 
                     @Nullable @Override public Message create(short type) {
@@ -2209,6 +2215,40 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                         assert impl != null;
 
                         return impl.create(type);
+                    }
+                };
+
+                MessageHandlerProvider msgHndprovider = new MessageHandlerProvider() {
+                    private final ClassLoader clsLdr = U.resolveClassLoader(ignite.configuration());
+                    private final Marshaller marsh = ignite.configuration().getMarshaller();
+
+                    private final ThreadLocal<MessageHandler> local = new ThreadLocal<MessageHandler>(){
+                        @Override protected MessageHandler initialValue() {
+                            return new MessageHandler(marsh, clsLdr, msgFactory);
+                        }
+                    };
+
+                    @Override public MessageHandler forRead(DataObject dataObject) {
+                        return handler().forRead(dataObject);
+                    }
+
+                    @Override public MessageHandler forWrite(DataObject dataObject) {
+                        return handler().forWrite(dataObject);
+                    }
+
+                    private MessageHandler handler() {
+                        IgniteThread thread = IgniteThread.current();
+
+                        if(thread != null) {
+                            MessageHandler handler = thread.meta(META_IDX);
+
+                            if(handler == null)
+                                thread.meta(handler = new MessageHandler(marsh, clsLdr, msgFactory), META_IDX);
+
+                            return handler;
+                        }
+                        else
+                            return local.get();
                     }
                 };
 
@@ -2309,6 +2349,7 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter implements Communicati
                         .selectorSpins(selectorSpins)
                         .filters(filters)
                         .writerFactory(writerFactory)
+                        .handlerProvider(msgHndprovider)
                         .skipRecoveryPredicate(skipRecoveryPred)
                         .messageQueueSizeListener(queueSizeMonitor)
                         .readWriteSelectorsAssign(usePairedConnections)

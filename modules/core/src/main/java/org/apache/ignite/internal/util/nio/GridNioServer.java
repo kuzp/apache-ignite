@@ -40,6 +40,7 @@ import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.configuration.ConnectorConfiguration;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.direct.MessageHandlerProvider;
 import org.apache.ignite.internal.util.GridConcurrentHashSet;
 import org.apache.ignite.internal.util.future.GridCompoundFuture;
 import org.apache.ignite.internal.util.nio.ssl.GridNioSslFilter;
@@ -212,6 +213,7 @@ public class GridNioServer<T> {
         long idleTimeout,
         GridNioMetricsListener metricsLsnr,
         GridNioMessageWriterFactory writerFactory,
+        MessageHandlerProvider handlerProvider,
         IgnitePredicate<Message> skipRecoveryPred,
         IgniteBiInClosure<GridNioSession, Integer> msgQueueLsnr,
         boolean readWriteSelectorsAssign,
@@ -298,6 +300,7 @@ public class GridNioServer<T> {
                     .metricsLsnr(metricsLsnr)
                     .sslFilter(sslFilter)
                     .writerFactory(writerFactory)
+                    .handlerProvider(handlerProvider)
                     .selectorSpins(selectorSpins)
                     .writeTimeout(writeTimeout)
                     .idleTimeout(idleTimeout)
@@ -1040,6 +1043,9 @@ public class GridNioServer<T> {
         /** Writer factory. */
         private GridNioMessageWriterFactory writerFactory;
 
+        /** Handler provider. */
+        private MessageHandlerProvider handlerProvider;
+
         /** Skip recovery predicate. */
         private IgnitePredicate<Message> skipRecoveryPred;
 
@@ -1083,6 +1089,7 @@ public class GridNioServer<T> {
                 idleTimeout,
                 metricsLsnr,
                 writerFactory,
+                handlerProvider,
                 skipRecoveryPred,
                 msgQueueLsnr,
                 readWriteSelectorsAssign,
@@ -1309,6 +1316,16 @@ public class GridNioServer<T> {
          */
         public Builder<T> writerFactory(GridNioMessageWriterFactory writerFactory) {
             this.writerFactory = writerFactory;
+
+            return this;
+        }
+
+        /**
+         * @param handlerProvider Handler provider.
+         * @return This for chaining.
+         */
+        public Builder<T> handlerProvider(MessageHandlerProvider handlerProvider) {
+            this.handlerProvider = handlerProvider;
 
             return this;
         }

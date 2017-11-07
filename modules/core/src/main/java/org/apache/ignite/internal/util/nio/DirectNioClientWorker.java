@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.internal.IgniteInterruptedCheckedException;
+import org.apache.ignite.internal.direct.MessageHandlerProvider;
 import org.apache.ignite.internal.util.nio.ssl.GridNioSslFilter;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -44,6 +45,9 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
     /** Metrics listener. */
     private final GridNioMetricsListener metricsLsnr;
 
+    /** Message handler provider. */
+    private final MessageHandlerProvider handlerProvider;
+
     /** Ssl filter. */
     private final GridNioSslFilter sslFilter;
 
@@ -59,6 +63,7 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
      * @param metricsLsnr Metrics listener.
      * @param sslFilter Ssl filter.
      * @param writerFactory Writer factory.
+     * @param handlerProvider Message handler provider.
      * @param selectorSpins Selector spins count.
      * @param writeTimeout Write timeout.
      * @param idleTimeout Idle timeout.
@@ -77,6 +82,7 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
         GridNioMetricsListener metricsLsnr,
         GridNioSslFilter sslFilter,
         GridNioMessageWriterFactory writerFactory,
+        MessageHandlerProvider handlerProvider,
         long selectorSpins,
         long writeTimeout,
         long idleTimeout,
@@ -102,6 +108,7 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
         this.metricsLsnr = metricsLsnr;
         this.sslFilter = sslFilter;
         this.writerFactory = writerFactory;
+        this.handlerProvider = handlerProvider;
     }
 
     /** {@inheritDoc} */
@@ -350,6 +357,13 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
     }
 
     /**
+     * @return Message handler provider.
+     */
+    MessageHandlerProvider handlerProvider() {
+        return handlerProvider;
+    }
+
+    /**
      * @param ses NIO session.
      * @param sockCh Socket channel.
      * @throws IOException If failed.
@@ -545,6 +559,8 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
         /** */
         private GridNioMessageWriterFactory writerFactory;
         /** */
+        private MessageHandlerProvider handlerProvider;
+        /** */
         private long selectorSpins;
         /** */
         private long writeTimeout;
@@ -632,6 +648,15 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
         }
 
         /**
+         * @param handlerProvider Message handler provider.
+         * @return This for chaining.
+         */
+        public Builder<T> handlerProvider(MessageHandlerProvider handlerProvider) {
+            this.handlerProvider = handlerProvider;
+            return this;
+        }
+
+        /**
          * @param selectorSpins Selector spins count.
          * @return This for chaining.
          */
@@ -701,7 +726,7 @@ class DirectNioClientWorker<T> extends AbstractNioClientWorker {
          * @throws IgniteCheckedException If NIO client worker creation failed or address is already in use.
          */
         public DirectNioClientWorker build() throws IgniteCheckedException {
-            return new DirectNioClientWorker<>(nio, idx, igniteInstanceName, name, filterChain, metricsLsnr, sslFilter, writerFactory, selectorSpins, writeTimeout, idleTimeout, directBuf, order, sndQueueLimit, log);
+            return new DirectNioClientWorker<>(nio, idx, igniteInstanceName, name, filterChain, metricsLsnr, sslFilter, writerFactory, handlerProvider, selectorSpins, writeTimeout, idleTimeout, directBuf, order, sndQueueLimit, log);
         }
     }
 }

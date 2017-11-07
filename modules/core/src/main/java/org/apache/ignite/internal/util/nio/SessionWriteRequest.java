@@ -17,6 +17,8 @@
 
 package org.apache.ignite.internal.util.nio;
 
+import java.io.IOException;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.lang.IgniteInClosure;
 
@@ -75,4 +77,6 @@ public interface SessionWriteRequest extends SessionChangeRequest {
      *
      */
     public void onMessageWritten();
+
+    <T> void prepare(GridNioWorker worker) throws IOException, IgniteCheckedException;
 }

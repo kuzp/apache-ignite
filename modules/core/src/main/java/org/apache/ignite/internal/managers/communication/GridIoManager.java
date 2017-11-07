@@ -59,12 +59,17 @@ import org.apache.ignite.internal.IgniteComponentType;
 import org.apache.ignite.internal.IgniteDeploymentCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
+import org.apache.ignite.internal.direct.DataObject;
 import org.apache.ignite.internal.direct.DirectMessageReader;
 import org.apache.ignite.internal.direct.DirectMessageWriter;
+import org.apache.ignite.internal.direct.MessageHandler;
+import org.apache.ignite.internal.direct.MessageHandlerProvider;
 import org.apache.ignite.internal.managers.GridManagerAdapter;
 import org.apache.ignite.internal.managers.deployment.GridDeployment;
 import org.apache.ignite.internal.managers.eventstorage.GridEventStorageManager;
 import org.apache.ignite.internal.managers.eventstorage.GridLocalEventListener;
+import org.apache.ignite.internal.processors.cache.GridCacheFutureAdapter;
+import org.apache.ignite.internal.processors.cache.distributed.dht.atomic.GridNearAtomicUpdateResponse;
 import org.apache.ignite.internal.processors.platform.message.PlatformMessageFilter;
 import org.apache.ignite.internal.processors.pool.PoolProcessor;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutObject;
@@ -94,6 +99,7 @@ import org.apache.ignite.spi.IgniteSpiException;
 import org.apache.ignite.spi.communication.CommunicationListener;
 import org.apache.ignite.spi.communication.CommunicationSpi;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
+import org.apache.ignite.thread.IgniteThread;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 import org.jsr166.ConcurrentLinkedDeque8;
@@ -118,6 +124,7 @@ import static org.apache.ignite.internal.managers.communication.GridIoPolicy.SYS
 import static org.apache.ignite.internal.managers.communication.GridIoPolicy.UTILITY_CACHE_POOL;
 import static org.apache.ignite.internal.managers.communication.GridIoPolicy.isReservedGridIoPolicy;
 import static org.apache.ignite.internal.util.nio.GridNioBackPressureControl.threadProcessingMessage;
+import static org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi.META_IDX;
 import static org.jsr166.ConcurrentLinkedHashMap.QueuePolicy.PER_SEGMENT_Q_OPTIMIZED_RMV;
 
 /**
@@ -192,6 +199,8 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
     /** */
     private MessageFactory msgFactory;
 
+    private MessageHandlerProvider msgHndprovider;
+
     /** */
     private MessageFormatter formatter;
 
@@ -264,7 +273,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         getSpi().setListener(commLsnr = new CommunicationListener<Serializable>() {
             @Override public void onMessage(UUID nodeId, Serializable msg, IgniteRunnable msgC) {
                 try {
-                    onMessage0(nodeId, (GridIoMessage)msg, msgC);
+                    onMessage0(nodeId, (GridIoMessageEx)msg, msgC);
                 }
                 catch (ClassCastException ignored) {
                     U.error(log, "Communication manager received message of unknown type (will ignore): " +
@@ -325,6 +334,39 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
             msgs = F.concat(msgs, compMsgs.toArray(new MessageFactory[compMsgs.size()]));
 
         msgFactory = new GridIoMessageFactory(msgs);
+
+        final ClassLoader clsLdr = U.resolveClassLoader(ctx.config());
+
+        msgHndprovider = new MessageHandlerProvider() {
+            private final ThreadLocal<MessageHandler> local = new ThreadLocal<MessageHandler>(){
+                @Override protected MessageHandler initialValue() {
+                    return new MessageHandler(marsh, clsLdr, msgFactory);
+                }
+            };
+
+            @Override public MessageHandler forRead(DataObject dataObject) {
+                return handler().forRead(dataObject);
+            }
+
+            @Override public MessageHandler forWrite(DataObject dataObject) {
+                return handler().forWrite(dataObject);
+            }
+
+            private MessageHandler handler() {
+                IgniteThread thread = IgniteThread.current();
+
+                if(thread != null) {
+                    MessageHandler handler = thread.meta(META_IDX);
+
+                    if(handler == null)
+                        thread.meta(handler = new MessageHandler(marsh, clsLdr, msgFactory), META_IDX);
+
+                    return handler;
+                }
+                else
+                    return local.get();
+            }
+        };
 
         if (log.isDebugEnabled())
             log.debug(startInfo());
@@ -921,7 +963,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
      * @param msgC Closure to call when message processing finished.
      */
     @SuppressWarnings("fallthrough")
-    private void onMessage0(UUID nodeId, GridIoMessage msg, IgniteRunnable msgC) {
+    private void onMessage0(UUID nodeId, GridIoMessageEx msg, IgniteRunnable msgC) {
         assert nodeId != null;
         assert msg != null;
 
@@ -938,12 +980,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
                 return;
             }
 
-            if (msg.topic() == null) {
-                int topicOrd = msg.topicOrdinal();
-
-                msg.topic(topicOrd >= 0 ? GridTopic.fromOrdinal(topicOrd) :
-                    U.unmarshal(marsh, msg.topicBytes(), U.resolveClassLoader(ctx.config())));
-            }
+            msg.topic(msgHndprovider);
 
             if (!started) {
                 lock.readLock().lock();
@@ -1030,7 +1067,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
      */
     private void processP2PMessage(
         final UUID nodeId,
-        final GridIoMessage msg,
+        final GridIoMessageEx msg,
         final IgniteRunnable msgC
     ) {
         Runnable c = new Runnable() {
@@ -1078,7 +1115,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
      */
     private void processRegularMessage(
         final UUID nodeId,
-        final GridIoMessage msg,
+        final GridIoMessageEx msg,
         final byte plc,
         final IgniteRunnable msgC
     ) throws IgniteCheckedException {
@@ -1088,6 +1125,9 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
                     threadProcessingMessage(true, msgC);
 
                     processRegularMessage0(msg, nodeId);
+                }
+                catch (IgniteCheckedException e) {
+                    U.error(log, "Failed to unmarshal message [nodeId=" + nodeId + ", msg=" + msg + ']', e);
                 }
                 finally {
                     threadProcessingMessage(false, null);
@@ -1101,7 +1141,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
             }
         };
 
-        if (msg.topicOrdinal() == TOPIC_IO_TEST.ordinal()) {
+        if (msg.topic() == TOPIC_IO_TEST) {
             IgniteIoTestMessage msg0 = (IgniteIoTestMessage)msg.message();
 
             if (msg0.processFromNioThread())
@@ -1124,7 +1164,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
             return;
         }
 
-        if (msg.topicOrdinal() == TOPIC_IO_TEST.ordinal()) {
+        if (msg.topic() == TOPIC_IO_TEST) {
             IgniteIoTestMessage msg0 = (IgniteIoTestMessage)msg.message();
 
             if (msg0.processFromNioThread()) {
@@ -1170,7 +1210,9 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
      * @param nodeId Node ID.
      */
     @SuppressWarnings("deprecation")
-    private void processRegularMessage0(GridIoMessage msg, UUID nodeId) {
+    private void processRegularMessage0(GridIoMessageEx msg, UUID nodeId) throws IgniteCheckedException {
+        msg.finishUnmarshalling(msgHndprovider);
+
         GridMessageListener lsnr = listenerGet0(msg.topic());
 
         if (lsnr == null)
@@ -1343,7 +1385,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     private void processOrderedMessage(
         final UUID nodeId,
-        final GridIoMessage msg,
+        final GridIoMessageEx msg,
         final byte plc,
         @Nullable final IgniteRunnable msgC
     ) throws IgniteCheckedException {
@@ -1613,7 +1655,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         assert !async || msg instanceof GridIoUserMessage : msg; // Async execution was added only for IgniteMessaging.
         assert topicOrd >= 0 || !(topic instanceof GridTopic) : msg;
 
-        GridIoMessage ioMsg = new GridIoMessage(plc, topic, topicOrd, msg, ordered, timeout, skipOnTimeout);
+        GridIoMessageEx ioMsg = new GridIoMessageEx(plc, topic, topicOrd, msg, ordered, timeout, skipOnTimeout);
 
         if (locNodeId.equals(node.id())) {
             assert plc != P2P_POOL;
@@ -1634,9 +1676,6 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
                 ackC.apply(null);
         }
         else {
-            if (topicOrd < 0)
-                ioMsg.topicBytes(U.marshal(marsh, topic));
-
             try {
                 if ((CommunicationSpi)getSpi() instanceof TcpCommunicationSpi)
                     ((TcpCommunicationSpi)(CommunicationSpi)getSpi()).sendMessage(node, ioMsg, ackC);
@@ -2580,7 +2619,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
 
         /** */
         @GridToStringInclude
-        private final Queue<GridTuple3<GridIoMessage, Long, IgniteRunnable>> msgs = new ConcurrentLinkedDeque<>();
+        private final Queue<GridTuple3<GridIoMessageEx, Long, IgniteRunnable>> msgs = new ConcurrentLinkedDeque<>();
 
         /** */
         private final AtomicBoolean reserved = new AtomicBoolean();
@@ -2609,7 +2648,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
             UUID nodeId,
             long timeout,
             boolean skipOnTimeout,
-            GridIoMessage msg,
+            GridIoMessageEx msg,
             @Nullable IgniteRunnable msgC
         ) {
             assert nodeId != null;
@@ -2746,9 +2785,14 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         void unwind(GridMessageListener lsnr) {
             assert reserved.get();
 
-            for (GridTuple3<GridIoMessage, Long, IgniteRunnable> t = msgs.poll(); t != null; t = msgs.poll()) {
+            for (GridTuple3<GridIoMessageEx, Long, IgniteRunnable> t = msgs.poll(); t != null; t = msgs.poll()) {
                 try {
+                    t.get1().finishUnmarshalling(msgHndprovider);
+
                     invokeListener(plc, lsnr, nodeId, t.get1().message());
+                }
+                catch (IgniteCheckedException e) {
+                    U.error(log, "Failed to unmarshal message [nodeId=" + nodeId + ", msg=" + t.get1() + ']', e);
                 }
                 finally {
                     if (t.get3() != null)
@@ -2762,7 +2806,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
          * @param msgC Message closure (may be {@code null}).
          */
         void add(
-            GridIoMessage msg,
+            GridIoMessageEx msg,
             @Nullable IgniteRunnable msgC
         ) {
             msgs.add(F.t(msg, U.currentTimeMillis(), msgC));
@@ -2837,7 +2881,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         private final UUID nodeId;
 
         /** */
-        private final GridIoMessage msg;
+        private final GridIoMessageEx msg;
 
         /** */
         private final IgniteRunnable msgC;
@@ -2847,7 +2891,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
          * @param msg Message.
          * @param msgC Callback.
          */
-        private DelayedMessage(UUID nodeId, GridIoMessage msg, IgniteRunnable msgC) {
+        private DelayedMessage(UUID nodeId, GridIoMessageEx msg, IgniteRunnable msgC) {
             this.nodeId = nodeId;
             this.msg = msg;
             this.msgC = msgC;
@@ -2863,7 +2907,7 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         /**
          * @return Message.
          */
-        public GridIoMessage message() {
+        public GridIoMessageEx message() {
             return msg;
         }
 

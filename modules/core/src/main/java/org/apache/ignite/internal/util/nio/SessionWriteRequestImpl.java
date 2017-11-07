@@ -17,7 +17,9 @@
 
 package org.apache.ignite.internal.util.nio;
 
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.internal.managers.communication.GridIoMessageEx;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.lang.IgniteInClosure;
@@ -93,6 +95,15 @@ final class SessionWriteRequestImpl implements SessionWriteRequest {
         this.skipRecovery = skipRecovery;
         this.system = system;
         this.ackC = ackC;
+    }
+
+    /** {@inheritDoc} */
+    @Override public <T> void prepare(GridNioWorker worker) throws IgniteCheckedException {
+        if (msg != null && msg.getClass() == GridIoMessageEx.class) {
+            assert worker.getClass() == DirectNioClientWorker.class;
+
+            ((GridIoMessageEx)msg).finishMarshalling(((DirectNioClientWorker)worker).handlerProvider());
+        }
     }
 
     /** {@inheritDoc} */

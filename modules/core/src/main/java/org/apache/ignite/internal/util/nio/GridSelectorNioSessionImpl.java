@@ -17,18 +17,21 @@
 
 package org.apache.ignite.internal.util.nio;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.internal.util.MpscQueue;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.LT;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -153,6 +156,9 @@ class GridSelectorNioSessionImpl extends GridNioSessionImpl implements GridNioKe
      * @param req Write request.
      */
     public void add(SessionWriteRequest req) {
+        if (!prepare(req))
+            return;
+
         if (req.system())
             system.offer(req);
         else
@@ -173,7 +179,12 @@ class GridSelectorNioSessionImpl extends GridNioSessionImpl implements GridNioKe
         SessionWriteRequest req = null;
 
         while (it.hasNext()) {
-            req = it.next();
+            SessionWriteRequest tmp;
+
+            if(!prepare(tmp = it.next()))
+                continue;
+
+            req = tmp;
 
             if (req.system())
                 system.offer(req);
@@ -184,6 +195,22 @@ class GridSelectorNioSessionImpl extends GridNioSessionImpl implements GridNioKe
         if(!moving)
             // wakeup worker if needed
             worker.offer(req);
+    }
+
+    /**
+     * @param req Write request.
+     */
+    private boolean prepare(SessionWriteRequest req) {
+        try {
+            req.prepare(worker);
+        }
+        catch (IOException | IgniteCheckedException e) {
+            U.error(log, "Cannot prepare request (will skip); req: " + req, e);
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

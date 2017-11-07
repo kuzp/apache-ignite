@@ -350,6 +350,11 @@ public class GridIoMessageFactory implements MessageFactory {
 
                 break;
 
+            case GridIoMessageEx.DIRECT_TYPE:
+                msg = new GridIoMessageEx();
+
+                break;
+
             case 9:
                 msg = new GridIoUserMessage();
 

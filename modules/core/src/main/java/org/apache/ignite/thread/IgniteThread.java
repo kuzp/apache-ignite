@@ -17,10 +17,13 @@
 
 package org.apache.ignite.thread;
 
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.ignite.internal.managers.communication.GridIoPolicy;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.internal.util.worker.GridWorker;
 
 /**
@@ -44,6 +47,9 @@ public class IgniteThread extends Thread {
     /** Number of all grid threads in the system. */
     private static final AtomicLong cntr = new AtomicLong();
 
+    /** Meta counter */
+    private static final AtomicInteger metaCntr = new AtomicInteger();
+
     /** The name of the Ignite instance this thread belongs to. */
     protected final String igniteInstanceName;
 
@@ -55,6 +61,33 @@ public class IgniteThread extends Thread {
 
     /** */
     private final byte plc;
+
+    /** */
+    private Object[] meta;
+
+    /**
+     * @return New meta idx.
+     */
+    public static int metaIdx() {
+        return metaCntr.getAndIncrement();
+    }
+
+    public void meta(Object meta, int idx) {
+        if (this.meta == null)
+            this.meta = new Object[Math.max(U.ceilPow2(idx), 16)];
+
+        if (this.meta.length <= idx)
+            this.meta = Arrays.copyOf(this.meta, U.ceilPow2(idx));
+
+        this.meta[idx] = meta;
+    }
+
+    public <T> T meta (int idx) {
+        if (meta == null || meta.length <= idx)
+            return null;
+
+        return (T)meta[idx];
+    }
 
     /**
      * Creates thread with given worker.
