@@ -60,7 +60,7 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
             return mongo.Account.count().exec()
                 .then((cnt) => {
                     user.admin = cnt === 0;
-
+                    user.registered = new Date();
                     user.token = _randomString();
 
                     return new mongo.Account(user);

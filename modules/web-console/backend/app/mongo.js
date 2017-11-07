@@ -47,6 +47,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         email: String,
         company: String,
         country: String,
+        registered: Date,
         lastLogin: Date,
         lastActivity: Date,
         admin: Boolean,
@@ -70,6 +71,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
             country: ret.country,
             admin: ret.admin,
             token: ret.token,
+            registered: ret.registered,
             lastLogin: ret.lastLogin,
             lastActivity: ret.lastActivity
         };
@@ -85,6 +87,7 @@ module.exports.factory = function(passportMongo, settings, pluginMongo, mongoose
         DUPLICATE_KEY_ERROR: 11000,
         DUPLICATE_KEY_UPDATE_ERROR: 11001
     };
+
     // Define Account model.
     result.Account = mongoose.model('Account', AccountSchema);
 
