@@ -163,6 +163,7 @@ module.exports.factory = (_, errors, settings, mongo, spacesService, mailsServic
                             country: 1,
                             lastLogin: 1,
                             lastActivity: 1,
+                            registered: 1,
                             spaces: {
                                 $filter: {
                                     input: '$spaces',

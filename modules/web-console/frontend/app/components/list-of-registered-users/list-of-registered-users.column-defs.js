@@ -56,6 +56,8 @@ export default [
     {name: 'country', displayName: 'Country', categoryDisplayName: 'Country', field: 'countryCode', minWidth: 160, enableFiltering: true, filter: { placeholder: 'Filter by country...' }},
     {name: 'lastlogin', displayName: 'Last login', categoryDisplayName: 'Last login', field: 'lastLogin', cellFilter: 'date:"M/d/yy HH:mm"', minWidth: 135, width: 135, enableFiltering: false, visible: false},
     {name: 'lastactivity', displayName: 'Last activity', categoryDisplayName: 'Last activity', field: 'lastActivity', cellFilter: 'date:"M/d/yy HH:mm"', minWidth: 135, width: 135, enableFiltering: false, visible: true, sort: { direction: 'desc', priority: 0 }},
+    {name: 'registered', displayName: 'Registration date', categoryDisplayName: 'Registration date', field: 'registered', cellFilter: 'date:"M/d/yy HH:mm"', minWidth: 135, width: 135, enableFiltering: false, visible: true, sort: { direction: 'desc', priority: 0 }},
+
     // Configurations
     {name: 'cfg_clusters', displayName: 'Clusters count', categoryDisplayName: 'Configurations', headerCellTemplate: CLUSTER_HEADER_TEMPLATE, field: 'counters.clusters', type: 'number', cellClass: 'ui-grid-number-cell', headerTooltip: 'Clusters count', minWidth: 65, width: 65, enableFiltering: false, visible: false},
     {name: 'cfg_models', displayName: 'Models count', categoryDisplayName: 'Configurations', headerCellTemplate: MODEL_HEADER_TEMPLATE, field: 'counters.models', type: 'number', cellClass: 'ui-grid-number-cell', headerTooltip: 'Models count', minWidth: 65, width: 65, enableFiltering: false, visible: false},
