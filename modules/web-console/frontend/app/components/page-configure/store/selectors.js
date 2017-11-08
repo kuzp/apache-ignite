@@ -22,6 +22,7 @@ import {forkJoin} from 'rxjs/observable/forkJoin';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import 'rxjs/add/operator/mergeMap';
 import {Observable} from 'rxjs/Observable';
+import {defaultNames} from '../defaultNames';
 
 import {default as Caches} from 'app/services/Caches';
 import {default as Clusters} from 'app/services/Clusters';
@@ -105,7 +106,7 @@ export default class ConfigSelectors {
         .let(selectItemToEdit({
             items: state$.let(this.selectCurrentShortCaches),
             itemFactory: () => this.Caches.getBlankCache(),
-            defaultName: 'Cache',
+            defaultName: defaultNames.cache,
             itemID: cacheID
         }));
     selectIGFSToEdit = (itemID) => (state$) => state$
@@ -114,7 +115,7 @@ export default class ConfigSelectors {
         .let(selectItemToEdit({
             items: state$.let(this.selectShortIGFSsValue()),
             itemFactory: () => this.IGFSs.getBlankIGFS(),
-            defaultName: 'IGFS',
+            defaultName: defaultNames.igfs,
             itemID
         }));
     selectModelToEdit = (itemID) => (state$) => state$
@@ -125,10 +126,9 @@ export default class ConfigSelectors {
             itemFactory: () => this.Models.getBlankModel(),
             itemID
         }));
-    selectClusterToEdit = (clusterID, defaultName = 'Cluster') => (state$) => state$
+    selectClusterToEdit = (clusterID, defaultName = defaultNames.cluster) => (state$) => state$
         .let(this.selectCluster(clusterID))
         .distinctUntilChanged()
-        .debug('what')
         .let(selectItemToEdit({
             items: state$.let(this.selectShortClustersValue()),
             itemFactory: () => this.Clusters.getBlankCluster(),
