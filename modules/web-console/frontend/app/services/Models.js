@@ -93,4 +93,16 @@ export default class Models {
             fields: []
         });
     }
+
+    /**
+     * @param {ig.config.model.DomainModel} model
+     * @returns {ig.config.model.ShortDomainModel}
+     */
+    toShortModel(model) {
+        return {
+            _id: model._id,
+            keyType: model.keyType,
+            valueType: model.valueType
+        };
+    }
 }

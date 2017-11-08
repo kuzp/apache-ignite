@@ -139,7 +139,7 @@ export default class ConfigEffects {
                     },
                     {
                         type: shortModelsActionTypes.UPSERT,
-                        items: action.changedItems.models
+                        items: action.changedItems.models.map((m) => this.Models.toShortModel(m))
                     },
                     {
                         type: igfssActionTypes.UPSERT,
