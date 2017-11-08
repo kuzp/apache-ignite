@@ -18,15 +18,15 @@ include /app/helpers/jade/mixins
 
 .list-of-registered-users
     ul.tabs.tabs--blue
-        li(role='presentation' ng-class='{ active: $ctrl.groupBy === "user" }') 
-            a(ng-click='$ctrl.groupByUser()') 
+        li(role='presentation' ng-class='{ active: $ctrl.groupBy === "user" }')
+            a(ng-click='$ctrl.groupByUser()')
                 span Users
                 span.badge.badge--blue(ng-hide='$ctrl.groupBy === "user"')
                     | {{ $ctrl.gridOptions.data.length }}
                 span.badge.badge--blue(ng-show='$ctrl.groupBy === "user"')
                     | {{ $ctrl.filteredRows.length }}
         li(role='presentation' ng-class='{ active: $ctrl.groupBy === "company" }')
-            a(ng-click='$ctrl.groupByCompany()') 
+            a(ng-click='$ctrl.groupByCompany()')
                 span Companies
                 span.badge.badge--blue {{ $ctrl.companies.length }}
         li(role='presentation' ng-class='{ active: $ctrl.groupBy === "country" }')

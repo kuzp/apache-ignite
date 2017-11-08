@@ -24,7 +24,7 @@ export default [
     {name: 'Last login', visible: false, enableHiding: true},
     {name: 'Last activity', visible: true, enableHiding: true},
     {name: 'Configurations', visible: false, enableHiding: true},
-    {name: 'Registration date', visible: true, enableHiding: true},
+    {name: 'Registered', visible: true, enableHiding: true},
     {name: 'Total activities', visible: true, enableHiding: true},
     {name: 'Configuration\'s activities', visible: false, enableHiding: true},
     {name: 'Queries\' activities', visible: false, enableHiding: true}
