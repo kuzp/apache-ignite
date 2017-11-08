@@ -146,7 +146,16 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
     class DomainsService {
         static shortList(userId, demo, clusterId) {
             return spacesService.spaceIds(userId, demo)
-                .then((spaceIds) => mongo.DomainModel.find({space: {$in: spaceIds}, clusters: clusterId }).select('keyType valueType').sort('valueType').lean().exec());
+                .then((spaceIds) => {
+                    return mongo.DomainModel.aggregate([
+                        {$match: {space: {$in: spaceIds}, clusters: clusterId}},
+                        {$project: {
+                            keyType: 1,
+                            valueType: 1,
+                            hasKeyFields: {$gt: [{ $size: '$keyFields' }, 0]}
+                        }}
+                    ]).exec();
+                });
         }
 
         static get(userId, demo, _id) {

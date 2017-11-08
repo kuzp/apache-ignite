@@ -90,7 +90,7 @@ module.exports.factory = (_, mongo, spacesService, errors) => {
     class IgfssService {
         static shortList(userId, demo, clusterId) {
             return spacesService.spaceIds(userId, demo)
-                .then((spaceIds) => mongo.Igfs.find({space: {$in: spaceIds}, clusters: clusterId }).select('name defaultMode affinnityGroupSize').sort('name').lean().exec());
+                .then((spaceIds) => mongo.Igfs.find({space: {$in: spaceIds}, clusters: clusterId }).select('name defaultMode affinnityGroupSize').lean().exec());
         }
 
         static get(userId, demo, _id) {
