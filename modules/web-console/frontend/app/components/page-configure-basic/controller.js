@@ -109,8 +109,8 @@ export default class PageConfigureBasicController {
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
         this.shortClusters$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortClustersValue());
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
-            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id)).debug('clusterToEdit');
-        }).take(1).debug('originalCluster$');
+            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id));
+        }).distinctUntilChanged().publishReplay(1).refCount();
 
         this.subscription = Observable.merge(
             this.shortCaches$.map((caches) => caches.sort((a, b) => naturalCompare(a.name, b.name))).do((v) => this.shortCaches = v),
