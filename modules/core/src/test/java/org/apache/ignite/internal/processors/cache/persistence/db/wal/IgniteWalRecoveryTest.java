@@ -152,8 +152,6 @@ public class IgniteWalRecoveryTest extends GridCommonAbstractTest {
 
         dbCfg.setWalHistorySize(2);
 
-        pCfg.setWalHistorySize(2);
-
         if (logOnly)
             dbCfg.setWalMode(WALMode.LOG_ONLY);
 

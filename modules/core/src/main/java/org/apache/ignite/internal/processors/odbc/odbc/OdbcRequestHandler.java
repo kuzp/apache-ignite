@@ -173,11 +173,6 @@ public class OdbcRequestHandler implements ClientListenerRequestHandler {
         return exceptionToResult(e);
     }
 
-    /** {@inheritDoc} */
-    @Override public void writeHandshake(BinaryWriterExImpl writer) {
-        writer.writeBoolean(true);
-    }
-
     /**
      * Called whenever client is disconnected due to correct connection close
      * or due to {@code IOException} during network operations.
