@@ -13,7 +13,7 @@ import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
 public class TxRunner {
     @SuppressWarnings({"unchecked", "TryFinallyCanBeTryWithResources"})
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder(true);
 
         Ignite node1 = Ignition.start(config("node1", ipFinder));
@@ -29,6 +29,8 @@ public class TxRunner {
                 .setBackups(1);
 
             IgniteCache cache = client.getOrCreateCache(ccfg);
+
+            Thread.sleep(500L);
 
             GridIoManager.print = true;
 
