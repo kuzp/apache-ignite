@@ -22,7 +22,7 @@ include /app/helpers/jade/mixins
 -var valueFields = `${model}.valueFields`
 
 mixin list-db-field-edit({ items, itemName, itemsName })
-    list-editable(ng-model=items)
+    list-editable(ng-model=items)&attributes(attributes)
         list-editable-item-view
             | {{ $parent.item.databaseFieldName }} / {{ $parent.item.databaseFieldType }} / {{ $parent.item.javaFieldName }} / {{ $parent.item.javaFieldType }}
 
@@ -62,7 +62,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
                     +text('Database table:', model + '.databaseTable', '"databaseTable"', 'false', 'Input DB table name', 'Table name in database')
                 .pc-form-grid-col-60
                     mixin domains-store-key-fields
-                        .ignite-form-field(ng-init='keysTbl={type: "table-db-fields", model: "keyFields", focusId: "KeyField", ui: "table-db-fields"}')
+                        .ignite-form-field
                             +ignite-form-field__label('Key fields:', '"keyFields"')
                                 +tooltip(`Collection of key fields descriptions for CacheJdbcPojoStore`)
                             .ignite-form-field__control
@@ -70,7 +70,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
                                     items: keyFields,
                                     itemName: 'key field',
                                     itemsName: 'key fields'
-                                })
+                                })(name='keyFields')
                     +domains-store-key-fields
 
                 .pc-form-grid-col-60
@@ -83,7 +83,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
                                     items: valueFields,
                                     itemName: 'value field',
                                     itemsName: 'value fields'
-                                })
+                                })(name='valueFields')
                     +domains-store-key-fields
 
             .pca-form-column-6
