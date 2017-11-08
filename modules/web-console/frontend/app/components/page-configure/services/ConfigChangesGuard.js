@@ -15,33 +15,41 @@
  * limitations under the License.
  */
 
-import isEqual from 'lodash/isEqual';
 import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
 
 import {Confirm} from 'app/services/Confirm.service';
-// import {diff} from 'jsondiffpatch';
+import {diff} from 'jsondiffpatch';
+import {html} from 'jsondiffpatch/public/build/jsondiffpatch-formatters.js';
+import 'jsondiffpatch/public/formatters-styles/html.css';
 
 export default class ConfigChangesGuard {
-    static $inject = [Confirm.name];
+    static $inject = [Confirm.name, '$sce'];
 
     /**
      * @param {Confirm} Confirm
+     * @param {ng.ISCEService} $sce
      */
-    constructor(Confirm) {
+    constructor(Confirm, $sce) {
         this.Confirm = Confirm;
+        this.$sce = $sce;
     }
 
     _hasChanges(a, b) {
-        // return diff(a, b)
-        return !isEqual(a, b);
+        return diff(a, b);
     }
 
     _confirm(changes) {
-        return this.Confirm.confirm(`
+        return this.Confirm.confirm(this.$sce.trustAsHtml(`
+            <p>
             You have unsaved changes.
             Are you sure you want to discard them?
-        `);
+            </p>
+            <details>
+                <summary>Click here to see changes</summary>
+                <div style='max-height: 400px; overflow: auto;'>${html.format(changes)}</div>                
+            </details>
+        `));
     }
 
     /**
