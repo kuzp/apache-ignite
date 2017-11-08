@@ -58,6 +58,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.management.ObjectName;
 import org.apache.ignite.DataStorageMetrics;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
@@ -1971,6 +1972,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             PageMemoryEx pageMem = (PageMemoryEx)grp.dataRegion().pageMemory();
 
             for (int i = 0; i < grp.affinity().partitions(); i++) {
+                if (!partStates.isEmpty() && i == 28 && grp.cacheOrGroupName().equals("default"))
+                    System.out.println("???");
+
                 if (storeMgr.exists(grpId, i)) {
                     storeMgr.ensure(grpId, i);
 
@@ -2004,15 +2008,25 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 changed = updateState(part, stateId);
 
-                                if (stateId == GridDhtPartitionState.OWNING.ordinal()) {
-                                    grp.offheap().onPartitionInitialCounterUpdated(i, fromWal.get2());
+                                part.updateCounter(fromWal.get2());
+                                part.initialUpdateCounter(fromWal.get2());
 
-                                    if (part.initialUpdateCounter() < fromWal.get2()) {
-                                        part.initialUpdateCounter(fromWal.get2());
+                                grp.offheap().onPartitionCounterUpdated(i, fromWal.get2());
+                                grp.offheap().onPartitionInitialCounterUpdated(i, fromWal.get2());
 
-                                        changed = true;
-                                    }
-                                }
+                                io.setUpdateCounter(pageAddr, fromWal.get2());
+
+                                changed = true;
+
+//                                if (stateId == GridDhtPartitionState.OWNING.ordinal()) {
+//                                    grp.offheap().onPartitionInitialCounterUpdated(i, fromWal.get2());
+//
+//                                    if (part.initialUpdateCounter() < fromWal.get2()) {
+//                                        part.initialUpdateCounter(fromWal.get2());
+//
+//                                        changed = true;
+//                                    }
+//                                }
                             }
                             else
                                 changed = updateState(part, (int)io.getPartitionState(pageAddr));

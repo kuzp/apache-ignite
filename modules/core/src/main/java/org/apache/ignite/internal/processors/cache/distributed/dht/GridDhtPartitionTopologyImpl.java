@@ -29,6 +29,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
@@ -353,9 +354,17 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                 if (first) {
                     assert exchId.isJoined() || added;
 
+                    if (DebugUtils.getFlag("test") && grp.cacheOrGroupName().equals("default") && Thread.currentThread().getName().endsWith("5%"))
+                        System.out.println("???");
+
                     for (int p = 0; p < num; p++) {
                         if (grp.persistenceEnabled() || localNode(p, aff)) {
                             GridDhtLocalPartition locPart = createPartition(p);
+
+                            long cntr = locPart.updateCounter();
+
+                            if (DebugUtils.getFlag("test") && grp.cacheOrGroupName().equals("default") && Thread.currentThread().getName().endsWith("5%") && p == 28)
+                                System.out.println("???");
 
                             boolean owned = locPart.own();
 
@@ -1934,6 +1943,13 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
         try {
             GridDhtLocalPartition locPart = locParts.get(p);
+
+            if (DebugUtils.getFlag("test") && grp.cacheOrGroupName().equals("default") && p == 28) {
+                for (UUID nodeId : owners) {
+                    if (ctx.node(nodeId).consistentId().toString().equals("5"))
+                        System.out.println("???");
+                }
+            }
 
             if (locPart != null) {
                 if (locPart.state() == OWNING && !owners.contains(ctx.localNodeId())) {

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.CacheRebalanceMode;
@@ -593,6 +594,9 @@ public class GridDhtPartitionDemander {
         final UUID id,
         final GridDhtPartitionSupplyMessage supply
     ) {
+        if (DebugUtils.getFlag("test") && Thread.currentThread().getName().endsWith("5%"))
+            System.out.println("???");
+
         AffinityTopologyVersion topVer = supply.topologyVersion();
 
         final RebalanceFuture fut = rebalanceFut;

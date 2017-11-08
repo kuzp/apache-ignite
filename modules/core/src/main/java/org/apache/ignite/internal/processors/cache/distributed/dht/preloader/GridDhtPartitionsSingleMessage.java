@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.GridDirectCollection;
 import org.apache.ignite.internal.GridDirectMap;
@@ -33,6 +34,7 @@ import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.T2;
+import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.plugin.extensions.communication.MessageCollectionItemType;
@@ -195,6 +197,9 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
             partCntrs = new HashMap<>();
 
         partCntrs.put(grpId, cntrMap);
+
+        if (DebugUtils.getFlag("test") && exchangeId() != null && exchangeId().topologyVersion().minorTopologyVersion() == 4 && grpId == CU.cacheId("default")&& Thread.currentThread().getName().endsWith("5%"))
+            System.out.println("???");
     }
 
     /**

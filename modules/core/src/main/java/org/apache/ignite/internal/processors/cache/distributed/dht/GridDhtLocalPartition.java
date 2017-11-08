@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
@@ -523,6 +524,9 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      * @return {@code True} if transitioned to OWNING state.
      */
     boolean own() {
+        if (DebugUtils.getFlag("test"))
+            System.out.println("???");
+
         while (true) {
             long state = this.state.get();
 
@@ -832,6 +836,9 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      * @param val Update index value.
      */
     public void updateCounter(long val) {
+        if (DebugUtils.getFlag("test") && Thread.currentThread().getName().endsWith("5%"))
+            System.out.println("???");
+
         store.updateCounter(val);
     }
 

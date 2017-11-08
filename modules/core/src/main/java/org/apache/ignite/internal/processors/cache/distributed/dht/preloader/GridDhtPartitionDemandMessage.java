@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.GridDirectCollection;
 import org.apache.ignite.internal.GridDirectMap;
@@ -117,6 +118,9 @@ public class GridDhtPartitionDemandMessage extends GridCacheGroupIdMessage {
      * @param p Partition.
      */
     void addPartition(int p, boolean historical) {
+        if (DebugUtils.getFlag("test"))
+            System.out.println("???");
+
         if (parts == null)
             parts = new HashSet<>();
 
