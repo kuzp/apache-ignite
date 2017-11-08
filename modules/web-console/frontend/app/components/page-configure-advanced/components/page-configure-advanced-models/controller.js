@@ -16,6 +16,7 @@
  */
 
 import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs/Observable';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import naturalCompare from 'natural-compare-lite';
 import {merge} from 'rxjs/observable/merge';
@@ -53,6 +54,7 @@ export default class PageConfigureAdvancedModels {
     $onInit() {
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
+        /** @type {Array<uiGrid.IColumnDefOf<ig.config.model.ShortDomainModel>>} */
         this.columnDefs = [
             {
                 name: 'keyType',
@@ -78,9 +80,12 @@ export default class PageConfigureAdvancedModels {
                 minWidth: 165
             }
         ];
+        /** @type {Observable<string>} */
         this.itemID$ = this.$uiRouter.globals.params$.pluck('modelID');
+        /** @type {Observable<ig.config.model.ShortDomainModel>} */
         this.shortItems$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortModels);
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
+        /** @type {Observable<ig.config.model.DomainModel>} */
         this.originalItem$ = this.itemID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectModelToEdit(id));
         })/* .take(1)*/.distinctUntilChanged().publishReplay(1).refCount().debug('model to edit');
