@@ -25,6 +25,7 @@ import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
 import ObjectID from 'bson-objectid';
 import {uniqueName} from 'app/utils/uniqueName';
+import {defaultNames} from '../../defaultNames';
 
 function _mapCaches(caches = []) {
     return caches.map((cache) => {
@@ -78,7 +79,7 @@ export class ModalImportModels {
     loadData() {
         return Observable.of(this.clusterID)
         .switchMap((id = 'new') => {
-            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id, 'Imported cluster'));
+            return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id, defaultNames.importedCluster));
         })
         .switchMap((cluster) => {
             return (!(cluster.caches || []).length && !(cluster.models || []).length)
