@@ -377,7 +377,7 @@ export const refsReducer = (refs) => (state, action) => {
                     .forEach((sourceID) => maybeTarget(target._id)[refs[ref].at].remove.add(sourceID));
                 });
                 [...addedSources.values()].forEach((sourceID) => {
-                    changedSources.get(sourceID)[refs[ref].store].forEach((targetID) => {
+                    (changedSources.get(sourceID)[refs[ref].store] || []).forEach((targetID) => {
                         maybeTarget(targetID)[refs[ref].at].add.add(sourceID);
                     });
                 });
