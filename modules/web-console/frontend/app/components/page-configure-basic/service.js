@@ -108,7 +108,7 @@ export default class PageConfigureBasic {
 
         this.basicSaveOKMessages$ = this.ConfigureState.actions$
             .filter(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
-            .do((action) => this.messages.showInfo(`Cluster ${action.changedItems.cluster.name} saved.`));
+            .do((action) => this.messages.showInfo(`Cluster "${action.changedItems.cluster.name}" saved.`));
 
         Observable.merge(this.basicSaveOKMessages$).subscribe();
         Observable.merge(this.saveClusterAndCaches$).subscribe((a) => ConfigureState.dispatchAction(a));
