@@ -72,6 +72,12 @@ namespace ig.config.model {
         indexes?: Array<Index>,
         generatePojo?: boolean
     }
+
+    export interface ShortDomainModel {
+        _id: string,
+        keyType: string,
+        valueType: string,
+    }
 }
 namespace ig.config.cluster {
     export type DiscoveryKinds = 'Vm'
