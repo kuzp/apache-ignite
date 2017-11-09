@@ -46,7 +46,7 @@ export default class IgniteListOfRegisteredUsersCtrl {
 
         // code for toggling filter dates by "Last Activity/Registered" modes
         $ctrl.filterModes = [
-            { name: 'lastactivity', displayName: 'Last Activity' },
+            { name: 'lastActivity', displayName: 'Last Activity' },
             { name: 'registered', displayName: 'Registered' }
         ];
         $ctrl.currentFilterMode = $ctrl.filterModes[0];
