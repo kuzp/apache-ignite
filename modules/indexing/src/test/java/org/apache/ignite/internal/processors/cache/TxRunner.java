@@ -10,6 +10,7 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.managers.communication.GridIoManager;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
+import org.apache.ignite.transactions.Transaction;
 
 public class TxRunner {
     @SuppressWarnings({"unchecked", "TryFinallyCanBeTryWithResources"})
@@ -34,7 +35,16 @@ public class TxRunner {
 
             GridIoManager.print = true;
 
-            cache.put(1, 2);
+            Transaction tx = client.transactions().txStart();
+
+            try {
+                cache.put(1, 2);
+
+                tx.commit();
+            }
+            finally {
+                tx.close();
+            }
 
             GridIoManager.print = false;
         }
