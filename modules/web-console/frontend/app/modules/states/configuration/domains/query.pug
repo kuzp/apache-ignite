@@ -37,7 +37,7 @@ include /app/helpers/jade/mixins
                     label Not available for annotated types
 
                 .pc-form-grid-col-60(ng-if-start=`${model}.queryMetadata === 'Configuration'`)
-                    +text('Table name:', `${model}.tableName`, '"tableName"', 'false', 'Enter table name', 'Table name for this query entity')
+                    +text('Table name:', `${model}.tableName`, '"tableName"', 'false', 'Enter table name')
 
                 .pc-form-grid-col-30(ng-if-start='$ctrl.available("2.0.0")')
                     +text('Key field name:', `${model}.keyFieldName`, '"keyFieldName"', 'false', 'Enter key field name',
@@ -128,14 +128,10 @@ include /app/helpers/jade/mixins
                                     | + Add alias to query
                     +domains-query-aliases
 
-                .pc-form-grid-col-60(
-                    ng-if-end
-                    ng-init='indexesTbl={type: "table-indexes", model: "indexes", focusId: "IndexName", ui: "table-indexes"}'
-                )
+                .pc-form-grid-col-60(ng-if-end)
                     mixin domains-query-indexes
                         .ignite-form-field
                             +ignite-form-field__label('Indexes:', '"indexes"')
-                                +tooltip(`Collection of indexes`)
                             .ignite-form-field__control
                                 -let items = queryIndexes
 
