@@ -15,8 +15,14 @@
  * limitations under the License.
  */
 
+import isEqual from 'lodash/isEqual';
+import map from 'lodash/map';
 import uniqBy from 'lodash/uniqBy';
 import headerTemplate from 'app/primitives/ui-grid-header/index.tpl.pug';
+
+const visibilityChanged = (a, b) => {
+    return !isEqual(map(a, 'visible'), map(b, 'visible'));
+};
 
 export default function() {
     return {
@@ -24,15 +30,23 @@ export default function() {
         link: {
             pre(scope, el, attr, grid) {
                 if (!grid.grid.options.enableColumnCategories) return;
+                grid.grid.api.core.registerColumnsProcessor((cp) => {
+                    const oldCategories = grid.grid.options.categories;
+                    const newCategories = uniqBy(cp.map(({colDef: cd}) => {
+                        cd.categoryDisplayName = cd.categoryDisplayName || cd.displayName;
+                        return {
+                            name: cd.categoryDisplayName || cd.displayName,
+                            enableHiding: cd.enableHiding,
+                            visible: !!cd.visible
+                        };
+                    }), 'name');
+
+                    if (visibilityChanged(oldCategories, newCategories))
+                        grid.grid.options.categories = newCategories;
+
+                    return cp;
+                });
                 grid.grid.options.headerTemplate = headerTemplate;
-                grid.grid.options.categories = uniqBy(grid.grid.options.columnDefs.map((cd) => {
-                    cd.categoryDisplayName = cd.categoryDisplayName || cd.displayName;
-                    return {
-                        name: cd.categoryDisplayName || cd.displayName,
-                        enableHiding: cd.enableHiding,
-                        visible: cd.visible
-                    };
-                }), 'name');
             }
         }
     };
