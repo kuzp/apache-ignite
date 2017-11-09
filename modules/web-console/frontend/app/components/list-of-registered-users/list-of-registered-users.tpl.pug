@@ -49,8 +49,19 @@ include /app/helpers/jade/mixins
                     svg(ignite-icon='csv')
                 form.ui-grid-settings-dateperiod(name=form novalidate)
                     -var form = 'admin'
-                    +ignite-form-field-datepicker('Period: from', '$ctrl.params.startDate', '"startDate"', null, '$ctrl.params.endDate')
+
+                    +ignite-form-field-datepicker('from', '$ctrl.params.startDate', '"startDate"', null, '$ctrl.params.endDate')
                     +ignite-form-field-datepicker('to', '$ctrl.params.endDate', '"endDate"', '$ctrl.params.startDate', null)
+
+                .btn-ignite.btn-ignite--link-dashed-secondary.filter-dropdown-toggler(
+                    bs-dropdown='$ctrl.filterDropdown'
+                    data-trigger='hover focus'
+                    data-container='self'
+                    ng-class='{"active": $ctrl.isActive }'
+                )
+                    span {{$ctrl.currentFilterMode.displayName}}
+                        i.icon-right.fa.fa-caret-down
+
                 form.ui-grid-settings-filter
                     -var form = 'admin'
                     +ignite-form-field-text('Exclude:', '$ctrl.params.companiesExclude', '"exclude"', false, false, 'Exclude by company name...')

@@ -44,6 +44,19 @@ export default class IgniteListOfRegisteredUsersCtrl {
 
         $ctrl.selected = [];
 
+        // code for toggling filter dates by "Last Activity/Registered" modes
+        $ctrl.filterModes = [
+            { name: 'lastactivity', displayName: 'Last Activity' },
+            { name: 'registered', displayName: 'Registered' }
+        ];
+        $ctrl.currentFilterMode = $ctrl.filterModes[0];
+        $ctrl.filterDropdown = $ctrl.filterModes.map((mode) => ({
+            text: mode.displayName,
+            click: () => {
+                $ctrl.currentFilterMode = mode;
+            }
+        }));
+
         $ctrl.params = {
             startDate: new Date(),
             endDate: new Date()
@@ -212,12 +225,14 @@ export default class IgniteListOfRegisteredUsersCtrl {
 
             const startDate = Date.UTC(sdt.getFullYear(), sdt.getMonth(), 1);
             const endDate = Date.UTC(edt.getFullYear(), edt.getMonth() + 1, 1);
+            const mode = $ctrl.currentFilterMode.name;
 
-            reloadUsers({ startDate, endDate });
+            reloadUsers({ startDate, endDate, mode });
         }, 250);
 
         $scope.$watch(() => $ctrl.params.startDate, filterDates);
         $scope.$watch(() => $ctrl.params.endDate, filterDates);
+        $scope.$watch(() => $ctrl.currentFilterMode.name, filterDates);
     }
 
     adjustHeight(rows) {
