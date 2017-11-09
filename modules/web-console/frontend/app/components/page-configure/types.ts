@@ -78,6 +78,7 @@ namespace ig.config.model {
         _id: string,
         keyType: string,
         valueType: string,
+        hasIndex: boolean
     }
 }
 namespace ig.config.cluster {

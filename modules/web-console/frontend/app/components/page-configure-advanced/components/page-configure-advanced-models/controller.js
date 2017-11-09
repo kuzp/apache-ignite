@@ -22,6 +22,7 @@ import naturalCompare from 'natural-compare-lite';
 import {merge} from 'rxjs/observable/merge';
 import get from 'lodash/get';
 
+import hasIndexTemplate from './hasIndex.template.pug';
 import keyCellTemplate from './keyCell.template.pug';
 import valueCellTemplate from './valueCell.template.pug';
 
@@ -57,6 +58,17 @@ export default class PageConfigureAdvancedModels {
         /** @type {Array<uiGrid.IColumnDefOf<ig.config.model.ShortDomainModel>>} */
         this.columnDefs = [
             {
+                name: 'hasIndex',
+                displayName: 'Indexed',
+                field: 'hasIndex',
+                type: 'boolean',
+                enableFiltering: true,
+                visible: true,
+                multiselectFilterOptions: [{value: true, label: 'Yes'}, {value: false, label: 'No'}],
+                width: 100,
+                cellTemplate: hasIndexTemplate
+            },
+            {
                 name: 'keyType',
                 displayName: 'Key type',
                 field: 'keyType',
@@ -83,7 +95,13 @@ export default class PageConfigureAdvancedModels {
         /** @type {Observable<string>} */
         this.itemID$ = this.$uiRouter.globals.params$.pluck('modelID');
         /** @type {Observable<ig.config.model.ShortDomainModel>} */
-        this.shortItems$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortModels);
+        this.shortItems$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortModels)
+            .do((shortModels = []) => {
+                const value = shortModels.every((m) => m.hasIndex);
+                this.columnDefs[0].visible = !value;
+            })
+            .publishReplay(1)
+            .refCount();
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
         /** @type {Observable<ig.config.model.DomainModel>} */
         this.originalItem$ = this.itemID$.distinctUntilChanged().switchMap((id) => {

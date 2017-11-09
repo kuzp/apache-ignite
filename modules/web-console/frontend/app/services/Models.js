@@ -96,13 +96,23 @@ export default class Models {
 
     /**
      * @param {ig.config.model.DomainModel} model
+     */
+    hasIndex(model) {
+        return model.queryMetadata === 'Configuration'
+            ? !!(model.keyFields && model.keyFields.length)
+            : (!model.generatePojo || !model.databaseSchema && !model.databaseTable);
+    }
+
+    /**
+     * @param {ig.config.model.DomainModel} model
      * @returns {ig.config.model.ShortDomainModel}
      */
     toShortModel(model) {
         return {
             _id: model._id,
             keyType: model.keyType,
-            valueType: model.valueType
+            valueType: model.valueType,
+            hasIndex: this.hasIndex(model)
         };
     }
 }
