@@ -77,7 +77,7 @@ export default class Models {
      * @param {Array<ig.config.model.IndexField>} fields
      */
     addIndexField(fields) {
-        return fields[fields.push({direction: true}) - 1];
+        return fields[fields.push({_id: ObjectID.generate(), direction: true}) - 1];
     }
 
     /**

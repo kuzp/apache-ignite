@@ -40,6 +40,7 @@ namespace ig.config.model {
     }
     type IndexTypes = 'SORTED' | 'FULLTEXT' | 'GEOSPATIAL'
     export interface IndexField {
+        _id: string,
         name?: string,
         direction?: boolean
     }

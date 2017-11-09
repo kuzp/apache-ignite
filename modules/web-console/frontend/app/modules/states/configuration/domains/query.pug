@@ -138,7 +138,7 @@ include /app/helpers/jade/mixins
                                 list-editable(ng-model=items name='queryIndexes')
                                     list-editable-item-view
                                         div {{ $parent.item.name }} [{{ $parent.item.indexType }}]
-                                        div(ng-repeat='field in $parent.item.fields')
+                                        div(ng-repeat='field in $parent.item.fields track by field._id')
                                             span {{ field.name }}
                                             span(ng-if='$parent.$parent.item.indexType == "SORTED"')
                                                 |  / {{ field.direction ? "ASC" : "DESC"}}
