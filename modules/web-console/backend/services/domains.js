@@ -147,12 +147,20 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
         static shortList(userId, demo, clusterId) {
             return spacesService.spaceIds(userId, demo)
                 .then((spaceIds) => {
+                    spaceIds = _.map(spaceIds, (spaceId) => mongo.ObjectId(spaceId));
+
                     return mongo.DomainModel.aggregate([
-                        {$match: {space: {$in: spaceIds}, clusters: clusterId}},
+                        {$match: {space: {$in: spaceIds}, clusters: mongo.ObjectId(clusterId)}},
                         {$project: {
                             keyType: 1,
                             valueType: 1,
-                            hasKeyFields: {$gt: [{ $size: '$keyFields' }, 0]}
+                            hasIndex: {
+                                $or: [
+                                    {queryMetadata: 'Annotations', generatePojo: false},
+                                    {queryMetadata: 'Annotations', generatePojo: true, databaseSchema: '', databaseTable: '' },
+                                    {$gt: [{ $size: '$keyFields' }, 0]}
+                                ]
+                            }
                         }}
                     ]).exec();
                 });
