@@ -154,11 +154,26 @@ module.exports.factory = (_, mongo, spacesService, cachesService, errors) => {
                         {$project: {
                             keyType: 1,
                             valueType: 1,
+                            queryMetadata: 1,
                             hasIndex: {
                                 $or: [
-                                    {queryMetadata: 'Annotations', generatePojo: false},
-                                    {queryMetadata: 'Annotations', generatePojo: true, databaseSchema: '', databaseTable: '' },
-                                    {$gt: [{ $size: '$keyFields' }, 0]}
+                                    {
+                                        $and: [
+                                            {$eq: ['$queryMetadata', 'Annotations']},
+                                            {
+                                                $or: [
+                                                    {$eq: ['$generatePojo', false]},
+                                                    {
+                                                        $and: [
+                                                            {$eq: ['$databaseSchema', '']},
+                                                            {$eq: ['$databaseTable', '']}
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {$gt: [{$size: {$ifNull: ['$keyFields', []]}}, 0]}
                                 ]
                             }
                         }}
