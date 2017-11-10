@@ -219,11 +219,6 @@ public class OdbcRequestHandler implements ClientListenerRequestHandler {
         return qry;
     }
 
-    /** {@inheritDoc} */
-    @Override public void writeHandshake(BinaryWriterExImpl writer) {
-        writer.writeBoolean(true);
-    }
-
     /**
      * {@link OdbcQueryExecuteRequest} command handler.
      *
