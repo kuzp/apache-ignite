@@ -29,9 +29,26 @@ public class TxRunner {
                 .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC)
                 .setBackups(1);
 
-            IgniteCache cache = client.getOrCreateCache(ccfg);
+            final IgniteCache cache = client.getOrCreateCache(ccfg);
 
             Thread.sleep(500L);
+
+//            new Thread(new Runnable() {
+//                @Override public void run() {
+//                    Transaction tx = client.transactions().txStart();
+//
+//                    cache.put(1, 1);
+//
+//                    try {
+//                        Thread.sleep(Integer.MAX_VALUE);
+//                    }
+//                    catch (InterruptedException e) {
+//                        // No-op.
+//                    }
+//                }
+//            }).start();
+//
+//            Thread.sleep(500L);
 
             GridIoManager.print = true;
 
