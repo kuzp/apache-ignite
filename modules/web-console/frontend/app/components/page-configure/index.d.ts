@@ -19,6 +19,8 @@ import {Observable} from 'rxjs/Observable'
 /// <reference path="./types/uirouter.d.ts" />
 
 declare namespace ig {
+    type menu<T> = Array<{value: T, label: string}>
+
     namespace config {
         namespace cluster {
             export type DiscoveryKinds = 'Vm'
@@ -30,6 +32,11 @@ declare namespace ig {
                 | 'SharedFs'
                 | 'ZooKeeper'
                 | 'Kubernetes'
+
+            export type LoadBalancingKinds = 'RoundRobin'
+                | 'Adaptive'
+                | 'WeightedRandom'
+                | 'Custom'
 
             export interface ShortCluster {
                 _id: string,

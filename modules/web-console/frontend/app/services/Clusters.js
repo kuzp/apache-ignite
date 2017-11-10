@@ -29,7 +29,7 @@ const uniqueNameValidator = (defaultName = '') => (a, items = []) => {
 export default class Clusters {
     static $inject = ['$http'];
 
-    /** @type {Array<{value: ig.config.cluster.DiscoveryKinds, label: string}>} */
+    /** @type {ig.menu<ig.config.cluster.DiscoveryKinds>}>} */
     discoveries = [
         {value: 'Vm', label: 'Static IPs'},
         {value: 'Multicast', label: 'Multicast'},
@@ -95,6 +95,10 @@ export default class Clusters {
         return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/caches`);
     }
 
+    /**
+     * @param {string} clusterID
+     * @returns {ng.IPromise<ng.IHttpResponse<{data: Array<ig.config.model.ShortDomainModel>}>>}
+     */
     getClusterModels(clusterID) {
         return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/models`);
     }
@@ -103,6 +107,9 @@ export default class Clusters {
         return this.$http.get(`/api/v1/configuration/clusters/${clusterID}/igfss`);
     }
 
+    /**
+     * @returns {ng.IPromise<ng.IHttpResponse<{data: Array<ig.config.cluster.ShortCluster>}>>}
+     */
     getClustersOverview() {
         return this.$http.get('/api/v1/configuration/clusters/');
     }
@@ -372,6 +379,7 @@ export default class Clusters {
         return cluster.loadBalancingSpi.push(this.makeBlankLoadBalancingSpi());
     }
 
+    /** @type {ig.menu<ig.config.cluster.LoadBalancingKinds>} */
     loadBalancingKinds = [
         {value: 'RoundRobin', label: 'Round-robin'},
         {value: 'Adaptive', label: 'Adaptive'},
