@@ -22,6 +22,9 @@ import 'rxjs/add/operator/sample';
 import clone from 'lodash/clone';
 import {RejectType} from '@uirouter/angularjs';
 
+/**
+ * @param {uirouter.TransitionService} $transitions
+ */
 export default function configSelectionManager($transitions) {
     return ({itemID$, selectedItemRows$, visibleRows$, loadedItems$}) => {
         const abortedTransitions$ = Observable.create((observer) => {

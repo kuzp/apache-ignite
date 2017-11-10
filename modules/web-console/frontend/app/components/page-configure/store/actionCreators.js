@@ -37,7 +37,7 @@ import {
 /**
  * @param {string} clusterID
  * @param {('caches'|'igfss'|'models')} itemType
- * @param {Array<string>} itemsIDs
+ * @param {Array<string>} itemIDs
  * @param {boolean} [save=false]
  * @param {boolean} [confirm=true]
  * @returns {IRemoveClusterItemsAction}

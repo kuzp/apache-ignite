@@ -40,9 +40,14 @@ export default class PageConfigureAdvancedModels {
      * @param {ConfigSelectors} ConfigSelectors
      * @param {ConfigureState} ConfigureState
      * @param {Models} Models
+     * @param {uirouter.UIRouter} $uiRouter
+     * @param {uirouter.StateService} $state
      */
     constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager) {
-        Object.assign(this, {$uiRouter, $state, conf, configSelectionManager});
+        Object.assign(this, {conf});
+        this.$state = $state;
+        this.$uiRouter = $uiRouter;
+        this.configSelectionManager = configSelectionManager;
         this.ConfigSelectors = ConfigSelectors;
         this.ConfigureState = ConfigureState;
         this.Models = Models;
@@ -53,7 +58,9 @@ export default class PageConfigureAdvancedModels {
         this.selectedRows$.complete();
     }
     $onInit() {
+        /** @type {Subject<Array<ig.config.model.ShortDomainModel>>} */
         this.visibleRows$ = new Subject();
+        /** @type {Subject<Array<ig.config.model.ShortDomainModel>>} */
         this.selectedRows$ = new Subject();
         /** @type {Array<uiGrid.IColumnDefOf<ig.config.model.ShortDomainModel>>} */
         this.columnDefs = [
@@ -94,7 +101,7 @@ export default class PageConfigureAdvancedModels {
         ];
         /** @type {Observable<string>} */
         this.itemID$ = this.$uiRouter.globals.params$.pluck('modelID');
-        /** @type {Observable<ig.config.model.ShortDomainModel>} */
+        /** @type {Observable<Array<ig.config.model.ShortDomainModel>>} */
         this.shortItems$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortModels)
             .do((shortModels = []) => {
                 const value = shortModels.every((m) => m.hasIndex);
@@ -143,6 +150,9 @@ export default class PageConfigureAdvancedModels {
     save(model) {
         this.conf.saveAdvanced({model});
     }
+    /**
+     * @param {Array<string>} itemIDs
+     */
     remove(itemIDs) {
         this.ConfigureState.dispatchAction(
             removeClusterItems(this.$uiRouter.globals.params.clusterID, 'models', itemIDs, true, true)
