@@ -116,7 +116,7 @@ import static org.apache.ignite.internal.processors.cache.distributed.dht.preloa
 public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapter
     implements Comparable<GridDhtPartitionsExchangeFuture>, CachePartitionExchangeWorkerTask, IgniteDiagnosticAware {
     /** */
-    public static final String EXCHANGE_LOG = "org.apache.ignite.internal.exchange.time";
+    public static final String EXCHANGE_LOG = "org.apache.ignite.internal.exchange_debug";
 
     /** */
     private static final int RELEASE_FUTURE_DUMP_THRESHOLD =
@@ -961,7 +961,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                 for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
                     GridAffinityAssignmentCache aff = grp.affinity();
 
-                    aff.initialize(initialVersion(), aff.idealAssignment());
+                    aff.initialize(initialVersion(), aff.idealAssignment(), exchLog, "client");
                 }
             }
             else
@@ -2974,7 +2974,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
             grp.affinity().idealAssignment(affAssignment);
 
-            grp.affinity().initialize(initialVersion(), affAssignment);
+            grp.affinity().initialize(initialVersion(), affAssignment, exchLog, "onAllServersLeft");
         }
     }
 

@@ -46,9 +46,9 @@ import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.jetbrains.annotations.Nullable;
-import org.jsr166.ConcurrentHashMap8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE;
 import static org.apache.ignite.IgniteSystemProperties.getInteger;
@@ -179,13 +179,35 @@ public class GridAffinityAssignmentCache {
 
     /**
      * Initializes affinity with given topology version and assignment.
-     *
      * @param topVer Topology version.
      * @param affAssignment Affinity assignment for topology version.
+     * @param log Logger for debug output.
+     * @param debugMsg Debug message.
      */
-    public void initialize(AffinityTopologyVersion topVer, List<List<ClusterNode>> affAssignment) {
+    public void initialize(AffinityTopologyVersion topVer, List<List<ClusterNode>> affAssignment, IgniteLogger log,
+        String debugMsg) {
         assert topVer.compareTo(lastVersion()) >= 0 : "[topVer = " + topVer + ", last=" + lastVersion() + ']';
         assert idealAssignment != null;
+
+        if (log.isInfoEnabled()) {
+            StringBuilder b = new StringBuilder(new StringBuilder().append("Initializing affinity: [cacheOrGrpName=").
+                append(cacheOrGrpName).append(", grpId=").append(grpId).append(", topVer=").append(topVer).
+                append(", lastVer=").append(topVer).append(", debugMsg=").append(debugMsg).append(']').append(System.lineSeparator()));
+
+            for (int i = 0; i < affAssignment.size(); i++) {
+                List<ClusterNode> nodes = affAssignment.get(i);
+
+                b.append("   ").append(i).append('=').append(F.transform(nodes, new IgniteClosure<ClusterNode, String>() {
+                    @Override public String apply(ClusterNode node) {
+                        return "id=" + U.id8(node.id()) + ", order=" + node.order();
+                    }
+                }));
+
+                b.append(System.lineSeparator());
+            }
+
+            log.info(b.toString());
+        }
 
         GridAffinityAssignment assignment = new GridAffinityAssignment(topVer, affAssignment, idealAssignment);
 
@@ -194,8 +216,8 @@ public class GridAffinityAssignmentCache {
 
         for (Map.Entry<AffinityTopologyVersion, AffinityReadyFuture> entry : readyFuts.entrySet()) {
             if (entry.getKey().compareTo(topVer) <= 0) {
-                if (log.isDebugEnabled())
-                    log.debug("Completing topology ready future (initialized affinity) " +
+                if (this.log.isDebugEnabled())
+                    this.log.debug("Completing topology ready future (initialized affinity) " +
                         "[locNodeId=" + ctx.localNodeId() + ", futVer=" + entry.getKey() + ", topVer=" + topVer + ']');
 
                 entry.getValue().onDone(topVer);
@@ -299,7 +321,7 @@ public class GridAffinityAssignmentCache {
         idealAssignment = assignment;
 
         if (locCache)
-            initialize(topVer, assignment);
+            initialize(topVer, assignment, null, null);
 
         return assignment;
     }
@@ -563,14 +585,16 @@ public class GridAffinityAssignmentCache {
 
     /**
      * @param aff Affinity cache.
+     * @param log
+     * @param s
      */
-    public void init(GridAffinityAssignmentCache aff) {
+    public void init(GridAffinityAssignmentCache aff, IgniteLogger log, String debugMsg) {
         assert aff.lastVersion().compareTo(lastVersion()) >= 0;
         assert aff.idealAssignment() != null;
 
         idealAssignment(aff.idealAssignment());
 
-        initialize(aff.lastVersion(), aff.assignments(aff.lastVersion()));
+        initialize(aff.lastVersion(), aff.assignments(aff.lastVersion()), log, debugMsg);
     }
 
     /**
