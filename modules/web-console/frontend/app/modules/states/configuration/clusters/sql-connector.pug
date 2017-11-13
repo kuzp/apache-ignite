@@ -32,11 +32,11 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60
                     +checkbox('Enabled', connectionEnabled, '"SqlConnectorEnabled"', 'Flag indicating whether to configure SQL connector configuration')
                 .pc-form-grid-col-40
-                    +text-enabled('Host:', `${connectionModel}.host`, '"SqlConnectorHost"', connectionEnabled, 'false', 'localhost', 'Host')
+                    +text-enabled('Host:', `${connectionModel}.host`, '"SqlConnectorHost"', connectionEnabled, 'false', 'localhost')
                 .pc-form-grid-col-20
-                    +number('Port:', `${connectionModel}.port`, '"SqlConnectorPort"', connectionEnabled, '10800', '1025', 'Port')
+                    +number('Port:', `${connectionModel}.port`, '"SqlConnectorPort"', connectionEnabled, '10800', '1025')
                 .pc-form-grid-col-20
-                    +number('Port range:', `${connectionModel}.portRange`, '"SqlConnectorPortRange"', connectionEnabled, '100', '0', 'Port range')
+                    +number('Port range:', `${connectionModel}.portRange`, '"SqlConnectorPortRange"', connectionEnabled, '100', '0')
                 .pc-form-grid-col-20
                     +number('Socket send buffer size:', `${connectionModel}.socketSendBufferSize`, '"SqlConnectorSocketSendBufferSize"', connectionEnabled, '0', '0',
                         'Socket send buffer size.<br/>\
@@ -52,6 +52,6 @@ include /app/helpers/jade/mixins
                     +number('Pool size:', `${connectionModel}.threadPoolSize`, '"SqlConnectorThreadPoolSize"', connectionEnabled, 'max(8, availableProcessors)', '1',
                         'Size of thread pool that is in charge of processing SQL requests')
                 .pc-form-grid-col-60
-                    +checkbox-enabled('TCP_NODELAY option', `${connectionModel}.tcpNoDelay`, '"SqlConnectorTcpNoDelay"', connectionEnabled, 'Value for TCP_NODELAY socket option')
+                    +checkbox-enabled('TCP_NODELAY option', `${connectionModel}.tcpNoDelay`, '"SqlConnectorTcpNoDelay"', connectionEnabled)
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterQuery')

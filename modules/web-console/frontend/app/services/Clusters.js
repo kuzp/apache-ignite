@@ -185,6 +185,9 @@ export default class Clusters {
             sqlConnectorConfiguration: {
                 tcpNoDelay: true
             },
+            clientConnectorConfiguration: {
+                tcpNoDelay: true
+            },
             space: void 0,
             discovery: {
                 kind: 'Multicast',
