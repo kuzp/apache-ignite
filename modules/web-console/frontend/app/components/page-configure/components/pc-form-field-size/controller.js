@@ -15,11 +15,23 @@
  * limitations under the License.
  */
 
+/// <reference path="./index.d.ts" />
+
 import get from 'lodash/get';
 
 export default class PCFormFieldSizeController {
+    /** @type {ng.INgModelController} */
+    ngModel;
+    /** @type {number} */
+    min;
+    /** @type {number} */
+    max;
+    /** @type {ng.ICompiledExpression} */
+    onScaleChange;
+
     static $inject = ['$element', '$attrs'];
 
+    /** @type {ig.config.formFieldSize.ISizeTypes} */
     static sizeTypes = {
         bytes: [
             {label: 'Kb', value: 1024},
@@ -33,8 +45,13 @@ export default class PCFormFieldSizeController {
         ]
     };
 
+    /**
+     * @param {JQLite} $element
+     * @param {ng.IAttributes} $attrs
+     */
     constructor($element, $attrs) {
-        Object.assign(this, {$element, $attrs});
+        this.$element = $element;
+        this.$attrs = $attrs;
         this.id = Math.random();
     }
 
@@ -70,17 +87,22 @@ export default class PCFormFieldSizeController {
         if ('min' in changes) this.ngModel.$validate();
     }
 
+    /**
+     * @param {ig.config.formFieldSize.ISizeTypeOption} value
+     */
     set sizeScale(value) {
         this._sizeScale = value;
         if (this.onScaleChange) this.onScaleChange({$event: this.sizeScale});
         if (this.ngModel) this.assignValue(this.ngModel.$viewValue);
-        return this.sizeScale;
     }
 
     get sizeScale() {
         return this._sizeScale;
     }
 
+    /**
+     * @param {number} rawValue
+     */
     assignValue(rawValue) {
         if (!this.sizesMenu) this.setDefaultSizeType();
         return this.value = rawValue
