@@ -53,6 +53,8 @@ export default class PCFormFieldSizeController {
             this.ngModel.$validators.min = (value) => this.ngModel.$isEmpty(value) || value === void 0 || value >= this.min;
         if ('max' in this.$attrs)
             this.ngModel.$validators.max = (value) => this.ngModel.$isEmpty(value) || value === void 0 || value <= this.max;
+
+        this.ngModel.$validators.step = (value) => this.ngModel.$isEmpty(value) || value === void 0 || Math.floor(value) === value;
     }
 
     $onChanges(changes) {

@@ -31,7 +31,6 @@ include /app/helpers/jade/mixins
             placeholder='{{$ctrl.placeholder}}'
             min='{{ $ctrl.min ? $ctrl.min / $ctrl.sizeScale.value : "" }}'
             max='{{ $ctrl.max ? $ctrl.max / $ctrl.sizeScale.value : "" }}'
-            step='1'
             ng-required='$ctrl.required'
             ng-disabled='$ctrl.ngDisabled'
         )
@@ -58,3 +57,5 @@ include /app/helpers/jade/mixins
         | Value is more than allowable maximum: {{ $ctrl.max/$ctrl.sizeScale.value }} {{$ctrl.sizeScale.label}}
     div(ng-message='number')
         | Only numbers allowed
+    div(ng-message='step')
+        | Invalid step
