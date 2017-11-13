@@ -715,7 +715,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 if (exchActions.cacheGroupStopping(aff.groupId()))
                     return;
 
-                aff.clientEventTopologyChange(evts.lastEvent(), evts.topologyVersion());
+                aff.clientEventTopologyChange(evts.lastEvent(), evts.topologyVersion(), exchLog);
             }
         });
 
@@ -961,7 +961,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 IgniteUuid deploymentId = desc.deploymentId();
 
                 if (!deploymentId.equals(deploymentIds.get(aff.groupId()))) {
-                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer);
+                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
 
                     return;
                 }
@@ -995,7 +995,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                     aff.initialize(topVer, cachedAssignment(aff, assignment, affCache), exchLog, "on rebalance finished");
                 }
                 else
-                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer);
+                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
             }
         });
     }
@@ -1015,7 +1015,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 @Override public void applyx(GridAffinityAssignmentCache aff) throws IgniteCheckedException {
                     AffinityTopologyVersion topVer = fut.initialVersion();
 
-                    aff.clientEventTopologyChange(fut.firstEvent(), topVer);
+                    aff.clientEventTopologyChange(fut.firstEvent(), topVer, exchLog);
                 }
             });
         }
