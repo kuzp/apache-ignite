@@ -15,19 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.cache.store;
-
-import org.apache.ignite.cache.CacheAtomicityMode;
-
-import static org.apache.ignite.cache.CacheAtomicityMode.ATOMIC;
-
 /**
- * This class tests that redundant calls of {@link CacheStoreSessionListener#onSessionStart(CacheStoreSession)}
- * and {@link CacheStoreSessionListener#onSessionEnd(CacheStoreSession, boolean)} are not executed.
+ * <!-- Package description. -->
+ * Calculators of splits by continuous features.
  */
-public class CacheStoreListenerRWThroughDisabledAtomicCache extends CacheStoreSessionListenerReadWriteThroughDisabled {
-    /** {@inheritDoc} */
-    @Override protected CacheAtomicityMode atomicityMode() {
-        return ATOMIC;
-    }
-}
+package org.apache.ignite.ml.trees.trainers.columnbased.contsplitcalcs;
