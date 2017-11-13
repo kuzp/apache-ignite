@@ -18,6 +18,7 @@
 package org.apache.ignite.ml.math;
 
 import java.io.Externalizable;
+import org.apache.ignite.ml.math.util.Blas;
 
 /**
  * Data storage support for {@link Matrix}.

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.math;
+package org.apache.ignite.ml.math.util;
 
 import java.math.BigDecimal;
 import org.apache.ignite.ml.math.exceptions.MathArithmeticException;

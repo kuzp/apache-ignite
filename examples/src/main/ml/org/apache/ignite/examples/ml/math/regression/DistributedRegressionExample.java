@@ -22,8 +22,8 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.examples.ml.math.matrix.SparseDistributedMatrixExample;
 import org.apache.ignite.ml.math.StorageConstants;
-import org.apache.ignite.ml.math.Tracer;
 import org.apache.ignite.ml.math.impls.matrix.SparseDistributedMatrix;
+import org.apache.ignite.ml.math.util.Tracer;
 import org.apache.ignite.ml.regressions.OLSMultipleLinearRegression;
 import org.apache.ignite.thread.IgniteThread;
 

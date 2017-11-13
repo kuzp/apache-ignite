@@ -15,28 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.math;
+package org.apache.ignite.ml.nn.graph.operation;
 
-import java.util.Map;
-import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
-import org.apache.ignite.ml.math.impls.vector.MapWrapperVector;
+import org.apache.ignite.ml.math.Matrix;
+import org.apache.ignite.ml.math.Tensor;
+import org.apache.ignite.ml.nn.graph.Operator;
 
 /**
- * Some utils for {@link Vector}.
+ * TODO: add description.
  */
-public class VectorUtils {
-    /** Create new vector like given vector initialized by zeroes. */
-    public static Vector zeroesLike(Vector v) {
-        return v.like(v.size()).assign(0.0);
-    }
+public class MatricesAddition<T extends Matrix> implements Operator<T> {
+    /** {@inheritDoc} */
+    @Override public T apply(Tensor... t) {
+        assert t.length == 2;
 
-    /** Create new */
-    public static DenseLocalOnHeapVector zeroes(int n) {
-        return (DenseLocalOnHeapVector)new DenseLocalOnHeapVector(n).assign(0.0);
-    }
+        Matrix left = (Matrix)t[0];
+        Matrix right = (Matrix)t[1];
 
-    /** */
-    public static Vector fromMap(Map<Integer, Double> val, boolean cp) {
-        return new MapWrapperVector(val);
+        return (T)left.plus(right);
     }
 }

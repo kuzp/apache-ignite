@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.math;
+package org.apache.ignite.ml.math.util;
 
 import com.github.fommil.netlib.BLAS;
 import com.github.fommil.netlib.F2jBLAS;
 import java.util.Set;
+import org.apache.ignite.ml.math.Matrix;
+import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.math.exceptions.CardinalityException;
 import org.apache.ignite.ml.math.exceptions.MathIllegalArgumentException;
 import org.apache.ignite.ml.math.exceptions.NonSquareMatrixException;
@@ -33,7 +35,6 @@ import org.apache.ignite.ml.math.impls.vector.DenseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.apache.ignite.ml.math.impls.vector.SparseLocalOffHeapVector;
 import org.apache.ignite.ml.math.impls.vector.SparseLocalVector;
-import org.apache.ignite.ml.math.util.MatrixUtil;
 
 /**
  * Useful subset of BLAS operations.

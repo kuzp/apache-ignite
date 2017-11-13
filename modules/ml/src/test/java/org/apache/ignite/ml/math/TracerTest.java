@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.apache.ignite.ml.math.impls.MathTestConstants;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
+import org.apache.ignite.ml.math.util.Tracer;
 import org.junit.Ignore;
 import org.junit.Test;
 

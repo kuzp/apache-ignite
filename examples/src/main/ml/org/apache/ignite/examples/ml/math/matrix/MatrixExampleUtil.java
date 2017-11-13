@@ -18,7 +18,7 @@
 package org.apache.ignite.examples.ml.math.matrix;
 
 import org.apache.ignite.ml.math.Matrix;
-import org.apache.ignite.ml.math.Tracer;
+import org.apache.ignite.ml.math.util.Tracer;
 
 /**
  * Utility functions for {@link Matrix} API examples.

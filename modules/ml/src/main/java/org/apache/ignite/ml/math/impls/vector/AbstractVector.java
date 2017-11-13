@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.IntToDoubleFunction;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.ml.math.Matrix;
+import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.math.VectorStorage;
 import org.apache.ignite.ml.math.exceptions.CardinalityException;
@@ -51,6 +52,9 @@ import org.jetbrains.annotations.NotNull;
 public abstract class AbstractVector implements Vector {
     /** Vector storage implementation. */
     private VectorStorage sto;
+
+    /** Cached tensor shape. */
+    private int[] shape;
 
     /** Meta attribute storage. */
     private Map<String, Object> meta = new HashMap<>();
@@ -94,6 +98,8 @@ public abstract class AbstractVector implements Vector {
 
         this.readOnly = readOnly;
         this.sto = sto;
+
+        shape = new int[] {sto.size()};
     }
 
     /**
@@ -878,6 +884,25 @@ public abstract class AbstractVector implements Vector {
         meta = (Map<String, Object>)in.readObject();
         guid = (IgniteUuid)in.readObject();
         readOnly = in.readBoolean();
+
+        shape = new int[] {sto.size()};
+    }
+
+    /** {@inheritDoc} */
+    @Override public int[] shape() {
+        return shape;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorFold(Tensor tensor) {
+        // TODO: IGNITE-6884 - implement.
+        throw new UnsupportedOperationException();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorProduct(Tensor tensor) {
+        // TODO: IGNITE-6884 - implement.
+        throw new UnsupportedOperationException();
     }
 
     /** {@inheritDoc} */

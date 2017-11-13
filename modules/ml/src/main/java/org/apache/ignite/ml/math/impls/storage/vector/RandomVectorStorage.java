@@ -22,9 +22,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.nio.ByteBuffer;
 import java.util.Random;
-import org.apache.ignite.ml.math.MurmurHash;
 import org.apache.ignite.ml.math.VectorStorage;
 import org.apache.ignite.ml.math.exceptions.UnsupportedOperationException;
+import org.apache.ignite.ml.math.util.MurmurHash;
 
 /**
  * {@link VectorStorage} implementation with random values in the vector elements.

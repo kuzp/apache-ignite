@@ -23,6 +23,7 @@ import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.matrix.SparseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.apache.ignite.ml.math.impls.vector.SparseLocalVector;
+import org.apache.ignite.ml.math.util.Blas;
 import org.junit.Assert;
 import org.junit.Test;
 

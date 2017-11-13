@@ -43,7 +43,7 @@ import org.apache.ignite.ml.math.functions.IntIntToDoubleFunction;
  * <p>
  * Based on ideas from <a href="http://mahout.apache.org/">Apache Mahout</a>.</p>
  */
-public interface Matrix extends MetaAttributes, Externalizable, StorageOpsMetrics, Destroyable {
+public interface Matrix extends MetaAttributes, Externalizable, StorageOpsMetrics, Destroyable, Tensor {
     /**
      * Holder for matrix's element.
      */

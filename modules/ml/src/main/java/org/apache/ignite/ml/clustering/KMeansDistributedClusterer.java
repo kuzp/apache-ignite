@@ -26,10 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import org.apache.ignite.lang.IgniteBiTuple;
-import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.ml.math.DistanceMeasure;
 import org.apache.ignite.ml.math.Vector;
-import org.apache.ignite.ml.math.VectorUtils;
 import org.apache.ignite.ml.math.distributed.CacheUtils;
 import org.apache.ignite.ml.math.distributed.keys.impl.SparseMatrixKey;
 import org.apache.ignite.ml.math.exceptions.ConvergenceException;
@@ -41,6 +39,7 @@ import org.apache.ignite.ml.math.impls.matrix.SparseDistributedMatrix;
 import org.apache.ignite.ml.math.impls.storage.matrix.SparseDistributedMatrixStorage;
 import org.apache.ignite.ml.math.util.MapUtil;
 import org.apache.ignite.ml.math.util.MatrixUtil;
+import org.apache.ignite.ml.math.util.VectorUtils;
 
 import static org.apache.ignite.ml.math.distributed.CacheUtils.distributedFold;
 import static org.apache.ignite.ml.math.util.MatrixUtil.localCopyOf;

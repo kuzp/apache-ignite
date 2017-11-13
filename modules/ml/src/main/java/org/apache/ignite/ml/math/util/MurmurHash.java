@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.math;
+package org.apache.ignite.ml.math.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

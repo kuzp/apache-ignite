@@ -17,10 +17,10 @@
 
 package org.apache.ignite.examples.ml.math.decompositions;
 
-import org.apache.ignite.ml.math.Tracer;
 import org.apache.ignite.ml.math.decompositions.EigenDecomposition;
 import org.apache.ignite.ml.math.functions.Functions;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
+import org.apache.ignite.ml.math.util.Tracer;
 
 /**
  * Example of using {@link EigenDecomposition}.

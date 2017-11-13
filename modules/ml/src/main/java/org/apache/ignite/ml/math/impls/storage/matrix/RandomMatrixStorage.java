@@ -22,9 +22,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.nio.ByteBuffer;
 import org.apache.ignite.ml.math.MatrixStorage;
-import org.apache.ignite.ml.math.MurmurHash;
 import org.apache.ignite.ml.math.StorageConstants;
 import org.apache.ignite.ml.math.exceptions.UnsupportedOperationException;
+import org.apache.ignite.ml.math.util.MurmurHash;
 
 /**
  * {@link MatrixStorage} implementation with random values in the matrix elements.

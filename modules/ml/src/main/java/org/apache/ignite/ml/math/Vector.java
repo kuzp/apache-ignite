@@ -42,7 +42,7 @@ import org.apache.ignite.ml.math.functions.IgniteIntDoubleToDoubleBiFunction;
  *
  * Based on ideas from <a href="http://mahout.apache.org/">Apache Mahout</a>.
  */
-public interface Vector extends MetaAttributes, Externalizable, StorageOpsMetrics, Destroyable {
+public interface Vector extends MetaAttributes, Externalizable, StorageOpsMetrics, Destroyable, Tensor {
     /**
      * Holder for vector's element.
      */

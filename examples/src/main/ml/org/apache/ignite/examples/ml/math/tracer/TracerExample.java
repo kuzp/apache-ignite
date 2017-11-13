@@ -19,8 +19,8 @@ package org.apache.ignite.examples.ml.math.tracer;
 
 import java.awt.Color;
 import java.io.IOException;
-import org.apache.ignite.ml.math.Tracer;
 import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
+import org.apache.ignite.ml.math.util.Tracer;
 
 /**
  * Example of using {@link Tracer} utility API.

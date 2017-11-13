@@ -24,7 +24,7 @@ CERN makes no representations about the suitability of this software for any pur
 It is provided "as is" without expressed or implied warranty.
 */
 
-package org.apache.ignite.ml.math;
+package org.apache.ignite.ml.math.util;
 
 /**
  * Math constants. Lifted from Apache Mahout.

@@ -15,18 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.math;
-
-import org.apache.ignite.ml.math.exceptions.NullArgumentException;
+package org.apache.ignite.ml.nn.graph;
 
 /**
- * Miscellaneous utility functions.
+ * TODO: add description.
  */
-public final class MathUtils {
-    /** */
-    public static void checkNotNull(Object o)
-        throws NullArgumentException {
-        if (o == null)
-            throw new NullArgumentException();
-    }
+public class Node {
 }

@@ -19,8 +19,8 @@ package org.apache.ignite.ml;
 
 import java.util.stream.IntStream;
 import org.apache.ignite.ml.math.Matrix;
-import org.apache.ignite.ml.math.Precision;
 import org.apache.ignite.ml.math.Vector;
+import org.apache.ignite.ml.math.util.Precision;
 import org.junit.Assert;
 
 import static org.junit.Assert.assertTrue;

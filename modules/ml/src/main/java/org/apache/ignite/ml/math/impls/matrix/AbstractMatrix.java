@@ -27,14 +27,15 @@ import java.util.Random;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import org.apache.ignite.lang.IgniteUuid;
-import org.apache.ignite.ml.math.Blas;
 import org.apache.ignite.ml.math.Matrix;
 import org.apache.ignite.ml.math.MatrixStorage;
+import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.math.decompositions.LUDecomposition;
 import org.apache.ignite.ml.math.exceptions.CardinalityException;
 import org.apache.ignite.ml.math.exceptions.ColumnIndexException;
 import org.apache.ignite.ml.math.exceptions.RowIndexException;
+import org.apache.ignite.ml.math.exceptions.UnsupportedOperationException;
 import org.apache.ignite.ml.math.functions.Functions;
 import org.apache.ignite.ml.math.functions.IgniteBiFunction;
 import org.apache.ignite.ml.math.functions.IgniteDoubleFunction;
@@ -43,6 +44,7 @@ import org.apache.ignite.ml.math.functions.IgniteTriFunction;
 import org.apache.ignite.ml.math.functions.IntIntToDoubleFunction;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.apache.ignite.ml.math.impls.vector.MatrixVectorView;
+import org.apache.ignite.ml.math.util.Blas;
 
 /**
  * This class provides a helper implementation of the {@link Matrix}
@@ -60,6 +62,8 @@ public abstract class AbstractMatrix implements Matrix {
     private static final int MAX_SAMPLES = 500;
     /** */
     private static final int MIN_SAMPLES = 15;
+    /** */
+    private int[] shape;
 
     /** Cached minimum element. */
     private Element minElm;
@@ -80,6 +84,8 @@ public abstract class AbstractMatrix implements Matrix {
      */
     public AbstractMatrix(MatrixStorage sto) {
         this.sto = sto;
+
+        shape = new int[] {sto.rowSize(), sto.columnSize()};
     }
 
     /**
@@ -326,6 +332,8 @@ public abstract class AbstractMatrix implements Matrix {
         sto = (MatrixStorage)in.readObject();
         meta = (Map<String, Object>)in.readObject();
         guid = (IgniteUuid)in.readObject();
+
+        shape = new int[] {sto.rowSize(), sto.columnSize()};
     }
 
     /** {@inheritDoc} */
@@ -927,6 +935,23 @@ public abstract class AbstractMatrix implements Matrix {
     }
 
     /** {@inheritDoc} */
+    @Override public int[] shape() {
+        return shape;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorFold(Tensor tensor) {
+        // TODO: IGNITE-6884 - implement.
+        throw new UnsupportedOperationException();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorProduct(Tensor tensor) {
+        // TODO: IGNITE-6884 - implement.
+        throw new UnsupportedOperationException();
+    }
+
+    /** {@inheritDoc} */
     @Override public void destroy() {
         getStorage().destroy();
     }
@@ -938,6 +963,11 @@ public abstract class AbstractMatrix implements Matrix {
         cp.assign(this);
 
         return cp;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void compute(int row, int col, IgniteTriFunction<Integer, Integer, Double, Double> f) {
+        setX(row, col, f.apply(row, col, getX(row, col)));
     }
 
     /** {@inheritDoc} */
@@ -968,10 +998,5 @@ public abstract class AbstractMatrix implements Matrix {
         MatrixStorage sto = getStorage();
 
         return (sto != null ? sto.equals(that.getStorage()) : that.getStorage() == null);
-    }
-
-    /** {@inheritDoc} */
-    @Override public void compute(int row, int col, IgniteTriFunction<Integer, Integer, Double, Double> f) {
-        setX(row, col, f.apply(row, col, getX(row, col)));
     }
 }
