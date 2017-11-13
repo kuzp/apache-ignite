@@ -184,12 +184,12 @@ public class GridAffinityAssignmentCache {
      * @param log Logger for debug output.
      * @param debugMsg Debug message.
      */
-    public void initialize(AffinityTopologyVersion topVer, List<List<ClusterNode>> affAssignment, IgniteLogger log,
-        String debugMsg) {
+    public void initialize(AffinityTopologyVersion topVer, List<List<ClusterNode>> affAssignment, @Nullable IgniteLogger log,
+        @Nullable String debugMsg) {
         assert topVer.compareTo(lastVersion()) >= 0 : "[topVer = " + topVer + ", last=" + lastVersion() + ']';
         assert idealAssignment != null;
 
-        if (log.isInfoEnabled()) {
+        if (log != null && log.isInfoEnabled()) {
             StringBuilder b = new StringBuilder(new StringBuilder().append("Initializing affinity: [cacheOrGrpName=").
                 append(cacheOrGrpName).append(", grpId=").append(grpId).append(", topVer=").append(topVer).
                 append(", lastVer=").append(topVer).append(", debugMsg=").append(debugMsg).append(']').append(System.lineSeparator()));
@@ -585,8 +585,8 @@ public class GridAffinityAssignmentCache {
 
     /**
      * @param aff Affinity cache.
-     * @param log
-     * @param s
+     * @param log Logger.
+     * @param debugMsg Debug msg.
      */
     public void init(GridAffinityAssignmentCache aff, IgniteLogger log, String debugMsg) {
         assert aff.lastVersion().compareTo(lastVersion()) >= 0;
