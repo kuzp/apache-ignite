@@ -86,6 +86,7 @@ import org.apache.ignite.internal.processors.query.schema.message.SchemaOperatio
 import org.apache.ignite.internal.processors.query.schema.message.SchemaProposeDiscoveryMessage;
 import org.apache.ignite.internal.processors.query.schema.operation.SchemaAbstractOperation;
 import org.apache.ignite.internal.processors.query.schema.operation.SchemaAlterTableAddColumnOperation;
+import org.apache.ignite.internal.processors.query.schema.operation.SchemaAlterTableDropColumnOperation;
 import org.apache.ignite.internal.processors.query.schema.operation.SchemaIndexCreateOperation;
 import org.apache.ignite.internal.processors.query.schema.operation.SchemaIndexDropOperation;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutProcessor;
@@ -1341,6 +1342,16 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 idx.dynamicAddColumn(op0.schemaName(), op0.tableName(), op0.columns(), op0.ifTableExists(),
                     op0.ifNotExists());
             }
+            else if (op instanceof SchemaAlterTableDropColumnOperation) {
+                SchemaAlterTableDropColumnOperation op0 = (SchemaAlterTableDropColumnOperation)op;
+
+                SchemaIndexCacheVisitor visitor =
+                    new SchemaIndexCacheVisitorImpl(this, cache.context(), cacheName, op0.tableName(), cancelTok);
+
+                processDynamicDropColumn();
+
+                idx.dynamicDropColumn();
+            }
             else
                 throw new SchemaOperationException("Unsupported operation: " + op);
         }
@@ -2197,6 +2208,24 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
         SchemaAlterTableAddColumnOperation op = new SchemaAlterTableAddColumnOperation(UUID.randomUUID(), cacheName,
             schemaName, tblName, cols, ifTblExists, ifNotExists);
+
+        return startIndexOperationDistributed(op);
+    }
+
+    /**
+     * Entry point for drop column procedure.
+     *
+     * @param schemaName Schema name.
+     * @param tblName Target table name.
+     * @param cols Columns to drop.
+     * @param ifTblExists Ignore operation if target table doesn't exist.
+     * @param ifExists Ignore operation if column does not exist.
+     */
+    public IgniteInternalFuture<?> dynamicColumnRemove(String cacheName, String schemaName, String tblName,
+        List<QueryField> cols, boolean ifTblExists, boolean ifExists) {
+
+        SchemaAlterTableDropColumnOperation op = new SchemaAlterTableDropColumnOperation(UUID.randomUUID(), cacheName,
+            schemaName, tblName, cols, ifTblExists, ifExists);
 
         return startIndexOperationDistributed(op);
     }

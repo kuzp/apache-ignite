@@ -43,6 +43,7 @@ import org.apache.ignite.internal.processors.query.QueryUtils;
 import org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Table;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlAlterTableAddColumn;
+import org.apache.ignite.internal.processors.query.h2.sql.GridSqlAlterTableDropColumn;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlColumn;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlCreateIndex;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlCreateTable;
@@ -342,6 +343,57 @@ public class DdlStatementsProcessor {
 
                         fut = ctx.query().dynamicColumnAdd(tbl.cacheName(), cmd.schemaName(),
                             tbl.rowDescriptor().type().tableName(), cols, cmd.ifTableExists(), cmd.ifNotExists());
+                    }
+                }
+            }
+            else if (stmt0 instanceof GridSqlAlterTableDropColumn) {
+                GridSqlAlterTableDropColumn cmd = (GridSqlAlterTableDropColumn)stmt0;
+
+                GridH2Table tbl = idx.dataTable(cmd.schemaName(), cmd.tableName());
+
+                if (tbl == null && cmd.ifTableExists()) {
+                    ctx.cache().createMissingQueryCaches();
+
+                    tbl = idx.dataTable(cmd.schemaName(), cmd.tableName());
+                }
+
+                if (tbl == null) {
+                    if (!cmd.ifTableExists())
+                        throw new SchemaOperationException(SchemaOperationException.CODE_TABLE_NOT_FOUND,
+                            cmd.tableName());
+                }
+                else {
+                    if (QueryUtils.isSqlType(tbl.rowDescriptor().type().valueClass()))
+                        throw new SchemaOperationException("Cannot drop column(s) because table was created " +
+                            "with " + PARAM_WRAP_VALUE + "=false option.");
+
+                    List<QueryField> cols = new ArrayList<>(cmd.columns().length);
+
+                    for (GridSqlColumn col : cmd.columns()) {
+                        if (!tbl.doesColumnExist(col.columnName())) {
+                            if ((!cmd.ifExists() || cmd.columns().length != 1)) {
+                                throw new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
+                                    col.columnName());
+                            }
+                            else {
+                                cols = null;
+
+                                break;
+                            }
+                        }
+
+                        QueryField field = new QueryField(col.columnName(),
+                            DataType.getTypeClassName(col.column().getType()),
+                            col.column().isNullable());
+
+                        cols.add(field);
+                    }
+
+                    if (cols != null) {
+                        assert tbl.rowDescriptor() != null;
+
+                        fut = ctx.query().dynamicColumnRemove(tbl.cacheName(), cmd.schemaName(),
+                            tbl.rowDescriptor().type().tableName(), cols, cmd.ifTableExists(), cmd.ifExists());
                     }
                 }
             }
