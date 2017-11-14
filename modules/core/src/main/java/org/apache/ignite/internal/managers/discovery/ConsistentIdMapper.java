@@ -48,16 +48,15 @@ public class ConsistentIdMapper {
      *
      * @param topVer Topology version.
      * @param nodeId UUID of node.
-     * @param baselineTop Baseline topology.
      * @return Compact ID of node for given baseline topology.
      */
-    public short mapToCompactId(AffinityTopologyVersion topVer, UUID nodeId, BaselineTopology baselineTop) {
-        ClusterNode node = discoveryMgr.node(topVer, nodeId);
+    public short mapToCompactId(AffinityTopologyVersion topVer, UUID nodeId) {
+        Short constId = discoveryMgr.consistentId(topVer, nodeId);
 
-        if (node == null)
-            throw new IllegalStateException("Unable to find node by UUID [nodeId=" + nodeId + ", topVer=" + topVer + ']');
+        if (constId == null)
+            throw new IllegalStateException("Unable to find consistentId by UUID [nodeId=" + nodeId + ", topVer=" + topVer + ']');
 
-        return baselineTop.consistentIdMapping().get(node.consistentId());
+        return constId;
     }
 
     /**
@@ -84,9 +83,9 @@ public class ConsistentIdMapper {
             Collection<Short> backups = new ArrayList<>(backupNodes.size());
 
             for (UUID backup : backupNodes)
-                backups.add(mapToCompactId(topVer, backup, baselineTop));
+                backups.add(mapToCompactId(topVer, backup));
 
-            consistentMap.put(mapToCompactId(topVer, node, baselineTop), backups);
+            consistentMap.put(mapToCompactId(topVer, node), backups);
         }
 
         return consistentMap;

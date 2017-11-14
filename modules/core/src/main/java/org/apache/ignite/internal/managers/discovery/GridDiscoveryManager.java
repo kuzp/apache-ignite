@@ -81,7 +81,6 @@ import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMess
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
 import org.apache.ignite.internal.processors.cluster.GridClusterStateProcessor;
-import org.apache.ignite.internal.processors.cluster.GridClusterStateProcessorImpl;
 import org.apache.ignite.internal.processors.jobmetrics.GridJobMetrics;
 import org.apache.ignite.internal.processors.security.SecurityContext;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutProcessor;
@@ -1830,6 +1829,19 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
      */
     public ClusterNode node(AffinityTopologyVersion topVer, UUID id) {
         return resolveDiscoCache(CU.cacheId(null), topVer).node(id);
+    }
+
+    /**
+     * Gets consistentId from history for given topology version.
+     *
+     * @param topVer Topology version.
+     * @param id Node ID.
+     * @return Compacted consistent id.
+     */
+    public Short consistentId(AffinityTopologyVersion topVer, UUID id) {
+        Map<UUID, Short> consistentIdMap = resolveDiscoCache(CU.cacheId(null), topVer).consistentIdMap();
+
+        return consistentIdMap == null ? null : consistentIdMap.get(id);
     }
 
     /**
