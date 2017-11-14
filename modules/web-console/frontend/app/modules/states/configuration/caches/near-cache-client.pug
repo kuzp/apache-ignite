@@ -29,22 +29,21 @@ include /app/helpers/jade/mixins
             | Should be used in case when it is impossible to send computations to remote nodes.
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
-            .pca-form-column-6
+            .pca-form-column-6.pc-form-grid-row
                 -var nearCfg = `${model}.clientNearConfiguration`
                 -var enabled = `${nearCfg}.enabled`
 
-                .settings-row
+                .pc-form-grid-col-60
                     +checkbox('Enabled', enabled, '"clientNearEnabled"', 'Flag indicating whether to configure near cache')
-                .settings-row
+                .pc-form-grid-col-60
                     +number('Start size:', `${nearCfg}.nearStartSize`, '"clientNearStartSize"', enabled, '375000', '0',
                         'Initial cache size for near cache which will be used to pre-create internal hash table after start')
-                .settings-row
-                    +evictionPolicy(`${nearCfg}.nearEvictionPolicy`, '"clientNearCacheEvictionPolicy"', enabled, 'false',
-                        'Near cache eviction policy\
-                        <ul>\
-                            <li>Least Recently Used (LRU) - Eviction policy based on LRU algorithm and supports batch eviction</li>\
-                            <li>First In First Out (FIFO) - Eviction policy based on FIFO algorithm and supports batch eviction</li>\
-                            <li>SORTED - Eviction policy which will select the minimum cache entry for eviction</li>\
-                        </ul>')
+                +evictionPolicy(`${nearCfg}.nearEvictionPolicy`, '"clientNearCacheEvictionPolicy"', enabled, 'false',
+                    'Near cache eviction policy\
+                    <ul>\
+                        <li>Least Recently Used (LRU) - Eviction policy based on LRU algorithm and supports batch eviction</li>\
+                        <li>First In First Out (FIFO) - Eviction policy based on FIFO algorithm and supports batch eviction</li>\
+                        <li>SORTED - Eviction policy which will select the minimum cache entry for eviction</li>\
+                    </ul>')
             .pca-form-column-6
                 +preview-xml-java(model, 'cacheNearClient')
