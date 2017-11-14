@@ -19,6 +19,8 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class CacheEditFormController {
+    /** @type {ig.menu<string>} */
+    modelsMenu;
     static $inject = ['IgniteConfirm', 'IgniteVersion', '$scope', 'Caches', 'IgniteFormUtils'];
     constructor(IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils) {
         Object.assign(this, {IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils});

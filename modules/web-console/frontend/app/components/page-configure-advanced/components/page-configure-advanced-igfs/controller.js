@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import naturalCompare from 'natural-compare-lite';
@@ -37,6 +38,8 @@ export default class PageConfigureAdvancedIGFS {
     $onInit() {
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
+
+        /** @type {Array<uiGrid.IColumnDefOf<ig.config.igfs.ShortIGFS>>} */
         this.columnDefs = [
             {
                 name: 'name',
@@ -66,6 +69,8 @@ export default class PageConfigureAdvancedIGFS {
             }
         ];
         this.itemID$ = this.$uiRouter.globals.params$.pluck('igfsID');
+
+        /** @type {Observable<ig.config.igfs.ShortIGFS>} */
         this.shortItems$ = this.ConfigureState.state$
             .let(this.ConfigSelectors.selectCurrentShortIGFSs)
             .map((items = []) => items.map((i) => ({

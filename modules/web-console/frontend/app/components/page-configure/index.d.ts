@@ -123,6 +123,15 @@ declare namespace ig {
                 hasIndex: boolean
             }
         }
+        namespace igfs {
+            type DefaultModes = 'PRIMARY' | 'PROXY' | 'DUAL_SYNC' | 'DUAL_ASYNC'
+            export interface ShortIGFS {
+                _id: string,
+                name: string,
+                defaultMode: DefaultModes,
+                affinnityGroupSize: number
+            }
+        }
     }
 }
 
