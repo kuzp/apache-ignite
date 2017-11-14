@@ -22,6 +22,16 @@ declare namespace ig {
     type menu<T> = Array<{value: T, label: string}>
 
     namespace config {
+        namespace formFieldSize {
+            interface ISizeTypeOption {
+                label: string,
+                value: number
+            }
+            type ISizeType = Array<ISizeTypeOption>
+            interface ISizeTypes {
+                [name: string]: ISizeType
+            }
+        }
         namespace cluster {
             export type DiscoveryKinds = 'Vm'
                 | 'Multicast'

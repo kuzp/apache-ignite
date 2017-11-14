@@ -16,46 +16,40 @@
  */
 
 import get from 'lodash/get';
+import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/merge';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import {merge} from 'rxjs/observable/merge';
 import 'rxjs/add/operator/distinctUntilChanged';
-// import {selectEditCluster, selectEditClusterItems} from 'app/components/page-configure/reducer';
+import {default as ConfigureState} from './services/ConfigureState';
+import {default as ConfigSelectors} from './store/selectors';
 
 export default class PageConfigureController {
-    static $inject = ['$uiRouter', 'ConfigureState', 'IgniteLoading', 'conf', 'ConfigSelectors'];
+    static $inject = ['$uiRouter', 'ConfigureState', 'conf', 'ConfigSelectors'];
 
-    constructor($uiRouter, ConfigureState, IgniteLoading, conf, ConfigSelectors) {
-        Object.assign(this, {$uiRouter, ConfigureState, IgniteLoading, conf, ConfigSelectors});
+    /**
+     * @param {uirouter.UIRouter} $uiRouter
+     * @param {ConfigureState} ConfigureState
+     * @param {ConfigSelectors} ConfigSelectors
+     */
+    constructor($uiRouter, ConfigureState, conf, ConfigSelectors) {
+        this.$uiRouter = $uiRouter;
+        this.ConfigureState = ConfigureState;
+        this.conf = conf;
+        this.ConfigSelectors = ConfigSelectors;
     }
 
     $onInit() {
+        /** @type {Observable<string>} */
         this.clusterID$ = this.$uiRouter.globals.params$.pluck('clusterID');
         const cluster$ = this.clusterID$.switchMap((id) => this.ConfigureState.state$.let(this.ConfigSelectors.selectCluster(id)));
-        // this.cluster$ = this.ConfigureState.state$.let(selectEditCluster);
-        // this.itemToEdit$ = this.ConfigureState.state$.pluck('edit', 'itemToEdit')/* .do((v) => console.log('ed', v))*/;
-        // this.clusterItems$ = this.ConfigureState.state$.let(selectEditClusterItems);
         const isNew$ = this.clusterID$.map((v) => v === 'new');
         this.clusterName$ = combineLatest(cluster$, isNew$, (cluster, isNew) => {
             return `${isNew ? 'Create' : 'Edit'} cluster configuration ${isNew ? '' : `‘${get(cluster, 'name')}’`}`;
         });
 
-        // const loading = this.ConfigureState.state$
-        //     .pluck('configurationLoading')
-        //     .distinctUntilChanged()
-        //     .do(({loadingText, isLoading}) => {
-        //         this.loadingText = loadingText;
-        //         if (isLoading)
-        //             this.IgniteLoading.start('configuration');
-        //         else
-        //             this.IgniteLoading.finish('configuration');
-        //     });
-
-        // this.subscription = merge(loading).subscribe();
         this.tooltipsVisible = true;
     }
 
-    $onDestroy() {
-        // this.subscription.unsubscribe();
-    }
+    $onDestroy() {}
 }

@@ -40,7 +40,7 @@ export default class PageConfigureBasicController {
 
     /**
      * @param {Confirm} Confirm
-     * @param {object} $uiRouter
+     * @param {uirouter.UIRouter} $uiRouter
      * @param {ConfigureState} ConfigureState
      * @param {ConfigSelectors} ConfigSelectors
      * @param {object} conf
@@ -53,7 +53,8 @@ export default class PageConfigureBasicController {
      * @param {ng.IScope} $scope
      */
     constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {$uiRouter, conf, ConfigChangesGuard, IgniteFormUtils});
+        Object.assign(this, {conf, ConfigChangesGuard, IgniteFormUtils});
+        this.$uiRouter = $uiRouter;
         this.$scope = $scope;
         this.$element = $element;
         this.Caches = Caches;

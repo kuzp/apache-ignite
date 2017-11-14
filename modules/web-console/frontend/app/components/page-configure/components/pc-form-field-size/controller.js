@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/// <reference path="./index.d.ts" />
-
 import get from 'lodash/get';
 
 export default class PCFormFieldSizeController {

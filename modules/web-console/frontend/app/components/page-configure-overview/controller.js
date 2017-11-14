@@ -47,6 +47,7 @@ export default class PageConfigureOverviewController {
     ];
 
     /**
+     * @param {uirouter.UIRouter} $uiRouter
      * @param {ModalPreviewProject} ModalPreviewProject
      * @param {Clusters} Clusters
      * @param {ConfigureState} ConfigureState
