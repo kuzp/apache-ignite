@@ -81,7 +81,7 @@ export default class PageConfigureAdvancedIGFS {
             })));
         this.originalItem$ = this.itemID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectIGFSToEdit(id));
-        })/* .take(1)*/.distinctUntilChanged().publishReplay(1).refCount().debug('igfs to edit');
+        }).distinctUntilChanged().publishReplay(1).refCount();
         this.isNew$ = this.itemID$.map((id) => id === 'new');
         this.itemEditTitle$ = combineLatest(this.isNew$, this.originalItem$, (isNew, item) => {
             return `${isNew ? 'Create' : 'Edit'} IGFS ${!isNew && get(item, 'name') ? `‘${get(item, 'name')}’` : ''}`;
