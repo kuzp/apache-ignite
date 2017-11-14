@@ -11,6 +11,8 @@ import org.apache.ignite.internal.managers.communication.GridIoManager;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.ignite.transactions.Transaction;
+import org.apache.ignite.transactions.TransactionConcurrency;
+import org.apache.ignite.transactions.TransactionIsolation;
 
 public class TxRunner {
     @SuppressWarnings({"unchecked", "TryFinallyCanBeTryWithResources"})
@@ -52,9 +54,12 @@ public class TxRunner {
 
             GridIoManager.print = true;
 
-            Transaction tx = client.transactions().txStart();
+            Transaction tx = client.transactions().txStart(TransactionConcurrency.PESSIMISTIC, TransactionIsolation.READ_COMMITTED);
 
             try {
+                cache.get(1);
+                cache.get(1);
+
                 cache.put(1, 2);
 
                 tx.commit();
