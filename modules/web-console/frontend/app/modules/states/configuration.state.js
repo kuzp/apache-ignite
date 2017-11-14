@@ -161,7 +161,8 @@ angular.module('ignite-console.states.configuration', ['ui.router'])
                         .map((cluster) => {
                             return Promise.all([
                                 etp('LOAD_SHORT_CACHES', {ids: cluster.caches, clusterID: cluster._id}),
-                                etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id})
+                                etp('LOAD_SHORT_MODELS', {ids: cluster.models, clusterID: cluster._id}),
+                                etp('LOAD_SHORT_IGFSS', {ids: cluster.igfss, clusterID: cluster._id})
                             ]);
                         })
                         .toPromise();

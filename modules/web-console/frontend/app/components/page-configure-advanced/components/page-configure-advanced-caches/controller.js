@@ -105,7 +105,8 @@ export default class Controller {
         const cacheID$ = this.$uiRouter.globals.params$.pluck('cacheID').publishReplay(1).refCount();
 
         this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
-        this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortModelsValue());
+        this.shortModels$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortModels);
+        this.shortIGFSs$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortIGFSs);
         this.originalCache$ = cacheID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectCacheToEdit(id));
         });

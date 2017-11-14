@@ -35,8 +35,7 @@ export default class PageConfigureAdvancedCluster {
 
     $onInit() {
         const clusterID$ = this.$uiRouter.globals.params$.take(1).pluck('clusterID').filter((v) => v).take(1).debug('clusterID$');
-        this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectShortCachesValue()).take(1)
-        .debug('shortCaches$');
+        this.shortCaches$ = this.ConfigureState.state$.let(this.ConfigSelectors.selectCurrentShortCaches);
         this.originalCluster$ = clusterID$.distinctUntilChanged().switchMap((id) => {
             return this.ConfigureState.state$.let(this.ConfigSelectors.selectClusterToEdit(id));
         }).distinctUntilChanged().publishReplay(1).refCount().debug('originalCluster$');

@@ -113,7 +113,7 @@ export default class ConfigSelectors {
         .let(this.selectIGFS(itemID))
         .distinctUntilChanged()
         .let(selectItemToEdit({
-            items: state$.let(this.selectShortIGFSsValue()),
+            items: state$.let(this.selectCurrentShortIGFSs),
             itemFactory: () => this.IGFSs.getBlankIGFS(),
             defaultName: defaultNames.igfs,
             itemID
@@ -122,7 +122,7 @@ export default class ConfigSelectors {
         .let(this.selectModel(itemID))
         .distinctUntilChanged()
         .let(selectItemToEdit({
-            items: state$.let(this.selectShortModelsValue()),
+            items: state$.let(this.selectCurrentShortModels),
             itemFactory: () => this.Models.getBlankModel(),
             itemID
         }));

@@ -21,6 +21,14 @@ import get from 'lodash/get';
 export default class CacheEditFormController {
     /** @type {ig.menu<string>} */
     modelsMenu;
+    /** @type {ig.menu<string>} */
+    igfssMenu;
+    /**
+     * IGFS IDs to validate against.
+     * @type {Array<string>}
+     */
+    igfsIDs;
+
     static $inject = ['IgniteConfirm', 'IgniteVersion', '$scope', 'Caches', 'IgniteFormUtils'];
     constructor(IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils) {
         Object.assign(this, {IgniteConfirm, IgniteVersion, $scope, Caches, IgniteFormUtils});
@@ -74,6 +82,10 @@ export default class CacheEditFormController {
         }
         if ('models' in changes)
             this.modelsMenu = (changes.models.currentValue || []).map((m) => ({value: m._id, label: m.valueType}));
+        if ('igfss' in changes) {
+            this.igfssMenu = (changes.igfss.currentValue || []).map((i) => ({value: i._id, label: i.name}));
+            this.igfsIDs = (changes.igfss.currentValue || []).map((i) => i._id);
+        }
     }
     getValuesToCompare() {
         return [this.cache, this.clonedCache].map(this.Caches.normalize);
