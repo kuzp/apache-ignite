@@ -81,7 +81,8 @@ include /app/helpers/jade/mixins
                             label: 'Trust store file:',
                             model: `${model}.trustStoreFilePath`,
                             name: '"trustStoreFilePath"',
-                            required: 'true',
+                            required: enabled,
+                            disabled: enabledToDisabled(enabled),
                             placeholder: 'Path to the trust store file',
                             tip: 'Path to the trust store file'
                         })
