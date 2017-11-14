@@ -8,6 +8,7 @@ import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.managers.communication.GridIoManager;
+import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.ignite.transactions.Transaction;
@@ -50,16 +51,17 @@ public class TxRunner {
 //                }
 //            }).start();
 //
-//            Thread.sleep(500L);
+            Thread.sleep(2000L);
 
             GridIoManager.print = true;
 
-            Transaction tx = client.transactions().txStart(TransactionConcurrency.PESSIMISTIC, TransactionIsolation.READ_COMMITTED);
+            TransactionConcurrency c = TransactionConcurrency.OPTIMISTIC;
+            TransactionIsolation i = TransactionIsolation.REPEATABLE_READ;
+
+            Transaction tx = client.transactions().txStart(c, i);
 
             try {
                 cache.get(1);
-                cache.get(1);
-
                 cache.put(1, 2);
 
                 tx.commit();
@@ -67,6 +69,20 @@ public class TxRunner {
             finally {
                 tx.close();
             }
+
+//            System.out.println("NEXT");
+//
+//            tx = client.transactions().txStart(c, i);
+//
+//            try {
+//                cache.getAll(F.asSet(2, 3));
+//                cache.putAll(F.asMap(2, 3, 3, 4));
+//
+//                tx.commit();
+//            }
+//            finally {
+//                tx.close();
+//            }
 
             GridIoManager.print = false;
         }
