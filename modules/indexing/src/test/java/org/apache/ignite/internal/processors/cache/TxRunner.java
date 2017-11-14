@@ -55,14 +55,14 @@ public class TxRunner {
 
             GridIoManager.print = true;
 
-            TransactionConcurrency c = TransactionConcurrency.OPTIMISTIC;
-            TransactionIsolation i = TransactionIsolation.REPEATABLE_READ;
+            TransactionConcurrency c = TransactionConcurrency.PESSIMISTIC;
+            TransactionIsolation i = TransactionIsolation.READ_COMMITTED;
 
             Transaction tx = client.transactions().txStart(c, i);
 
             try {
-                cache.get(1);
                 cache.put(1, 2);
+                cache.put(2, 3);
 
                 tx.commit();
             }
