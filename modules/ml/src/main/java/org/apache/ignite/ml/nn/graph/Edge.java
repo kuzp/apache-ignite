@@ -17,32 +17,23 @@
 
 package org.apache.ignite.ml.nn.graph;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
  * TODO: add description.
  */
-public class Node {
-    private List<Edge> links;
+public class Edge {
+    private Node input;
+    private Node output;
 
-    public Node(List<Edge> links) {
-        this.links = links;
+    public Edge(Node input, Node output) {
+        this.input = input;
+        this.output = output;
     }
 
-    public List<Edge> getInputLinks(){
-        return links.stream().filter(l->l.getInput().equals(this)).collect(Collectors.toList());
+    public Node getInput() {
+        return input;
     }
 
-    public List<Edge> getOutputLinks(){
-        return links.stream().filter(l->l.getOutput().equals(this)).collect(Collectors.toList());
-    }
-
-    public List<Node> getInputNodes(){
-        return links.stream().filter(l->l.getOutput().equals(this)).map(Edge::getInput).collect(Collectors.toList());
-    }
-
-    public List<Node> getOutputNodes(){
-        return links.stream().filter(l->l.getInput().equals(this)).map(Edge::getOutput).collect(Collectors.toList());
+    public Node getOutput() {
+        return output;
     }
 }

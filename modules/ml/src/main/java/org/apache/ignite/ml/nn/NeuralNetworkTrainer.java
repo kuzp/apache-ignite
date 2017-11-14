@@ -15,34 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.nn.graph;
+package org.apache.ignite.ml.nn;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.ignite.ml.Model;
+import org.apache.ignite.ml.Trainer;
 
 /**
  * TODO: add description.
  */
-public class Node {
-    private List<Edge> links;
-
-    public Node(List<Edge> links) {
-        this.links = links;
-    }
-
-    public List<Edge> getInputLinks(){
-        return links.stream().filter(l->l.getInput().equals(this)).collect(Collectors.toList());
-    }
-
-    public List<Edge> getOutputLinks(){
-        return links.stream().filter(l->l.getOutput().equals(this)).collect(Collectors.toList());
-    }
-
-    public List<Node> getInputNodes(){
-        return links.stream().filter(l->l.getOutput().equals(this)).map(Edge::getInput).collect(Collectors.toList());
-    }
-
-    public List<Node> getOutputNodes(){
-        return links.stream().filter(l->l.getInput().equals(this)).map(Edge::getOutput).collect(Collectors.toList());
+public class NeuralNetworkTrainer<T, V> implements Trainer<Model<T, V>, T> {
+    /** {@inheritDoc} */
+    @Override public Model<T, V> train(T data) {
+        //TODO: implement.
+        throw new UnsupportedOperationException();
     }
 }

@@ -17,8 +17,19 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.List;
+import org.apache.ignite.ml.nn.NeuralNetworkTrainer;
+
 /**
  * TODO: add description.
  */
-public class Leaf {
+public class ComputationGraph {
+    private List<Node> topNodes;
+    private List<Edge> links;
+
+    public NeuralNetworkTrainer buildGraph() {
+        return null;
+    }
+
+
 }

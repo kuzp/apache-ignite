@@ -15,34 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.ml.nn.graph;
+package org.apache.ignite.ml.nn;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.BiFunction;
+import org.apache.ignite.ml.Model;
 
 /**
  * TODO: add description.
  */
-public class Node {
-    private List<Edge> links;
-
-    public Node(List<Edge> links) {
-        this.links = links;
+public class NeuralNetworkModel<T, V> implements Model<T, V> {
+    /** {@inheritDoc} */
+    @Override public V predict(T val) {
+        //TODO: implement.
+        throw new UnsupportedOperationException();
     }
 
-    public List<Edge> getInputLinks(){
-        return links.stream().filter(l->l.getInput().equals(this)).collect(Collectors.toList());
-    }
-
-    public List<Edge> getOutputLinks(){
-        return links.stream().filter(l->l.getOutput().equals(this)).collect(Collectors.toList());
-    }
-
-    public List<Node> getInputNodes(){
-        return links.stream().filter(l->l.getOutput().equals(this)).map(Edge::getInput).collect(Collectors.toList());
-    }
-
-    public List<Node> getOutputNodes(){
-        return links.stream().filter(l->l.getInput().equals(this)).map(Edge::getOutput).collect(Collectors.toList());
+    /** {@inheritDoc} */
+    @Override public <X, W> Model<T, X> combine(Model<T, W> other, BiFunction<V, W, X> combiner) {
+        //TODO: implement.
+        return null;
     }
 }
