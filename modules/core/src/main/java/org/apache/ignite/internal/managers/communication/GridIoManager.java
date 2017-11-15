@@ -1594,6 +1594,8 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
             (ping && !ctx.discovery().pingNode(nodeId));
     }
 
+    public static volatile boolean print = false;
+
     /**
      * @param node Destination node.
      * @param topic Topic to send the message to.
@@ -1624,6 +1626,9 @@ public class GridIoManager extends GridManagerAdapter<CommunicationSpi<Serializa
         assert msg != null;
         assert !async || msg instanceof GridIoUserMessage : msg; // Async execution was added only for IgniteMessaging.
         assert topicOrd >= 0 || !(topic instanceof GridTopic) : msg;
+
+        if (print)
+            System.out.println(msg);
 
         GridIoMessage ioMsg = new GridIoMessage(plc, topic, topicOrd, msg, ordered, timeout, skipOnTimeout);
 
