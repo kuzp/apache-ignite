@@ -71,7 +71,7 @@ include /app/helpers/jade/mixins
                                             'Zero for unlimited')
                                     .settings-row
                                         +dropdown-required-empty('Cache:', '$parent.item.cache', '"serviceCache"', 'true', 'false',
-                                            'Choose cache', 'No caches configured for current cluster', '$ctrl.emptyCachesMenu', 'Cache name used for key-to-node affinity calculation')(
+                                            'Choose cache', 'No caches configured for current cluster', '$ctrl.cachesMenu', 'Cache name used for key-to-node affinity calculation')(
                                             pc-is-in-collection='$ctrl.clonedCluster.caches'
                                         ).settings-row
                                             +form-field-feedback(form, 'isInCollection', `Cluster doesn't have such a cache`)
@@ -88,4 +88,4 @@ include /app/helpers/jade/mixins
                 +clusters-service-configurations
 
             .pca-form-column-6
-                +preview-xml-java('$ctrl.clonedCluster', 'clusterServiceConfiguration', '$ctrl.shortCaches')
+                +preview-xml-java('$ctrl.clonedCluster', 'clusterServiceConfiguration', '$ctrl.caches')

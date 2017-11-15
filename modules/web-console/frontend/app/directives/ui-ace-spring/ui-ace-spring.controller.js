@@ -63,7 +63,7 @@ export default ['IgniteVersion', 'SpringTransformer', function(Version, spring) 
                 break;
             case 'clusterCheckpoint':
                 ctrl.generate = (cluster, caches) => {
-                    return spring.clusterCheckpoint(cluster, available, caches);
+                    return spring.clusterCheckpoint(cluster, caches);
                 };
 
                 break;

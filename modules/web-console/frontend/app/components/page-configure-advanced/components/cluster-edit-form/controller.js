@@ -21,6 +21,9 @@ import get from 'lodash/get';
 export default class ClusterEditFormController {
     /** @type {Array<ig.config.cache.ShortCache>} */
     caches;
+    /** @type {ig.menu<string>} */
+    cachesMenu;
+
     static $inject = ['IgniteLegacyUtils', 'IgniteEventGroups', 'IgniteConfirm', 'IgniteVersion', '$scope', 'Clusters', 'IgniteFormUtils'];
     constructor(IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils) {
         Object.assign(this, {IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils});
@@ -97,6 +100,8 @@ export default class ClusterEditFormController {
                 this.$scope.ui.inputForm.$setUntouched();
             }
         }
+        if ('caches' in changes)
+            this.cachesMenu = (changes.caches.currentValue || []).map((c) => ({label: c.name, value: c._id}));
     }
     getValuesToCompare() {
         return [this.cluster, this.clonedCluster].map(this.Clusters.normalize);

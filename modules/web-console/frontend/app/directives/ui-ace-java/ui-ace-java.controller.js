@@ -67,14 +67,7 @@ export default ['IgniteVersion', 'JavaTransformer', function(Version, java) {
                 break;
             case 'clusterCheckpoint':
                 ctrl.generate = (cluster, caches) => {
-                    const clusterCaches = _.reduce(caches, (acc, cache) => {
-                        if (_.includes(cluster.caches, cache.value))
-                            acc.push(cache.cache);
-
-                        return acc;
-                    }, []);
-
-                    return java.clusterCheckpoint(cluster, clusterCaches);
+                    return java.clusterCheckpoint(cluster, caches);
                 };
 
                 break;
