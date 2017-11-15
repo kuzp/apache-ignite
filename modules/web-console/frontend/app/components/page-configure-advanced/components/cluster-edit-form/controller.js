@@ -19,6 +19,8 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 
 export default class ClusterEditFormController {
+    /** @type {Array<ig.config.cache.ShortCache>} */
+    caches;
     static $inject = ['IgniteLegacyUtils', 'IgniteEventGroups', 'IgniteConfirm', 'IgniteVersion', '$scope', 'Clusters', 'IgniteFormUtils'];
     constructor(IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils) {
         Object.assign(this, {IgniteLegacyUtils, IgniteEventGroups, IgniteConfirm, IgniteVersion, $scope, Clusters, IgniteFormUtils});

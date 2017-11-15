@@ -21,29 +21,40 @@ import omit from 'lodash/fp/omit';
 export default class Caches {
     static $inject = ['$http'];
 
+    /** @type {ig.menu<ig.config.cache.CacheModes>} */
     cacheModes = [
         {value: 'LOCAL', label: 'LOCAL'},
         {value: 'REPLICATED', label: 'REPLICATED'},
         {value: 'PARTITIONED', label: 'PARTITIONED'}
     ];
 
+    /** @type {ig.menu<ig.config.cache.AtomicityModes>} */
     atomicityModes = [
         {value: 'ATOMIC', label: 'ATOMIC'},
         {value: 'TRANSACTIONAL', label: 'TRANSACTIONAL'}
     ];
 
+    /**
+     * @param {ng.IHttpService} $http
+     */
     constructor($http) {
-        Object.assign(this, {$http});
+        this.$http = $http;
     }
 
     saveCache(cache) {
         return this.$http.post('/api/v1/configuration/caches/save', cache);
     }
 
+    /**
+     * @param {string} cacheID
+     */
     getCache(cacheID) {
         return this.$http.get(`/api/v1/configuration/caches/${cacheID}`);
     }
 
+    /**
+     * @param {string} cacheID
+     */
     removeCache(cacheID) {
         return this.$http.post(`/api/v1/configuration/caches/remove/${cacheID}`);
     }
@@ -71,6 +82,10 @@ export default class Caches {
         };
     }
 
+    /**
+     * @param {object} cache
+     * @returns {ig.config.cache.ShortCache}
+     */
     toShortCache(cache) {
         return {
             _id: cache._id,

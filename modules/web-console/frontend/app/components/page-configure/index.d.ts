@@ -57,6 +57,16 @@ declare namespace ig {
                 igfs: number
             }
         }
+        namespace cache {
+            type CacheModes = 'PARTITIONED' | 'REPLICATED' | 'LOCAL'
+            type AtomicityModes = 'ATOMIC' | 'TRANSACTIONAL'
+            export interface ShortCache {
+                _id: string,
+                cacheMode: CacheModes,
+                atomicityMode: AtomicityModes,
+                backups: number
+            }
+        }
         namespace model {
             type QueryMetadataTypes = 'Annotations' | 'Configuration'
             type DomainModelKinds = 'query' | 'store' | 'both'

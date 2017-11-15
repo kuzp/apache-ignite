@@ -48,22 +48,27 @@ export default class Controller {
      * @param {object} conf
      * @param {ConfigSelectors} ConfigSelectors
      * @param {object} configSelectionManager
-     * @param {object} $uiRouter
-     * @param {object} $transitions
+     * @param {uirouter.UIRouter} $uiRouter
+     * @param {uirouter.TransitionService} $transitions
      * @param {ConfigureState} ConfigureState
-     * @param {object} $state
+     * @param {uirouter.StateService} $state
      * @param {object} FormUtils
      * @param {object} Version
      * @param {Caches} Caches
      */
     constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $state, FormUtils, Version, Caches) {
-        Object.assign(this, {conf, configSelectionManager, $uiRouter, $transitions, $state, FormUtils});
+        Object.assign(this, {conf, configSelectionManager, FormUtils});
+        this.$state = $state;
+        this.$transitions = $transitions;
+        this.$uiRouter = $uiRouter;
         this.ConfigSelectors = ConfigSelectors;
         this.ConfigureState = ConfigureState;
         this.Caches = Caches;
 
         this.visibleRows$ = new Subject();
         this.selectedRows$ = new Subject();
+
+        /** @type {Array<uiGrid.IColumnDefOf<ig.config.cache.ShortCache>>} */
         this.cachesColumnDefs = [
             {
                 name: 'name',
@@ -146,6 +151,9 @@ export default class Controller {
         ]);
     }
 
+    /**
+     * @param {Array<string>} itemIDs
+     */
     remove(itemIDs) {
         this.ConfigureState.dispatchAction(
             removeClusterItems(this.$uiRouter.globals.params.clusterID, 'caches', itemIDs, true, true)
@@ -158,6 +166,9 @@ export default class Controller {
         this.selectedRows$.complete();
     }
 
+    /**
+     * @param {string} cacheID
+     */
     edit(cacheID) {
         this.$state.go('base.configuration.edit.advanced.caches.cache', {cacheID});
     }
