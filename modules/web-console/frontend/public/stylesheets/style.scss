@@ -30,7 +30,7 @@ body {
 .flex-full-height {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 0 auto;
 }
 
 hr {
@@ -275,7 +275,7 @@ body > .wrapper,
 body > .wrapper > ui-view {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 100vh;
     flex: 1 0 auto;
 
     .body-container {

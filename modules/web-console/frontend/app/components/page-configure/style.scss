@@ -17,7 +17,7 @@
 
 page-configure {
     font-family: Roboto;
-    flex: 1;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
 
@@ -57,7 +57,7 @@ page-configure {
         position: relative;
 
         &, &>ui-view {
-            flex: 1;
+            flex: 1 0 auto;
             display: flex;
             flex-direction: column;
         }
@@ -66,6 +66,10 @@ page-configure {
             position: absolute;
             top: 0;
             right: 0;
+        }
+
+        &>.tabs {
+            flex: 0 0 auto;
         }
     }
 

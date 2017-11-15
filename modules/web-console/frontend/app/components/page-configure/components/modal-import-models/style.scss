@@ -22,7 +22,7 @@ modal-import-models {
         flex-direction: column;
 
         .modal-body {
-            flex: 1;
+            flex: 1 1 auto;
             overflow-y: auto;
         }
         .modal-footer {
