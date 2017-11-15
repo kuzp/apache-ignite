@@ -26,5 +26,5 @@ mixin discovery-s3(modelAt = '$ctrl.clonedCluster')
         .pc-form-grid-col-30
             +text('Bucket name:', `${model}.bucketName`, `'${discoveryKind}BucketName'`, required, 'Input bucket name', 'Bucket name for IP finder')
         .pc-form-grid-col-30
-            .pc-form-grid__text-only-item
+            .pc-form-grid__text-only-item(style='font-style: italic;color: #424242;')
                 | AWS credentials will be generated as stub
