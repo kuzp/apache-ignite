@@ -66,13 +66,13 @@ include /app/helpers/jade/mixins
                     .pc-form-grid-col-60
                         +java-class('Class name:', plannerModel + '.Custom.className', '"MapReducePlannerCustomClass"', 'true', customPlanner,
                             'Custom planner implementation')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Finished job info TTL:', model + '.finishedJobInfoTtl', '"finishedJobInfoTtl"', 'true', '30000', '0',
                         'Finished job info time-to-live in milliseconds')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Max parallel tasks:', model + '.maxParallelTasks', '"maxParallelTasks"', 'true', 'availableProcessors * 2', '1',
                         'Max number of local tasks that may be executed in parallel')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Max task queue size:', model + '.maxTaskQueueSize', '"maxTaskQueueSize"', 'true', '8192', '1', 'Max task queue size')
                 .pc-form-grid-col-60
                     .ignite-form-field
