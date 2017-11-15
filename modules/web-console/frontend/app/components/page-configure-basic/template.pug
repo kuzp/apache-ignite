@@ -150,7 +150,6 @@ form(novalidate name=form)
                 +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
                     ignite-unique='$ctrl.shortCaches'
                     ignite-unique-property='name'
-                )(
                     ignite-form-field-input-autofocus='true'
                 )
                     +unique-feedback('"name"', 'Cache name should be unqiue')
