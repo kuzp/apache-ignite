@@ -3248,7 +3248,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 }
 
                 if (!fail) {
-                    deleted += cctx.wal().truncate(cpEntry.checkpointMark());
+                    deleted += cctx.wal().truncate(null, cpEntry.checkpointMark());
 
                     histMap.remove(entry.getKey());
                 }
