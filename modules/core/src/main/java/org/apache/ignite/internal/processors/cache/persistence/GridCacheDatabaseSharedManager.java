@@ -2019,6 +2019,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /**
+     * @param lowBound WALPointer.
+     * @param highBound WALPointer.
+     */
+    public void onWalTruncate(WALPointer lowBound, WALPointer highBound) {
+        checkpointHist.onWalTruncate(lowBound, highBound);
+    }
+
+    /**
      * @param part Partition to restore state for.
      * @param stateId State enum ordinal.
      * @return Updated flag.
@@ -3212,6 +3220,41 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
          */
         private void addCheckpointEntry(CheckpointEntry entry) {
             histMap.put(entry.checkpointTimestamp(), entry);
+        }
+
+        /**
+         * Callback on truncate wal.
+         */
+        private void onWalTruncate(WALPointer from, WALPointer to) {
+            FileWALPointer lowBound = (FileWALPointer)from;
+            FileWALPointer toBound = new FileWALPointer(Long.valueOf(((FileWALPointer)to).index() + 1), 0, 0);
+
+            List<CheckpointEntry> toRemove = new ArrayList<>();
+
+            for (CheckpointEntry cpEntry : histMap.values()) {
+                FileWALPointer cpPnt = (FileWALPointer)cpEntry.checkpointMark();
+
+                if (lowBound.compareTo(cpPnt) > 0 || toBound.compareTo(cpPnt) < 0)
+                    continue;
+
+                if (cctx.wal().reserved(cpEntry.checkpointMark())) {
+                    U.warn(log, "Could not clear historyMap due to WAL reservation on cpEntry " + cpEntry.cpId +
+                        ", history map size is " + histMap.size());
+
+                    break;
+                }
+
+                File startFile = new File(cpDir.getAbsolutePath(), cpEntry.startFile());
+                File endFile = new File(cpDir.getAbsolutePath(), cpEntry.endFile());
+
+                boolean rmvdStart = !startFile.exists() || startFile.delete();
+                boolean rmvdEnd = !endFile.exists() || endFile.delete();
+
+                boolean fail = !rmvdStart || !rmvdEnd;
+
+                if (!fail)
+                    toRemove.add(cpEntry);
+            }
         }
 
         /**

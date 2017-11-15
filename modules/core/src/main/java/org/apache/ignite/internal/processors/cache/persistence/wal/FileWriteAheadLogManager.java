@@ -677,7 +677,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 return deleted;
 
             // We need to leave at least one archived segment to correctly determine the archive index.
-            if (desc.idx + 1 < toPtr.index()) {
+            if (desc.idx + 1 < toPtr.index() || (from != null && desc.idx < toPtr.index())) {
                 if (!desc.file.delete())
                     U.warn(log, "Failed to remove obsolete WAL segment (make sure the process has enough rights): " +
                         desc.file.getAbsolutePath());
