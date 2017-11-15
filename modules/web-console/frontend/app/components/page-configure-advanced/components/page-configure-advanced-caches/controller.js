@@ -77,7 +77,7 @@ export default class Controller {
                 enableHiding: false,
                 sort: {direction: 'asc', priority: 0},
                 filter: {
-                    placeholder: 'Filter by key type…'
+                    placeholder: 'Filter by name…'
                 },
                 sortingAlgorithm: naturalCompare,
                 minWidth: 165
