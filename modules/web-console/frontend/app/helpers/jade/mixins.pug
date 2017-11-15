@@ -348,7 +348,7 @@ mixin list-java-package-field(lbl, model, name, items)
 
         data-ignite-unique=items
         data-ignite-form-field-input-autofocus='true'
-    )
+    )&attributes(attributes)
         +form-field-feedback(name, 'javaKeywords', 'Package name could not contains reserved Java keyword!')
         +form-field-feedback(name, 'javaPackageName', 'Package name is invalid!')
 

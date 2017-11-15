@@ -76,17 +76,26 @@ include /app/helpers/jade/mixins
                                             | {{ $parent.item }}
 
                                         list-editable-item-edit
-                                            -let form = '$parent.form'
-                                            +list-java-package-field('Package name', '$parent.item', '"packageName"', items)
+                                            +list-java-package-field('Package name', '$parent.item', '"packageName"', items)(
+                                                ignite-auto-focus
+                                            )
                                                 +unique-feedback('"packageName"', uniqueTip)
 
                                         list-editable-no-items
                                             | You have no packages.&nbsp;
-                                            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                            a.link-success(
+                                                ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
+                                            ) Create one?
 
-                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
+                                    button.btn-ignite.btn-ignite--link(
+                                        type='button'
+                                        ng-if=`${items}.length`
+                                        ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
+                                    )
                                         | + Add new package
+                    -var form = '$parent.form'
                     +clusters-deployment-packages
+                    -var form = 'deployment'
 
                 //- Since ignite 2.0
                 .pc-form-grid-col-60(ng-if='$ctrl.available("2.0.0")')

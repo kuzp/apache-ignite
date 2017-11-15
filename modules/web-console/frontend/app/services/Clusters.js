@@ -545,4 +545,9 @@ export default class Clusters {
     ];
 
     normalize = omit(['__v', 'space']);
+
+    addPeerClassLoadingLocalClassPathExclude(cluster) {
+        if (!cluster.peerClassLoadingLocalClassPathExclude) cluster.peerClassLoadingLocalClassPathExclude = [];
+        cluster.peerClassLoadingLocalClassPathExclude.push('');
+    }
 }
