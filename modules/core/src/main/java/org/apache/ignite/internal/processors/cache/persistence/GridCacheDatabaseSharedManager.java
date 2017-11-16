@@ -3227,14 +3227,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
          * Callback on truncate wal.
          */
         private void onWalTruncate(WALPointer ptr) {
-            FileWALPointer bound = (FileWALPointer)ptr;
+            FileWALPointer highBound = (FileWALPointer)ptr;
 
             List<CheckpointEntry> cpToRemove = new ArrayList<>();
 
             for (CheckpointEntry cpEntry : histMap.values()) {
                 FileWALPointer cpPnt = (FileWALPointer)cpEntry.checkpointMark();
 
-                if (bound.compareTo(cpPnt) <= 0)
+                if (highBound.compareTo(cpPnt) <= 0)
                     break;
 
                 if (cctx.wal().reserved(cpEntry.checkpointMark())) {
