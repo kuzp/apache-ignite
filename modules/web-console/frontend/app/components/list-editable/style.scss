@@ -30,6 +30,10 @@ list-editable {
         pointer-events: none;
     }
 
+    [ng-transclude='itemView'] {
+        flex: 1;
+    }
+
     &-item-view,
     &-item-edit,
     &-no-items {
