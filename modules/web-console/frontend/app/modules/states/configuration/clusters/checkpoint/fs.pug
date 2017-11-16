@@ -19,18 +19,20 @@ include /app/helpers/jade/mixins
 -var form = '$parent.form'
 
 div
-    .ignite-form-field
-        +ignite-form-field__label('Paths:', '"paths"')
-            +tooltip(`Paths to a shared directory where checkpoints will be stored`)
-        .ignite-form-field__control(ng-init='item = $parent.item')
-            +list-text-field({
-                items: `item.FS.directoryPaths`,
-                lbl: 'Directory path',
-                name: 'directoryPath',
-                itemName: 'path',
-                itemsName: 'paths'
-            })
-                +unique-feedback('"directoryPath"', 'Such path already exists!')
+    .ignite-form-field(ng-init='item = $parent.item')
+        +list-text-field({
+            items: `item.FS.directoryPaths`,
+            lbl: 'Directory path',
+            name: 'directoryPath',
+            itemName: 'path',
+            itemsName: 'paths'
+        })(
+            list-editable-cols=`::[{
+                name: 'Paths:',
+                tip: 'Paths to a shared directory where checkpoints will be stored'
+            }]`
+        )
+            +unique-feedback(_, 'Such path already exists!')
 
 .settings-row
     +java-class('Listener:', '$parent.item.FS.checkpointListener', '"checkpointFsListener" + $index', 'true', 'false', 'Checkpoint listener implementation class name', '$parent.item.kind === "FS"')

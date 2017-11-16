@@ -76,16 +76,16 @@ include /app/helpers/jade/mixins
                     +number('Max task queue size:', model + '.maxTaskQueueSize', '"maxTaskQueueSize"', 'true', '8192', '1', 'Max task queue size')
                 .pc-form-grid-col-60
                     .ignite-form-field
-                        +ignite-form-field__label('Native libraries:', '"nativeLibraries"')
-                        .ignite-form-field__control
-                            +list-text-field({
-                                items: libs,
-                                lbl: 'Library name',
-                                name: 'libraryName',
-                                itemName: 'library name',
-                                itemsName: 'library names'
-                            })
-                                +unique-feedback('"libraryName"', `${uniqueTip}`)
+                        +list-text-field({
+                            items: libs,
+                            lbl: 'Library name',
+                            name: 'libraryName',
+                            itemName: 'library name',
+                            itemsName: 'library names'
+                        })(
+                            list-editable-cols=`::[{name: 'Native libraries:'}]`
+                        )
+                            +unique-feedback(_, `${uniqueTip}`)
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterHadoop')

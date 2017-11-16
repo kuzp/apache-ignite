@@ -61,28 +61,31 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60
                     mixin caches-query-list-sql-functions()
                         .ignite-form-field
-                            +ignite-form-field__label('SQL functions:', '"sqlFunctions"')
-                                +tooltip(`Collections of classes with user-defined functions for SQL queries`)
-                            .ignite-form-field__control
-                                -let items = `${model}.sqlFunctionClasses`;
-                                -let uniqueTip = 'SQL function with such class name already exists!'
+                            -let items = `${model}.sqlFunctionClasses`;
+                            -let uniqueTip = 'SQL function with such class name already exists!'
 
-                                list-editable(ng-model=`${items}`)
-                                    list-editable-item-view
-                                        | {{ $parent.item }}
+                            list-editable(
+                                ng-model=items
+                                list-editable-cols=`::[{
+                                    name: 'SQL functions:',
+                                    tip: 'Collections of classes with user-defined functions for SQL queries'
+                                }]`
+                            )
+                                list-editable-item-view {{ $parent.item }}
 
-                                    list-editable-item-edit
-                                        - let form = '$parent.form'
-                                        +list-java-class-field('SQL function', '$parent.item', '"sqlFunction"', items)
-                                            +unique-feedback('"sqlFunction"', uniqueTip)
+                                list-editable-item-edit
+                                    +list-java-class-field('SQL function', '$parent.item', '"sqlFunction"', items)
+                                        +unique-feedback('"sqlFunction"', uniqueTip)
 
-                                    list-editable-no-items
-                                        | You have no SQL functions.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
+                                list-editable-no-items
+                                    | You have no SQL functions.&nbsp;
+                                    a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
-                                    | + Add new SQL function
+                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
+                                | + Add new SQL function
+                    - var form = '$parent.form'
                     +caches-query-list-sql-functions
+                    - var form = 'query'
 
                 //- Removed in ignite 2.0
                 .pc-form-grid-col-60(ng-if='$ctrl.available(["1.0.0", "2.0.0"])')

@@ -302,7 +302,7 @@ mixin dropdown-multiple(lbl, model, name, enabled, placeholder, placeholderEmpty
             block
 
 mixin list-text-field({ items, lbl, name, itemName, itemsName })
-    list-editable(ng-model=items)
+    list-editable(ng-model=items)&attributes(attributes)
         list-editable-item-view
             | {{ $parent.item }}
 
@@ -368,34 +368,38 @@ mixin list-url-field(lbl, model, name, items)
             block
 
 mixin list-addresses({ items, name, tip, withPortRange = true })
-    list-editable(
-        ng-model=items
-        name=name
-        list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
-    )&attributes(attributes)
-        list-editable-item-view
-            | {{ $parent.item }}
-        list-editable-item-edit
-            - form = '$parent.form'
-            +ignite-form-field-text('Address', '$parent.item', '"address"', false, true, 'IP address:port')(
-                data-ipaddress='true'
-                data-ipaddress-with-port='true'
-                data-ipaddress-with-port-range=withPortRange
-                data-ignite-unique=items
-                data-ignite-form-field-input-autofocus='true'
-            )
-                +unique-feedback('"address"', 'Such IP address already exists!')
-                +ipaddress-feedback('"address"')
-                +ipaddress-port-feedback('"address"')
-                +ipaddress-port-range-feedback('"address"')
-                +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
+    .ignite-form-field
+        list-editable(
+            ng-model=items
+            name=name
+            list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
+        )&attributes(attributes)
+            list-editable-item-view
+                | {{ $parent.item }}
+            list-editable-item-edit
+                - form = '$parent.form'
+                +ignite-form-field-text('Address', '$parent.item', '"address"', false, true, 'IP address:port')(
+                    data-ipaddress='true'
+                    data-ipaddress-with-port='true'
+                    data-ipaddress-with-port-range=withPortRange
+                    data-ignite-unique=items
+                    data-ignite-form-field-input-autofocus='true'
+                )
+                    +unique-feedback('"address"', 'Such IP address already exists!')
+                    +ipaddress-feedback('"address"')
+                    +ipaddress-port-feedback('"address"')
+                    +ipaddress-port-range-feedback('"address"')
+                    +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
 
-        list-editable-no-items
-            | You have no addresses.&nbsp;
-            a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
+            list-editable-no-items
+                | You have no addresses.&nbsp;
+                a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
 
-    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
-        | + Add new address
+        button.btn-ignite.btn-ignite--link(
+            type='button'
+            ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`
+        )
+            | + Add new address
 
 //- Mixin for cache mode.
 mixin cacheMode(lbl, model, name, placeholder)

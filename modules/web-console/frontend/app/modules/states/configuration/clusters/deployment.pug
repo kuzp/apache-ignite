@@ -64,35 +64,38 @@ include /app/helpers/jade/mixins
                 .pc-form-grid-col-60
                     mixin clusters-deployment-packages
                         .ignite-form-field
-                            +ignite-form-field__label('Local class path exclude:', '"localClassPathExclude"')
-                                +tooltip(`List of packages from the system classpath that need to be peer-to-peer loaded from task originating node<br/>
-                                    '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause`)
-                            .ignite-form-field__control
-                                    -let items = exclude
-                                    -var uniqueTip = 'Such package already exists!'
+                            -let items = exclude
+                            -var uniqueTip = 'Such package already exists!'
 
-                                    list-editable(ng-model=items name='localClassPathExclude')
-                                        list-editable-item-view
-                                            | {{ $parent.item }}
+                            list-editable(
+                                ng-model=items
+                                name='localClassPathExclude'
+                                list-editable-cols=`::[{
+                                    name: "Local class path excludes:",
+                                    tip: "List of packages from the system classpath that need to be peer-to-peer loaded from task originating node<br/>
+                                    '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause"
+                                }]`
+                            )
+                                list-editable-item-view {{ $parent.item }}
 
-                                        list-editable-item-edit
-                                            +list-java-package-field('Package name', '$parent.item', '"packageName"', items)(
-                                                ignite-auto-focus
-                                            )
-                                                +unique-feedback('"packageName"', uniqueTip)
-
-                                        list-editable-no-items
-                                            | You have no packages.&nbsp;
-                                            a.link-success(
-                                                ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
-                                            ) Create one?
-
-                                    button.btn-ignite.btn-ignite--link(
-                                        type='button'
-                                        ng-if=`${items}.length`
-                                        ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
+                                list-editable-item-edit
+                                    +list-java-package-field('Package name', '$parent.item', '"packageName"', items)(
+                                        ignite-auto-focus
                                     )
-                                        | + Add new package
+                                        +unique-feedback('"packageName"', uniqueTip)
+
+                                list-editable-no-items
+                                    | You have no packages.&nbsp;
+                                    a.link-success(
+                                        ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
+                                    ) Create one?
+
+                            button.btn-ignite.btn-ignite--link(
+                                type='button'
+                                ng-if=`${items}.length`
+                                ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
+                            )
+                                | + Add new package
                     -var form = '$parent.form'
                     +clusters-deployment-packages
                     -var form = 'deployment'
@@ -121,28 +124,39 @@ include /app/helpers/jade/mixins
                     .pc-form-grid-col-60
                         mixin clusters-deployment-uri
                             .ignite-form-field
-                                +ignite-form-field__label('URI list:', '"uriList"')
-                                    +tooltip(`List of URI which point to GAR file and which should be scanned by SPI for the new tasks`)
-                                .ignite-form-field__control
-                                    -let items = uriListModel
-                                    -var uniqueTip = 'Such URI already configured!'
+                                -let items = uriListModel
+                                -var uniqueTip = 'Such URI already configured!'
 
-                                    list-editable(ng-model=items name='uriList')
-                                        list-editable-item-view
-                                            | {{ $parent.item }}
+                                list-editable(
+                                    ng-model=items
+                                    name='uriList'
+                                    list-editable-cols=`::[{
+                                        name: "URI list:",
+                                        tip: "List of URI which point to GAR file and which should be scanned by SPI for the new tasks"
+                                    }]`
+                                )
+                                    list-editable-item-view {{ $parent.item }}
 
-                                        list-editable-item-edit
-                                            - form = '$parent.form'
-                                            +list-url-field('URL', '$parent.item', '"url"', items)
-                                                +unique-feedback('"url"', uniqueTip)
+                                    list-editable-item-edit
+                                        +list-url-field('URL', '$parent.item', '"url"', items)
+                                            +unique-feedback('"url"', uniqueTip)
 
-                                        list-editable-no-items
-                                            | You have no URI.&nbsp;
-                                            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                    list-editable-no-items
+                                        | You have no URI.&nbsp;
+                                        a.link-success(
+                                            ng-click=`(${items} = ${items} || []).push('')`
+                                        ) Create one?
 
-                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                        | + Add new URI
+                                button.btn-ignite.btn-ignite--link(
+                                    type='button'
+                                    ng-if=`${items}.length`
+                                    ng-click=`(${items} = ${items} || []).push('')`
+                                )
+                                    | + Add new URI
+
+                        - var form = '$parent.form'
                         +clusters-deployment-uri
+                        - var form = 'deployment'
 
                     .pc-form-grid-col-60
                         +text('Temporary directory path:', modelDeployment + '.URI.temporaryDirectoryPath', '"DeploymentURITemporaryDirectoryPath"', 'false', 'Temporary directory path',
@@ -150,28 +164,34 @@ include /app/helpers/jade/mixins
                     .pc-form-grid-col-60
                         mixin clusters-deployment-scanner
                             .ignite-form-field
-                                +ignite-form-field__label('Scanner list:', '"scannerModel"')
-                                    +tooltip(`List of URI deployment scanners`)
-                                .ignite-form-field__control
-                                    -let items = scannerModel
-                                    -var uniqueTip = 'Such scanner already configured!'
+                                -let items = scannerModel
+                                -var uniqueTip = 'Such scanner already configured!'
 
-                                    list-editable(ng-model=items name='scannerModel')
-                                        list-editable-item-view
-                                            | {{ $parent.item }}
+                                list-editable(
+                                    ng-model=items
+                                    name='scannerModel'
+                                    list-editable-cols=`::[{name: "URI deployment scanners:"}]`
+                                )
+                                    list-editable-item-view {{ $parent.item }}
 
-                                        list-editable-item-edit
-                                            - form = '$parent.form'
-                                            +list-java-class-field('Scanner', '$parent.item', '"scanner"', items)
-                                                +unique-feedback('"scanner"', uniqueTip)
+                                    list-editable-item-edit
+                                        +list-java-class-field('Scanner', '$parent.item', '"scanner"', items)
+                                            +unique-feedback('"scanner"', uniqueTip)
 
-                                        list-editable-no-items
-                                            | You have no scanner.&nbsp;
-                                            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                    list-editable-no-items
+                                        | You have no scanners.&nbsp;
+                                        a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
 
-                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                        | + Add new scanner
+                                button.btn-ignite.btn-ignite--link(
+                                    type='button'
+                                    ng-if=`${items}.length`
+                                    ng-click=`(${items} = ${items} || []).push('')`
+                                )
+                                    | + Add new scanner
+
+                        - var form = '$parent.form'
                         +clusters-deployment-scanner
+                        - var form = 'deployment'
 
                     .pc-form-grid-col-60
                         +java-class('Listener:', `${modelDeployment}.URI.listener`, '"DeploymentURIListener"', 'true', 'false', 'Deployment event listener', uriDeployment)
