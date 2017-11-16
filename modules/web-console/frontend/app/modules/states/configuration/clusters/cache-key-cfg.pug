@@ -34,11 +34,11 @@ include /app/helpers/jade/mixins
                         .ignite-form-field__control
                             -let items = model
                             list-editable(ng-model=items name='cacheKeyConfiguration')
-                                list-editable-item-edit
+                                list-editable-item-edit.pc-form-grid-row
                                     - form = '$parent.form'
-                                    .settings-row
+                                    .pc-form-grid-col-60
                                         +java-class-autofocus('Type name:', '$parent.item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
-                                    .settings-row
+                                    .pc-form-grid-col-60
                                         +sane-ignite-form-field-text({
                                             label: 'Affinity key field name:',
                                             model: '$parent.item.affinityKeyFieldName',
