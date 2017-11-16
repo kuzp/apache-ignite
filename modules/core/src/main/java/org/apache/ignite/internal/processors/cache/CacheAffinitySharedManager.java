@@ -715,7 +715,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 if (exchActions.cacheGroupStopping(aff.groupId()))
                     return;
 
-                aff.clientEventTopologyChange(evts.lastEvent(), evts.topologyVersion(), exchLog);
+                aff.clientEventTopologyChange(evts.lastEvent(), evts.topologyVersion(), exchLog, "onCacheChangeRequest");
             }
         });
 
@@ -961,9 +961,12 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 IgniteUuid deploymentId = desc.deploymentId();
 
                 if (!deploymentId.equals(deploymentIds.get(aff.groupId()))) {
-                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
-
-                    return;
+//                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
+//
+//                    return;
+                    if (log.isInfoEnabled())
+                        log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
+                            ", deploymentId" + deploymentId + ", currentIds=" + deploymentIds);
                 }
 
                 Map<Integer, List<UUID>> change = affChange.get(aff.groupId());
@@ -995,7 +998,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                     aff.initialize(topVer, cachedAssignment(aff, assignment, affCache), exchLog, "on rebalance finished");
                 }
                 else
-                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
+                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog, "change=null");
             }
         });
     }
@@ -1015,7 +1018,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 @Override public void applyx(GridAffinityAssignmentCache aff) throws IgniteCheckedException {
                     AffinityTopologyVersion topVer = fut.initialVersion();
 
-                    aff.clientEventTopologyChange(fut.firstEvent(), topVer, exchLog);
+                    aff.clientEventTopologyChange(fut.firstEvent(), topVer, exchLog, "onClientEvent");
                 }
             });
         }
