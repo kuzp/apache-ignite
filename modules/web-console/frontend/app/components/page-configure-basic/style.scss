@@ -46,13 +46,6 @@ page-configure-basic {
         }
     }
 
-
-    .pcb-caches-list {
-        [ng-transclude='itemView'] {
-            flex: 1;
-        }
-    }
-
     .pcb-buttons-group {
         display: flex;
         flex-direction: row;
@@ -159,6 +152,9 @@ page-configure-basic {
             &>.pc-form-grid-col-60 {
                 flex: 0 0 calc(100% / 2);
             }
+            &>.pc-form-grid-col-120 {
+                flex: 0 0 calc(100% / 1);
+            }
         }
         @media(max-width: 992px) {
             &>.pc-form-grid-col-10 {
@@ -177,7 +173,8 @@ page-configure-basic {
                 flex: 0 0 calc(100% / 1.5);
             }
 
-            &>.pc-form-grid-col-60 {
+            &>.pc-form-grid-col-60,
+            &>.pc-form-grid-col-120 {
                 flex: 0 0 calc(100% / 1);
             }
         }

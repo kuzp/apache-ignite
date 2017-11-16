@@ -73,26 +73,26 @@ form(novalidate name=form)
             </ul>')
         .pc-form-grid__break
         .pc-form-group
+            +discovery-vm(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Vm'`)
             +discovery-cloud(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Cloud'`)
             +discovery-google(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'GoogleStorage'`)
             +discovery-jdbc(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Jdbc'`)
             +discovery-multicast(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Multicast'`)
             +discovery-s3(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'S3'`)
             +discovery-shared(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'SharedFs'`)
-            +discovery-vm(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Vm'`)
             +discovery-zookeeper(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'ZooKeeper'`)
             +discovery-kubernetes(model)(class='pcb-form-grid-row' ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
 
     h2.pcb-section-header.pcb-inner-padding(style='margin-top:30px') Step 2. Caches Configuration
 
-    .pcb-form-grid-row.pc-form-grid-row(
-        ng-if=`
-            $ctrl.defaultMemoryPolicy &&
-            $ctrl.IgniteVersion.available(['2.0.0', '2.3.0']) &&
-            $ctrl.memorySizeInputVisible$|async:this
-        `
-    )
-        .pc-form-grid-col-60
+    .pcb-form-grid-row.pc-form-grid-row
+        .pc-form-grid-col-60(
+            ng-if=`
+                $ctrl.defaultMemoryPolicy &&
+                $ctrl.IgniteVersion.available(['2.0.0', '2.3.0']) &&
+                $ctrl.memorySizeInputVisible$|async:this
+            `
+        )
             pc-form-field-size(
                 ng-model='$ctrl.defaultMemoryPolicy.maxSize'
                 ng-model-options='{allowInvalid: true}'
@@ -108,8 +108,7 @@ form(novalidate name=form)
             )
                 +form-field-feedback('"memory"', 'min', 'Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.memoryPolicy.maxSize.min($ctrl.defaultMemoryPolicy) / scale.value}} {{scale.label}}).')
 
-    .pcb-form-grid-row.pc-form-grid-row(ng-if=`$ctrl.IgniteVersion.available('2.3.0')`)
-        .pc-form-grid-col-60
+        .pc-form-grid-col-60(ng-if=`$ctrl.IgniteVersion.available('2.3.0')`)
             pc-form-field-size(
                 ng-model=`${model}.dataStorageConfiguration.defaultDataRegionConfiguration.maxSize`
                 ng-model-options='{allowInvalid: true}'
@@ -128,48 +127,49 @@ form(novalidate name=form)
                     'min',
                     `Maximum size should be equal to or more than initial size ({{ $ctrl.Clusters.dataRegion.maxSize.min(${model}.dataStorageConfiguration.defaultDataRegionConfiguration) / scale.value}} {{scale.label}}).`
                 )
-
-    list-editable.pcb-caches-list(
-        ng-model='$ctrl.shortCaches'
-        list-editable-one-way
-        on-item-change='$ctrl.changeCache($event)'
-        on-item-remove='$ctrl.removeCache($event)'
-        list-editable-cols='::$ctrl.cachesColDefs'
-        list-editable-cols-row-class='pc-form-grid-row pcb-row-no-margin'
-    )
-        list-editable-item-view
-            div {{ $parent.item.name }}
-            div {{ $parent.item.cacheMode }}
-            div {{ $parent.item.atomicityMode }}
-            div {{ $parent.item.backups || '0' }}
-        list-editable-item-edit
-            div
-                +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
-                    ignite-unique='$ctrl.shortCaches'
-                    ignite-unique-property='name'
-                    ignite-form-field-input-autofocus='true'
+        .pc-form-grid-col-120
+            .ignite-form-field
+                list-editable.pcb-caches-list(
+                    ng-model='$ctrl.shortCaches'
+                    list-editable-one-way
+                    on-item-change='$ctrl.changeCache($event)'
+                    on-item-remove='$ctrl.removeCache($event)'
+                    list-editable-cols='::$ctrl.cachesColDefs'
+                    list-editable-cols-row-class='pc-form-grid-row pcb-row-no-margin'
                 )
-                    +unique-feedback('"name"', 'Cache name should be unqiue')
-            div
-                +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
-            div
-                +sane-ignite-form-field-dropdown({
-                    label: 'Atomicity:',
-                    model: '$parent.item.atomicityMode',
-                    name: '"atomicityMode"',
-                    placeholder: 'ATOMIC',
-                    options: '::$ctrl.Caches.atomicityModes'
-                })
-            div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
-                +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
-        list-editable-no-items
-            | You have no caches. #[a.link-success(ng-click='$ctrl.addCache()') Create one?]
+                    list-editable-item-view
+                        div {{ $parent.item.name }}
+                        div {{ $parent.item.cacheMode }}
+                        div {{ $parent.item.atomicityMode }}
+                        div {{ $parent.item.backups || '0' }}
+                    list-editable-item-edit
+                        div
+                            +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
+                                ignite-unique='$ctrl.shortCaches'
+                                ignite-unique-property='name'
+                                ignite-form-field-input-autofocus='true'
+                            )
+                                +unique-feedback('"name"', 'Cache name should be unqiue')
+                        div
+                            +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
+                        div
+                            +sane-ignite-form-field-dropdown({
+                                label: 'Atomicity:',
+                                model: '$parent.item.atomicityMode',
+                                name: '"atomicityMode"',
+                                placeholder: 'ATOMIC',
+                                options: '::$ctrl.Caches.atomicityModes'
+                            })
+                        div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
+                            +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
+                    list-editable-no-items
+                        | You have no caches. #[a.link-success(ng-click='$ctrl.addCache()') Create one?]
 
-    .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding(ng-show='$ctrl.shortCaches.length')
-        a.link-success(
-            ng-click='$ctrl.addCache()'
-        )
-            | + Add one more cache
+                button.btn-ignite.btn-ignite--link(
+                    type='button'
+                    ng-click='$ctrl.addCache()'
+                )
+                    | + Add one more cache
         
     .pc-form-actions-panel
         button-preview-project(ng-hide='$ctrl.isNew$|async:this' cluster=model)
