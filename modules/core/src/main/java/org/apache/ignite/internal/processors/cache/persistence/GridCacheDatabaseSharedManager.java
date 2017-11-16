@@ -3244,15 +3244,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     break;
                 }
 
-                File startFile = new File(cpDir.getAbsolutePath(), cpEntry.startFile());
-                File endFile = new File(cpDir.getAbsolutePath(), cpEntry.endFile());
-
-                boolean rmvdStart = !startFile.exists() || startFile.delete();
-                boolean rmvdEnd = !endFile.exists() || endFile.delete();
-
-                boolean fail = !rmvdStart || !rmvdEnd;
-
-                if (!fail)
+                if (!removeCheckpointFiles(cpEntry))
                     cpToRemove.add(cpEntry);
             }
 
@@ -3278,24 +3270,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     break;
                 }
 
-                File startFile = new File(cpDir.getAbsolutePath(), cpEntry.startFile());
-                File endFile = new File(cpDir.getAbsolutePath(), cpEntry.endFile());
-
-                boolean rmvdStart = !startFile.exists() || startFile.delete();
-                boolean rmvdEnd = !endFile.exists() || endFile.delete();
-
-                boolean fail = !rmvdStart || !rmvdEnd;
-
-                if (fail) {
-                    U.warn(log, "Failed to remove stale checkpoint files [startFile=" + startFile.getAbsolutePath() +
-                        ", endFile=" + endFile.getAbsolutePath() + ']');
-
-                    if (histMap.size() > 2 * persistenceCfg.getWalHistorySize()) {
-                        U.error(log, "Too many stale checkpoint entries in the map, will truncate WAL archive anyway.");
-
-                        fail = false;
-                    }
-                }
+                boolean fail = removeCheckpointFiles(cpEntry);
 
                 if (!fail) {
                     deleted += cctx.wal().truncate(null, cpEntry.checkpointMark());
@@ -3307,6 +3282,33 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             }
 
             chp.walFilesDeleted = deleted;
+        }
+
+        /**
+         * @param cpEntry Checkpoint entry.
+         * @return {True} if delete fail.
+         */
+        private boolean removeCheckpointFiles(CheckpointEntry cpEntry) {
+            File startFile = new File(cpDir.getAbsolutePath(), cpEntry.startFile());
+            File endFile = new File(cpDir.getAbsolutePath(), cpEntry.endFile());
+
+            boolean rmvdStart = !startFile.exists() || startFile.delete();
+            boolean rmvdEnd = !endFile.exists() || endFile.delete();
+
+            boolean fail = !rmvdStart || !rmvdEnd;
+
+            if (fail) {
+                U.warn(log, "Failed to remove stale checkpoint files [startFile=" + startFile.getAbsolutePath() +
+                    ", endFile=" + endFile.getAbsolutePath() + ']');
+
+                if (histMap.size() > 2 * persistenceCfg.getWalHistorySize()) {
+                    U.error(log, "Too many stale checkpoint entries in the map, will truncate WAL archive anyway.");
+
+                    fail = false;
+                }
+            }
+
+            return fail;
         }
 
         /**
