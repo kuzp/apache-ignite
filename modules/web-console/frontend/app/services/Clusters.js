@@ -498,15 +498,11 @@ export default class Clusters {
         }
     };
 
-    makeBlankExecutorConfiguration() {
-        return {_id: ObjectID.generate()};
-    }
-
     addExecutorConfiguration(cluster) {
         if (!cluster.executorConfiguration) cluster.executorConfiguration = [];
-        cluster.executorConfiguration.push(Object.assign(this.makeBlankExecutorConfiguration(), {
-            name: uniqueName('New executor configuration', cluster.executorConfiguration)
-        }));
+        const item = {_id: ObjectID.generate(), name: ''};
+        cluster.executorConfiguration.push(item);
+        return item;
     }
 
     executorConfiguration = {

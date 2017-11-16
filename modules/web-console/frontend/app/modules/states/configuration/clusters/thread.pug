@@ -132,9 +132,15 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         | You have no executor configurations.&nbsp;
-                                        a.link-success(ng-click=`$ctrl.Clusters.addExecutorConfiguration(${model})`) Create one?
+                                        a.link-success(
+                                            ng-click=`ui.inputForm.pools.executorConfigurations.editListItem($ctrl.Clusters.addExecutorConfiguration(${model}))`
+                                        ) Create one?
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addExecutorConfiguration(${model})`)
+                                button.btn-ignite.btn-ignite--link(
+                                    type='button'
+                                    ng-if=`${items}.length`
+                                    ng-click=`ui.inputForm.pools.executorConfigurations.editListItem($ctrl.Clusters.addExecutorConfiguration(${model}))`
+                                )
                                     | + Add new executor configuration
                     +clusters-thread-executor-configurations
 
