@@ -19,9 +19,12 @@
     $index-column-width: 46px;
     $remove-column-width: 36px;
 
-    margin-top: 10px;
+    margin-left: 10px;
     margin-right: $remove-column-width;
-    margin-left: $index-column-width;
+
+    &__multiple-cols {
+        margin-left: $index-column-width;
+    }
 
     .ignite-form-field__label {
         margin-left: 0;
