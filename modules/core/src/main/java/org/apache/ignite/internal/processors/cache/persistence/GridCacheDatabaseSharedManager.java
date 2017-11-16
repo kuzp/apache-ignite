@@ -201,9 +201,22 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     private static final Pattern CP_FILE_NAME_PATTERN = Pattern.compile("(\\d+)-(.*)-(START|END)\\.bin");
 
     /** */
+    private static final Pattern NODE_STARTED__FILE_NAME_PATTERN = Pattern.compile("(\\d+)-node-started\\.bin");
+
+    /** Node started file suffix. */
+    private static final String NODE_STARTED_FILE_NAME_SUFFIX = "-node-started.bin";
+
+    /** */
     private static final FileFilter CP_FILE_FILTER = new FileFilter() {
         @Override public boolean accept(File f) {
             return CP_FILE_NAME_PATTERN.matcher(f.getName()).matches();
+        }
+    };
+
+    /** */
+    private static final FileFilter NODE_STARTED_FILE_FILTER = new FileFilter() {
+        @Override public boolean accept(File f) {
+            return f.getName().endsWith(NODE_STARTED_FILE_NAME_SUFFIX);
         }
     };
 
@@ -683,7 +696,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             cctx.wal().resumeLogging(restore);
 
-            cctx.wal().log(new MemoryRecoveryRecord(U.currentTimeMillis()));
+            WALPointer ptr = cctx.wal().log(new MemoryRecoveryRecord(U.currentTimeMillis()));
+
+            cctx.wal().fsync(ptr);
+
+            nodeStart(ptr);
 
             metaStorage.init(this);
 
@@ -698,10 +715,96 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /**
+     * @param ptr Memory recovery wal pointer.
+     */
+    private void nodeStart(WALPointer ptr) throws IgniteCheckedException {
+        FileWALPointer p = (FileWALPointer)ptr;
+
+        String fileName = U.currentTimeMillis() + "-node-started.bin";
+
+        ByteBuffer buf = ByteBuffer.allocate(20);
+        buf.order(ByteOrder.nativeOrder());
+
+        try (FileChannel ch = FileChannel.open(
+            Paths.get(cpDir.getAbsolutePath(), fileName),
+            StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND)
+        ) {
+            buf.putLong(p.index());
+
+            buf.putInt(p.fileOffset());
+
+            buf.putInt(p.length());
+
+            buf.flip();
+
+            ch.write(buf);
+
+            buf.clear();
+
+            ch.force(true);
+        }
+        catch (IOException e) {
+            throw new IgniteCheckedException(e);
+        }
+    }
+
+    /**
+     *
+     */
+    public List<T2<Long, WALPointer>> nodeStartedPointers() throws IgniteCheckedException {
+        List<T2<Long, WALPointer>> res = new ArrayList<>();
+
+        File[] files = cpDir.listFiles(NODE_STARTED_FILE_FILTER);
+
+        Arrays.sort(files, new Comparator<File>() {
+            @Override public int compare(File o1, File o2) {
+                Matcher m1 = NODE_STARTED__FILE_NAME_PATTERN.matcher(o1.getName());
+                Matcher m2 = NODE_STARTED__FILE_NAME_PATTERN.matcher(o2.getName());
+
+                Long ts1 = Long.valueOf(m1.group(0));
+                Long ts2 = Long.valueOf(m2.group(0));
+
+                if (ts1 == ts2)
+                    return 0;
+                else if (ts1 > ts2)
+                    return -1;
+                else
+                    return 1;
+            }
+        });
+
+        ByteBuffer buf = ByteBuffer.allocate(20);
+        buf.order(ByteOrder.nativeOrder());
+
+        for (File f : files){
+            Matcher m = NODE_STARTED__FILE_NAME_PATTERN.matcher(f.getName());
+
+            Long ts = Long.valueOf(m.group(0));
+
+            try (FileChannel ch = FileChannel.open(f.toPath(), READ)) {
+                ch.read(buf);
+
+                buf.flip();
+
+                FileWALPointer ptr = new FileWALPointer(
+                    buf.getLong(), buf.getInt(), buf.getInt());
+
+                res.add(new T2<Long, WALPointer>(ts, ptr));
+
+                buf.clear();
+            }
+            catch (IOException e) {
+                throw new IgniteCheckedException("Failed to read node started marker file: " + f.getAbsolutePath(), e);
+            }
+        }
+
+        return res;
+    }
+
+    /**
      * @throws IgniteCheckedException
      */
     private void getMetastoreData() throws IgniteCheckedException {
-
         try {
             DataStorageConfiguration memCfg = cctx.kernalContext().config().getDataStorageConfiguration();
 
