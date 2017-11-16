@@ -16,6 +16,7 @@
 
 include /app/helpers/jade/mixins
 
+//- Static discovery
 mixin discovery-vm(modelAt = '$ctrl.clonedCluster')
     -const model = `${modelAt}.discovery.Vm`
     -const addresses = `${model}.addresses`
