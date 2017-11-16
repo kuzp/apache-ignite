@@ -33,7 +33,6 @@ include /app/helpers/jade/mixins
             .pca-form-column-6
                 .ignite-form-field(ng-init='checkpointSpiTbl={type: "checkpointSpi", model: "checkpointSpi", focusId: "kind", ui: "checkpoint-table"}')
                     +ignite-form-field__label('Checkpoint SPI configurations:', '"checkpointSPIConfigurations"')
-                        +tooltip(`Checkpoint SPI configurations`)
                     .ignite-form-field__control
                         list-editable(ng-model=model name='checkpointSPIConfigurations')
                             list-editable-item-edit

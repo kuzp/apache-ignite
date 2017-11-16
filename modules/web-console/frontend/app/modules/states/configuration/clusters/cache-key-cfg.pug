@@ -31,7 +31,6 @@ include /app/helpers/jade/mixins
                 mixin clusters-cache-key-cfg
                     .ignite-form-field
                         +ignite-form-field__label('Cache key configuration:', '"cacheKeyConfiguration"')
-                            +tooltip(`Cache key configuration`)
                         .ignite-form-field__control
                             -let items = model
                             list-editable(ng-model=items name='cacheKeyConfiguration')
