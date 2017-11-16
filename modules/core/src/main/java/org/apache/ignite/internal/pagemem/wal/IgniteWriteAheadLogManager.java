@@ -96,11 +96,11 @@ public interface IgniteWriteAheadLogManager extends GridCacheSharedManager, Igni
      * the given pointer will be kept because there is a configurable WAL history size. Those entries may be used
      * for partial partition rebalancing.
      *
-     * @param from Pointer for which it is safe to clear the log.
-     * @param to Pointer for which it is safe to clear the log.
+     * @param low Pointer for which it is safe to clear the log.
+     * @param high Pointer for which it is safe to clear the log.
      * @return Number of deleted WAL segments.
      */
-    public int truncate(WALPointer from, WALPointer to);
+    public int truncate(WALPointer low, WALPointer high);
 
     /**
      * @return Total number of segments in the WAL archive.

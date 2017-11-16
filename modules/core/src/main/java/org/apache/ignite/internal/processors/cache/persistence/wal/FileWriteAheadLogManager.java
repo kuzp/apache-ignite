@@ -652,15 +652,15 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     }
 
     /** {@inheritDoc} */
-    @Override public int truncate(WALPointer from, WALPointer to) {
-        if (to == null)
+    @Override public int truncate(WALPointer low, WALPointer high) {
+        if (high == null)
             return 0;
 
-        assert to instanceof FileWALPointer : to;
+        assert high instanceof FileWALPointer : high;
 
         // File pointer bound: older entries will be deleted from archive
-        FileWALPointer fromPtr = (FileWALPointer)from;
-        FileWALPointer toPtr = (FileWALPointer)to;
+        FileWALPointer lowPtr = (FileWALPointer)low;
+        FileWALPointer highPtr = (FileWALPointer)high;
 
         FileDescriptor[] descs = scan(walArchiveDir.listFiles(WAL_SEGMENT_FILE_FILTER));
 
@@ -669,7 +669,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         FileArchiver archiver0 = archiver;
 
         for (FileDescriptor desc : descs) {
-            if (fromPtr != null && desc.idx < fromPtr.index())
+            if (lowPtr != null && desc.idx < lowPtr.index())
                 continue;
 
             // Do not delete reserved or locked segment and any segment after it.
@@ -677,7 +677,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 return deleted;
 
             // We need to leave at least one archived segment to correctly determine the archive index.
-            if (desc.idx + 1 < toPtr.index() || (from != null && desc.idx < toPtr.index())) {
+            if (desc.idx + 1 < highPtr.index()) {
                 if (!desc.file.delete())
                     U.warn(log, "Failed to remove obsolete WAL segment (make sure the process has enough rights): " +
                         desc.file.getAbsolutePath());

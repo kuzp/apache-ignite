@@ -2019,11 +2019,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /**
-     * @param lowBound WALPointer.
+     * Wal truncate callBack.
+     *
      * @param highBound WALPointer.
      */
-    public void onWalTruncate(WALPointer lowBound, WALPointer highBound) {
-        checkpointHist.onWalTruncate(lowBound, highBound);
+    public void onWalTruncate(WALPointer highBound) {
+        checkpointHist.onWalTruncate(highBound);
     }
 
     /**
@@ -3225,17 +3226,16 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         /**
          * Callback on truncate wal.
          */
-        private void onWalTruncate(WALPointer from, WALPointer to) {
-            FileWALPointer lowBound = (FileWALPointer)from;
-            FileWALPointer toBound = new FileWALPointer(Long.valueOf(((FileWALPointer)to).index() + 1), 0, 0);
+        private void onWalTruncate(WALPointer ptr) {
+            FileWALPointer bound = (FileWALPointer)ptr;
 
-            List<CheckpointEntry> toRemove = new ArrayList<>();
+            List<CheckpointEntry> cpToRemove = new ArrayList<>();
 
             for (CheckpointEntry cpEntry : histMap.values()) {
                 FileWALPointer cpPnt = (FileWALPointer)cpEntry.checkpointMark();
 
-                if (lowBound.compareTo(cpPnt) > 0 || toBound.compareTo(cpPnt) < 0)
-                    continue;
+                if (bound.compareTo(cpPnt) <= 0)
+                    break;
 
                 if (cctx.wal().reserved(cpEntry.checkpointMark())) {
                     U.warn(log, "Could not clear historyMap due to WAL reservation on cpEntry " + cpEntry.cpId +
@@ -3253,8 +3253,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 boolean fail = !rmvdStart || !rmvdEnd;
 
                 if (!fail)
-                    toRemove.add(cpEntry);
+                    cpToRemove.add(cpEntry);
             }
+
+            for (CheckpointEntry cpEntry : cpToRemove)
+                histMap.remove(cpEntry.cpTs);
         }
 
         /**
