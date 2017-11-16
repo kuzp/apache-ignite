@@ -122,11 +122,7 @@ page-configure {
     flex-wrap: wrap;
     align-content: flex-start;
 
-    &>.pc-form-grid-col-10,
-    &>.pc-form-grid-col-20,
-    &>.pc-form-grid-col-30,
-    &>.pc-form-grid-col-40,
-    &>.pc-form-grid-col-60 {
+    &>[class*='pc-form-grid-col-'] {
         margin: 10px 0 0 !important;
         max-width: none;
         padding: 0 10px;
