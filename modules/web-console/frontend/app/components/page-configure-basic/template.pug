@@ -85,9 +85,6 @@ form(novalidate name=form)
 
     h2.pcb-section-header.pcb-inner-padding(style='margin-top:30px') Step 2. Caches Configuration
 
-    .settings-row.pcb-inner-padding(ng-show='!$ctrl.shortCaches.length').pcb-section-notification
-        | You have no caches. Let’s create a new one.
-
     .pcb-form-grid-row.pc-form-grid-row(
         ng-if=`
             $ctrl.defaultMemoryPolicy &&
@@ -165,8 +162,10 @@ form(novalidate name=form)
                 })
             div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
                 +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
+        list-editable-no-items
+            | You have no caches. #[a.link-success(ng-click='$ctrl.addCache()') Create one?]
 
-    .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding
+    .pcb-buttons-group.margin-top-dflt-2x.pcb-inner-padding(ng-show='$ctrl.shortCaches.length')
         a.link-success(
             ng-click='$ctrl.addCache()'
         )
