@@ -14,9 +14,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.le-body()
+.le-body
     .le-row(
-        ng-if='$ctrl.ngModel.$viewValue.length'
         ng-repeat='item in $ctrl.ngModel.$viewValue track by $ctrl.$index(item, $index)'
         ng-class=`{
             'le-row--editable': $ctrl.isEditView($index),
@@ -48,4 +47,4 @@
                 svg(ignite-icon='cross')
 
     .le-row(ng-if='!$ctrl.ngModel.$viewValue.length')
-        div(ng-transclude='noItems')
+        .le-row-item(ng-transclude='noItems')
