@@ -17,19 +17,27 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.LinkedList;
 import java.util.List;
-import org.apache.ignite.ml.nn.NeuralNetworkTrainer;
+import org.apache.ignite.ml.math.Tensor;
 
 /**
  * TODO: add description.
  */
-public class ComputationGraph {
-    private List<Node> topNodes;
-    private List<Edge> links;
+public class InputNode<T extends Tensor> implements Node<T> {
+    private T value;
 
-    public NeuralNetworkTrainer buildGraph() {
-        return null;
+    private List<Node> consumers;
+
+    public InputNode() {
+        consumers = new LinkedList<>();
     }
 
+    public void setValue(T val){
+        this.value = val;
+    }
 
+    @Override public T output() {
+        return value;
+    }
 }

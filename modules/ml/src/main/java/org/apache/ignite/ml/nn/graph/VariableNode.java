@@ -20,20 +20,5 @@ package org.apache.ignite.ml.nn.graph;
 /**
  * TODO: add description.
  */
-public class Edge {
-    private Node input;
-    private Node output;
-
-    public Edge(Node input, Node output) {
-        this.input = input;
-        this.output = output;
-    }
-
-    public Node getInput() {
-        return input;
-    }
-
-    public Node getOutput() {
-        return output;
-    }
+public class VariableNode implements Node {
 }

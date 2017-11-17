@@ -22,6 +22,32 @@ import org.apache.ignite.ml.math.Tensor;
 /**
  * TODO: add description.
  */
-public interface Node<T extends Tensor> {
-    public T output();
+public class ScalarTensor implements Tensor {
+    private double value;
+
+    /**
+     * @return Value.
+     */
+    public double value() {
+        return value;
+    }
+
+    /**
+     * @param val New value.
+     */
+    public void value(double val) {
+        value = val;
+    }
+
+    @Override public int[] shape() {
+        return new int[0];
+    }
+
+    @Override public Tensor tensorFold(Tensor tensor) {
+        return null;
+    }
+
+    @Override public Tensor tensorProduct(Tensor tensor) {
+        return null;
+    }
 }

@@ -17,11 +17,40 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 
 /**
  * TODO: add description.
  */
-public interface Node<T extends Tensor> {
-    public T output();
+public class OperationNode<T extends Tensor> implements Node<T> {
+    private T apply;
+    private Operator<T> operator;
+    /**
+     * All input nodes.
+     */
+    private List<Node> inputNodes;
+    /**
+     * Nodes that receive this operation's output as input.
+     */
+    private List<Node> consumers = new LinkedList<>();
+
+    public OperationNode(Operator<T> operator, List<Node> inputNodes) {
+        this.operator = operator;
+        this.inputNodes = inputNodes;
+    }
+
+    public void addConsumer(Node node){
+        consumers.add(node);
+    }
+
+    public void compute() {
+        inputNodes.stream().filter(node -> node instanceof OperationNode).forEach(node -> ((OperationNode)node).compute());
+        apply = operator.apply((Tensor[])inputNodes.stream().map(Node::output).toArray());
+    }
+
+    @Override public T output() {
+        return apply;
+    }
 }
