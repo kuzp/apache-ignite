@@ -51,19 +51,24 @@ include /app/helpers/jade/mixins
                                     list-editable-item-edit
                                         - form = '$parent.form'
                                         .settings-row
-                                            +dropdown-required-autofocus('Failover SPI:', '$parent.item.kind', '"failoverKind"', 'true', 'true', 'Choose Failover SPI', '[\
-                                                    {value: "JobStealing", label: "Job stealing"},\
-                                                    {value: "Never", label: "Never"},\
-                                                    {value: "Always", label: "Always"},\
-                                                    {value: "Custom", label: "Custom"}\
-                                                ]', 'Provides ability to supply custom logic for handling failed execution of a grid job\
-                                                <ul>\
-                                                    <li>Job stealing - Supports job stealing from over-utilized nodes to under-utilized nodes</li>\
-                                                    <li>Never - Jobs are ordered as they arrived</li>\
-                                                    <li>Always - Jobs are first ordered by their priority</li>\
-                                                    <li>Custom - Jobs are activated immediately on arrival to mapped node</li>\
-                                                    <li>Default - Default FailoverSpi implementation</li>\
-                                                </ul>')
+                                            +sane-ignite-form-field-dropdown({
+                                                label: 'Failover SPI:',
+                                                model: '$parent.item.kind',
+                                                name: '"failoverKind"',
+                                                placeholder: 'Choose Failover SPI',
+                                                options: '::$ctrl.Clusters.failoverSpis',
+                                                tip: `
+                                                Provides ability to supply custom logic for handling failed execution of a grid job
+                                                <ul>
+                                                    <li>Job stealing - Supports job stealing from over-utilized nodes to under-utilized nodes</li>
+                                                    <li>Never - Jobs are ordered as they arrived</li>
+                                                    <li>Always - Jobs are first ordered by their priority</li>
+                                                    <li>Custom - Jobs are activated immediately on arrival to mapped node</li>
+                                                    <li>Default - Default FailoverSpi implementation</li>
+                                                </ul>`
+                                            })(
+                                                required
+                                            )
 
                                         .settings-row(ng-show='$parent.item.kind === "JobStealing"')
                                             +number('Maximum failover attempts:', '$parent.item.JobStealing.maximumFailoverAttempts', '"jsMaximumFailoverAttempts"', 'true', '5', '0',

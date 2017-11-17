@@ -48,6 +48,8 @@ declare namespace ig {
                 | 'WeightedRandom'
                 | 'Custom'
 
+            export type FailoverSPIs = 'JobStealing' | 'Never' | 'Always' | 'Custom'
+
             export interface ShortCluster {
                 _id: string,
                 name: string,

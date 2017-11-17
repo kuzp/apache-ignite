@@ -210,6 +210,14 @@ export default class Clusters {
         };
     }
 
+    /** @type {ig.menu<ig.config.cluster.FailoverSPIs>} */
+    failoverSpis = [
+        {value: 'JobStealing', label: 'Job stealing'},
+        {value: 'Never', label: 'Never'},
+        {value: 'Always', label: 'Always'},
+        {value: 'Custom', label: 'Custom'}
+    ];
+
     toShortCluster(cluster) {
         return {
             _id: cluster._id,
