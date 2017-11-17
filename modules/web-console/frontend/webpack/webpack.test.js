@@ -29,5 +29,11 @@ export default merge(commonCfg, {
     entry: null,
 
     // Output system.
-    output: null
+    output: null,
+    module: {
+        rules: [
+            {test: /\.scss$/, use: ['ignore']},
+            {test: /\.pug$/, use: ['ignore']}
+        ]
+    }
 });
