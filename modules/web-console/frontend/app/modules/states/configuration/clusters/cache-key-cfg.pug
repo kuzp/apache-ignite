@@ -53,11 +53,12 @@ include /app/helpers/jade/mixins
                                             +unique-feedback(`affinityKeyFieldName`, 'Affinity key field name should be unique.')
 
                                 list-editable-no-items
-                                    | You have no cache key configurations.&nbsp;
-                                    a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                    list-editable-add-item-button(
+                                        add-item=`(${items} = ${items} || []).push({})`
+                                        label-single='configuration'
+                                        label-multiple='configurations'
+                                    )
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                | + Add new cache key configuration
                 +clusters-cache-key-cfg
 
             .pca-form-column-6

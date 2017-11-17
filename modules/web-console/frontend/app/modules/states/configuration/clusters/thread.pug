@@ -131,17 +131,12 @@ include /app/helpers/jade/mixins
                                                 +number('Pool size:', '$parent.item.size', '"ExecutorPoolSize"', 'true', 'max(8, availableProcessors)', '1', 'Thread pool size')
 
                                     list-editable-no-items
-                                        | You have no executor configurations.&nbsp;
-                                        a.link-success(
-                                            ng-click=`ui.inputForm.pools.executorConfigurations.editListItem($ctrl.Clusters.addExecutorConfiguration(${model}))`
-                                        ) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`$edit($ctrl.Clusters.addExecutorConfiguration(${model}))`
+                                            label-single='executor configuration'
+                                            label-multiple='executor configurations'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(
-                                    type='button'
-                                    ng-if=`${items}.length`
-                                    ng-click=`ui.inputForm.pools.executorConfigurations.editListItem($ctrl.Clusters.addExecutorConfiguration(${model}))`
-                                )
-                                    | + Add new executor configuration
                     +clusters-thread-executor-configurations
 
             .pca-form-column-6

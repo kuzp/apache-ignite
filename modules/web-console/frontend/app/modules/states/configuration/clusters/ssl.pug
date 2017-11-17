@@ -67,11 +67,11 @@ include /app/helpers/jade/mixins
                                             +unique-feedback('"trustManager"', uniqueTip)
 
                                     list-editable-no-items
-                                        | You have no trust managers.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
-
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push('')`)
-                                    | + Add new trust manager
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push('')`
+                                            label-single='trust manager'
+                                            label-multiple='trust managers'
+                                        )
 
                         - var form = '$parent.form'
                         +clusters-ssl-trust-managers

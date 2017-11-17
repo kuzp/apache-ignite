@@ -76,11 +76,12 @@ include /app/helpers/jade/mixins
                                                 +java-class-typeahead('Field full class name', `$parent.item.className`, '"className"', 'javaBuiltInClasses', true, true, 'Enter field full class name')
 
                                     list-editable-no-items
-                                        | You have no fields.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push({})`
+                                            label-single='field to query'
+                                            label-multiple='fields'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                    | + Add field to query
                     +domains-query-fields
 
                 .pc-form-grid-col-60
@@ -121,11 +122,12 @@ include /app/helpers/jade/mixins
                                                 +ignite-form-field-text('Field alias', '$parent.item.alias', '"alias"', false, true, 'Enter field alias')
 
                                     list-editable-no-items
-                                        | You have no aliases.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push({})`
+                                            label-single='alias to query'
+                                            label-multiple='aliases'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                    | + Add alias to query
                     +domains-query-aliases
 
                 .pc-form-grid-col-60(ng-if-end)
@@ -196,29 +198,21 @@ include /app/helpers/jade/mixins
                                                                                 options: '::$ctrl.Models.indexSortDirection.values'
                                                                             })
                                                                 list-editable-no-items
-                                                                    | You have no fields in index.&nbsp;
-                                                                    a.link-success(
-                                                                        ng-click=`ui.inputForm.query.form.indexFields.editListItem($ctrl.Models.addIndexField(${items}))`
-                                                                    ) Create one?
+                                                                    list-editable-add-item-button(
+                                                                        add-item=`$edit($ctrl.Models.addIndexField(${items}))`
+                                                                        label-single='field to index'
+                                                                        label-multiple='fields in index'
+                                                                    )
 
-                                                            button.btn-ignite.btn-ignite--link(
-                                                                type='button'
-                                                                ng-if=`${items}.length`
-                                                                ng-click=`ui.inputForm.query.form.indexFields.editListItem($ctrl.Models.addIndexField(${items}))`
-                                                            )
-                                                                | + Add new field to index
                                                 +domains-query-indexes-fields
 
                                     list-editable-no-items
-                                        | You have no fields.&nbsp;
-                                        a.link-success(ng-click=`$ctrl.Models.addIndex(${model})`) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`$ctrl.Models.addIndex(${model})`
+                                            label-single='index'
+                                            label-multiple='fields'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(
-                                    type='button'
-                                    ng-if=`${items}.length`
-                                    ng-click=`$ctrl.Models.addIndex(${model})`
-                                )
-                                    | + Add new index
                     +domains-query-indexes
             .pca-form-column-6
                 +preview-xml-java(model, 'domainModelQuery')

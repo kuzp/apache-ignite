@@ -106,11 +106,12 @@ include /app/helpers/jade/mixins
                                             'Custom load balancing SPI implementation class name.', loadBalancingCustom)
 
                                 list-editable-no-items
-                                    | You have no load balancing configurations.&nbsp;
-                                    a.link-success(ng-click=`$ctrl.Clusters.addLoadBalancingSpi(${model})`) Create one?
+                                    list-editable-add-item-button(
+                                        add-item=`$ctrl.Clusters.addLoadBalancingSpi(${model})`
+                                        label-single='load balancing configuration'
+                                        label-multiple='load balancing configurations'
+                                    )
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addLoadBalancingSpi(${model})`)
-                                | + Add new load balancing configuration
                 +clusters-load-balancing-spi
 
             .pca-form-column-6

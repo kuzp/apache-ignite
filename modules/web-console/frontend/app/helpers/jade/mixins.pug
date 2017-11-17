@@ -26,7 +26,10 @@ include ../../primitives/switcher/index
 //- Mixin for advanced options toggle.
 mixin advanced-options-toggle(click, cond, showMessage, hideMessage)
     .advanced-options
-        i.fa(ng-click=`${click}` ng-class=`${cond} ? 'fa-chevron-circle-down' : 'fa-chevron-circle-right'`)
+        i.fa(
+            ng-click=`${click}`
+            ng-class=`${cond} ? 'fa-chevron-circle-down' : 'fa-chevron-circle-right'`
+        )
         a(ng-click=click) {{ #{cond} ? '#{hideMessage}' : '#{showMessage}' }}
 
 //- Mixin for advanced options toggle with default settings.
@@ -317,11 +320,11 @@ mixin list-text-field({ items, lbl, name, itemName, itemsName })
                     block
 
         list-editable-no-items
-            | You have no #{itemsName}.&nbsp;
-            a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
-
-    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push('')`)
-        | + Add new #{itemName}
+            list-editable-add-item-button(
+                add-item=`(${items} = ${items} || []).push('')`
+                label-single=itemName
+                label-multiple=itemsName
+            )
 
 mixin list-java-class-field(lbl, model, name, items)
     +ignite-form-field-text(lbl, model, name, false, true, 'Enter fully qualified class name')(
@@ -392,14 +395,11 @@ mixin list-addresses({ items, name, tip, withPortRange = true })
                     +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
 
             list-editable-no-items
-                | You have no addresses.&nbsp;
-                a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
-
-        button.btn-ignite.btn-ignite--link(
-            type='button'
-            ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`
-        )
-            | + Add new address
+                list-editable-add-item-button(
+                    add-item=`(${items} = ${items} || []).push("")`
+                    label-multiple='addresses'
+                    label-single='address'
+                )
 
 //- Mixin for cache mode.
 mixin cacheMode(lbl, model, name, placeholder)
@@ -541,11 +541,11 @@ mixin list-pair-edit({ items, keyLbl, valLbl, itemName, itemsName })
                     +ignite-form-field-text(valLbl, '$parent.item.value', '"value"', false, true, valLbl)
 
         list-editable-no-items
-            | You have no #{itemsName}.&nbsp;
-            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
-
-    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-        | + Add new #{itemName}
+            list-editable-add-item-button(
+                add-item=`(${items} = ${items} || []).push({})`
+                label-single=itemName
+                label-multiple=itemsName
+            )
 
 //- Mixin for DB dialect.
 mixin dialect(lbl, model, name, required, tipTitle, genericDialectName, placeholder)

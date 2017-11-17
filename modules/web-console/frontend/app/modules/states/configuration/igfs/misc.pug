@@ -101,11 +101,12 @@ include /app/helpers/jade/mixins
                                                 )
 
                                     list-editable-no-items
-                                        | You have no path modes.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push('')`
+                                            label-single='path mode'
+                                            label-multiple='path modes'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push('')`)
-                                    | + Add new path mode
                     +igfs-misc-path-modes
 
             .pca-form-column-6

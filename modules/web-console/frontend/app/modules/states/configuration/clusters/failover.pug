@@ -76,11 +76,12 @@ include /app/helpers/jade/mixins
                                                 'Custom FailoverSpi implementation class name.', failoverCustom)
 
                                     list-editable-no-items
-                                        | You have no failover SPI.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push({})`
+                                            label-single='failover SPI'
+                                            label-multiple='failover SPIs'
+                                        )
 
-                                button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-                                    | + Add new failover SPI
                     +clusters-failover-spi
 
             .pca-form-column-6

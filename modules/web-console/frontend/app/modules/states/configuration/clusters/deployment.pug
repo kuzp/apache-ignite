@@ -85,17 +85,12 @@ include /app/helpers/jade/mixins
                                         +unique-feedback('"packageName"', uniqueTip)
 
                                 list-editable-no-items
-                                    | You have no packages.&nbsp;
-                                    a.link-success(
-                                        ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
-                                    ) Create one?
+                                    list-editable-add-item-button(
+                                        add-item=`$ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model})`
+                                        label-single='package'
+                                        label-multiple='packages'
+                                    )
 
-                            button.btn-ignite.btn-ignite--link(
-                                type='button'
-                                ng-if=`${items}.length`
-                                ng-click=`ui.inputForm.deployment.localClassPathExclude.editListItem($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
-                            )
-                                | + Add new package
                     -var form = '$parent.form'
                     +clusters-deployment-packages
                     -var form = 'deployment'
@@ -142,17 +137,11 @@ include /app/helpers/jade/mixins
                                             +unique-feedback('"url"', uniqueTip)
 
                                     list-editable-no-items
-                                        | You have no URI.&nbsp;
-                                        a.link-success(
-                                            ng-click=`(${items} = ${items} || []).push('')`
-                                        ) Create one?
-
-                                button.btn-ignite.btn-ignite--link(
-                                    type='button'
-                                    ng-if=`${items}.length`
-                                    ng-click=`(${items} = ${items} || []).push('')`
-                                )
-                                    | + Add new URI
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push('')`
+                                            label-single='URI'
+                                            label-multiple='URIs'
+                                        )
 
                         - var form = '$parent.form'
                         +clusters-deployment-uri
@@ -179,15 +168,11 @@ include /app/helpers/jade/mixins
                                             +unique-feedback('"scanner"', uniqueTip)
 
                                     list-editable-no-items
-                                        | You have no scanners.&nbsp;
-                                        a.link-success(ng-click=`(${items} = ${items} || []).push('')`) Create one?
-
-                                button.btn-ignite.btn-ignite--link(
-                                    type='button'
-                                    ng-if=`${items}.length`
-                                    ng-click=`(${items} = ${items} || []).push('')`
-                                )
-                                    | + Add new scanner
+                                        list-editable-add-item-button(
+                                            add-item=`(${items} = ${items} || []).push('')`
+                                            label-single='scanner'
+                                            label-multiple='scanners'
+                                        )
 
                         - var form = '$parent.form'
                         +clusters-deployment-scanner

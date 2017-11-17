@@ -79,11 +79,11 @@ include /app/helpers/jade/mixins
                                     'Custom CheckpointSpi implementation class', CustomCheckpoint)
 
                             list-editable-no-items
-                                | You have no checkpoint SPI configurations.&nbsp;
-                                a.link-success(ng-click=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`) Create one?
-
-                        button.btn-ignite.btn-ignite--link(type='button' ng-if=`${model}.length` ng-click=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`)
-                            | + Add new checkpoint SPI configuration
+                                list-editable-add-item-button(
+                                    add-item=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`
+                                    label-single='checkpoint SPI configuration'
+                                    label-multiple='checkpoint SPI configurations'
+                                )
             
             .pca-form-column-6
                 +preview-xml-java('$ctrl.clonedCluster', 'clusterCheckpoint', '$ctrl.caches')

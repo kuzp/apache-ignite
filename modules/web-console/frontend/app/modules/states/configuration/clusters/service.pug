@@ -80,11 +80,12 @@ include /app/helpers/jade/mixins
                                             'Affinity key used for key-to-node affinity calculation')
 
                                 list-editable-no-items
-                                    | You have no service configurations.&nbsp;
-                                    a.link-success(ng-click=`$ctrl.Clusters.addServiceConfiguration($ctrl.clonedCluster)`) Create one?
+                                    list-editable-add-item-button(
+                                        add-item=`$ctrl.Clusters.addServiceConfiguration($ctrl.clonedCluster)`
+                                        label-single='service configuration'
+                                        label-multiple='service configurations'
+                                    )
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addServiceConfiguration($ctrl.clonedCluster)`)
-                                | + Add new service configuration
                 +clusters-service-configurations
 
             .pca-form-column-6

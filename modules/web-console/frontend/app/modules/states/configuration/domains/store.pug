@@ -40,11 +40,11 @@ mixin list-db-field-edit({ items, itemName, itemsName })
                     +dropdown-required('Java type:', '$parent.item.javaFieldType', '"javaFieldType"', true, true, 'Choose Java type', 'supportedJavaTypes')
 
         list-editable-no-items
-            | You have no #{itemsName}.&nbsp;
-            a.link-success(ng-click=`(${items} = ${items} || []).push({})`) Create one?
-
-    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push({})`)
-        | + Add new #{itemName}
+            list-editable-add-item-button(
+                add-item=`(${items} = ${items} || []).push({})`
+                label-single=itemName
+                label-multiple=itemsName
+            )
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle='' ng-click=`ui.loadPanel('${form}')`)

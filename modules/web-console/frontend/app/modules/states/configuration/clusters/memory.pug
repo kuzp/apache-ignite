@@ -182,11 +182,12 @@ include /app/helpers/jade/mixins
                                                 'Whether memory metrics are enabled by default on node startup')
 
                                         list-editable-no-items
-                                            | You have no memory policy configurations.&nbsp;
-                                            a.link-success(ng-click=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`) Create one?
+                                            list-editable-add-item-button(
+                                                add-item=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`
+                                                label-single='memory policy configuration'
+                                                label-multiple='memory policy configurations'
+                                            )
 
-                                    button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`$ctrl.Clusters.addMemoryPolicy($ctrl.clonedCluster)`)
-                                        | + Add new memory policy configuration
                         +clusters-memory-policies
 
             .pca-form-column-6

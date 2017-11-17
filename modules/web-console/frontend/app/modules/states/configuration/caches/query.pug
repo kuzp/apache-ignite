@@ -78,11 +78,12 @@ include /app/helpers/jade/mixins
                                         +unique-feedback('"sqlFunction"', uniqueTip)
 
                                 list-editable-no-items
-                                    | You have no SQL functions.&nbsp;
-                                    a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
+                                    list-editable-add-item-button(
+                                        add-item=`(${items} = ${items} || []).push("")`
+                                        label-single='SQL function'
+                                        label-multiple='SQL functions'
+                                    )
 
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
-                                | + Add new SQL function
                     - var form = '$parent.form'
                     +caches-query-list-sql-functions
                     - var form = 'query'

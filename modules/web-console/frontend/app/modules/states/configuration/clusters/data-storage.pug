@@ -201,14 +201,11 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                                     })
                                     - form = 'dataStorageConfiguration'
                                 list-editable-no-items
-                                    | You have no data region configurations.&nbsp;
-                                    a.link-success(ng-click=`$ctrl.Clusters.addDataRegionConfiguration($ctrl.clonedCluster)`) Create one?
-                            button.btn-ignite.btn-ignite--link(
-                                type='button'
-                                ng-if=`${dataRegionConfigurations}.length`
-                                ng-click=`$ctrl.Clusters.addDataRegionConfiguration($ctrl.clonedCluster)`
-                            )
-                                | + Add new data region configuration
+                                    list-editable-add-item-button(
+                                        add-item=`$ctrl.Clusters.addDataRegionConfiguration($ctrl.clonedCluster)`
+                                        label-single='data region configuration'
+                                        label-multiple='data region configurations'
+                                    )
 
                 .pc-form-grid-col-60
                     +text-enabled('Storage path:', `${model}.storagePath`, '"DataStoragePath"', 'true', 'false', 'db',

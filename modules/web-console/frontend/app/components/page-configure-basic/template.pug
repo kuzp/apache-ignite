@@ -163,13 +163,11 @@ form(novalidate name=form)
                         div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
                             +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
                     list-editable-no-items
-                        | You have no caches. #[a.link-success(ng-click='$ctrl.addCache()') Create one?]
-
-                button.btn-ignite.btn-ignite--link(
-                    type='button'
-                    ng-click='$ctrl.addCache()'
-                )
-                    | + Add one more cache
+                        list-editable-add-item-button(
+                            add-item='$ctrl.addCache()'
+                            label-single='cache'
+                            label-multiple='caches'
+                        )
         
     .pc-form-actions-panel
         button-preview-project(ng-hide='$ctrl.isNew$|async:this' cluster=model)

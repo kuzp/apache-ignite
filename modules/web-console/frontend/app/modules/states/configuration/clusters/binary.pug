@@ -70,11 +70,11 @@ include /app/helpers/jade/mixins
                                         +checkbox('Enum', '$parent.item.enum', 'enum', 'Flag indicating that this type is the enum')
 
                                 list-editable-no-items
-                                    | You have no type configurations.&nbsp;
-                                    a.link-success(ng-click=`(${items} = ${items} || []).push("")`) Create one?
-
-                            button.btn-ignite.btn-ignite--link(type='button' ng-if=`${items}.length` ng-click=`(${items} = ${items} || []).push("")`)
-                                | + Add New type configuration
+                                    list-editable-add-item-button(
+                                        add-item=`(${items} = ${items} || []).push("")`
+                                        label-single='configuration'
+                                        label-multiple='configurations'
+                                    )
 
                 - form = 'binary'
                 .pc-form-grid-col-60
