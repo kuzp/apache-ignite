@@ -22,17 +22,19 @@ export default class {
     /** @type {ng.INgModelController} */
     ngModel;
 
-    static $inject = ['$animate', '$element', '$transclude'];
+    static $inject = ['$animate', '$element', '$transclude', '$timeout'];
 
     /**
      * @param {ng.animate.IAnimateService} $animate
      * @param {JQLite} $element
      * @param {ng.ITranscludeFunction} $transclude
+     * @param {ng.ITimeoutService} $timeout
      */
-    constructor($animate, $element, $transclude) {
+    constructor($animate, $element, $transclude, $timeout) {
         $animate.enabled($element, false);
         this.$transclude = $transclude;
         this.$element = $element;
+        this.$timeout = $timeout;
         this.hasItemView = $transclude.isSlotFilled('itemView');
 
         this._cache = {};
@@ -54,7 +56,9 @@ export default class {
             return !Array.isArray(value) || !value.length;
         };
         this.ngModel.editListItem = (item) => {
-            this.startEditView(this.ngModel.$viewValue.indexOf(item));
+            this.$timeout(() => {
+                this.startEditView(this.ngModel.$viewValue.indexOf(item));
+            });
         };
     }
 
