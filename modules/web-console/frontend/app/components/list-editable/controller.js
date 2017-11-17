@@ -32,7 +32,7 @@ export default class {
     constructor($animate, $element, $transclude) {
         $animate.enabled($element, false);
         this.$transclude = $transclude;
-
+        this.$element = $element;
         this.hasItemView = $transclude.isSlotFilled('itemView');
 
         this._cache = {};
@@ -43,6 +43,10 @@ export default class {
             return item._id;
 
         return $index;
+    }
+
+    $onDestroy() {
+        this.$element = null;
     }
 
     $onInit() {
