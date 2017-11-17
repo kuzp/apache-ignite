@@ -116,6 +116,7 @@ include /app/helpers/jade/mixins
                                                 +ignite-form-field-text('Field name', '$parent.item.field', '"field"', false, true, 'Enter field name')(
                                                     data-ignite-unique=items
                                                     data-ignite-unique-property='field'
+                                                    ignite-auto-focus
                                                 )
                                                     +unique-feedback('"field"', 'Such field already exists!')
                                             .pc-form-grid-col-30

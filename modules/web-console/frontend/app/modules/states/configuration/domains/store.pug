@@ -31,7 +31,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
 
             .pc-form-grid-row
                 .pc-form-grid-col-30(divider='/')
-                    +ignite-form-field-text('DB name:', '$parent.item.databaseFieldName', '"databaseFieldName"', false, true, 'Enter DB name')
+                    +ignite-form-field-text('DB name:', '$parent.item.databaseFieldName', '"databaseFieldName"', false, true, 'Enter DB name')(ignite-auto-focus)
                 .pc-form-grid-col-30
                     +dropdown-required('DB type:', '$parent.item.databaseFieldType', '"databaseFieldType"', true, true, 'Choose DB type', 'supportedJdbcTypes')
                 .pc-form-grid-col-30(divider='/')

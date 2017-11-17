@@ -535,6 +535,7 @@ mixin list-pair-edit({ items, keyLbl, valLbl, itemName, itemsName })
                     +ignite-form-field-text(keyLbl, '$parent.item.name', '"name"', false, true, keyLbl)(
                         data-ignite-unique=items
                         data-ignite-unique-property='name'
+                        ignite-auto-focus
                     )
                         +unique-feedback('"name"', 'Property with such name already exists!')
                 .pc-form-grid-col-30
