@@ -70,6 +70,7 @@ include /app/helpers/jade/mixins
                                                 +ignite-form-field-text('Field name', '$parent.item.name', '"name"', false, true, 'Enter field name')(
                                                     data-ignite-unique=items
                                                     data-ignite-unique-property='name'
+                                                    ignite-auto-focus
                                                 )
                                                     +unique-feedback('"name"', 'Property with such name already exists!')
                                             .pc-form-grid-col-30
@@ -188,6 +189,7 @@ include /app/helpers/jade/mixins
                                                                                 ng-model-options='{allowInvalid: true}'
                                                                                 data-ignite-unique=items
                                                                                 data-ignite-unique-property='name'
+                                                                                ignite-auto-focus
                                                                             )
                                                                                 +unique-feedback('"name"', 'Such field already exists!')
                                                                         .pc-form-grid-col-60(ng-if='item.indexType == "SORTED"')
