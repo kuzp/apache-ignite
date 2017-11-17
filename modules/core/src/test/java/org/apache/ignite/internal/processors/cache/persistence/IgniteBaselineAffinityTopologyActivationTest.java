@@ -29,9 +29,9 @@ import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.cluster.BaselineNode;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.DataRegionConfiguration;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.configuration.MemoryConfiguration;
-import org.apache.ignite.configuration.PersistentStoreConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cluster.BaselineTopology;
@@ -62,16 +62,13 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
         if (consId != null)
             cfg.setConsistentId(consId);
 
-        MemoryConfiguration memCfg = new MemoryConfiguration();
-        memCfg.setPageSize(1024);
-        memCfg.setDefaultMemoryPolicySize(10 * 1024 * 1024);
+        cfg.setDataStorageConfiguration(
+            new DataStorageConfiguration().setDefaultDataRegionConfiguration(
+                new DataRegionConfiguration()
+                    .setPersistenceEnabled(true).setMaxSize(10 * 1024 * 1024)
 
-        cfg.setMemoryConfiguration(memCfg);
-
-        PersistentStoreConfiguration pCfg = new PersistentStoreConfiguration();
-        pCfg.setWalMode(WALMode.LOG_ONLY);
-
-        cfg.setPersistentStoreConfiguration(pCfg);
+            ).setWalMode(WALMode.LOG_ONLY)
+        );
 
         return cfg;
     }
@@ -131,7 +128,7 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
     public void testOnlineNodesCannotBeRemovedFromBaselineTopology() throws Exception {
         Ignite nodeA = startGridWithConsistentId("A");
         Ignite nodeB = startGridWithConsistentId("B");
-        Ignite nodeC = startGridWithConsistentId("C");
+        Ignite nodeC = startGridWithConsistentId("OnlineConsID");
 
         nodeC.active(true);
 
@@ -141,7 +138,9 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
             nodeC.cluster().setBaselineTopology(Arrays.asList((BaselineNode) nodeA.cluster().localNode(),
                 nodeB.cluster().localNode()));
         } catch (IgniteException e) {
-            assertTrue(e.getMessage().startsWith("Removing online nodes"));
+            String errMsg = e.getMessage();
+            assertTrue(errMsg.startsWith("Removing online nodes"));
+            assertTrue(errMsg.contains("[OnlineConsID]"));
 
             expectedExceptionIsThrown = true;
         }
@@ -359,6 +358,14 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
 
         nodeA.cluster().setBaselineTopology(baselineNodes(nodeA.cluster().forServers().nodes()));
 
+        boolean activated = GridTestUtils.waitForCondition(new GridAbsPredicate() {
+            @Override public boolean apply() {
+                return grid("A").active();
+            }
+        }, 10_000);
+
+        assertEquals(true, activated);
+
         verifyBaselineTopologyOnNodes(verifier, new Ignite[] {nodeA, nodeC});
 
         stopAllGrids(false);
@@ -366,7 +373,7 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
         nodeA = startGridWithConsistentId("A");
         nodeC = startGridWithConsistentId("C");
 
-        boolean activated = GridTestUtils.waitForCondition(new GridAbsPredicate() {
+        activated = GridTestUtils.waitForCondition(new GridAbsPredicate() {
             @Override public boolean apply() {
                 return grid("A").active();
             }
@@ -495,6 +502,60 @@ public class IgniteBaselineAffinityTopologyActivationTest extends GridCommonAbst
         assertTrue(clusterActive);
 
         checkDataInCache((IgniteEx) ig);
+    }
+
+    /**
+     *
+     */
+    public void testNoAutoActivationOnJoinNewNodeToInactiveCluster() throws Exception {
+        startGrids(2);
+
+        IgniteEx srv = grid(0);
+
+        srv.active(true);
+
+        awaitPartitionMapExchange();
+
+        assertTrue(srv.active());
+
+        srv.active(false);
+
+        assertFalse(srv.active());
+
+        startGrid(2);
+
+        Thread.sleep(3_000);
+
+        assertFalse(srv.active());
+    }
+
+    /**
+     * Verifies that neither BaselineTopology nor BaselineTopologyHistory are changed when cluster is deactivated.
+     */
+    public void testBaselineTopologyRemainsTheSameOnClusterDeactivation() throws Exception {
+        startGrids(2);
+
+        IgniteEx srv = grid(0);
+
+        srv.active(true);
+
+        awaitPartitionMapExchange();
+
+        assertTrue(srv.active());
+
+        srv.active(false);
+
+        BaselineTopology blt = getBaselineTopology(srv);
+
+        BaselineTopologyHistory bltHist = getBaselineTopologyHistory(srv);
+
+        assertEquals(0, blt.id());
+
+        assertEquals(2, blt.consistentIds().size());
+
+        assertEquals(1, blt.branchingHistory().size());
+
+        assertEquals(0, bltHist.history().size());
     }
 
     /**
