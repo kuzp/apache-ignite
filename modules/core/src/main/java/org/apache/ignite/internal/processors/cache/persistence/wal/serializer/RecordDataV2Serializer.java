@@ -22,9 +22,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.internal.pagemem.wal.record.BaselineTopologyRecord;
 import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
+import org.apache.ignite.internal.pagemem.wal.record.ExchangeRecord;
 import org.apache.ignite.internal.pagemem.wal.record.SnapshotRecord;
+import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.persistence.wal.ByteBufferBackedDataInput;
 import org.apache.ignite.internal.processors.cache.persistence.wal.record.HeaderRecord;
@@ -36,6 +39,12 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
     /** V1 data serializer delegate. */
     private final RecordDataV1Serializer delegateSerializer;
 
+    /** Serializer of {@link TxRecord} records. */
+    private final TxRecordSerializer txRecordSerializer;
+
+    /** Serializer of {@link BaselineTopologyRecord} records. */
+    private final BaselineTopologyRecordSerializer bltRecSerializer;
+
     /**
      * Create an instance of V2 data serializer.
      *
@@ -43,22 +52,33 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
      */
     public RecordDataV2Serializer(RecordDataV1Serializer delegateSerializer) {
         this.delegateSerializer = delegateSerializer;
+        this.txRecordSerializer = new TxRecordSerializer();
+        this.bltRecSerializer = new BaselineTopologyRecordSerializer(delegateSerializer.cctx());
     }
 
     /** {@inheritDoc} */
-    @Override public int size(WALRecord record) throws IgniteCheckedException {
-        if (record instanceof HeaderRecord)
+    @Override public int size(WALRecord rec) throws IgniteCheckedException {
+        if (rec instanceof HeaderRecord)
             throw new UnsupportedOperationException("Getting size of header records is forbidden since version 2 of serializer");
 
-        switch (record.type()) {
+        switch (rec.type()) {
             case DATA_RECORD:
-                return delegateSerializer.size(record) + 8/*timestamp*/;
+                return delegateSerializer.size(rec) + 8/*timestamp*/;
 
             case SNAPSHOT:
                 return 8 + 1;
 
+            case EXCHANGE:
+               return 4 /*type*/ + 8 /*timestamp*/ + 2 /*constId*/;
+
+            case TX_RECORD:
+                return txRecordSerializer.size((TxRecord)rec);
+
+            case BASELINE_TOP_RECORD:
+                return bltRecSerializer.size((BaselineTopologyRecord)rec);
+
             default:
-                return delegateSerializer.size(record);
+                return delegateSerializer.size(rec);
         }
     }
 
@@ -79,6 +99,19 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
 
                 return new DataRecord(entries, timeStamp);
 
+            case EXCHANGE:
+                int idx = in.readInt();
+                short constId = in.readShort();
+                long ts = in.readLong();
+
+                return new ExchangeRecord(constId, ExchangeRecord.Type.values()[idx], ts);
+
+            case TX_RECORD:
+                return txRecordSerializer.read(in);
+
+            case BASELINE_TOP_RECORD:
+                return bltRecSerializer.read(in);
+
             case SNAPSHOT:
                 long snpId = in.readLong();
                 byte full = in.readByte();
@@ -88,16 +121,17 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
             default:
                 return delegateSerializer.readRecord(type, in);
         }
+
     }
 
     /** {@inheritDoc} */
-    @Override public void writeRecord(WALRecord record, ByteBuffer buf) throws IgniteCheckedException {
-        if (record instanceof HeaderRecord)
+    @Override public void writeRecord(WALRecord rec, ByteBuffer buf) throws IgniteCheckedException {
+        if (rec instanceof HeaderRecord)
             throw new UnsupportedOperationException("Writing header records is forbidden since version 2 of serializer");
 
-        switch (record.type()) {
+        switch (rec.type()) {
             case DATA_RECORD:
-                DataRecord dataRec = (DataRecord)record;
+                DataRecord dataRec = (DataRecord)rec;
 
                 buf.putInt(dataRec.writeEntries().size());
                 buf.putLong(dataRec.timestamp());
@@ -108,15 +142,34 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                 break;
 
             case SNAPSHOT:
-                SnapshotRecord snpRec = (SnapshotRecord)record;
+                SnapshotRecord snpRec = (SnapshotRecord)rec;
 
                 buf.putLong(snpRec.getSnapshotId());
                 buf.put(snpRec.isFull() ? (byte)1 : 0);
 
                 break;
 
+            case EXCHANGE:
+                ExchangeRecord r = (ExchangeRecord)rec;
+
+                buf.putInt(r.getType().ordinal());
+                buf.putShort(r.getConstId());
+                buf.putLong(r.timestamp());
+
+                break;
+
+            case TX_RECORD:
+                txRecordSerializer.write((TxRecord)rec, buf);
+
+                break;
+
+            case BASELINE_TOP_RECORD:
+                bltRecSerializer.write((BaselineTopologyRecord)rec, buf);
+
+                break;
+
             default:
-                delegateSerializer.writeRecord(record, buf);
+                delegateSerializer.writeRecord(rec, buf);
         }
     }
 }

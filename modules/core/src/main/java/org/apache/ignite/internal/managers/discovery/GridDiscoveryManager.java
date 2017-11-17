@@ -60,7 +60,7 @@ import org.apache.ignite.events.Event;
 import org.apache.ignite.internal.ClusterMetricsSnapshot;
 import org.apache.ignite.internal.GridComponent;
 import org.apache.ignite.internal.GridKernalContext;
-import org.apache.ignite.internal.GridNodeOrderComparator;
+import org.apache.ignite.internal.cluster.NodeOrderComparator;
 import org.apache.ignite.internal.IgniteClientDisconnectedCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
@@ -81,6 +81,7 @@ import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMess
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
 import org.apache.ignite.internal.processors.cluster.GridClusterStateProcessor;
+import org.apache.ignite.internal.processors.cluster.GridClusterStateProcessorImpl;
 import org.apache.ignite.internal.processors.jobmetrics.GridJobMetrics;
 import org.apache.ignite.internal.processors.security.SecurityContext;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutProcessor;
@@ -702,7 +703,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 if (verChanged) {
                     Snapshot snapshot = topSnap.get();
 
-                    if (customMsg == null) {
+                    if (customMsg == null || customMsg instanceof ChangeGlobalStateMessage) {
                         discoCache = createDiscoCache(nextTopVer,
                             ctx.state().clusterState(),
                             locNode,
@@ -1832,6 +1833,32 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
     }
 
     /**
+     * Gets consistentId from history for given topology version.
+     *
+     * @param topVer Topology version.
+     * @param id Node ID.
+     * @return Compacted consistent id.
+     */
+    public Short consistentId(AffinityTopologyVersion topVer, UUID id) {
+        Map<UUID, Short> consistentIdMap = resolveDiscoCache(CU.cacheId(null), topVer).consistentIdMap();
+
+        return consistentIdMap == null ? null : consistentIdMap.get(id);
+    }
+
+    /**
+     * Gets consistentId from history for given topology version.
+     *
+     * @param topVer Topology version.
+     * @param constId Node consistentID.
+     * @return Compacted consistent id.
+     */
+    public UUID nodeIdMap(AffinityTopologyVersion topVer, Short constId) {
+        Map<Short, UUID> consistentIdMap = resolveDiscoCache(CU.cacheId(null), topVer).nodeIdMap();
+
+        return consistentIdMap == null ? null : consistentIdMap.get(constId);
+    }
+
+    /**
      * Gets cache nodes for cache with given name.
      *
      * @param cacheName Cache name.
@@ -2248,7 +2275,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
         Map<Integer, List<ClusterNode>> allCacheNodes = U.newHashMap(allNodes.size());
         Map<Integer, List<ClusterNode>> cacheGrpAffNodes = U.newHashMap(allNodes.size());
-        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(GridNodeOrderComparator.INSTANCE);
+        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(NodeOrderComparator.getInstance());
 
         fillAffinityNodeCaches(allNodes, allCacheNodes, cacheGrpAffNodes, rmtNodesWithCaches);
 
@@ -3072,7 +3099,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
         List<ClusterNode> allNodes = discoCache.allNodes();
         Map<Integer, List<ClusterNode>> allCacheNodes = U.newHashMap(allNodes.size());
         Map<Integer, List<ClusterNode>> cacheGrpAffNodes = U.newHashMap(allNodes.size());
-        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(GridNodeOrderComparator.INSTANCE);
+        Set<ClusterNode> rmtNodesWithCaches = new TreeSet<>(NodeOrderComparator.getInstance());
 
         fillAffinityNodeCaches(allNodes, allCacheNodes, cacheGrpAffNodes, rmtNodesWithCaches);
 
