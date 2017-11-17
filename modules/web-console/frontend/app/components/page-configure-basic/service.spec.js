@@ -57,7 +57,7 @@ const mocks = () => new Map([
     }]
 ]);
 
-suite('page-configure-basic service', () => {
+suite.skip('page-configure-basic service', () => {
     test('saveClusterAndCaches, new cluster only', () => {
         const service = new Provider(...mocks().values());
         const cluster = {_id: -1, name: 'New cluster', caches: []};

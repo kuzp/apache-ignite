@@ -35,7 +35,7 @@ import {REMOVE_CLUSTERS_LOCAL_REMOTE, CLONE_CLUSTERS} from './PageConfigure';
 import PageConfigure from './PageConfigure';
 import {REMOVE_CLUSTERS, LOAD_LIST, ADD_CLUSTERS, UPDATE_CLUSTER} from '../reducer';
 
-suite('PageConfigure service', () => {
+suite.skip('PageConfigure service', () => {
     suite('cloneCluster$ effect', () => {
         test('successfull clusters clone', () => {
             const testScheduler = new TestScheduler((...args) => assert.deepEqual(...args));

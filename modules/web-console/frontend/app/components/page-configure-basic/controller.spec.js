@@ -53,7 +53,7 @@ const mocks = () => new Map([
     }]
 ]);
 
-suite('page-configure-basic component controller', () => {
+suite.skip('page-configure-basic component controller', () => {
     test('$onInit method', () => {
         const c = new Controller(...mocks().values());
         c.getObservable = spy(c.getObservable.bind(c));
