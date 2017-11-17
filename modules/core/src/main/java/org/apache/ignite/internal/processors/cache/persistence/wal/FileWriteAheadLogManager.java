@@ -234,9 +234,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      */
     @Nullable private volatile GridTimeoutObject nextAutoArchiveTimeoutObj;
 
-    /** RollOver set. */
-    private final Set<WALRecord.RecordType> rollOverTypes = Collections.singleton(WALRecord.RecordType.SNAPSHOT);
-
     /**
      * @param ctx Kernal context.
      */
@@ -510,8 +507,11 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         record.size(serializer.size(record));
 
         while (true) {
-            if (rollOverTypes.contains(record.type()))
+            if (record.rollOver()){
+                assert cctx.database().checkpointLockIsHeldByThread();
+
                 currWrHandle = rollOver(currWrHandle);
+            }
 
             WALPointer ptr = currWrHandle.addRecord(record);
 
