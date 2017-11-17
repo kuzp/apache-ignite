@@ -92,6 +92,7 @@ export default class Models {
             indexType: null,
             fields: []
         });
+        return model.indexes[model.indexes.length - 1];
     }
 
     /**

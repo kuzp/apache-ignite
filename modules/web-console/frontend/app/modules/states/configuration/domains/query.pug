@@ -209,7 +209,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`$ctrl.Models.addIndex(${model})`
+                                            add-item=`$edit($ctrl.Models.addIndex(${model}))`
                                             label-single='index'
                                             label-multiple='fields'
                                         )
