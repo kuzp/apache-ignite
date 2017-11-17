@@ -71,6 +71,10 @@ public class FileDownloader {
         return fut;
     }
 
+    public IgniteInternalFuture<Void> future() {
+        return fut;
+    }
+
     public boolean cancel() {
         return fut.onDone(new IgniteFutureCancelledException("Download cancelled"));
     }
