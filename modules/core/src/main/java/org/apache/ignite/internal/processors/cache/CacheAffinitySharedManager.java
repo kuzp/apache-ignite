@@ -966,7 +966,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 //                    return;
                     if (log.isInfoEnabled())
                         log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
-                            ", deploymentId" + deploymentId + ", currentIds=" + deploymentIds);
+                            ", deploymentId=" + deploymentId + ", currentIds=" + deploymentIds);
                 }
 
                 Map<Integer, List<UUID>> change = affChange.get(aff.groupId());
