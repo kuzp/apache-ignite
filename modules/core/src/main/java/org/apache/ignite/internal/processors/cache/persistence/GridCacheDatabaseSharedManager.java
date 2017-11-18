@@ -94,7 +94,6 @@ import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.MemoryRecoveryRecord;
 import org.apache.ignite.internal.pagemem.wal.record.MetastoreDataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.PageSnapshot;
-import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PageDeltaRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionDestroyRecord;
@@ -200,8 +199,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     /** Checkpoint file name pattern. */
     private static final Pattern CP_FILE_NAME_PATTERN = Pattern.compile("(\\d+)-(.*)-(START|END)\\.bin");
 
-    /** */
-    private static final Pattern NODE_STARTED__FILE_NAME_PATTERN = Pattern.compile("(\\d+)-node-started\\.bin");
+    /** Node started file patter. */
+    private static final Pattern NODE_STARTED_FILE_NAME_PATTERN = Pattern.compile("(\\d+)-node-started\\.bin");
 
     /** Node started file suffix. */
     private static final String NODE_STARTED_FILE_NAME_SUFFIX = "-node-started.bin";
@@ -758,15 +757,15 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
         Arrays.sort(files, new Comparator<File>() {
             @Override public int compare(File o1, File o2) {
-                Matcher m1 = NODE_STARTED__FILE_NAME_PATTERN.matcher(o1.getName());
-                Matcher m2 = NODE_STARTED__FILE_NAME_PATTERN.matcher(o2.getName());
+                String n1 = o1.getName();
+                String n2 = o2.getName();
 
-                Long ts1 = Long.valueOf(m1.group(0));
-                Long ts2 = Long.valueOf(m2.group(0));
+                Long ts1 = Long.valueOf(n1.substring(0, n1.length() - NODE_STARTED_FILE_NAME_SUFFIX.length()));
+                Long ts2 = Long.valueOf(n2.substring(0, n2.length() - NODE_STARTED_FILE_NAME_SUFFIX.length()));
 
                 if (ts1 == ts2)
                     return 0;
-                else if (ts1 > ts2)
+                else if (ts1 < ts2)
                     return -1;
                 else
                     return 1;
@@ -777,9 +776,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         buf.order(ByteOrder.nativeOrder());
 
         for (File f : files){
-            Matcher m = NODE_STARTED__FILE_NAME_PATTERN.matcher(f.getName());
+            String name = f.getName();
 
-            Long ts = Long.valueOf(m.group(0));
+            Long ts = Long.valueOf(name.substring(0, name.length() - NODE_STARTED_FILE_NAME_SUFFIX.length()));
 
             try (FileChannel ch = FileChannel.open(f.toPath(), READ)) {
                 ch.read(buf);
@@ -1351,6 +1350,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             checkpointer = new Checkpointer(cctx.igniteInstanceName(), "db-checkpoint-thread", log);
 
             new IgniteThread(cctx.igniteInstanceName(), "db-checkpoint-thread", checkpointer).start();
+
+            CheckpointProgressSnapshot chp = checkpointer.wakeupForCheckpoint(0, "node started");
+
+            if (chp != null)
+                chp.cpBeginFut.get();
         }
         catch (StorageException e) {
             throw new IgniteCheckedException(e);
@@ -2705,8 +2709,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                     CacheState state = new CacheState(locParts.size());
 
-                    for (GridDhtLocalPartition part : grp.topology().currentLocalPartitions())
-                        state.addPartitionState(part.id(), part.dataStore().fullSize(), part.updateCounter());
+                    for (GridDhtLocalPartition part : grp.topology().currentLocalPartitions()) {
+                        state.addPartitionState(
+                            part.id(),
+                            part.dataStore().fullSize(),
+                            part.updateCounter(),
+                            (byte)part.state().ordinal()
+                        );
+                    }
 
                     cpRec.addCacheGroupState(grp.groupId(), state);
                 }
