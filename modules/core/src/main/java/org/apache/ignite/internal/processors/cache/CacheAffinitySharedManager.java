@@ -961,12 +961,12 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 IgniteUuid deploymentId = desc.deploymentId();
 
                 if (!deploymentId.equals(deploymentIds.get(aff.groupId()))) {
-//                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog);
-//
-//                    return;
-                    if (log.isInfoEnabled())
-                        log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
-                            ", deploymentId=" + deploymentId + ", currentIds=" + deploymentIds);
+                    aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog, "onChangeAffinityMessage deploymentId changed");
+
+                    return;
+//                    if (log.isInfoEnabled())
+//                        log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
+//                            ", deploymentId=" + deploymentId + ", currentIds=" + deploymentIds);
                 }
 
                 Map<Integer, List<UUID>> change = affChange.get(aff.groupId());
