@@ -25,8 +25,8 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.pagemem.wal.record.BaselineTopologyRecord;
 import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
-import org.apache.ignite.internal.pagemem.wal.record.ExchangeRecord;
 import org.apache.ignite.internal.pagemem.wal.record.SnapshotRecord;
+import org.apache.ignite.internal.pagemem.wal.record.ExchangeRecord;
 import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.persistence.wal.ByteBufferBackedDataInput;
@@ -140,8 +140,9 @@ public class RecordDataV2Serializer implements RecordDataSerializer {
                     RecordDataV1Serializer.putDataEntry(buf, dataEntry);
 
                 break;
+
             case SNAPSHOT:
-                SnapshotRecord snpRec = (SnapshotRecord)rec;
+                SnapshotRecord snpRec = (SnapshotRecord)record;
 
                 buf.putLong(snpRec.getSnapshotId());
                 buf.put(snpRec.isFull() ? (byte)1 : 0);
