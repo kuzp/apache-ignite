@@ -26,6 +26,7 @@ import java.util.Spliterator;
 import java.util.function.IntToDoubleFunction;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.ml.math.Matrix;
+import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.math.VectorStorage;
 import org.apache.ignite.ml.math.functions.IgniteBiFunction;
@@ -375,6 +376,22 @@ public class DelegatingVector implements Vector {
     /** {@inheritDoc} */
     @Override public void destroy() {
         dlg.destroy();
+    }
+
+
+    /** {@inheritDoc} */
+    @Override public int[] shape() {
+        return new int[] {size()};
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorFold(Tensor tensor) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Tensor tensorProduct(Tensor tensor) {
+        return null;
     }
 
     /** {@inheritDoc} */

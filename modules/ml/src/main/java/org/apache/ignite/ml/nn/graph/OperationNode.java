@@ -24,7 +24,7 @@ import org.apache.ignite.ml.math.Tensor;
 /**
  * TODO: add description.
  */
-public class OperationNode<T extends Tensor> implements Node<T> {
+public class OperationNode<T extends Tensor> extends GraphNode<T> {
     private T apply;
     private Operator<T> operator;
     /**
@@ -37,20 +37,26 @@ public class OperationNode<T extends Tensor> implements Node<T> {
     private List<Node> consumers = new LinkedList<>();
 
     public OperationNode(Operator<T> operator, List<Node> inputNodes) {
+        super(null);
         this.operator = operator;
         this.inputNodes = inputNodes;
     }
 
-    public void addConsumer(Node node){
-        consumers.add(node);
-    }
-
     public void compute() {
-        inputNodes.stream().filter(node -> node instanceof OperationNode).forEach(node -> ((OperationNode)node).compute());
-        apply = operator.apply((Tensor[])inputNodes.stream().map(Node::output).toArray());
-    }
+        inputNodes.forEach(node -> {
+            if (node instanceof OperationNode)
+                ((OperationNode)node).compute();
+        });
 
-    @Override public T output() {
-        return apply;
+        Tensor[] tensors = new Tensor[inputNodes.size()];
+
+        for (int i = 0; i < tensors.length; i++)
+            tensors[i] = inputNodes.get(i).output();
+
+//        Tensor[] tensors = (Tensor[])inputNodes.stream()
+//            .map(Node::output)
+//            .toArray();
+
+        val = operator.apply(tensors);
     }
 }

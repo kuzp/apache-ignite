@@ -17,14 +17,45 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 
 /**
  * TODO: add description.
  */
-public class InputNode<T extends Tensor> extends GraphNode<T> {
+public class ComputationGraph {
+    private List<VariableNode> vars;
+    private List<InputNode> input;
+    private List<OperationNode> operations;
 
-    public InputNode() {
-        super(null);
+    //
+    private List<OperationNode> top;
+
+    public ComputationGraph(List<VariableNode> vars, List<InputNode> input,
+        List<OperationNode> operations) {
+        this.vars = vars;
+        this.input = input;
+        this.operations = operations;
     }
+
+    public void compute(){
+        for (OperationNode node: top)
+            node.compute();
+    }
+
+    public void setTop(List top){
+        this.top = top;
+    }
+
+    public List<OperationNode> getTop() {
+        return top;
+    }
+
+    public void setInput(Tensor... inputVal) {
+        assert input.size() == inputVal.length;
+
+        for (int i = 0; i < input.size(); i++)
+            input.get(i).setVal(inputVal[i]);
+    }
+
 }

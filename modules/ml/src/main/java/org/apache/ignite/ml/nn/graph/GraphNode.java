@@ -17,14 +17,34 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 
 /**
  * TODO: add description.
  */
-public class InputNode<T extends Tensor> extends GraphNode<T> {
+public abstract class GraphNode<T extends Tensor> implements Node<T> {
+    protected T val;
 
-    public InputNode() {
-        super(null);
+    public GraphNode(T val) {
+        this.val = val;
+    }
+
+    /**
+     * Nodes that receive this operation's output as input.
+     */
+    private List<Node> consumers = new LinkedList<>();
+
+    public void addConsumer(Node node){
+        consumers.add(node);
+    }
+
+    public void setVal(T val) {
+        this.val = val;
+    }
+
+    @Override public T output() {
+        return val;
     }
 }

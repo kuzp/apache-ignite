@@ -206,7 +206,7 @@ public class Blas {
     }
 
     /** TODO: IGNTIE-5770, add description for a */
-    static void syr(Double alpha, DenseLocalOnHeapVector x, DenseLocalOnHeapMatrix a) {
+    public static void syr(Double alpha, DenseLocalOnHeapVector x, DenseLocalOnHeapMatrix a) {
         int nA = a.rowSize();
         int mA = a.columnSize();
 

@@ -17,8 +17,13 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import org.apache.ignite.ml.math.Tensor;
+
 /**
  * TODO: add description.
  */
-public class VariableNode implements Node {
+public class VariableNode<T extends Tensor> extends GraphNode {
+    public VariableNode(T a) {
+        super(a);
+    }
 }
