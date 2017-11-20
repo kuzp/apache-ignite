@@ -188,26 +188,26 @@ public class GridAffinityAssignmentCache {
     private void logAssignment(AffinityTopologyVersion topVer, List<List<ClusterNode>> affAssignment,
         @Nullable IgniteLogger log,
         @Nullable String debugMsg) {
-        if (log != null && log.isInfoEnabled()) {
-            StringBuilder b = new StringBuilder(new StringBuilder().append("Initializing affinity: [cacheOrGrpName=").
-                append(cacheOrGrpName).append(", grpId=").append(grpId).append(", topVer=").append(topVer).
-                append(", lastVer=").append(topVer).append(", debugMsg=").append(debugMsg).append(']').
-                append(System.lineSeparator()));
-
-            for (int i = 0; i < affAssignment.size(); i++) {
-                List<ClusterNode> nodes = affAssignment.get(i);
-
-                b.append("   ").append(i).append('=').append(F.transform(nodes, new IgniteClosure<ClusterNode, String>() {
-                    @Override public String apply(ClusterNode node) {
-                        return "[id=" + U.id8(node.id()) + ", order=" + node.order() + ']';
-                    }
-                }));
-
-                b.append(System.lineSeparator());
-            }
-
-            log.info(b.toString());
-        }
+//        if (log != null && log.isInfoEnabled()) {
+//            StringBuilder b = new StringBuilder(new StringBuilder().append("Initializing affinity: [cacheOrGrpName=").
+//                append(cacheOrGrpName).append(", grpId=").append(grpId).append(", topVer=").append(topVer).
+//                append(", lastVer=").append(topVer).append(", debugMsg=").append(debugMsg).append(']').
+//                append(System.lineSeparator()));
+//
+//            for (int i = 0; i < affAssignment.size(); i++) {
+//                List<ClusterNode> nodes = affAssignment.get(i);
+//
+//                b.append("   ").append(i).append('=').append(F.transform(nodes, new IgniteClosure<ClusterNode, String>() {
+//                    @Override public String apply(ClusterNode node) {
+//                        return "[id=" + U.id8(node.id()) + ", order=" + node.order() + ']';
+//                    }
+//                }));
+//
+//                b.append(System.lineSeparator());
+//            }
+//
+//            log.info(b.toString());
+//        }
     }
 
     /**

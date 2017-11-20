@@ -966,10 +966,11 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                 if (!deploymentId.equals(deploymentIds.get(aff.groupId()))) {
                     aff.clientEventTopologyChange(exchFut.firstEvent(), topVer, exchLog, "onChangeAffinityMessage deploymentId changed");
 
+                    if (log.isInfoEnabled())
+                        log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
+                            ", deploymentId=" + deploymentId + ", currentIds=" + deploymentIds);
+
                     return;
-//                    if (log.isInfoEnabled())
-//                        log.info("deploymentId differs: cacheOrGroup=" + desc.cacheOrGroupName() +
-//                            ", deploymentId=" + deploymentId + ", currentIds=" + deploymentIds);
                 }
 
                 Map<Integer, List<UUID>> change = affChange.get(aff.groupId());
@@ -2533,8 +2534,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
             saveCacheConfiguration(grpDesc.config());
 
             if (log.isInfoEnabled())
-                log.info("deployment-debug affinityManagerRegisterGroup grpOrName=" + grpDesc.cacheOrGroupName() +
-                    ", groupdId" + grpDesc.groupId() + ", debugInfo=[" + debugMsg + ']');
+                log.info("deployment-debug affinityManagerRegisterGroup grp=" + grpDesc + ", debugInfo=[" + debugMsg + ']');
 
             return registeredGrps.put(grpDesc.groupId(), grpDesc);
         }

@@ -465,7 +465,7 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
         concurrentStart(true);
     }
 
-    public void testComplextScenarioWithDynamicCacheGroups() throws Exception {
+    public void testComplexScenarioWithDynamicCacheGroups() throws Exception {
         try {
             System.setProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC, "true");
 
@@ -473,15 +473,15 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
 
             enablePeristence = true;
 
-            final int gridsCnt = 5;
+            final int gridsCnt = 3;
 
             final IgniteEx node = (IgniteEx)startGridsMultiThreaded(gridsCnt);
 
             final List<CacheConfiguration> cfgs = Arrays.asList(
-                cacheConfiguration("g1c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "g1"),
-                cacheConfiguration("g1c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "g1"),
-                cacheConfiguration("g2c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "g2"),
-                cacheConfiguration("g2c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "g2"));
+                cacheConfiguration("g1c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
+                cacheConfiguration("g1c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
+                cacheConfiguration("g2c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"),
+                cacheConfiguration("g2c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"));
 
             final Collection<IgniteCache> caches = node.getOrCreateCaches(cfgs);
 
