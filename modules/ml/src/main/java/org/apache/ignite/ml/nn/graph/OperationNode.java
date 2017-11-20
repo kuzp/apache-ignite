@@ -17,29 +17,40 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.ignite.ml.math.Tensor;
 
 /**
  * TODO: add description.
  */
 public class OperationNode<T extends Tensor> extends GraphNode<T> {
-    private T apply;
     private Operator<T> operator;
     /**
      * All input nodes.
      */
-    private List<Node> inputNodes;
+    private List<Node> inputNodes = new ArrayList<>();
     /**
      * Nodes that receive this operation's output as input.
      */
     private List<Node> consumers = new LinkedList<>();
 
+    public OperationNode(Operator<T> operator) {
+        super(null);
+        this.operator = operator;
+    }
+
+    public OperationNode(Operator<T> operator, Node input){
+        this(operator);
+        inputNodes.add(input);
+    }
+
     public OperationNode(Operator<T> operator, List<Node> inputNodes) {
         super(null);
         this.operator = operator;
-        this.inputNodes = inputNodes;
+        this.inputNodes.addAll(inputNodes);
     }
 
     public void compute() {
@@ -48,15 +59,6 @@ public class OperationNode<T extends Tensor> extends GraphNode<T> {
                 ((OperationNode)node).compute();
         });
 
-        Tensor[] tensors = new Tensor[inputNodes.size()];
-
-        for (int i = 0; i < tensors.length; i++)
-            tensors[i] = inputNodes.get(i).output();
-
-//        Tensor[] tensors = (Tensor[])inputNodes.stream()
-//            .map(Node::output)
-//            .toArray();
-
-        val = operator.apply(tensors);
+        val = operator.apply(inputNodes.stream().map(Node::output).collect(Collectors.toList()));
     }
 }

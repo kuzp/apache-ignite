@@ -17,6 +17,7 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.LinkedList;
 import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 
@@ -29,7 +30,7 @@ public class ComputationGraph {
     private List<OperationNode> operations;
 
     //
-    private List<OperationNode> top;
+    private List<OperationNode> top = new LinkedList<>();
 
     public ComputationGraph(List<VariableNode> vars, List<InputNode> input,
         List<OperationNode> operations) {
@@ -45,6 +46,10 @@ public class ComputationGraph {
 
     public void setTop(List top){
         this.top = top;
+    }
+
+    public void addTop(OperationNode node){
+        top.add(node);
     }
 
     public List<OperationNode> getTop() {

@@ -18,6 +18,7 @@
 package org.apache.ignite.ml.nn.graph;
 
 import java.util.Arrays;
+import java.util.List;
 import org.apache.ignite.ml.math.Matrix;
 import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
@@ -33,6 +34,13 @@ import org.junit.Test;
  * TODO: add description.
  */
 public class GraphSimpleTest {
+    /**
+     * Simple test.
+     *
+     * z = A * x + b
+     *
+     * A - matrix, b - vector, x - input
+     */
     @Test
     public void test(){
         Matrix a = new DenseLocalOnHeapMatrix(new double[][] {{1,0}, {0,-1}});
@@ -49,9 +57,13 @@ public class GraphSimpleTest {
 
         Tensor[] input = {new DenseLocalOnHeapVector(new double[] {1, 2})};
 
-        ComputationGraph graph = new ComputationGraph(Arrays.asList(varA, varB), Arrays.asList(x), Arrays.asList(y, z));
+        List<VariableNode> varNodes = Arrays.asList(varA, varB);
+        List<InputNode> inputNodes = Arrays.asList(x);
+        List<OperationNode> operationNodes = Arrays.asList(y, z);
 
-        graph.setTop(Arrays.asList(z));
+        ComputationGraph graph = new ComputationGraph(varNodes, inputNodes, operationNodes);
+
+        graph.addTop(z);
         graph.setInput(input);
 
         graph.compute();

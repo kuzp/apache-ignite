@@ -17,6 +17,7 @@
 
 package org.apache.ignite.ml.nn.graph;
 
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 
 /**
@@ -24,5 +25,5 @@ import org.apache.ignite.ml.math.Tensor;
  */
 public interface Operator<T extends Tensor> {
     /** */
-    T apply(Tensor ... t);
+    T apply(List<Tensor> input);
 }

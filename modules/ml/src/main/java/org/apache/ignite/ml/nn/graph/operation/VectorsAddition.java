@@ -17,6 +17,7 @@
 
 package org.apache.ignite.ml.nn.graph.operation;
 
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.nn.graph.Operator;
@@ -26,11 +27,11 @@ import org.apache.ignite.ml.nn.graph.Operator;
  */
 public class VectorsAddition<T extends Vector> implements Operator<T> {
     /** {@inheritDoc} */
-    @Override public T apply(Tensor... t) {
-        assert t.length == 2;
+    @Override public T apply(List<Tensor> input) {
+        assert input.size() == 2;
 
-        Vector left = (Vector)t[0];
-        Vector right = (Vector)t[1];
+        Vector left = (Vector)input.get(0);
+        Vector right = (Vector)input.get(1);
 
         return (T)left.plus(right);
     }

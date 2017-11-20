@@ -17,6 +17,7 @@
 
 package org.apache.ignite.ml.nn.graph.operation;
 
+import java.util.List;
 import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.math.Vector;
 import org.apache.ignite.ml.nn.graph.Operator;
@@ -25,7 +26,12 @@ import org.apache.ignite.ml.nn.graph.Operator;
  * TODO: add description.
  */
 public class VectorsMultiplication<T extends Vector> implements Operator<T> {
-    @Override public T apply(Tensor... t) {
-        return null;
+    @Override public T apply(List<Tensor> input) {
+        assert input.size() == 2;
+
+        Vector left = (Vector)input.get(0);
+        Vector right = (Vector)input.get(1);
+
+        return (T)left.times(right);
     }
 }
