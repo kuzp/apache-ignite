@@ -718,6 +718,7 @@ public class BinaryUtils {
 
         return cls == KeyCacheObjectImpl.class ||
             cls == BinaryObjectImpl.class ||
+            cls == BinaryObjectOffheapImpl.class ||
             cls == CacheObjectImpl.class ||
             cls == CacheObjectByteArrayImpl.class ||
             cls == BinaryEnumObjectImpl.class ||

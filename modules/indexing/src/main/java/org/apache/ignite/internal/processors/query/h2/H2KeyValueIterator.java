@@ -29,12 +29,16 @@ public class H2KeyValueIterator<K, V> extends H2ResultSetIterator<IgniteBiTuple<
     /** */
     private static final long serialVersionUID = 0L;
 
+
     /**
      * @param data Data array.
+     * @param localNoCopy local no copy flag.
      * @throws IgniteCheckedException If failed.
      */
-    protected H2KeyValueIterator(ResultSet data) throws IgniteCheckedException {
+    protected H2KeyValueIterator(ResultSet data, boolean localNoCopy) throws IgniteCheckedException {
         super(data, false, true);
+
+        setLocalNoCopy(localNoCopy);
     }
 
     /** {@inheritDoc} */

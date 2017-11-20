@@ -60,6 +60,9 @@ public final class SqlQuery<K, V> extends Query<Cache.Entry<K, V>> {
     /** Partitions for query */
     private int[] parts;
 
+    /** */
+    private boolean localNoCopy;
+
     /**
      * Constructs query for the given type name and SQL query.
      *
@@ -272,6 +275,23 @@ public final class SqlQuery<K, V> extends Query<Cache.Entry<K, V>> {
      */
     public SqlQuery setPartitions(@Nullable int... parts) {
         this.parts = prepare(parts);
+
+        return this;
+    }
+
+    /**
+     * @return Local no copy flag.
+     */
+    public boolean isLocalNoCopy() {
+        return localNoCopy;
+    }
+
+    /**
+     * @param localNoCopy Local no copy flag.
+     * @return {@code this} for chaining.
+     */
+    public SqlQuery<K, V> setLocalNoCopy(boolean localNoCopy) {
+        this.localNoCopy = localNoCopy;
 
         return this;
     }

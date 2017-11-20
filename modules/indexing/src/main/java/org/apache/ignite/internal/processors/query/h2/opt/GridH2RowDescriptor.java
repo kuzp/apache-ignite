@@ -21,6 +21,7 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
+import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
@@ -68,6 +69,20 @@ public interface GridH2RowDescriptor extends GridOffHeapSmartPointerFactory<Grid
      * @throws IgniteCheckedException If failed.
      */
     public GridH2Row createRow(KeyCacheObject key, int part, @Nullable CacheObject val, GridCacheVersion ver, long expirationTime)
+        throws IgniteCheckedException;
+
+    /**
+     * Creates new offheap row.
+     *
+     * @param key Key.
+     * @param val Value.
+     * @param ver Version.
+     * @param expirationTime Expiration time in millis.
+     * @return Row.
+     * @throws IgniteCheckedException If failed.
+     */
+    public GridH2Row createRowOffheap(KeyCacheObject key, int part, @Nullable CacheObject val, GridCacheVersion ver,
+        long expirationTime, CacheDataRowAdapter.OffheapPageLocker lock)
         throws IgniteCheckedException;
 
     /**
