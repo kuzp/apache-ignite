@@ -1088,7 +1088,7 @@ class ClusterCachesInfo {
 
         for (CacheGroupDescriptor desc : registeredCacheGrps.values()) {
             if (log.isInfoEnabled())
-                log.info("onGridDataReceived: grpOrName=" + desc.cacheOrGroupName() + ", grpId=" + desc.groupId() +
+                log.info("deployment-debug onGridDataReceived: grpOrName=" + desc.cacheOrGroupName() + ", grpId=" + desc.groupId() +
                     ", deploymentId=" + desc.deploymentId());
         }
     }
@@ -1527,7 +1527,7 @@ class ClusterCachesInfo {
             exchActions.addCacheGroupToStart(grpDesc);
 
         if (log.isInfoEnabled())
-            log.info("registerCacheGroup: grpOrName=" + grpDesc.cacheOrGroupName() + ", grpId=" + grpDesc.groupId() +
+            log.info("deployment-debug registerCacheGroup: grpOrName=" + grpDesc.cacheOrGroupName() + ", grpId=" + grpDesc.groupId() +
                 ", deploymentId=" + grpDesc.deploymentId() + ", debugInfo=[" + debugMsg + ']');
 
         return grpDesc;

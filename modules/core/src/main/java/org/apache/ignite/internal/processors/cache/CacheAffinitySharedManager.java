@@ -181,13 +181,16 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
             lastAffVer = null;
 
-            caches.init(cctx.cache().cacheGroupDescriptors(), cctx.cache().cacheDescriptors());
+            caches.init(cctx.cache().cacheGroupDescriptors(), cctx.cache().cacheDescriptors(),
+                "onDiscoveryEvent cleanup type=" + type + ", node=" + node.id() + ", topVer=" + topVer + ", state=" + state);
 
             cachesInitialized = true;
         }
         else if (customMsg instanceof ChangeGlobalStateFinishMessage) {
             if (!cachesInitialized && ((ChangeGlobalStateFinishMessage)customMsg).clusterActive()) {
-                caches.init(cctx.cache().cacheGroupDescriptors(), cctx.cache().cacheDescriptors());
+                caches.init(cctx.cache().cacheGroupDescriptors(), cctx.cache().cacheDescriptors(),
+                    "onDiscoveryEvent ChangeGlobalStateFinishMessage type=" + type + ", node=" + node.id() +
+                        ", topVer=" + topVer + ", state=" + state);
 
                 cachesInitialized = true;
             }
@@ -1142,7 +1145,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         final GridDhtPartitionsExchangeFuture fut,
         Collection<DynamicCacheDescriptor> descs
     ) throws IgniteCheckedException {
-        caches.initStartedCaches(descs);
+        caches.initStartedCaches(descs, "initStartedCaches fut=" + fut);
 
         if (fut.context().mergeExchanges())
             return;
@@ -2505,9 +2508,9 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
          * @param grps Registered groups.
          * @param caches Registered caches.
          */
-        void init(Map<Integer, CacheGroupDescriptor> grps, Map<String, DynamicCacheDescriptor> caches) {
+        void init(Map<Integer, CacheGroupDescriptor> grps, Map<String, DynamicCacheDescriptor> caches, String debugMsg) {
             for (CacheGroupDescriptor grpDesc : grps.values())
-                registerGroup(grpDesc);
+                registerGroup(grpDesc, debugMsg);
 
             for (DynamicCacheDescriptor cacheDesc : caches.values())
                 registerCache(cacheDesc);
@@ -2526,8 +2529,12 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         /**
          * @param grpDesc Group description.
          */
-        private CacheGroupDescriptor registerGroup(CacheGroupDescriptor grpDesc) {
+        private CacheGroupDescriptor registerGroup(CacheGroupDescriptor grpDesc, String debugMsg) {
             saveCacheConfiguration(grpDesc.config());
+
+            if (log.isInfoEnabled())
+                log.info("deployment-debug affinityManagerRegisterGroup grpOrName=" + grpDesc.cacheOrGroupName() +
+                    ", groupdId" + grpDesc.groupId() + ", debugInfo=[" + debugMsg + ']');
 
             return registeredGrps.put(grpDesc.groupId(), grpDesc);
         }
@@ -2554,12 +2561,12 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         /**
           * @param descs Cache descriptor.
          */
-        void initStartedCaches(Collection<DynamicCacheDescriptor> descs) {
+        void initStartedCaches(Collection<DynamicCacheDescriptor> descs, String debugMsg) {
             for (DynamicCacheDescriptor desc : descs) {
                 CacheGroupDescriptor grpDesc = desc.groupDescriptor();
 
                 if (!registeredGrps.containsKey(grpDesc.groupId()))
-                    registerGroup(grpDesc);
+                    registerGroup(grpDesc, debugMsg);
 
                 if (!registeredCaches.containsKey(desc.cacheId()))
                     registerCache(desc);
@@ -2577,7 +2584,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
             }
 
             for (ExchangeActions.CacheGroupActionData startAction : exchActions.cacheGroupsToStart()) {
-                CacheGroupDescriptor old = registerGroup(startAction.descriptor());
+                CacheGroupDescriptor old = registerGroup(startAction.descriptor(), "updateCachesInfo startAction=" + startAction.descriptor());
 
                 assert old == null : old;
             }
