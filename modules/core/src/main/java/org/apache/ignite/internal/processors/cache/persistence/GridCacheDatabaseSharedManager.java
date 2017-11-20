@@ -1589,8 +1589,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
         final CheckpointStatus status = new CheckpointStatus(lastStartTs, startId, startPtr, endId, endPtr);
 
-        ASSERTION_LOG.append(" readCheckpointStatus [consistentId=")
-            .append(cctx.discovery().localNode().consistentId()).append(" status=").append(status).append("]\n");
+//        ASSERTION_LOG.append(" readCheckpointStatus [consistentId=")
+//            .append(cctx.discovery().localNode().consistentId()).append(" status=").append(status).append("]\n");
 
         return status;
     }
