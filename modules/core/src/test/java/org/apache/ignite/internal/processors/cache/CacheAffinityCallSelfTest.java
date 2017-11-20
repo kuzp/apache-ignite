@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteCompute;
@@ -28,6 +29,7 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.closure.GridClosureProcessor;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.lang.IgniteRunnable;
@@ -50,7 +52,7 @@ public class CacheAffinityCallSelfTest extends GridCommonAbstractTest {
     private static final String CACHE_NAME = "myCache";
 
     /** */
-    private static final int SRVS = 4;
+    private static final int SRVS = 32;
 
     /** */
     private static final TcpDiscoveryIpFinder IP_FINDER = new TcpDiscoveryVmIpFinder(true);
@@ -125,6 +127,8 @@ public class CacheAffinityCallSelfTest extends GridCommonAbstractTest {
             Integer key = primaryKey(grid(0).cache(CACHE_NAME));
 
             AffinityTopologyVersion topVer = grid(0).context().discovery().topologyVersionEx();
+
+            GridClosureProcessor.awaitTaskExecute = new CountDownLatch(1);
 
             IgniteInternalFuture<Object> fut = GridTestUtils.runAsync(new Callable<Object>() {
                 @Override public Object call() throws Exception {

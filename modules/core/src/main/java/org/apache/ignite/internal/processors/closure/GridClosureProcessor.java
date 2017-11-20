@@ -23,10 +23,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.IgniteInterruptedException;
 import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryRawWriter;
@@ -511,6 +513,14 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
+            if (awaitTaskExecute != null)
+                try {
+                    awaitTaskExecute.await();
+                }
+                catch (InterruptedException e) {
+                    throw new IgniteInterruptedException(e);
+                }
+
             return ctx.task().execute(new T5(node, job, cacheNames, partId, mapTopVer), null,
                 false, execName);
         }
@@ -518,6 +528,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             busyLock.readUnlock();
         }
     }
+
+    public static volatile CountDownLatch awaitTaskExecute;
 
     /**
      * @param cacheNames Cache names.

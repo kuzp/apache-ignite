@@ -77,6 +77,7 @@ import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.GridCacheAdapter;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager;
+import org.apache.ignite.internal.processors.closure.GridClosureProcessor;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMessage;
 import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
@@ -655,6 +656,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
                         topSnap.set(new Snapshot(snapshot.topVer, discoCache));
 
+                        if (GridClosureProcessor.awaitTaskExecute != null)
+                            GridClosureProcessor.awaitTaskExecute.countDown();
+
                         incMinorTopVer = false;
                     }
                     else {
@@ -718,6 +722,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                         ", evt=" + U.gridEventName(type) + ']';
 
                     topSnap.set(new Snapshot(nextTopVer, discoCache));
+
+                    if (GridClosureProcessor.awaitTaskExecute != null)
+                        GridClosureProcessor.awaitTaskExecute.countDown();
                 }
                 else
                     // Current version.
