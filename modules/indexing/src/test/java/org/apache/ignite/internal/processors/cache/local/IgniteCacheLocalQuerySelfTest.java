@@ -17,22 +17,39 @@
 
 package org.apache.ignite.internal.processors.cache.local;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import javax.cache.Cache;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.binary.BinaryRawReader;
+import org.apache.ignite.binary.BinaryRawWriter;
+import org.apache.ignite.binary.BinaryReader;
+import org.apache.ignite.binary.BinaryWriter;
+import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.cache.query.SqlQuery;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
+import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.processors.cache.IgniteCacheAbstractQuerySelfTest;
 
-import static org.apache.ignite.cache.CacheMode.LOCAL;
+import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 
 /**
  * Tests local query.
  */
 public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfTest {
+    /** Keys count. */
+    private static final int KEYS = 100_000;
+    /** Random. */
+    private static Random RND = new Random();
+
     /** {@inheritDoc} */
     @Override protected int gridCount() {
         return 1;
@@ -40,7 +57,15 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
 
     /** {@inheritDoc} */
     @Override protected CacheMode cacheMode() {
-        return LOCAL;
+        return PARTITIONED;
+    }
+
+    /** {@inheritDoc} */
+    @Override protected CacheConfiguration cacheConfiguration() {
+        return super.cacheConfiguration()
+            .setQueryEntities(Arrays.asList(
+                new QueryEntity(KeyObject.class, ValueObject.class),
+                new QueryEntity(Integer.class, BigValue.class)));
     }
 
     /**
@@ -86,5 +111,185 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
             "explain select _key from String where _val > 'value1'").setLocal(true)).getAll();
 
         assertTrue("__ explain: \n" + res, ((String)res.get(0).get(0)).toLowerCase().contains("_val_idx"));
+    }
+
+    /**
+     * @throws Exception On failed.
+     */
+    public void testQueryLocalNoCopyFlag() throws Exception {
+        IgniteCache<KeyObject, ValueObject> cache = jcache(KeyObject.class, ValueObject.class);
+
+        for (int i = 0; i < KEYS; ++i)
+            cache.put(new KeyObject(i), new ValueObject(i));
+
+        for (int begIdx = KEYS - 3; begIdx < KEYS - 1; ++begIdx) {
+            Set<ValueObject> set = new HashSet<>();
+
+            for (int i = begIdx + 1; i < KEYS; ++i)
+                set.add(new ValueObject(i));
+
+            Iterator<Cache.Entry<KeyObject, ValueObject>> it = cache.query(
+                new SqlQuery<KeyObject, ValueObject>(ValueObject.class, "longVal > " + begIdx)
+                    .setLocalNoCopy(true).setLocal(true)).iterator();
+
+            while (it.hasNext()) {
+                Cache.Entry<KeyObject, ValueObject> e = it.next();
+
+                assertTrue("Invalid val: e.getValue()", set.contains(e.getValue()));
+
+                System.out.println("read " + e.getValue());
+
+                set.remove(e.getValue());
+            }
+
+            assertTrue("Leak locks count: " + set.size(), set.isEmpty());
+        }
+    }
+
+    /**
+     * @throws Exception On failed.
+     */
+    public void testQueryLocalNoCopyFlagBigObject() throws Exception {
+        IgniteCache<Integer, BigValue> cache = jcache(Integer.class, BigValue.class);
+
+        for (int i = 0; i < KEYS; ++i)
+            cache.put(i, new BigValue(RND.nextInt(10)));
+
+        SqlQuery query = new SqlQuery(BigValue.class, "search = ?");
+        query.setArgs(5);
+        query.setLocal(true);
+//        query.setLocalNoCopy(true);
+
+        System.out.println("+++ Benchmark");
+
+        while (true) {
+            long t0 = System.currentTimeMillis();
+
+            for (int op = 0; op < 1000; ++op) {
+                cache.query(query).getAll();
+            }
+            System.out.println("Throughput: " + ((System.currentTimeMillis() - t0) / 1000.0));
+        }
+
+    }
+
+    /**
+     *
+     */
+    private static class KeyObject {
+        /** Key. */
+        private long key;
+
+        /**
+         * @param key Key.
+         */
+        KeyObject(long key) {
+            this.key = key;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            KeyObject object = (KeyObject)o;
+
+            return key == object.key;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            return (int)(key ^ (key >>> 32));
+        }
+    }
+
+    /**
+     *
+     */
+    private static class ValueObject {
+        /** Long value. */
+        @QuerySqlField
+        private long longVal;
+
+        /** String value. */
+        private String strVal;
+
+        /** String value. */
+        private byte[] arr = new byte[2000];
+
+        /**
+         * @param key Key.
+         */
+        ValueObject(int key) {
+            longVal = key;
+
+            strVal = "String value " + key;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            ValueObject object = (ValueObject)o;
+
+            if (longVal != object.longVal)
+                return false;
+            return strVal != null ? strVal.equals(object.strVal) : object.strVal == null;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            int result = (int)(longVal ^ (longVal >>> 32));
+            result = 31 * result + (strVal != null ? strVal.hashCode() : 0);
+            return result;
+        }
+
+        @Override public String toString() {
+            return "ValueObject{" +
+                "longVal=" + longVal +
+                ", strVal='" + strVal + '\'' +
+                '}';
+        }
+    }
+
+    /**
+     *
+     */
+    private static class BigValue implements Binarylizable {
+        /** Search. */
+        @QuerySqlField(index = true)
+        private int search;
+
+        /**
+         * @param search Search field.
+         */
+        public BigValue(int search) {
+            this.search = search;
+        }
+
+        /** {@inheritDoc} */
+        @Override public void writeBinary(BinaryWriter writer) {
+            writer.writeInt("search", search);
+
+            BinaryRawWriter rawWriter = writer.rawWriter();
+
+            for (int i = 0; i < 400; i++)
+                rawWriter.writeInt(123);
+        }
+
+        /** {@inheritDoc} */
+        @Override public void readBinary(BinaryReader reader) {
+            search = reader.readInt("search");
+
+            BinaryRawReader rawReader = reader.rawReader();
+
+            for (int i = 0; i < 400; i++)
+                rawReader.readInt();
+        }
     }
 }

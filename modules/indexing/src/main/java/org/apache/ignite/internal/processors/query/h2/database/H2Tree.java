@@ -160,8 +160,15 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
     /** {@inheritDoc} */
     @Override protected int compare(BPlusIO<SearchRow> io, long pageAddr, int idx,
         SearchRow row) throws IgniteCheckedException {
-        if (inlineSize() == 0)
-            return compareRows(getRow(io, pageAddr, idx), row);
+        if (inlineSize() == 0) {
+            GridH2Row tmpRow = getRow(io, pageAddr, idx);
+
+            int res = compareRows(tmpRow, row);
+
+            tmpRow.unlock();
+
+            return res;
+        }
         else {
             int off = io.offset(idx);
 

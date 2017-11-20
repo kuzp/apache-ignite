@@ -179,4 +179,11 @@ public abstract class GridH2Row implements GridSearchRowPointer, CacheDataRow, R
     @Override public int cacheId() {
         return 0;
     }
+
+    /**
+     * Unlock data page. Has implementation for GridH2KeyValueRowOffheap.
+     */
+    public void unlock() {
+        // No-op.
+    }
 }

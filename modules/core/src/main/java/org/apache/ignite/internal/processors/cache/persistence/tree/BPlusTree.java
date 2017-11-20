@@ -42,6 +42,7 @@ import org.apache.ignite.internal.pagemem.wal.record.delta.NewRootInitRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.RemoveRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.ReplaceRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.SplitExistingPageRecord;
+import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.persistence.DataStructure;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusInnerIO;
@@ -4562,7 +4563,10 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
                 return false;
 
             if (++row < rows.length && rows[row] != null) {
-                clearLastRow(); // Allow to GC the last returned row.
+                T lastRow = clearLastRow(); // Allow to GC the last returned row.
+
+                if (lastRow instanceof CacheDataRow)
+                    ((CacheDataRow)lastRow).unlock();
 
                 return true;
             }
@@ -4615,7 +4619,12 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
          * @throws IgniteCheckedException If failed.
          */
         private boolean nextPage() throws IgniteCheckedException {
-            updateLowerBound(clearLastRow());
+            T lastRow = clearLastRow(); // Allow to GC the last returned row.
+
+            updateLowerBound(lastRow);
+
+            if (lastRow instanceof CacheDataRow)
+                ((CacheDataRow)lastRow).unlock();
 
             row = 0;
 

@@ -38,6 +38,10 @@ import org.h2.value.Value;
 public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapter<T> {
     /** */
     private static final Field RESULT_FIELD;
+    /** */
+    private static final long serialVersionUID = 0L;
+    /** Local no copy. */
+    private static ThreadLocal<Boolean> tlLocalNoCopy = new ThreadLocal<>();
 
     /**
      * Initialize.
@@ -54,22 +58,17 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     }
 
     /** */
-    private static final long serialVersionUID = 0L;
-
+    protected final Object[] row;
     /** */
     private final ResultInterface res;
-
     /** */
     private final ResultSet data;
-
-    /** */
-    protected final Object[] row;
-
     /** */
     private final boolean closeStmt;
-
     /** */
     private boolean hasRow;
+    /** Local no copy. */
+    private boolean localNoCopy;
 
     /**
      * @param data Data array.
@@ -101,11 +100,22 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     }
 
     /**
+     * @return Is local no copy enabled.
+     */
+    public static boolean isLocalNoCopy() {
+        return tlLocalNoCopy != null && tlLocalNoCopy.get() != null && tlLocalNoCopy.get();
+    }
+
+    /**
      * @return {@code true} If next row was fetched successfully.
      */
     private boolean fetchNext() {
         if (data == null)
             return false;
+
+        Boolean old = tlLocalNoCopy.get();
+
+        tlLocalNoCopy.set(localNoCopy);
 
         try {
             if (!data.next())
@@ -135,6 +145,9 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
         }
         catch (SQLException e) {
             throw new IgniteSQLException(e);
+        }
+        finally {
+            tlLocalNoCopy.set(old);
         }
     }
 
@@ -180,6 +193,12 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
         }
 
         U.closeQuiet(data);
+    }
+    /**
+     * @param localNoCopy local no copy flag.
+     */
+    public void setLocalNoCopy(boolean localNoCopy) {
+        this.localNoCopy = localNoCopy;
     }
 
     /** {@inheritDoc} */

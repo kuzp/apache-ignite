@@ -54,6 +54,8 @@ public class CacheOperationContext implements Serializable {
     /** Data center Id. */
     private final Byte dataCenterId;
 
+    private final boolean localNoCopy;
+
     /**
      * Constructor with default values.
      */
@@ -71,6 +73,8 @@ public class CacheOperationContext implements Serializable {
         recovery = false;
 
         dataCenterId = null;
+
+        localNoCopy = false;
     }
 
     /**
@@ -78,7 +82,9 @@ public class CacheOperationContext implements Serializable {
      * @param subjId Subject ID.
      * @param keepBinary Keep binary flag.
      * @param expiryPlc Expiry policy.
+     * @param noRetries No retries flag.
      * @param dataCenterId Data center id.
+     * @param recovery Recovery flag.
      */
     public CacheOperationContext(
         boolean skipStore,
@@ -102,6 +108,45 @@ public class CacheOperationContext implements Serializable {
         this.dataCenterId = dataCenterId;
 
         this.recovery = recovery;
+
+        localNoCopy = false;
+    }
+
+    /**
+     * @param skipStore Skip store flag.
+     * @param subjId Subject ID.
+     * @param keepBinary Keep binary flag.
+     * @param expiryPlc Expiry policy.
+     * @param noRetries No retries flag.
+     * @param dataCenterId Data center id.
+     * @param recovery Recovery flag.
+     * @param localNoCopy Local no copy flag.
+     */
+    public CacheOperationContext(
+        boolean skipStore,
+        @Nullable UUID subjId,
+        boolean keepBinary,
+        @Nullable ExpiryPolicy expiryPlc,
+        boolean noRetries,
+        @Nullable Byte dataCenterId,
+        boolean recovery,
+        boolean localNoCopy
+    ) {
+        this.skipStore = skipStore;
+
+        this.subjId = subjId;
+
+        this.keepBinary = keepBinary;
+
+        this.expiryPlc = expiryPlc;
+
+        this.noRetries = noRetries;
+
+        this.dataCenterId = dataCenterId;
+
+        this.recovery = recovery;
+
+        this.localNoCopy = localNoCopy;
     }
 
     /**
@@ -263,6 +308,22 @@ public class CacheOperationContext implements Serializable {
     }
 
     /**
+     * @param localNoCopy Local no copy flag.
+     * @return New instance of CacheOperationContext with recovery flag.
+     */
+    public CacheOperationContext localNoCopy(boolean localNoCopy) {
+        return new CacheOperationContext(
+            skipStore,
+            subjId,
+            keepBinary,
+            expiryPlc,
+            noRetries,
+            dataCenterId,
+            recovery,
+            localNoCopy);
+    }
+
+    /**
      * @return Recovery flag.
      */
     public boolean recovery() {
@@ -274,6 +335,13 @@ public class CacheOperationContext implements Serializable {
      */
     public boolean noRetries() {
         return noRetries;
+    }
+
+    /**
+     * @return Local no copy flag
+     */
+    public boolean localNoCopy() {
+        return localNoCopy;
     }
 
     /** {@inheritDoc} */

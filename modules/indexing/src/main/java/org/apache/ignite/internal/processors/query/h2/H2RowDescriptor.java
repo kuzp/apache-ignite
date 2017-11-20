@@ -30,10 +30,12 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
+import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.query.GridQueryProperty;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOffheap;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOffheapV2;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOnheap;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
@@ -294,6 +296,33 @@ public class H2RowDescriptor implements GridH2RowDescriptor {
         }
 
         throw new IgniteCheckedException("Failed to wrap value[type=" + type + ", value=" + obj + "]");
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridH2Row createRowOffheap(KeyCacheObject key, int partId, @Nullable CacheObject val,
+        GridCacheVersion ver, long expirationTime, CacheDataRowAdapter.OffheapPageLocker lock) throws IgniteCheckedException {
+        GridH2Row row;
+
+        try {
+            if (val == null) // Only can happen for remove operation, can create simple search row.
+                row = GridH2RowFactory.create(wrap(key, keyType));
+            else
+                row =
+                    new GridH2KeyValueRowOffheapV2(this, key, keyType, val, valType, ver, expirationTime, lock);
+        }
+        catch (ClassCastException e) {
+            throw new IgniteCheckedException("Failed to convert key to SQL type. " +
+                "Please make sure that you always store each value type with the same key type " +
+                "or configure key type as common super class for all actual keys for this value type.", e);
+        }
+
+        row.ver = ver;
+
+        row.key = key;
+        row.val = val;
+        row.partId = partId;
+
+        return row;
     }
 
     /** {@inheritDoc} */

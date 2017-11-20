@@ -38,6 +38,7 @@ import org.apache.ignite.internal.binary.streams.BinaryOffheapInputStream;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.CacheObjectContext;
 import org.apache.ignite.internal.processors.cache.CacheObjectValueContext;
+import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.plugin.extensions.communication.MessageReader;
 import org.apache.ignite.plugin.extensions.communication.MessageWriter;
@@ -48,7 +49,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  *  Binary object implementation over offheap memory
  */
-public class BinaryObjectOffheapImpl extends BinaryObjectExImpl implements Externalizable, CacheObject {
+public class BinaryObjectOffheapImpl extends BinaryObjectExImpl implements Externalizable, CacheObject, KeyCacheObject {
     /** */
     private static final long serialVersionUID = 0L;
 
@@ -63,6 +64,9 @@ public class BinaryObjectOffheapImpl extends BinaryObjectExImpl implements Exter
 
     /** */
     private final int size;
+
+    /** */
+    private int part = -1;
 
     /**
      * For {@link Externalizable} (not supported).
@@ -114,6 +118,32 @@ public class BinaryObjectOffheapImpl extends BinaryObjectExImpl implements Exter
     /** {@inheritDoc} */
     @Override public int hashCode() {
         return BinaryPrimitives.readInt(ptr, start + GridBinaryMarshaller.HASH_CODE_POS);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean internal() {
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int partition() {
+        return part;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void partition(int part) {
+        this.part = part;
+    }
+
+    /** {@inheritDoc} */
+    @Override public KeyCacheObject copy(int part) {
+        if (this.part == part)
+            return this;
+
+        BinaryObjectOffheapImpl cp = new BinaryObjectOffheapImpl(ctx, ptr, start, size);
+        cp.part = part;
+
+        return cp;
     }
 
     /** {@inheritDoc} */

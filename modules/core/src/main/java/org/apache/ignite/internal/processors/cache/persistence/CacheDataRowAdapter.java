@@ -19,6 +19,7 @@ package org.apache.ignite.internal.processors.cache.persistence;
 
 import java.nio.ByteBuffer;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.internal.binary.BinaryObjectOffheapImpl;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.pagemem.PageUtils;
@@ -29,10 +30,13 @@ import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.IncompleteCacheObject;
 import org.apache.ignite.internal.processors.cache.IncompleteObject;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
+import org.apache.ignite.internal.processors.cache.binary.CacheObjectBinaryProcessorImpl;
+import org.apache.ignite.internal.processors.cache.binary.IgniteBinaryImpl;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVersionIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
+import org.apache.ignite.internal.processors.cacheobject.IgniteCacheObjectProcessor;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -68,6 +72,9 @@ public class CacheDataRowAdapter implements CacheDataRow {
     /** */
     @GridToStringInclude
     protected int cacheId;
+
+    /** Lock. */
+    private OffheapPageLocker lock;
 
     /**
      * @param link Link.
@@ -157,6 +164,9 @@ public class CacheDataRowAdapter implements CacheDataRow {
                             // Fast path for a single page row.
                             readFullRow(sharedCtx, coctx, pageAddr + data.offset(), rowData, readCacheId);
 
+                            if (rowData == RowData.OFFHEAP_OBJ)
+                                lock = new OffheapPageLocker(pageMem, grpId, pageId, page);
+
                             return;
                         }
 
@@ -176,11 +186,13 @@ public class CacheDataRowAdapter implements CacheDataRow {
                         return;
                 }
                 finally {
-                    pageMem.readUnlock(grpId, pageId, page);
+                    if (lock == null)
+                        pageMem.readUnlock(grpId, pageId, page);
                 }
             }
             finally {
-                pageMem.releasePage(grpId, pageId, page);
+                if (lock == null)
+                    pageMem.releasePage(grpId, pageId, page);
             }
         }
         while(nextLink != 0);
@@ -288,7 +300,18 @@ public class CacheDataRowAdapter implements CacheDataRow {
         int len = PageUtils.getInt(addr, off);
         off += 4;
 
-        if (rowData != RowData.NO_KEY) {
+        IgniteCacheObjectProcessor proc = ((IgniteBinaryImpl)coctx.kernalContext().cacheObjects().binary()).processor();
+
+        if (rowData == RowData.OFFHEAP_OBJ) {
+            off++;
+
+            key = new BinaryObjectOffheapImpl(
+                ((CacheObjectBinaryProcessorImpl)proc).binaryContext(),
+                addr + off, 0, len);
+
+            off += len;
+        }
+        else if (rowData != RowData.NO_KEY) {
             byte type = PageUtils.getByte(addr, off);
             off++;
 
@@ -309,10 +332,16 @@ public class CacheDataRowAdapter implements CacheDataRow {
         byte type = PageUtils.getByte(addr, off);
         off++;
 
-        byte[] bytes = PageUtils.getBytes(addr, off, len);
-        off += len;
+        if (rowData == RowData.OFFHEAP_OBJ) {
+            val = new BinaryObjectOffheapImpl(((CacheObjectBinaryProcessorImpl)proc).binaryContext(),
+                addr + off, 0, len);
+        }
+        else {
+            byte[] bytes = PageUtils.getBytes(addr, off, len);
 
-        val = coctx.kernalContext().cacheObjects().toCacheObject(coctx, type, bytes);
+            val = coctx.kernalContext().cacheObjects().toCacheObject(coctx, type, bytes);
+        }
+        off += len;
 
         ver = CacheVersionIO.read(addr + off, false);
 
@@ -324,6 +353,7 @@ public class CacheDataRowAdapter implements CacheDataRow {
     /**
      * @param buf Buffer.
      * @param incomplete Incomplete.
+     * @return Incomplete read object.
      */
     private IncompleteObject<?> readIncompleteCacheId(
         ByteBuffer buf,
@@ -529,6 +559,11 @@ public class CacheDataRowAdapter implements CacheDataRow {
     }
 
     /** {@inheritDoc} */
+    @Override public void unlock() {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
     @Override public int cacheId() {
         return cacheId;
     }
@@ -583,11 +618,75 @@ public class CacheDataRowAdapter implements CacheDataRow {
         KEY_ONLY,
 
         /** */
-        NO_KEY
+        NO_KEY,
+
+        /** */
+        OFFHEAP_OBJ
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(CacheDataRowAdapter.class, this, "link", U.hexLong(link));
+    }
+
+    /**
+     * @return Page locker.
+     */
+    public OffheapPageLocker locker() {
+        return lock;
+    }
+
+    /**
+     *
+     */
+    public static class OffheapPageLocker {
+//        /** Debug map. */
+//        public static ConcurrentHashMap<OffheapPageLocker, Integer> dbgMap = new ConcurrentHashMap<>();
+
+        /** Page mem. */
+        private PageMemory pageMem;
+
+        /** Group id. */
+        private int grpId;
+
+        /** Page id. */
+        private long pageId;
+
+        /** Page. */
+        private long page;
+
+        /**
+         * @param mem page memory.
+         * @param grpId group ID.
+         * @param pageId page ID.
+         * @param page page.
+         */
+        OffheapPageLocker(PageMemory mem, int grpId, long pageId, long page) {
+            pageMem = mem;
+            this.grpId = grpId;
+            this.pageId = pageId;
+            this.page = page;
+
+//            dbgMap.put(this, 1);
+        }
+
+        /**
+         * Unlock.
+         */
+        public void unlock() {
+            pageMem.readUnlock(grpId, pageId, page);
+            pageMem.releasePage(grpId, pageId, page);
+
+//            dbgMap.remove(this);
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return "OffheapPageLocker{" +
+                "grpId=" + grpId +
+                ", pageId=" + pageId +
+                ", page=" + page +
+                '}';
+        }
     }
 }

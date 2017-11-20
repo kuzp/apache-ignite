@@ -387,6 +387,11 @@ public class FreeListImplSelfTest extends GridCommonAbstractTest {
         }
 
         /** {@inheritDoc} */
+        @Override public void unlock() {
+            // No-op.
+        }
+
+        /** {@inheritDoc} */
         @Override public CacheObject value() {
             return val;
         }

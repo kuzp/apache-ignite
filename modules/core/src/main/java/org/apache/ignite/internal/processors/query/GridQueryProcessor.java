@@ -62,6 +62,7 @@ import org.apache.ignite.internal.processors.GridProcessorAdapter;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.CacheObjectContext;
+import org.apache.ignite.internal.processors.cache.CacheOperationContext;
 import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.GridCacheAdapter;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
@@ -2008,6 +2009,10 @@ private IgniteInternalFuture<Object> rebuildIndexesFromHash(@Nullable final Stri
 
         if ((qry.isReplicatedOnly() && cctx.isReplicatedAffinityNode()) || cctx.isLocal() || qry.isLocal())
             return queryLocalSql(cctx, qry, keepBinary);
+        else if (qry.isLocalNoCopy()) {
+            throw new CacheException(
+                "The flag localNoOpy is not supported for distributed query");
+        }
 
         return queryDistributedSql(cctx, qry, keepBinary);
     }
@@ -2059,6 +2064,12 @@ private IgniteInternalFuture<Object> rebuildIndexesFromHash(@Nullable final Stri
         final int mainCacheId = CU.cacheId(cctx.name());
 
         try {
+            if (qry.isLocalNoCopy()) {
+                CacheOperationContext opCtx = cctx.operationContextPerCall();
+
+                cctx.operationContextPerCall(opCtx.localNoCopy(true));
+            }
+
             return executeQuery(GridCacheQueryType.SQL, qry.getSql(), cctx,
                 new IgniteOutClosureX<QueryCursor<Cache.Entry<K, V>>>() {
                     @Override public QueryCursor<Cache.Entry<K, V>> applyx() throws IgniteCheckedException {

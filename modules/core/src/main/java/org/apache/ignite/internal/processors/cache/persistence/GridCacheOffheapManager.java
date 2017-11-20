@@ -781,6 +781,11 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
         }
 
         /** {@inheritDoc} */
+        @Override public void unlock() {
+            // No-op
+        }
+
+        /** {@inheritDoc} */
         @Override public CacheObject value() {
             return entry.value();
         }
