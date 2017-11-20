@@ -334,8 +334,28 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
         return store;
     }
 
-    public Path getPath(CacheConfiguration ccfg, int partId) {
-        return new File(cacheWorkDirectory(ccfg), String.format(PART_FILE_TEMPLATE, partId)).toPath();
+    /**
+     *
+     */
+    public Path getPath(boolean isGroup, String cacheOrGroupName, int partId) {
+        return new File(
+            cacheWorkDirectory(isGroup, cacheOrGroupName),
+            String.format(PART_FILE_TEMPLATE, partId)
+        ).toPath();
+    }
+
+    /**
+     *
+     */
+    private File cacheWorkDirectory(boolean isGroup, String cacheOrGroupName) {
+        String dirName;
+
+        if (isGroup)
+            dirName = CACHE_GRP_DIR_PREFIX + cacheOrGroupName;
+        else
+            dirName = CACHE_DIR_PREFIX + cacheOrGroupName;
+
+        return new File(storeWorkDir, dirName);
     }
 
     /**
