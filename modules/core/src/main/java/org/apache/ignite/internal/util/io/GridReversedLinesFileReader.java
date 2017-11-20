@@ -41,6 +41,8 @@ public class GridReversedLinesFileReader implements Closeable {
     private final long totalBlockCount;
 
     private final byte[][] newLineSequences;
+    /** First found new line sign for current file. */
+    private byte[] curNewLineSequence;
     private final int avoidNewlineSplitBufferSize;
     private final int byteDecrement;
 
@@ -147,13 +149,14 @@ public class GridReversedLinesFileReader implements Closeable {
      * @throws IOException  if an I/O error occurs
      */
     public String readLine() throws IOException {
-
         String line = currentFilePart.readLine();
+
         while (line == null) {
             currentFilePart = currentFilePart.rollOver();
-            if (currentFilePart != null) {
+
+            if (currentFilePart != null)
                 line = currentFilePart.readLine();
-            } else {
+            else {
                 // no more fileparts: we're done, leave line set to null
                 break;
             }
@@ -203,9 +206,8 @@ public class GridReversedLinesFileReader implements Closeable {
             if (no > 0 /* file not empty */) {
                 randomAccessFile.seek(off);
                 final int countRead = randomAccessFile.read(data, 0, length);
-                if (countRead != length) {
+                if (countRead != length)
                     throw new IllegalStateException("Count of requested bytes and actually read bytes don't match");
-                }
             }
             // copy left over part into data arr
             if (leftOverOfLastFilePart != null) {
@@ -247,15 +249,12 @@ public class GridReversedLinesFileReader implements Closeable {
          * @throws IOException if there is an error reading from the file
          */
         private String readLine() throws IOException {
-
             String line = null;
             int newLineMatchByteCount;
-
             boolean isLastFilePart = no == 1;
-
             int i = currentLastBytePos;
-            while (i > -1) {
 
+            while (i > -1) {
                 if (!isLastFilePart && i < avoidNewlineSplitBufferSize) {
                     // avoidNewlineSplitBuffer: for all except the last file part we
                     // take a few bytes to the next file part to avoid splitting of newlines
@@ -305,14 +304,35 @@ public class GridReversedLinesFileReader implements Closeable {
          */
         private void createLeftOver() {
             int lineLengthBytes = currentLastBytePos + 1;
+
             if (lineLengthBytes > 0) {
                 // create left over for next block
                 leftOver = new byte[lineLengthBytes];
                 System.arraycopy(data, 0, leftOver, 0, lineLengthBytes);
-            } else {
+            } else
                 leftOver = null;
-            }
+
             currentLastBytePos = -1;
+        }
+
+        /**
+         * Check specified new-line sequence arrived in current cursor position.
+         *
+         * @param sequence New-line sequence byte presentation.
+         * @param data buffer to scan
+         * @param i start offset in buffer
+         * @return length of newline sequence or 0 if none found
+         */
+        private int checkNewLineSequence(byte[] sequence, byte[] data, int i) {
+            boolean match = true;
+            int len = sequence.length - 1;
+
+            for (int j = len; j >= 0; j--) {
+                int k = i + j - len;
+                match &= k >= 0 && data[k] == sequence[j];
+            }
+
+            return match ? sequence.length : 0;
         }
 
         /**
@@ -323,14 +343,16 @@ public class GridReversedLinesFileReader implements Closeable {
          * @return length of newline sequence or 0 if none found
          */
         private int getNewLineMatchByteCount(byte[] data, int i) {
-            for (byte[] newLineSequence : newLineSequences) {
-                boolean match = true;
-                for (int j = newLineSequence.length - 1; j >= 0; j--) {
-                    int k = i + j - (newLineSequence.length - 1);
-                    match &= k >= 0 && data[k] == newLineSequence[j];
-                }
-                if (match) {
-                    return newLineSequence.length;
+            if (curNewLineSequence != null)
+                return checkNewLineSequence(curNewLineSequence, data, i);
+            else {
+                for (byte[] newLineSequence : newLineSequences) {
+                    int res = checkNewLineSequence(newLineSequence, data, i);
+
+                    if (res > 0) {
+                        curNewLineSequence = newLineSequence;
+                        return newLineSequence.length;
+                    }
                 }
             }
             return 0;

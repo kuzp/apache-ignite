@@ -10196,6 +10196,34 @@ public abstract class IgniteUtils {
     }
 
     /**
+     * @param src Source string.
+     * @param what Substring to find.
+     * @return {@code true} if string contains substring.
+     */
+    public static boolean containsIgnoreCase(String src, String what) {
+        if (F.isEmpty(src))
+            return false;
+
+        int len = what.length();
+
+        char firstLo = Character.toLowerCase(what.charAt(0));
+        char firstUp = Character.toUpperCase(what.charAt(0));
+
+        for (int i = src.length() - len; i >= 0; i--) {
+            // Quick check before calling the more expensive regionMatches() method:
+            char ch = src.charAt(i);
+
+            if (ch != firstLo && ch != firstUp)
+                continue;
+
+            if (src.regionMatches(true, i, what, 0, len))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
      *
      */
     public static class ReentrantReadWriteLockTracer implements ReadWriteLock {

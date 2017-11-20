@@ -135,7 +135,7 @@ public class VisorLogSearchTask extends VisorMultiNodeTask<VisorLogSearchTaskArg
                     }
 
                     if (foundCnt < limit) {
-                        if (s.toLowerCase().contains(searchStr)) {
+                        if (U.containsIgnoreCase(s, searchStr)) {
                             String[] buf = new String[LINE_CNT];
 
                             buf[HALF] = s;
@@ -190,7 +190,9 @@ public class VisorLogSearchTask extends VisorMultiNodeTask<VisorLogSearchTaskArg
 
                 List<VisorLogFile> matchingFiles = matchedFiles(folder, filePtrn);
 
-                Collection<VisorLogSearchResult> results = new ArrayList<>(arg.getLimit());
+                int limit = arg.getLimit();
+
+                Collection<VisorLogSearchResult> results = new ArrayList<>(limit);
 
                 int resCnt = 0;
 
@@ -201,11 +203,11 @@ public class VisorLogSearchTask extends VisorMultiNodeTask<VisorLogSearchTaskArg
                         if (textFile(f, false)) {
                             Charset charset = decode(f);
 
-                            if (resCnt == arg.getLimit())
+                            if (resCnt == limit)
                                 break;
 
                             List<GridTuple3<String[], Integer, Integer>> searched =
-                                searchInFile(f, charset, arg.getSearchString(), arg.getLimit() - resCnt);
+                                searchInFile(f, charset, arg.getSearchString(), limit - resCnt);
 
                             resCnt += searched.size();
 
