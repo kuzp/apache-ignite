@@ -64,7 +64,6 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.Gri
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionsExchangeFuture;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionsFullMessage;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionsSingleRequest;
-import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager;
 import org.apache.ignite.internal.util.future.GridCompoundFuture;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.G;
@@ -83,7 +82,6 @@ import org.apache.ignite.transactions.Transaction;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.jsr166.ThreadLocalRandom8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_EXCHANGE_HISTORY_SIZE;
 import static org.apache.ignite.cache.CacheAtomicityMode.ATOMIC;
@@ -120,7 +118,7 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
     private boolean cfgCache = true;
 
     /** */
-    private boolean enablePeristence = false;
+    private boolean enablePersistence = false;
 
     /** */
     private IgniteClosure<String, Boolean> clientC;
@@ -132,7 +130,7 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
 
-        if (enablePeristence) {
+        if (enablePersistence) {
             cfg.setMemoryConfiguration(new MemoryConfiguration().setDefaultMemoryPolicyName("d").
                 setPageSize(1024).setMemoryPolicies(new MemoryPolicyConfiguration().setName("d").
                 setInitialSize(50 * 1024 * 1024L).setMaxSize(50 * 1024 * 1024)));
@@ -241,7 +239,7 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
         ccfg.setCacheMode(cacheMode);
         ccfg.setGroupName(grp);
 
-        if (enablePeristence)
+        if (enablePersistence)
             ccfg.setAffinity(new RendezvousAffinityFunction(false, 128));
 
         if (cacheMode == PARTITIONED)
@@ -471,30 +469,65 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
 
             cfgCache = false;
 
-            enablePeristence = true;
+            enablePersistence = true;
 
-            final int gridsCnt = 3;
+            final int gridsCnt = 5;
 
-            final IgniteEx node = (IgniteEx)startGridsMultiThreaded(gridsCnt);
+            final CountDownLatch l = new CountDownLatch(gridsCnt);
 
-            final List<CacheConfiguration> cfgs = Arrays.asList(
-                cacheConfiguration("g1c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
-                cacheConfiguration("g1c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
-                cacheConfiguration("g2c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"),
-                cacheConfiguration("g2c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"));
+            final AtomicInteger idx = new AtomicInteger(0);
 
-            final Collection<IgniteCache> caches = node.getOrCreateCaches(cfgs);
+            IgniteInternalFuture initFut = GridTestUtils.runMultiThreadedAsync(new Callable<Void>() {
+                @Override public Void call() throws Exception {
+                    int id0 = idx.getAndIncrement();
 
-            final int keys = 1000;
+                    IgniteEx ig = startGrid(id0);
 
-            for (int i = 0; i < keys; i++) {
-                for (IgniteCache cache : caches)
-                    cache.put(i, i);
-            }
+                    while (!ig.active())
+                        Thread.sleep(500);
+
+                    final List<CacheConfiguration> cfgs0 = Arrays.asList(
+                        cacheConfiguration("g1c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
+                        cacheConfiguration("g1c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp1"),
+                        cacheConfiguration("g2c1", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"),
+                        cacheConfiguration("g2c2", TRANSACTIONAL, PARTITIONED, gridsCnt, "testGrp2"));
+
+                    l.countDown();
+                    l.await();
+
+                    Collection<IgniteCache> caches = ig.getOrCreateCaches(cfgs0);
+
+                    assertEquals(cfgs0.size(), caches.size());
+
+                    return null;
+                }
+            }, gridsCnt, "stop-srv");
+
+            Thread.sleep(5_000);
+
+            client.set(true);
+
+            Ignite ignite = startGrid("client");
+
+            while(ignite.cluster().topologyVersion() != gridsCnt + 1)
+                Thread.sleep(500);
+
+            ignite.active(true);
+
+            initFut.get();
+
+            IgniteEx node = grid(0);
+//
+//            final int keys = 1000;
+//
+//            for (int i = 0; i < keys; i++) {
+//                for (IgniteCache cache : caches)
+//                    cache.put(i, i);
+//            }
 
             final int restartIdxFrom = 2;
 
-            final AtomicInteger idx = new AtomicInteger(restartIdxFrom);
+            idx.set(restartIdxFrom);
 
             IgniteInternalFuture fut = GridTestUtils.runMultiThreadedAsync(new Callable<Void>() {
                 @Override public Void call() throws Exception {
@@ -511,15 +544,6 @@ public class CacheExchangeMergeTest extends GridCommonAbstractTest {
             awaitPartitionMapExchange();
 
             checkAffinity();
-
-            client.set(true);
-            final Ignite c = startGrid("client");
-
-            for (CacheConfiguration cfg : cfgs) {
-                final IgniteCache<Object, Object> cache = c.getOrCreateCache(cfg.getName());
-
-                assertTrue(cache.size() > 0);
-            }
 
             stopGrid("client");
 
