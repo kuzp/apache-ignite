@@ -37,6 +37,7 @@ mixin chart-settings
                 a(title='Click to show chart settings dialog' ng-click='$event.stopPropagation()' bs-popover data-template-url='{{ $ctrl.chartSettingsTemplateUrl }}' data-placement='bottom' data-auto-close='1' data-trigger='click')
                     i.fa.fa-bars
                     | Chart settings
+                label.margin-left-dflt Duration: #[b {{paragraph.duration | duration}}]
                 div(ng-show='paragraphTimeSpanVisible(paragraph)')
                     label Show
                     button.select-manual-caret.btn.btn-default(ng-model='paragraph.timeLineSpan' ng-change='applyChartSettings(paragraph)' bs-options='item for item in timeLineSpans' bs-select data-caret-html='<span class="caret"></span>')
