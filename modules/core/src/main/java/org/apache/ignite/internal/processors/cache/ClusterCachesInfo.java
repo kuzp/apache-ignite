@@ -528,7 +528,7 @@ class ClusterCachesInfo {
                             ccfg,
                             cacheId,
                             req.initiatingNodeId(),
-                            req.deploymentId());
+                            req.deploymentId(), "processCacheStart req=" + req);
 
                         DynamicCacheDescriptor startDesc = new DynamicCacheDescriptor(ctx,
                             ccfg,
@@ -1085,6 +1085,12 @@ class ClusterCachesInfo {
             initStartCachesForLocalJoin(false);
         else
             locJoinStartCaches = Collections.emptyList();
+
+        for (CacheGroupDescriptor desc : registeredCacheGrps.values()) {
+            if (log.isInfoEnabled())
+                log.info("onGridDataReceived: grpOrName=" + desc.cacheOrGroupName() + ", grpId=" + desc.groupId() +
+                    ", deploymentId=" + desc.deploymentId());
+        }
     }
 
     /**
@@ -1402,7 +1408,8 @@ class ClusterCachesInfo {
                     cfg,
                     cacheId,
                     nodeId,
-                    joinData.cacheDeploymentId());
+                    joinData.cacheDeploymentId(), "processJoiningNode joinData=" + joinData + ", joinedNodeId=" + nodeId
+                        + ", locJoin=" + locJoin);
 
                 ctx.discovery().setCacheFilter(
                     cacheId,
@@ -1477,6 +1484,7 @@ class ClusterCachesInfo {
      * @param cacheId Cache ID.
      * @param rcvdFrom Node ID cache was recived from.
      * @param deploymentId Deployment ID.
+     * @param debugMsg
      * @return Group descriptor.
      */
     private CacheGroupDescriptor registerCacheGroup(
@@ -1485,7 +1493,7 @@ class ClusterCachesInfo {
         CacheConfiguration<?, ?> startedCacheCfg,
         Integer cacheId,
         UUID rcvdFrom,
-        IgniteUuid deploymentId) {
+        IgniteUuid deploymentId, String debugMsg) {
         if (startedCacheCfg.getGroupName() != null) {
             CacheGroupDescriptor desc = cacheGroupByName(startedCacheCfg.getGroupName());
 
@@ -1517,6 +1525,10 @@ class ClusterCachesInfo {
 
         if (exchActions != null)
             exchActions.addCacheGroupToStart(grpDesc);
+
+        if (log.isInfoEnabled())
+            log.info("registerCacheGroup: grpOrName=" + grpDesc.cacheOrGroupName() + ", grpId=" + grpDesc.groupId() +
+                ", deploymentId=" + grpDesc.deploymentId() + ", debugInfo=[" + debugMsg + ']');
 
         return grpDesc;
     }
