@@ -53,6 +53,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
         ccfg.setName(CACHE);
         ccfg.setExpiryPolicyFactory(AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, DURATION_SEC)));
         ccfg.setEagerTtl(true);
+        ccfg.setGroupName("group1");
 
         final DataStorageConfiguration storCfg = new DataStorageConfiguration();
         final DataRegionConfiguration regCfg = new DataRegionConfiguration();
@@ -111,7 +112,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
         final long ms = System.currentTimeMillis();
         {
             if(restartGrid) {
-                ignite.close();
+                Ignition.stop(ignite.name(), false);
                 ignite = startGrid(0);
                 ignite.active(true);
             }
@@ -127,8 +128,6 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
 
             final long timeout = DURATION_SEC * 1000 + CLEANUP_WORKER_SLEEP_INTERVAL;
             Thread.sleep(timeout);
-            if(restartGrid)
-                Thread.sleep(timeout);
 
             System.out.println("After sleep {{");
             ((IgniteCacheProxy)cache).context().printMemoryStats();
@@ -136,6 +135,47 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
 
             assertEquals(0, cache.size());
         }
+    }
+
+    public void testRebalancingWithTtlExpirable() throws Exception {
+        final IgniteEx srv1 = startGrid(0);
+
+        srv1.active(true);
+
+        {
+            final IgniteCache<Integer, String> cache = srv1.cache(CACHE);
+
+            putEntriesBatch(cache, 0);
+
+            assertEquals(ENTRIES, cache.size());
+
+            System.out.println("After cache puts {{");
+            ((IgniteCacheProxy)cache).context().printMemoryStats();
+            System.out.println("}} ");
+        }
+
+
+        //causes rebalancing start
+        final IgniteEx srv2 = startGrid(1);
+        {
+            final IgniteCache<Integer, String> cacheOn2 = srv2.cache(CACHE);
+            System.out.println("After rebalancing start  {{");
+            ((IgniteCacheProxy)cacheOn2).context().printMemoryStats();
+            System.out.println("}} After rebalancing start");
+
+
+            final long timeout = DURATION_SEC * 1000 + CLEANUP_WORKER_SLEEP_INTERVAL;
+            Thread.sleep(timeout);
+
+
+            System.out.println("After timeout {{");
+            ((IgniteCacheProxy)cacheOn2).context().printMemoryStats();
+            System.out.println("}} After timeout");
+
+            assertEquals(0, cacheOn2.size());
+        }
+
+        stopAllGrids();
     }
 
     private void putEntriesBatch(IgniteCache<Integer, String> cache, final int startKey) {
