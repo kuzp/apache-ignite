@@ -39,7 +39,7 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
 
     public static final String CACHE = "expirableCache";
-    public static final int DURATION_SEC = 5;
+    public static final int DURATION_SEC = 10;
     public static final int ENTRIES = 7000;
     /**
      * copy of GridCacheSharedTtlCleanupManager.CLEANUP_WORKER_SLEEP_INTERVAL
@@ -137,6 +137,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
         }
     }
 
+    //it is possible test will be passing if SQL indexes are enabled
     public void testRebalancingWithTtlExpirable() throws Exception {
         final IgniteEx srv1 = startGrid(0);
 
