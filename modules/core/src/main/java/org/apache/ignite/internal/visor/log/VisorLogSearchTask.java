@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -142,9 +143,11 @@ public class VisorLogSearchTask extends VisorMultiNodeTask<VisorLogSearchTaskArg
 
                             int i = 1;
 
-                            for (String l : lastLines) {
-                                buf[HALF + i] = l;
+                            Iterator<String> it = lastLines.descendingIterator();
 
+                            while(it.hasNext()) {
+                                String l = it.next();
+                                buf[HALF + i] = l;
                                 i++;
                             }
 
