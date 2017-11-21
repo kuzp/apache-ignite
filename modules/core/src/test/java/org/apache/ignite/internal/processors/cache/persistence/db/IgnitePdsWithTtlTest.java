@@ -20,16 +20,22 @@ package org.apache.ignite.internal.processors.cache.persistence.db;
 import com.google.common.base.Strings;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.events.CacheEvent;
+import org.apache.ignite.events.Event;
+import org.apache.ignite.events.EventType;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.IgniteCacheProxy;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
@@ -79,11 +85,22 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
         final IgniteEx ignite = startGrid(0);
 
         ignite.active(true);
+        final AtomicInteger evtCnt = new AtomicInteger();
+
+        ignite.events().localListen(new IgnitePredicate<Event>() {
+            @Override public boolean apply(Event evt) {
+                evtCnt.incrementAndGet();
+                final Integer key = ((CacheEvent)evt).key();
+                return true;
+            }
+        }, EventType.EVT_CACHE_OBJECT_EXPIRED);
 
         for (int i = 0; i < 1; i++)
-            loadAndWaitForCleanup(ignite, i*ENTRIES, false);
+            loadAndWaitForCleanup(ignite, i * ENTRIES, false);
 
         stopAllGrids();
+
+        assertEquals(evtCnt.intValue(), ENTRIES);
     }
 
     public void testTtlIsAppliedAfterRestart() throws Exception {
@@ -92,7 +109,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
         ignite.active(true);
 
         for (int i = 0; i < 1; i++)
-            loadAndWaitForCleanup(ignite, i*ENTRIES, true);
+            loadAndWaitForCleanup(ignite, i * ENTRIES, true);
 
         stopAllGrids();
     }
