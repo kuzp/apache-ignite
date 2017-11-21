@@ -40,9 +40,9 @@ public class GridReversedLinesFileReader implements Closeable {
     private final long totalByteLength;
     private final long totalBlockCount;
 
-    private final byte[][] newLineSequences;
-    /** First found new line sign for current file. */
-    private byte[] curNewLineSequence;
+    private final byte[] nNewLineSequence;
+    private final byte[] rNewLineSequence;
+
     private final int avoidNewlineSplitBufferSize;
     private final int byteDecrement;
 
@@ -118,9 +118,10 @@ public class GridReversedLinesFileReader implements Closeable {
                 "Encoding "+charset+" is not supported yet (feel free to submit a patch)");
         }
         // NOTE: The new line sequences are matched in the order given, so it is important that \r\n is BEFORE \n
-        newLineSequences = new byte[][] { "\r\n".getBytes(charset), "\n".getBytes(charset), "\r".getBytes(charset) };
+        nNewLineSequence = "\n".getBytes(charset);
+        rNewLineSequence = "\r".getBytes(charset);
 
-        avoidNewlineSplitBufferSize = newLineSequences[0].length;
+        avoidNewlineSplitBufferSize = byteDecrement * 2;
     }
 
     /**
@@ -343,19 +344,18 @@ public class GridReversedLinesFileReader implements Closeable {
          * @return length of newline sequence or 0 if none found
          */
         private int getNewLineMatchByteCount(byte[] data, int i) {
-            if (curNewLineSequence != null)
-                return checkNewLineSequence(curNewLineSequence, data, i);
-            else {
-                for (byte[] newLineSequence : newLineSequences) {
-                    int res = checkNewLineSequence(newLineSequence, data, i);
+            int nLen = checkNewLineSequence(nNewLineSequence, data, i);
 
-                    if (res > 0) {
-                        curNewLineSequence = newLineSequence;
-                        return newLineSequence.length;
-                    }
-                }
+            if (nLen > 0) {
+                int rLen = checkNewLineSequence(rNewLineSequence, data, i - byteDecrement);
+
+                if (rLen == 0)
+                    return nLen;
+
+                return rLen + nLen;
             }
-            return 0;
+
+            return checkNewLineSequence(nNewLineSequence, data, i);
         }
     }
 }
