@@ -29,12 +29,12 @@ include /app/helpers/jade/mixins
                 href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory"
                 target="_blank"
                 ng-show='$ctrl.available(["1.0.0", "2.0.0"])'
-            ) More info.
+            ) More info
             a.link-success(
                 href="https://apacheignite.readme.io/docs/evictions"
                 target="_blank"
                 ng-show='$ctrl.available("2.0.0")'
-            ) More info.
+            ) More info
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body.pca-form-row(ng-if=`ui.isPanelLoaded('${form}')`)
             .pca-form-column-6.pc-form-grid-row

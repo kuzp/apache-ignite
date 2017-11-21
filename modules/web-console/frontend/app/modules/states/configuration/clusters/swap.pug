@@ -27,7 +27,7 @@ include /app/helpers/jade/mixins
         .pca-panel-heading-title Swap
         .pca-panel-heading-description
             | Settings for overflow data to disk if it cannot fit in memory. 
-            | #[a.link-success(href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory#swap-space" target="_blank") More info.]
+            | #[a.link-success(href="https://apacheignite.readme.io/v1.9/docs/off-heap-memory#swap-space" target="_blank") More info]
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body(ng-if=`$ctrl.available(["1.0.0", "2.0.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6.pc-form-grid-row

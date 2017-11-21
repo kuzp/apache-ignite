@@ -26,7 +26,7 @@ include /app/helpers/jade/mixins
         .pca-panel-heading-title ODBC configuration
         .pca-panel-heading-description
             | ODBC server configuration. 
-            | #[a.link-success(href="https://apacheignite.readme.io/docs/odbc-driver" target="_blank") More info.]
+            | #[a.link-success(href="https://apacheignite.readme.io/docs/odbc-driver" target="_blank") More info]
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body(ng-if=`$ctrl.available(["1.0.0", "2.1.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6
