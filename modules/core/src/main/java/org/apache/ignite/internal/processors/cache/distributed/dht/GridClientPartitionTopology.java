@@ -444,6 +444,11 @@ public class GridClientPartitionTopology implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
+    @Override public void tryRentPartition(GridDhtLocalPartition part) {
+        part.rent(true);
+    }
+
+    /** {@inheritDoc} */
     @Override public List<GridDhtLocalPartition> localPartitions() {
         return Collections.emptyList();
     }

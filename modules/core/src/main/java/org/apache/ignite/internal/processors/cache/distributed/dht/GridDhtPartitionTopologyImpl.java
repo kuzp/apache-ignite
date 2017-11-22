@@ -896,6 +896,21 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
+    public void tryRentPartition(GridDhtLocalPartition part) {
+        lock.writeLock().lock();
+
+        try {
+            part.rent(false);
+
+            if (part.state() != OWNING)
+                updateLocal(part.id(), part.state(), updateSeq.incrementAndGet(), AffinityTopologyVersion.NONE);
+        }
+        finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public GridDhtLocalPartition localPartition(int part) {
         return locParts.get(part);
     }

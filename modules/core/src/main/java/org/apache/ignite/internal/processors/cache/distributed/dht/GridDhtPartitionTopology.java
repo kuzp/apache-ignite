@@ -169,6 +169,11 @@ public interface GridDhtPartitionTopology {
     public void releasePartitions(int... parts);
 
     /**
+     * @param part Partition to rent.
+     */
+    public void tryRentPartition(GridDhtLocalPartition part);
+
+    /**
      * @param part Partition number.
      * @return Local partition.
      * @throws GridDhtInvalidPartitionException If partition is evicted or absent and

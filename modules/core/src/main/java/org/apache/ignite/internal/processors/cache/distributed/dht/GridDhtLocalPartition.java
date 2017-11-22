@@ -49,6 +49,7 @@ import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridIterator;
+import org.apache.ignite.internal.util.lang.GridPlainRunnable;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -480,10 +481,15 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
 
             // Decrement reservations.
             if (this.state.compareAndSet(state, newState)) {
-                if (reservations == 0 && shouldBeRenting)
-                    rent(true);
+                if (reservations == 0 && shouldBeRenting) {
+                    ctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable() {
+                        @Override public void run() {
+                            grp.topology().tryRentPartition(GridDhtLocalPartition.this);
 
-                tryEvictAsync(false);
+                            tryEvictAsync(false);
+                        }
+                    });
+                }
 
                 break;
             }

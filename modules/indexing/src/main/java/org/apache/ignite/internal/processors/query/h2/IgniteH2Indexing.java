@@ -71,6 +71,7 @@ import org.apache.ignite.internal.processors.cache.IgniteCacheOffheapManager;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.QueryCursorImpl;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtInvalidPartitionException;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryPartitionInfo;
@@ -2013,6 +2014,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         IgniteCacheOffheapManager offheapMgr = cctx.isNear() ? cctx.near().dht().context().offheap() : cctx.offheap();
 
         for (int p = 0; p < cctx.affinity().partitions(); p++) {
+            GridDhtLocalPartition part = cctx.topology().localPartition(p, AffinityTopologyVersion.NONE, false);
+
+            if (part == null || !part.reserve())
+                continue;
+
             try (GridCloseableIterator<KeyCacheObject> keyIter = offheapMgr.cacheKeysIterator(cctx.cacheId(), p)) {
                 while (keyIter.hasNext()) {
                     cctx.shared().database().checkpointReadLock();
@@ -2046,6 +2052,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
                         cctx.shared().database().checkpointReadUnlock();
                     }
                 }
+            }
+            finally {
+                part.release();
             }
         }
 
