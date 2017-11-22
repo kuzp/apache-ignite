@@ -31,6 +31,7 @@ import javax.cache.Cache;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.internal.NodeStoppingException;
 import org.apache.ignite.internal.pagemem.FullPageId;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
@@ -333,6 +334,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         }
     }
 
+    private static Benchmark invokeBenchmark = new Benchmark("IgniteCacheOffheapManagerImpl#invoke");
+
     /** {@inheritDoc} */
     @Override public void invoke(
         GridCacheContext cctx,
@@ -340,7 +343,9 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         GridDhtLocalPartition part,
         OffheapInvokeClosure c)
         throws IgniteCheckedException {
+        long time = System.nanoTime();
         dataStore(part).invoke(cctx, key, c);
+        invokeBenchmark.supply(System.nanoTime() - time);
     }
 
     /** {@inheritDoc} */

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.internal.IgniteInterruptedCheckedException;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageMemory;
@@ -1589,8 +1590,12 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
         return res != null ? res : false;
     }
 
+    private static Benchmark invokeBenchmark = new Benchmark("BPlusTree#invoke");
+
     /** {@inheritDoc} */
     @Override public void invoke(L row, Object z, InvokeClosure<T> c) throws IgniteCheckedException {
+        long time = System.nanoTime();
+
         checkDestroyed();
 
         Invoke x = new Invoke(row, z, c);
@@ -1637,6 +1642,7 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
         finally {
             x.releaseAll();
             checkDestroyed();
+            invokeBenchmark.supply(System.nanoTime() - time);
         }
     }
 

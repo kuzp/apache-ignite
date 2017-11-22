@@ -30,6 +30,7 @@ import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.NodeStoppingException;
@@ -471,9 +472,16 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
         return cacheCtx.cache().entryEx(key.key(), topVer);
     }
 
+    private static Benchmark userCommitBenchmark = new Benchmark("IgniteTxLocalAdapter#userCommit");
+    @Override public void userCommit() throws IgniteCheckedException {
+        long time = System.nanoTime();
+        userCommitInternal();
+        userCommitBenchmark.supply(System.nanoTime() - time);
+    }
+
     /** {@inheritDoc} */
     @SuppressWarnings({"CatchGenericClass"})
-    @Override public void userCommit() throws IgniteCheckedException {
+    public void userCommitInternal() throws IgniteCheckedException {
         TransactionState state = state();
 
         if (state != COMMITTING) {

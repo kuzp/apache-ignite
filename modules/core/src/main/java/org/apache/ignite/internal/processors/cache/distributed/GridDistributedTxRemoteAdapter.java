@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.NodeStoppingException;
 import org.apache.ignite.internal.pagemem.wal.StorageException;
@@ -401,11 +402,18 @@ public abstract class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
         }
     }
 
+    private static Benchmark commitIfLockedBenchmark = new Benchmark("GridDistributedTxRemoteAdapter#commitIfLocked");
+    public void commitIfLocked() throws IgniteCheckedException {
+        long time = System.nanoTime();
+        commitIfLockedInternal();
+        commitIfLockedBenchmark.supply(System.nanoTime() - time);
+    }
+
     /**
      * @throws IgniteCheckedException If commit failed.
      */
     @SuppressWarnings({"CatchGenericClass"})
-    private void commitIfLocked() throws IgniteCheckedException {
+    private void commitIfLockedInternal() throws IgniteCheckedException {
         if (state() == COMMITTING) {
             for (IgniteTxEntry txEntry : writeEntries()) {
                 assert txEntry != null : "Missing transaction entry for tx: " + this;

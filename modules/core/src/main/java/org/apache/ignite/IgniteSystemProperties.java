@@ -495,6 +495,15 @@ public final class IgniteSystemProperties {
     /** Indicating whether local store keeps primary only. Backward compatibility flag. */
     public static final String IGNITE_LOCAL_STORE_KEEPS_PRIMARY_ONLY = "IGNITE_LOCAL_STORE_KEEPS_PRIMARY_ONLY";
 
+    /** Indicating number of values collected in every run of benchmarks. */
+    public static final String IGNITE_BENCH_MARKS = "IGNITE_BENCH_MARKS";
+
+    /** Indicating benchmarks collection period (secs). */
+    public static final String IGNITE_BENCH_PERIOD = "IGNITE_BENCH_PERIOD";
+
+    /** Indicating number of evenly-spaced percentile columns. */
+    public static final String IGNITE_BENCH_COLS = "IGNITE_BENCH_COLS";
+
     /**
      * Manages {@link OptimizedMarshaller} behavior of {@code serialVersionUID} computation for
      * {@link Serializable} classes.

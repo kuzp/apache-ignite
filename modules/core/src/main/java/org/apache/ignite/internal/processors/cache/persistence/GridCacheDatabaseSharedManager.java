@@ -62,6 +62,7 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteSystemProperties;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CheckpointWriteOrder;
 import org.apache.ignite.configuration.DataPageEvictionMode;
@@ -962,12 +963,19 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         }
     }
 
+    private static Benchmark checkpointReadLockBenchmark = new Benchmark("GridCacheDatabaseSharedManager#checkpointReadLock");
+    @Override public void checkpointReadLock() {
+        long time = System.nanoTime();
+        checkpointReadLockInternal();
+        checkpointReadLockBenchmark.supply(System.nanoTime() - time);
+    }
+
     /**
      * Gets the checkpoint read lock. While this lock is held, checkpoint thread will not acquireSnapshotWorker memory
      * state.
      */
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")
-    @Override public void checkpointReadLock() {
+    public void checkpointReadLockInternal() {
         if (checkpointLock.writeLock().isHeldByCurrentThread())
             return;
 

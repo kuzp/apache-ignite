@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.cache.persistence.freelist;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.internal.pagemem.PageIdAllocator;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageUtils;
@@ -456,8 +457,12 @@ public class FreeListImpl extends PagesList implements FreeList, ReuseList {
         return pageMem.allocatePage(grpId, part, PageIdAllocator.FLAG_DATA);
     }
 
+    private static Benchmark insertDataRowBenchmark = new Benchmark("FreeListImpl#insertDataRow");
+
     /** {@inheritDoc} */
     @Override public void insertDataRow(CacheDataRow row) throws IgniteCheckedException {
+        long time = System.nanoTime();
+
         int rowSize = getRowSize(row, row.cacheId() != 0);
 
         int written = 0;
@@ -500,10 +505,16 @@ public class FreeListImpl extends PagesList implements FreeList, ReuseList {
             assert written != FAIL_I; // We can't fail here.
         }
         while (written != COMPLETE);
+
+        insertDataRowBenchmark.supply(System.nanoTime() - time);
     }
+
+    private static Benchmark updateDataRowBenchmark = new Benchmark("FreeListImpl#updateDataRow");
 
     /** {@inheritDoc} */
     @Override public boolean updateDataRow(long link, CacheDataRow row) throws IgniteCheckedException {
+        long time = System.nanoTime();
+
         assert link != 0;
 
         long pageId = PageIdUtils.pageId(link);
@@ -513,11 +524,17 @@ public class FreeListImpl extends PagesList implements FreeList, ReuseList {
 
         assert updated != null; // Can't fail here.
 
+        updateDataRowBenchmark.supply(System.nanoTime() - time);
+
         return updated;
     }
 
+    private static Benchmark removeDataRowBenchmark = new Benchmark("FreeListImpl#removeDataRow");
+
     /** {@inheritDoc} */
     @Override public void removeDataRowByLink(long link) throws IgniteCheckedException {
+        long time = System.nanoTime();
+
         assert link != 0;
 
         long pageId = PageIdUtils.pageId(link);
@@ -537,6 +554,8 @@ public class FreeListImpl extends PagesList implements FreeList, ReuseList {
 
             assert nextLink != FAIL_L; // Can't fail here.
         }
+
+        removeDataRowBenchmark.supply(System.nanoTime() - time);
     }
 
     /** {@inheritDoc} */

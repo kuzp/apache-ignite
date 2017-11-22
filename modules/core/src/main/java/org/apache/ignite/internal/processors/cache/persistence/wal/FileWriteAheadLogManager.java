@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteSystemProperties;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
@@ -482,71 +483,87 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         }
     }
 
+    private static Benchmark logBenchmark = new Benchmark("FileWriteAheadLogManager#log");
+
     /** {@inheritDoc} */
     @SuppressWarnings("TooBroadScope")
     @Override public WALPointer log(WALRecord record) throws IgniteCheckedException, StorageException {
-        if (serializer == null || mode == WALMode.NONE)
-            return null;
+        long time = System.nanoTime();
 
-        FileWriteHandle currWrHandle = currentHandle();
+        try {
+            if (serializer == null || mode == WALMode.NONE)
+                return null;
 
-        // Logging was not resumed yet.
-        if (currWrHandle == null)
-            return null;
+            FileWriteHandle currWrHandle = currentHandle();
 
-        // Need to calculate record size first.
-        record.size(serializer.size(record));
+            // Logging was not resumed yet.
+            if (currWrHandle == null)
+                return null;
 
-        for (; ; currWrHandle = rollOver(currWrHandle)) {
-            WALPointer ptr = currWrHandle.addRecord(record);
+            // Need to calculate record size first.
+            record.size(serializer.size(record));
 
-            if (ptr != null) {
-                metrics.onWalRecordLogged();
+            for (; ; currWrHandle = rollOver(currWrHandle)) {
+                WALPointer ptr = currWrHandle.addRecord(record);
 
-                lastWALPtr.set(ptr);
+                if (ptr != null) {
+                    metrics.onWalRecordLogged();
 
-                if (walAutoArchiveAfterInactivity > 0)
-                    lastRecordLoggedMs.set(U.currentTimeMillis());
+                    lastWALPtr.set(ptr);
 
-                return ptr;
+                    if (walAutoArchiveAfterInactivity > 0)
+                        lastRecordLoggedMs.set(U.currentTimeMillis());
+
+                    return ptr;
+                }
+
+                checkEnvironment();
+
+                if (isStopping())
+                    throw new IgniteCheckedException("Stopping.");
             }
-
-            checkEnvironment();
-
-            if (isStopping())
-                throw new IgniteCheckedException("Stopping.");
+        } finally {
+            logBenchmark.supply(System.nanoTime() - time);
         }
     }
 
+    private static Benchmark fsyncBenchmark = new Benchmark("FileWriteAheadLogManager#fsync");
+
     /** {@inheritDoc} */
     @Override public void fsync(WALPointer ptr) throws IgniteCheckedException, StorageException {
-        if (serializer == null || mode == WALMode.NONE)
-            return;
+        long time = System.nanoTime();
 
-        FileWriteHandle cur = currentHandle();
+        try {
+            if (serializer == null || mode == WALMode.NONE)
+                return;
 
-        // WAL manager was not started (client node).
-        if (cur == null)
-            return;
+            FileWriteHandle cur = currentHandle();
 
-        FileWALPointer filePtr = (FileWALPointer)(ptr == null ? lastWALPtr.get() : ptr);
+            // WAL manager was not started (client node).
+            if (cur == null)
+                return;
 
-        boolean forceFlush = filePtr != null && filePtr.forceFlush();
+            FileWALPointer filePtr = (FileWALPointer)(ptr == null ? lastWALPtr.get() : ptr);
 
-        if (mode == WALMode.BACKGROUND && !forceFlush)
-            return;
+            boolean forceFlush = filePtr != null && filePtr.forceFlush();
 
-        if (mode == WALMode.LOG_ONLY || forceFlush) {
-            cur.flushOrWait(filePtr, false);
+            if (mode == WALMode.BACKGROUND && !forceFlush)
+                return;
 
-            return;
+            if (mode == WALMode.LOG_ONLY || forceFlush) {
+                cur.flushOrWait(filePtr, false);
+
+                return;
+            }
+
+            // No need to sync if was rolled over.
+            if (filePtr != null && !cur.needFsync(filePtr))
+                return;
+
+            cur.fsync(filePtr, false);
+        } finally {
+            logBenchmark.supply(System.nanoTime() - time);
         }
-
-        // No need to sync if was rolled over.
-        if (filePtr != null && !cur.needFsync(filePtr))
-            return;
-
-        cur.fsync(filePtr, false);
     }
 
     /** {@inheritDoc} */

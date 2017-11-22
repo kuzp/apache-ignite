@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.bench.Benchmark;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.mem.DirectMemoryProvider;
 import org.apache.ignite.internal.mem.DirectMemoryRegion;
@@ -402,9 +403,16 @@ public class PageMemoryImpl implements PageMemoryEx {
         return writeLock(cacheId, pageId, page, false);
     }
 
+    private static Benchmark writeLockBenchmark = new Benchmark("PageMemoryImpl#writeLock");
+
     /** {@inheritDoc} */
     @Override public long writeLock(int cacheId, long pageId, long page, boolean restore) {
-        return writeLockPage(page, new FullPageId(pageId, cacheId), !restore);
+        long time = System.nanoTime();
+        try {
+            return writeLockPage(page, new FullPageId(pageId, cacheId), !restore);
+        } finally {
+            writeLockBenchmark.supply(System.nanoTime() - time);
+        }
     }
 
     /** {@inheritDoc} */
@@ -418,10 +426,17 @@ public class PageMemoryImpl implements PageMemoryEx {
         writeUnlock(cacheId, pageId, page, walPlc, dirtyFlag, false);
     }
 
+    private static Benchmark writeUnlockBenchmark = new Benchmark("PageMemoryImpl#writeUnlock");
+
     /** {@inheritDoc} */
     @Override public void writeUnlock(int cacheId, long pageId, long page, Boolean walPlc,
         boolean dirtyFlag, boolean restore) {
-        writeUnlockPage(page, new FullPageId(pageId, cacheId), walPlc, dirtyFlag, restore);
+        long time = System.nanoTime();
+        try {
+            writeUnlockPage(page, new FullPageId(pageId, cacheId), walPlc, dirtyFlag, restore);
+        } finally {
+            writeUnlockBenchmark.supply(System.nanoTime() - time);
+        }
     }
 
     /** {@inheritDoc} */
@@ -531,8 +546,12 @@ public class PageMemoryImpl implements PageMemoryEx {
         return acquirePage(cacheId, pageId, false);
     }
 
+    private static Benchmark acquirePageBenchmark = new Benchmark("PageMemoryImpl#acquirePage");
+
     /** {@inheritDoc} */
     @Override public long acquirePage(int cacheId, long pageId, boolean restore) throws IgniteCheckedException {
+        long time = System.nanoTime();
+
         FullPageId fullId = new FullPageId(pageId, cacheId);
 
         int partId = PageIdUtils.partId(pageId);
@@ -662,6 +681,7 @@ public class PageMemoryImpl implements PageMemoryEx {
         }
         finally {
             seg.writeLock().unlock();
+            acquirePageBenchmark.supply(System.nanoTime() - time);
         }
     }
 
@@ -1142,24 +1162,32 @@ public class PageMemoryImpl implements PageMemoryEx {
         return total;
     }
 
+    private static Benchmark readLockPageBenchmark = new Benchmark("PageMemoryImpl#readLockPage");
+
     /**
      * @param absPtr Absolute pointer to read lock.
      * @param force Force flag.
      * @return Pointer to the page read buffer.
      */
     private long readLockPage(long absPtr, FullPageId fullId, boolean force) {
-        int tag = force ? -1 : PageIdUtils.tag(fullId.pageId());
+        long time = System.nanoTime();
 
-        boolean locked = rwLock.readLock(absPtr + PAGE_LOCK_OFFSET, tag);
+        try {
+            int tag = force ? -1 : PageIdUtils.tag(fullId.pageId());
 
-        if (!locked)
-            return 0;
+            boolean locked = rwLock.readLock(absPtr + PAGE_LOCK_OFFSET, tag);
 
-        PageHeader.writeTimestamp(absPtr, U.currentTimeMillis());
+            if (!locked)
+                return 0;
 
-        assert GridUnsafe.getInt(absPtr + PAGE_OVERHEAD + 4) == 0; //TODO GG-11480
+            PageHeader.writeTimestamp(absPtr, U.currentTimeMillis());
 
-        return absPtr + PAGE_OVERHEAD;
+            assert GridUnsafe.getInt(absPtr + PAGE_OVERHEAD + 4) == 0; //TODO GG-11480
+
+            return absPtr + PAGE_OVERHEAD;
+        } finally {
+            readLockPageBenchmark.supply(System.nanoTime() - time);
+        }
     }
 
     /** {@inheritDoc} */
@@ -1167,11 +1195,18 @@ public class PageMemoryImpl implements PageMemoryEx {
         return readLockPage(page, new FullPageId(pageId, cacheId), true);
     }
 
+
+    private static Benchmark readUnlockPageBenchmark = new Benchmark("PageMemoryImpl#readUnlockPage");
+
     /**
      * @param absPtr Absolute pointer to unlock.
      */
     void readUnlockPage(long absPtr) {
+        long time = System.nanoTime();
+
         rwLock.readUnlock(absPtr + PAGE_LOCK_OFFSET);
+
+        readUnlockPageBenchmark.supply(System.nanoTime() - time);
     }
 
     /**
