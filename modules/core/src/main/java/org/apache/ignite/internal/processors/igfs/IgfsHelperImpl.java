@@ -31,9 +31,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 public class IgfsHelperImpl implements IgfsHelper {
     /** {@inheritDoc} */
     @Override public void preProcessCacheConfiguration(CacheConfiguration cfg) {
-        EvictionPolicy evictPlc = cfg.getEvictionPolicyFactory() != null ?
-            (EvictionPolicy)cfg.getEvictionPolicyFactory().create()
-            : cfg.getEvictionPolicy();
+        EvictionPolicy evictPlc = cfg.getEvictionPolicy();
 
         if (evictPlc instanceof IgfsPerBlockLruEvictionPolicy && cfg.getEvictionFilter() == null)
             cfg.setEvictionFilter(new IgfsEvictionFilter());
@@ -41,9 +39,7 @@ public class IgfsHelperImpl implements IgfsHelper {
 
     /** {@inheritDoc} */
     @Override public void validateCacheConfiguration(CacheConfiguration cfg) throws IgniteCheckedException {
-        EvictionPolicy evictPlc = cfg.getEvictionPolicyFactory() != null ?
-            (EvictionPolicy)cfg.getEvictionPolicyFactory().create()
-            : cfg.getEvictionPolicy();
+        EvictionPolicy evictPlc =  cfg.getEvictionPolicy();
 
         if (evictPlc != null && evictPlc instanceof IgfsPerBlockLruEvictionPolicy) {
             EvictionFilter evictFilter = cfg.getEvictionFilter();
