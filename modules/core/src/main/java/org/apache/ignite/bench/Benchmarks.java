@@ -12,8 +12,10 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.apache.ignite.DataStorageMetrics;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteSystemProperties;
+import org.apache.ignite.internal.IgnitionEx;
 
 public class Benchmarks {
     private static final int MARKS = Integer.getInteger(IgniteSystemProperties.IGNITE_BENCH_MARKS, 10000);
@@ -31,6 +33,7 @@ public class Benchmarks {
             String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
             final PrintWriter aggregateLog = new PrintWriter(new File("benchmarks-" + pid + ".txt"));
             final PrintWriter threadsLog = new PrintWriter(new File("benchmarks-threads-" + pid + ".txt"));
+            final PrintWriter metricsLog = new PrintWriter(new File("benchmarks-metrics-" + pid + ".txt"));
 
             DateFormat date = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -46,6 +49,10 @@ public class Benchmarks {
 
             aggregateLog.println("Class#method");
             threadsLog.println("Class#method\tThread-name");
+            metricsLog.println("lastCheckpointDataPagesNumber\tlastCheckpointTotalPagesNumber" +
+                "\tlastCheckpointCopiedOnWritePagesNumber\tlastCheckpointDuration\tlastCheckpointFsyncDuration" +
+                "\tlastCheckpointLockWaitDuration\tlastCheckpointMarkDuration" +
+                "\twalArchiveSegments\twalFsyncTimeAverage\twalLoggingRate\twalWritingRate");
 
             Runnable outputStats = new Runnable() {
                 public void run() {
@@ -61,10 +68,29 @@ public class Benchmarks {
 
                     aggregateLog.flush();
                     threadsLog.flush();
+
+                    // XXX
+                    DataStorageMetrics metrics = IgnitionEx.grid().dataStorageMetrics();
+
+                    metricsLog.println(String.format("%d %d %d %d %d %d %d %d %f %f %f",
+                        metrics.getLastCheckpointDataPagesNumber(),
+                        metrics.getLastCheckpointTotalPagesNumber(),
+                        metrics.getLastCheckpointCopiedOnWritePagesNumber(),
+                        metrics.getLastCheckpointDuration(),
+                        metrics.getLastCheckpointFsyncDuration(),
+                        metrics.getLastCheckpointLockWaitDuration(),
+                        metrics.getLastCheckpointMarkDuration(),
+                        metrics.getWalArchiveSegments(),
+                        metrics.getWalFsyncTimeAverage(),
+                        metrics.getWalLoggingRate(),
+                        metrics.getWalWritingRate()));
+                    metricsLog.flush();
                 }
             };
 
             SCHEDULER.scheduleAtFixedRate(outputStats, PERIOD, PERIOD, TimeUnit.SECONDS);
+
+
         } catch (Exception e) {
             throw new IgniteException(e);
         }
