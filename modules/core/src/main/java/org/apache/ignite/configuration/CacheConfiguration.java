@@ -204,9 +204,6 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
     @Deprecated
     private EvictionPolicy evictPlc;
 
-    /** Cache eviction policy factory. */
-    private Factory evictPlcFactory;
-
     /** */
     private boolean onheapCache;
 
@@ -357,6 +354,9 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
 
     /** Cache key configuration. */
     private CacheKeyConfiguration[] keyCfg;
+
+    /** Cache eviction policy factory. */
+    private Factory evictPlcFactory;
 
     /** Empty constructor (all values are initialized to their defaults). */
     public CacheConfiguration() {
