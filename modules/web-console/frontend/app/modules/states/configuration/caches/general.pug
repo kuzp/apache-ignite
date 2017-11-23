@@ -30,7 +30,7 @@ include /app/helpers/jade/mixins
         .pca-panel-body.pca-form-row
             .pca-form-column-6.pc-form-grid-row
                 
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +sane-ignite-form-field-text({
                         label: 'Name:',
                         model: `${model}.name`,
@@ -43,11 +43,7 @@ include /app/helpers/jade/mixins
                         ignite-unique-skip=`["_id", ${model}]`
                     )
                         +unique-feedback(`${model}.name`, 'Cache name should be unique')
-                .pc-form-grid-col-30(ng-if='$ctrl.available("2.1.0")')
-                    +text('Group:', `${model}.groupName`, '"groupName"', 'false', 'Input group name',
-                        'Cache group name.<br/>\
-                        Caches with the same group name share single underlying "physical" cache (partition set), but are logically isolated.')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +sane-ignite-form-field-dropdown({
                         label: 'Domain models:',
                         model: `${model}.domains`,
@@ -58,6 +54,10 @@ include /app/helpers/jade/mixins
                         options: '$ctrl.modelsMenu',
                         tip: 'Select domain models to describe types in cache'
                     })
+                .pc-form-grid-col-60(ng-if='$ctrl.available("2.1.0")')
+                    +text('Group:', `${model}.groupName`, '"groupName"', 'false', 'Input group name',
+                        'Cache group name.<br/>\
+                        Caches with the same group name share single underlying "physical" cache (partition set), but are logically isolated.')
                 .pc-form-grid-col-30
                     +cacheMode('Mode:', `${model}.cacheMode`, '"cacheMode"', 'PARTITIONED')
 

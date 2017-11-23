@@ -33,7 +33,7 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target='' id=`${form}`)
         .pca-panel-body(ng-if=`ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6.pc-form-grid-row
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +dropdown('Cache mode:', `${model}.cacheMode`, '"cacheMode"', 'true', 'PARTITIONED',
                         '[\
                             {value: "LOCAL", label: "LOCAL"},\
@@ -46,11 +46,11 @@ include /app/helpers/jade/mixins
                             <li>Replicated - in this mode all the keys are distributed to all participating nodes</li>\
                             <li>Local - in this mode caches residing on different grid nodes will not know about each other</li>\
                         </ul>')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Sequence reserve:', `${model}.atomicSequenceReserveSize`, '"atomicSequenceReserveSize"', 'true', '1000', '0',
                         'Default number of sequence values reserved for IgniteAtomicSequence instances<br/>\
                         After a certain number has been reserved, consequent increments of sequence will happen locally, without communication with other nodes, until the next reservation has to be made')
-                .pc-form-grid-col-20(ng-show=`!(${model}.cacheMode && ${model}.cacheMode != "PARTITIONED")`)
+                .pc-form-grid-col-60(ng-show=`!(${model}.cacheMode && ${model}.cacheMode != "PARTITIONED")`)
                     +number('Backups:', model + '.backups', '"backups"', 'true', '0', '0', 'Number of backup nodes')
 
                 .pc-form-grid-col-60(ng-if-start='$ctrl.available("2.1.0")')

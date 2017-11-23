@@ -30,7 +30,7 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id=`${form}`)
         .pca-panel-body(ng-if=`$ctrl.available(["2.0.0", "2.3.0"]) && ui.isPanelLoaded('${form}')`).pca-form-row
             .pca-form-column-6.pc-form-grid-row
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +sane-ignite-form-field-dropdown({
                         label: 'Page size:',
                         model: `${model}.pageSize`,
@@ -38,7 +38,7 @@ include /app/helpers/jade/mixins
                         options: `$ctrl.Clusters.memoryConfiguration.pageSize.values`,
                         tip: 'Every memory region is split on pages of fixed size'
                     })
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Concurrency level:', model + '.concurrencyLevel', '"MemoryConfigurationConcurrencyLevel"',
                     'true', 'availableProcessors', '2', 'The number of concurrent segments in Ignite internal page mapping tables')
                 .pc-form-grid-col-60.pc-form-group__text-title

@@ -48,11 +48,11 @@ include /app/helpers/jade/mixins
                     +number-min-max('TCP port:', `${model}.port`, '"connectorPort"', enabled, '11211', '1024', '65535', 'Port for TCP binary protocol server')
                 .pc-form-grid-col-20
                     +number('TCP port range:', `${model}.portRange`, '"connectorPortRange"', enabled, '100', '1', 'Number of ports for TCP binary protocol server to try if configured port is already in use')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Idle query cursor timeout:', `${model}.idleQueryCursorTimeout`, '"connectorIdleQueryCursorTimeout"', enabled, '600000', '0',
                         'Reject open query cursors that is not used timeout<br/>\
                         If no fetch query request come within idle timeout, it will be removed on next check for old query cursors')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Idle query cursor check frequency:', `${model}.idleQueryCursorCheckFrequency`, '"connectorIdleQueryCursorCheckFrequency"', enabled, '60000', '0',
                         'Idle query cursors check frequency<br/>\
                         This setting is used to reject open query cursors that is not used')
