@@ -420,11 +420,6 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
         return BinaryObjectBuilderImpl.wrap(binaryObj);
     }
 
-    /** */
-    @Override public BinaryObjectBuilder builder(String clsName, String cacheName) {
-        return new BinaryObjectBuilderImpl(binaryCtx, clsName).cacheName(cacheName);
-    }
-
     /** {@inheritDoc} */
     @Override public void updateMetadata(int typeId, String typeName, @Nullable String affKeyFieldName,
         Map<String, BinaryFieldMetadata> fieldTypeIds, boolean isEnum, @Nullable Map<String, Integer> enumMap)
@@ -500,7 +495,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
         if (!meta.explicit())
             throw new BinaryObjectException("This method can only be used for explicit types");
 
-        BinaryMetadata.CacheSpecificMetadata cacheMeta = meta.cache(cacheName);
+        BinaryMetadata.CacheSpecificMetadata cacheMeta = meta.cache();
 
         return (cacheMeta == null) ? null: cacheMeta.metadata().wrap(binaryCtx);
     }
@@ -1000,7 +995,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldTypeName)
+    public BinaryType addField(String typeName, String fieldName, String fieldTypeName)
         throws IgniteException {
 
         int typeId = binaryCtx.typeId(typeName);
@@ -1011,7 +1006,8 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             throw new IgniteException("Cannot add or remove fields for implicit types" +
                 " [typeName=" + typeName + ", typeId=" + typeId + "].");
 
-        meta0.addField(cacheName, fieldName, new BinaryFieldMetadata(binaryCtx.typeId(fieldTypeName), binaryCtx.fieldId(typeId, fieldName)));
+        meta0.addField(fieldName, new BinaryFieldMetadata(binaryCtx.typeId(fieldTypeName),
+            binaryCtx.fieldId(typeId, fieldName)));
 
         binaryCtx.updateMetadata(typeId, meta0);
 
@@ -1019,7 +1015,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     }
 
     /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String cacheName, String fieldName)
+    public BinaryType removeField(String typeName, String fieldName)
         throws IgniteException {
 
         int typeId = binaryCtx.typeId(typeName);
@@ -1030,7 +1026,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             throw new IgniteException("Cannot add or remove fields for implicit types" +
                 " [typeName=" + typeName + ", typeId=" + typeId + "].");
 
-        meta0.removeField(cacheName, fieldName);
+        meta0.removeField(fieldName);
 
         binaryCtx.updateMetadata(typeId, meta0);
 
@@ -1043,7 +1039,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
      * @return
      * @throws IgniteException
      */
-    public Object adaptObjectVersion(Object obj, String cacheName) throws IgniteException {
+    public Object adaptObjectVersion(Object obj) throws IgniteException {
         if (obj instanceof BinaryObject) {
             BinaryObject binaryObject = (BinaryObject)obj;
 
@@ -1054,7 +1050,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             if (!metadata.explicit())
                 return obj;
 
-            BinaryMetadata.CacheSpecificMetadata cacheSpecMeta = metadata.cache(cacheName);
+            BinaryMetadata.CacheSpecificMetadata cacheSpecMeta = metadata.cache();
 
             if (cacheSpecMeta == null)
                 return obj;

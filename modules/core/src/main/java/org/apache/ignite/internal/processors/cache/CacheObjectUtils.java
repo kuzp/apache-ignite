@@ -174,7 +174,7 @@ public class CacheObjectUtils {
 
             if (!co.isPlatformType() && keepBinary)
                 return ((CacheObjectBinaryProcessorImpl)ctx.kernalContext().cacheObjects())
-                    .adaptObjectVersion(o, ((CacheObjectBinaryContext)ctx).cacheName());
+                    .adaptObjectVersion(o);
 
             // It may be a collection of binaries
             o = co.value(ctx, cpy);

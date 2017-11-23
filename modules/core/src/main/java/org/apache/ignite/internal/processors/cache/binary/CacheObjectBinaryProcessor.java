@@ -47,12 +47,6 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
     public BinaryObjectBuilder builder(BinaryObject binaryObj);
 
     /**
-     * @param clsName Class name.
-     * @return Builder.
-     */
-    public BinaryObjectBuilder builder(String clsName, String cacheName);
-
-    /**
      * @param typeId Type ID.
      * @param newMeta New meta data.
      * @throws IgniteException In case of error.
@@ -171,25 +165,21 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
     /**
      *
      * @param typeName
-     * @param cacheName
      * @param fieldName
      * @param fieldTypeName
      * @return
      * @throws IgniteException
      */
-    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldTypeName)
+    public BinaryType addField(String typeName, String fieldName, String fieldTypeName)
         throws IgniteException;
 
     /**
      *
      * @param typeName
-     * @param cacheName
      * @param fieldName
      * @return
      * @throws IgniteException
      */
-    public BinaryType removeField(String typeName, String cacheName, String fieldName)
+    public BinaryType removeField(String typeName, String fieldName)
         throws IgniteException;
-
-
 }

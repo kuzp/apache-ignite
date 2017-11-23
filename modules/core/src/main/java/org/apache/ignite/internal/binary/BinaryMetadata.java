@@ -82,8 +82,8 @@ public class BinaryMetadata implements Externalizable {
     /** Explicit changes. */
     private boolean explicit;
 
-    /** Cache specific metadata. */
-    private Map<String, CacheSpecificMetadata> cacheSpecificMeta = new LinkedHashMap<>();
+    /** Versioned part of meta. */
+    private CacheSpecificMetadata changes = null;
 
     /**
      * For {@link Externalizable}.
@@ -274,16 +274,12 @@ public class BinaryMetadata implements Externalizable {
         out.writeBoolean(explicit);
 
         if (explicit) {
-            if (cacheSpecificMeta == null)
-                out.writeInt(0);
+            if (changes == null)
+                out.writeBoolean(false);
             else {
-                out.writeInt(cacheSpecificMeta.size());
+                out.writeBoolean(true);
 
-                for (Map.Entry<String, CacheSpecificMetadata> e : cacheSpecificMeta.entrySet()) {
-                    U.writeString(out, e.getKey());
-
-                    e.getValue().writeTo(out);
-                }
+                changes.writeTo(out);
             }
         }
     }
@@ -377,20 +373,10 @@ public class BinaryMetadata implements Externalizable {
         explicit = in.readBoolean();
 
         if (explicit) {
-            int size = in.readInt();
+            if (in.readBoolean()) {
+                changes = new CacheSpecificMetadata();
 
-            if (size > 0) {
-                cacheSpecificMeta = new HashMap<>(size);
-
-                for (int idx = 0; idx < size; idx++) {
-                    String name = U.readString(in);
-
-                    CacheSpecificMetadata cacheMeta = new CacheSpecificMetadata();
-
-                    cacheMeta.readFrom(in);
-
-                    cacheSpecificMeta.put(name, cacheMeta);
-                }
+                changes.readFrom(in);
             }
         }
     }
@@ -448,37 +434,25 @@ public class BinaryMetadata implements Externalizable {
 
     /**
      *
-     * @param cacheName
      * @return
      */
-    public CacheSpecificMetadata cache(String cacheName) {
-        return cacheSpecificMeta.get(cacheName);
+    public CacheSpecificMetadata cache() {
+        return changes;
     }
 
     /**
      *
-     * @param cacheName
-     * @param cacheSpecMeta
-     */
-    public void cache(String cacheName, CacheSpecificMetadata cacheSpecMeta) {
-        if (cacheSpecificMeta.put(cacheName, cacheSpecMeta) != null)
-            throw new IgniteException("cache specific meta existed");
-    }
-
-    /**
-     *
-     * @param cacheName
      * @param fieldName
      */
-    public void removeField(String cacheName, String fieldName) {
+    public void removeField(String fieldName) {
         assert explicit;
 
-        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+        CacheSpecificMetadata cacheMeta = changes;
 
         if (cacheMeta == null) {
             cacheMeta = new CacheSpecificMetadata();
 
-            cacheSpecificMeta.put(cacheName, cacheMeta);
+            changes = cacheMeta;
         }
 
         cacheMeta.removeField(fieldName);
@@ -486,28 +460,25 @@ public class BinaryMetadata implements Externalizable {
 
     /**
      *
-     * @param cacheName
      * @param fieldName
+     * @param fieldMeta
      */
-    public void addField(String cacheName, String fieldName, BinaryFieldMetadata fieldMeta) {
+    public void addField(String fieldName, BinaryFieldMetadata fieldMeta) {
         assert explicit;
 
-        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+        CacheSpecificMetadata cacheMeta = changes;
 
         if (cacheMeta == null) {
             cacheMeta = new CacheSpecificMetadata();
 
-            cacheSpecificMeta.put(cacheName, cacheMeta);
+            changes = cacheMeta;
         }
 
         cacheMeta.addField(fieldName, fieldMeta);
     }
 
-    public int mapSchemaVersion(String cacheName, int schemaId) {
-        if (cacheSpecificMeta == null)
-            return schemaId;
-
-        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+    public int mapSchemaVersion(int schemaId) {
+        CacheSpecificMetadata cacheMeta = changes;
 
         if (cacheMeta == null)
             return schemaId;

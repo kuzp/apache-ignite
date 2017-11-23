@@ -339,8 +339,8 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
             int schemaId = writer.schemaId();
             BinaryMetadata meta0 = ctx.metadata0(typeId);
 
-            if (cacheName != null && meta0.explicit())
-                writer.schemaId(meta0.mapSchemaVersion(cacheName, schemaId));
+            if (meta0.explicit())
+                writer.schemaId(meta0.mapSchemaVersion(schemaId));
 
             //noinspection NumberEquality
             writer.postWrite(true, registeredType);

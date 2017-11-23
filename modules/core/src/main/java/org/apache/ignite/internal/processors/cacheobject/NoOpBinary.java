@@ -51,11 +51,6 @@ public class NoOpBinary implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryObjectBuilder builder(String typeName, String cacheName) throws BinaryObjectException {
-        throw unsupported();
-    }
-
-    /** {@inheritDoc} */
     @Override public BinaryType type(Class<?> cls) throws BinaryObjectException {
         throw unsupported();
     }
@@ -107,12 +102,12 @@ public class NoOpBinary implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldType) {
+    public BinaryType addField(String typeName, String fieldName, String fieldType) {
         throw unsupported();
     }
 
     /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String cacheName, String fieldName) {
+    public BinaryType removeField(String typeName, String fieldName) {
         throw unsupported();
     }
 }

@@ -98,18 +98,6 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryObjectBuilder builder(String typeName, String cacheName) {
-        guard();
-
-        try {
-            return proc.builder(typeName, cacheName);
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
     @Nullable @Override public BinaryType type(Class<?> cls) throws BinaryObjectException {
         guard();
 
@@ -241,11 +229,11 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldTypeName) {
+    public BinaryType addField(String typeName, String fieldName, String fieldTypeName) {
         guard();
 
         try {
-            return proc.addField(typeName, cacheName, fieldName, fieldTypeName);
+            return proc.addField(typeName, fieldName, fieldTypeName);
         }
         finally {
             unguard();
@@ -253,11 +241,11 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String cacheName, String fieldName) {
+    public BinaryType removeField(String typeName, String fieldName) {
         guard();
 
         try {
-            return proc.removeField(typeName, cacheName, fieldName);
+            return proc.removeField(typeName, fieldName);
         }
         finally {
             unguard();

@@ -93,14 +93,14 @@ public class GridCacheBinaryObjectMetadataVersionTest extends GridCommonAbstract
 
         IgniteCache<Integer, Object> cache = client.cache(cacheName).withKeepBinary();
 
-        BinaryObjectBuilder bld = client.binary().builder(typeName, cacheName);
+        BinaryObjectBuilder bld = client.binary().builder(typeName);
 
         bld.setField("A", 1);
         bld.setField("B", "testString");
 
         cache.put(1, bld.build());
 
-        client.binary().removeField(typeName, cacheName, "A");
+        client.binary().removeField(typeName, "A");
 
         BinaryObject result = (BinaryObject)cache.get(1);
 
@@ -108,16 +108,12 @@ public class GridCacheBinaryObjectMetadataVersionTest extends GridCommonAbstract
         assertNull(result.field("A"));
         assertEquals("testString", result.field("B"));
 
-        client.binary().addField(typeName, cacheName, "A", Long.class.getName());
+        client.binary().addField(typeName, "A", Long.class.getName());
 
         result = (BinaryObject)cache.get(1);
         assertFalse(result.hasField("A"));
         assertNull(result.field("A"));
         assertEquals("testString", result.field("B"));
-
-        bld = client.binary().builder(typeName, cacheName);
-        bld.setField("A", 2L);
-        bld.setField("B", "testLine");
     }
 
     /**
@@ -133,13 +129,13 @@ public class GridCacheBinaryObjectMetadataVersionTest extends GridCommonAbstract
         client.binary().registerChangeControlledType(typeName,
             F.asMap("A", Integer.class.getName(), "B", String.class.getName()));
 
-        client.binary().removeField(typeName, cacheName, "A");
+        client.binary().removeField(typeName, "A");
 
-        client.binary().addField(typeName, cacheName, "C", Long.class.getName());
+        client.binary().addField(typeName, "C", Long.class.getName());
 
-        client.binary().addField(typeName, cacheName, "E", Long.class.getName());
+        client.binary().addField(typeName, "E", Long.class.getName());
 
-        client.binary().removeField(typeName, cacheName, "E");
+        client.binary().removeField(typeName, "E");
 
         for (int node = 0; node < NODE_COUNT; node++) {
             assertEqualsCollections(F.asList("B", "C"),
@@ -152,28 +148,6 @@ public class GridCacheBinaryObjectMetadataVersionTest extends GridCommonAbstract
      * @throws Exception if failed.
      */
     public void testTwoCachesTypeChanges() throws Exception {
-        final String cacheNameA = "cacheA";
-        final String cacheNameB = "cacheB";
-
-        final String typeName = "TestType2C";
-
-        IgniteEx client = grid(NODE_CLIENT);
-
-        client.binary().registerChangeControlledType(typeName,
-            F.asMap("A", Integer.class.getName(), "B", String.class.getName()));
-
-        //Cache A: (A, B) => (A, C)
-        client.binary().removeField(typeName, cacheNameA, "B");
-        client.binary().addField(typeName, cacheNameA, "C", String.class.getName());
-
-        //Cache B: (A, B) => (B, C)
-        client.binary().removeField(typeName, cacheNameB, "A");
-        client.binary().addField(typeName, cacheNameB, "C", Integer.class.getName());
-
-        for (int node = 0; node < NODE_COUNT; node++) {
-            assertEqualsCollections(F.asList("A", "C"), grid(node).binary().type(typeName, cacheNameA).fieldNames());
-            assertEqualsCollections(F.asList("B", "C"), grid(node).binary().type(typeName, cacheNameB).fieldNames());
-        }
     }
 
     /**

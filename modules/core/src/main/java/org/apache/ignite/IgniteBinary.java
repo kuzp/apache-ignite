@@ -340,15 +340,6 @@ public interface IgniteBinary {
     public BinaryObjectBuilder builder(BinaryObject binaryObj) throws BinaryObjectException;
 
     /**
-     * Creates new binary builder.
-     *
-     * @param typeName Type name.
-     * @param cacheName Cache name.
-     * @return Newly binary builder.
-     */
-    public BinaryObjectBuilder builder(String typeName, String cacheName) throws BinaryObjectException;
-
-    /**
      * Gets metadata for provided class.
      *
      * @param cls Class.
@@ -431,11 +422,18 @@ public interface IgniteBinary {
 
     /**
      *
+     * @param typeName
+     * @param fieldName
+     * @param fieldType
+     * @return
      */
-    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldType);
+    public BinaryType addField(String typeName, String fieldName, String fieldType);
 
     /**
      *
+     * @param typeName
+     * @param fieldName
+     * @return
      */
-    public BinaryType removeField(String typeName, String cacheName, String fieldName);
+    public BinaryType removeField(String typeName, String fieldName);
 }
