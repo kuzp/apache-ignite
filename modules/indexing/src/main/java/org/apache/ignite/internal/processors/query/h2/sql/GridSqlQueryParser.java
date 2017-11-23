@@ -1268,16 +1268,16 @@ public class GridSqlQueryParser {
 
         GridSqlAlterTableDropColumn res = new GridSqlAlterTableDropColumn();
 
-        ArrayList<Column> h2NewCols = ALTER_COLUMN_NEW_COLS.get(dropCol);
+        ArrayList<Column> h2DropCols = ALTER_COLUMN_REMOVE_COLS.get(dropCol);
 
-        GridSqlColumn[] gridNewCols = new GridSqlColumn[h2NewCols.size()];
+        GridSqlColumn[] gridDropCols = new GridSqlColumn[h2DropCols.size()];
 
-        for (int i = 0; i < h2NewCols.size(); i++)
-            gridNewCols[i] = parseColumn(h2NewCols.get(i));
+        for (int i = 0; i < h2DropCols.size(); i++)
+            gridDropCols[i] = parseColumn(h2DropCols.get(i));
 
-        res.columns(gridNewCols);
+        res.columns(gridDropCols);
 
-        if (gridNewCols.length == 1)
+        if (gridDropCols.length == 1)
             res.ifExists(!ALTER_COLUMN_IF_NOT_EXISTS.get(dropCol));
 
         res.ifTableExists(ALTER_COLUMN_IF_TBL_EXISTS.get(dropCol));
