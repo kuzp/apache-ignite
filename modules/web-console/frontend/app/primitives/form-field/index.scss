@@ -41,6 +41,7 @@
 
         [ignite-icon='info'], .tipLabel {
             margin-left: 4px;
+            flex: 0 0 auto;
         }
 
 
@@ -114,7 +115,8 @@
     .ignite-form-field__label {
         float: left;
         width: 100%;
-        margin: 0 10px 2px;
+        margin: 0 0 2px;
+        padding: 0 10px;
         height: 16px;
         display: inline-flex;
         align-items: center;
