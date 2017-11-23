@@ -32,7 +32,7 @@ mixin discovery-zookeeper(modelAt = '$ctrl.clonedCluster')
         .pc-form-grid-col-60
             +text('Connect string:', `${model}.zkConnectionString`, `'${discoveryKind}ConnectionString'`, required, 'host:port[chroot][,host:port[chroot]]',
                 'When <b>IGNITE_ZK_CONNECTION_STRING</b> system property is not configured this property will be used.<br><br>This should be a comma separated host:port pairs, each corresponding to a zk server. e.g. "127.0.0.1:3000,127.0.0.1:3001".<br>If the optional chroot suffix is used the example would look like: "127.0.0.1:3000,127.0.0.1:3002/app/a".<br><br>Where the client would be rooted at "/app/a" and all paths would be relative to this root - ie getting/setting/etc... "/foo/bar" would result in operations being run on "/app/a/foo/bar" (from the server perspective).<br><br><a href="https://zookeeper.apache.org/doc/r3.2.2/api/org/apache/zookeeper/ZooKeeper.html#ZooKeeper(java.lang.String,%20int,%20org.apache.zookeeper.Watcher)">Zookeeper docs</a>')
-        .pc-form-grid-col-30
+        .pc-form-grid-col-60
             +dropdown('Retry policy:', `${model}.retryPolicy.kind`, '"retryPolicy"', 'true', 'Default',
             '[\
                 {value: "ExponentialBackoff", label: "Exponential backoff"},\
