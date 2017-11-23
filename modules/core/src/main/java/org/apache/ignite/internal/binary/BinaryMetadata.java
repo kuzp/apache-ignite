@@ -31,8 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
-import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +45,7 @@ public class BinaryMetadata implements Externalizable {
     private static final long serialVersionUID = 0L;
 
     /** */
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     /** Type ID. */
     @GridToStringInclude(sensitive = true)
@@ -78,6 +78,12 @@ public class BinaryMetadata implements Externalizable {
 
     /** Enum ordinal to name mapping. */
     private Map<Integer, String> ordinalToName;
+
+    /** Explicit changes. */
+    private boolean explicit;
+
+    /** Cache specific metadata. */
+    private Map<String, CacheSpecificMetadata> cacheSpecificMeta = new LinkedHashMap<>();
 
     /**
      * For {@link Externalizable}.
@@ -263,6 +269,23 @@ public class BinaryMetadata implements Externalizable {
                 out.writeInt(e.getValue());
             }
         }
+
+        // Version 2 starting here
+        out.writeBoolean(explicit);
+
+        if (explicit) {
+            if (cacheSpecificMeta == null)
+                out.writeInt(0);
+            else {
+                out.writeInt(cacheSpecificMeta.size());
+
+                for (Map.Entry<String, CacheSpecificMetadata> e : cacheSpecificMeta.entrySet()) {
+                    U.writeString(out, e.getKey());
+
+                    e.getValue().writeTo(out);
+                }
+            }
+        }
     }
 
     /** {@inheritDoc} */
@@ -347,6 +370,29 @@ public class BinaryMetadata implements Externalizable {
                 }
             }
         }
+
+        if (VERSION < 2)
+            return;
+
+        explicit = in.readBoolean();
+
+        if (explicit) {
+            int size = in.readInt();
+
+            if (size > 0) {
+                cacheSpecificMeta = new HashMap<>(size);
+
+                for (int idx = 0; idx < size; idx++) {
+                    String name = U.readString(in);
+
+                    CacheSpecificMetadata cacheMeta = new CacheSpecificMetadata();
+
+                    cacheMeta.readFrom(in);
+
+                    cacheSpecificMeta.put(name, cacheMeta);
+                }
+            }
+        }
     }
 
     /**
@@ -384,8 +430,362 @@ public class BinaryMetadata implements Externalizable {
         return nameToOrdinal;
     }
 
+    /**
+     *
+     * @return Explicit flag.
+     */
+    public boolean explicit() {
+        return explicit;
+    }
+
+    /**
+     *
+     * @param explicit Explicit flag.
+     */
+    public void explicit(boolean explicit) {
+        this.explicit = explicit;
+    }
+
+    /**
+     *
+     * @param cacheName
+     * @return
+     */
+    public CacheSpecificMetadata cache(String cacheName) {
+        return cacheSpecificMeta.get(cacheName);
+    }
+
+    /**
+     *
+     * @param cacheName
+     * @param cacheSpecMeta
+     */
+    public void cache(String cacheName, CacheSpecificMetadata cacheSpecMeta) {
+        if (cacheSpecificMeta.put(cacheName, cacheSpecMeta) != null)
+            throw new IgniteException("cache specific meta existed");
+    }
+
+    /**
+     *
+     * @param cacheName
+     * @param fieldName
+     */
+    public void removeField(String cacheName, String fieldName) {
+        assert explicit;
+
+        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+
+        if (cacheMeta == null) {
+            cacheMeta = new CacheSpecificMetadata();
+
+            cacheSpecificMeta.put(cacheName, cacheMeta);
+        }
+
+        cacheMeta.removeField(fieldName);
+    }
+
+    /**
+     *
+     * @param cacheName
+     * @param fieldName
+     */
+    public void addField(String cacheName, String fieldName, BinaryFieldMetadata fieldMeta) {
+        assert explicit;
+
+        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+
+        if (cacheMeta == null) {
+            cacheMeta = new CacheSpecificMetadata();
+
+            cacheSpecificMeta.put(cacheName, cacheMeta);
+        }
+
+        cacheMeta.addField(fieldName, fieldMeta);
+    }
+
+    public int mapSchemaVersion(String cacheName, int schemaId) {
+        if (cacheSpecificMeta == null)
+            return schemaId;
+
+        CacheSpecificMetadata cacheMeta = cacheSpecificMeta.get(cacheName);
+
+        if (cacheMeta == null)
+            return schemaId;
+
+        return cacheMeta.mapSchemaVersion(schemaId);
+    }
+
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(BinaryMetadata.class, this);
     }
+
+    /** Cache specific metadata. */
+    public class CacheSpecificMetadata implements Externalizable {
+        /** */
+        private static final long serialVersionUID = 0L;
+
+        /** Current version. */
+        private int version = 0;
+
+        /** Version-Schema-Id to version info. */
+        private Map<Integer, VersionInfo> versionSchemas = new HashMap<>();
+
+        /** Version to field map. */
+        private Map<Integer, Map<String, BinaryFieldMetadata>> fieldsMaps = new HashMap<>();
+
+        /**
+         *
+         * @return Current version.
+         */
+        public int version() {
+            return version;
+        }
+
+        /**
+         *
+         * @param fields
+         */
+        public void addVersion(Map<String, BinaryFieldMetadata> fields) {
+            version++;
+
+            fieldsMaps.put(version, fields);
+
+            BinarySchema.Builder scmBldr = BinarySchema.Builder.newBuilder();
+
+            for (Map.Entry<String, BinaryFieldMetadata> entry : fields.entrySet()) {
+                scmBldr.addField(entry.getValue().fieldId());
+            }
+
+            BinarySchema schema = scmBldr.build();
+
+            schema.schemaId();
+
+            versionSchemas.put(schema.schemaId() ^ version, new VersionInfo(version, schema));
+        }
+
+        /**
+         *
+         * @param version Current version.
+         */
+        public void version(int version) {
+            this.version = version;
+        }
+
+        /**
+         *
+         * @param schemaId
+         * @return
+         */
+        public int mapSchemaVersion(int schemaId) {
+            if (version == 0)
+                return schemaId;
+
+            return version ^ schemaId;
+        }
+
+        /**
+         *
+         * @param fieldName
+         */
+        public void removeField(String fieldName) {
+            Map<String, BinaryFieldMetadata> f = new LinkedHashMap<>(
+                (version == 0) ? fields : fieldsMaps.get(version));
+
+            if (f.remove(fieldName) == null)
+                throw new IgniteException("Cannot find field to remove [fieldName=" + fieldName + "].");
+
+            addVersion(f);
+        }
+
+        /**
+         *
+         * @param fieldName
+         * @param fldMeta
+         */
+        public void addField(String fieldName, BinaryFieldMetadata fldMeta) {
+            Map<String, BinaryFieldMetadata> f = new LinkedHashMap<>(
+                (version == 0) ? fields : fieldsMaps.get(version));
+
+            if (f.put(fieldName, fldMeta) != null)
+                throw new IgniteException("Field already exists [fieldName=" + fieldName + "].");
+
+            addVersion(f);
+        }
+
+        /**
+         *
+         * @return Metadata view for current version.
+         */
+        public BinaryMetadata metadata() {
+            Map<String, BinaryFieldMetadata> f = new LinkedHashMap<>(
+                (version == 0) ? fields : fieldsMaps.get(version));
+
+            return new BinaryMetadata(typeId, typeName, f, affKeyFieldName, null, false, null);
+        }
+
+        /** */
+        public Map<String, BinarySchemaFieldState> getFieldStates(int schemaId) {
+            VersionInfo verInfo = versionSchemas.get(schemaId);
+
+            int v = (verInfo == null)? 0 : verInfo.version;
+
+            // start with fields for current version, all marked as 'OK'
+            // go down from current version to target version
+            // mark fields that are deleted
+            Map<String, BinarySchemaFieldState> result = null;
+
+            for (int ver = version; ver > v; ver--) {
+                Map<String, BinaryFieldMetadata> fields = (ver == 0) ? fieldsMap() : fieldsMaps.get(ver);
+
+                if (result == null) {
+                    result = new HashMap<>(fields.size());
+
+                    for (String name : fields.keySet()) {
+                        result.put(name, BinarySchemaFieldState.OK);
+                    }
+                }
+                else {
+                    for (Object name : result.keySet().toArray()) {
+                        if (result.get(name) == BinarySchemaFieldState.OK && !fields.containsKey(name))
+                            result.put((String)name, BinarySchemaFieldState.DELETED);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         *
+         * @param out
+         * @throws IOException
+         */
+        public void writeTo(DataOutput out) throws IOException {
+            out.writeInt(version);
+
+            // write schemas
+            out.writeInt(versionSchemas.size());
+
+            for (Map.Entry<Integer, VersionInfo> e : versionSchemas.entrySet()) {
+                out.writeInt(e.getKey());
+
+                VersionInfo vInfo = e.getValue();
+                out.writeInt(vInfo.version);
+                vInfo.schema.writeTo(out);
+            }
+
+            // write version fields maps
+            out.writeInt(fieldsMaps.size());
+
+            for (Map.Entry<Integer, Map<String, BinaryFieldMetadata>> e : fieldsMaps.entrySet()) {
+                out.writeInt(e.getKey());
+
+                Map<String, BinaryFieldMetadata> map = e.getValue();
+
+                out.writeInt(map.size());
+
+                for (Map.Entry<String, BinaryFieldMetadata> e2 : map.entrySet()) {
+                    U.writeString(out, e2.getKey());
+
+                    e2.getValue().writeTo(out);
+                }
+            }
+        }
+
+        /**
+         *
+         * @param in
+         * @throws IOException
+         */
+        public void readFrom(DataInput in) throws IOException {
+            version = in.readInt();
+
+            // read schemas
+            int size = in.readInt();
+
+            versionSchemas = new HashMap<>(size);
+
+            for (int idx = 0; idx < size; idx++) {
+                int id = in.readInt();
+
+                int v = in.readInt();
+
+                BinarySchema schema = new BinarySchema();
+                schema.readFrom(in);
+
+                versionSchemas.put(id, new VersionInfo(v, schema));
+            }
+
+            // read version fields maps
+            size = in.readInt();
+
+            fieldsMaps = new HashMap<>(size);
+
+            for (int idx = 0; idx < size; idx++) {
+                int id = in.readInt();
+
+                int size2 = in.readInt();
+
+                Map<String, BinaryFieldMetadata> map = new HashMap<>(size2);
+
+                fieldsMaps.put(id, map);
+
+                for (int idx2 = 0; idx2 < size2; idx2++) {
+                    String id2 = U.readString(in);
+
+                    BinaryFieldMetadata fieldMetadata = new BinaryFieldMetadata();
+                    fieldMetadata.readFrom(in);
+
+                    map.put(id2, fieldMetadata);
+                }
+            }
+        }
+
+        /** {@inheritDoc} */
+        @Override public void writeExternal(ObjectOutput out) throws IOException {
+            writeTo(out);
+        }
+
+        /** {@inheritDoc} */
+        @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            readFrom(in);
+        }
+    }
+
+    /** */
+    public static class VersionInfo {
+        /** Version. */
+        private final int version;
+
+        /** Schema. */
+        private final BinarySchema schema;
+
+        /**
+         *
+         * @param version Version.
+         * @param schema Schema.
+         */
+        public VersionInfo(int version, BinarySchema schema) {
+            this.version = version;
+            this.schema = schema;
+        }
+
+        /**
+         *
+         * @return Version.
+         */
+        public int version() {
+            return version;
+        }
+
+        /**
+         *
+         * @return Schema.
+         */
+        public BinarySchema schema() {
+            return schema;
+        }
+    }
+
 }

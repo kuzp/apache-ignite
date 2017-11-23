@@ -51,6 +51,11 @@ public class NoOpBinary implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
+    @Override public BinaryObjectBuilder builder(String typeName, String cacheName) throws BinaryObjectException {
+        throw unsupported();
+    }
+
+    /** {@inheritDoc} */
     @Override public BinaryType type(Class<?> cls) throws BinaryObjectException {
         throw unsupported();
     }
@@ -62,6 +67,11 @@ public class NoOpBinary implements IgniteBinary {
 
     /** {@inheritDoc} */
     @Override public BinaryType type(int typeId) throws BinaryObjectException {
+        throw unsupported();
+    }
+
+    /** {@inheritDoc} */
+    @Override public BinaryType type(String typeName, String cacheName) throws BinaryObjectException {
         throw unsupported();
     }
 
@@ -88,5 +98,21 @@ public class NoOpBinary implements IgniteBinary {
     /** {@inheritDoc} */
     private BinaryObjectException unsupported() {
         return new BinaryObjectException("Binary marshaller is not configured.");
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+        throws BinaryObjectException {
+        throw unsupported();
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldType) {
+        throw unsupported();
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType removeField(String typeName, String cacheName, String fieldName) {
+        throw unsupported();
     }
 }

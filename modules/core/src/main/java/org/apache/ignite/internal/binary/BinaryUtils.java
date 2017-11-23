@@ -1046,6 +1046,10 @@ public class BinaryUtils {
                     changed = true;
             }
 
+            if (newMeta.explicit() && oldMeta.explicit()) {
+                return newMeta;
+            }
+
             // Return either old meta if no changes detected, or new merged meta.
             return changed ? new BinaryMetadata(oldMeta.typeId(), oldMeta.typeName(), mergedFields,
                 oldMeta.affinityKeyFieldName(), mergedSchemas, oldMeta.isEnum(), mergedEnumMap) : oldMeta;

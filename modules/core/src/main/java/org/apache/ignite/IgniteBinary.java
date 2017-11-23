@@ -340,6 +340,15 @@ public interface IgniteBinary {
     public BinaryObjectBuilder builder(BinaryObject binaryObj) throws BinaryObjectException;
 
     /**
+     * Creates new binary builder.
+     *
+     * @param typeName Type name.
+     * @param cacheName Cache name.
+     * @return Newly binary builder.
+     */
+    public BinaryObjectBuilder builder(String typeName, String cacheName) throws BinaryObjectException;
+
+    /**
      * Gets metadata for provided class.
      *
      * @param cls Class.
@@ -365,6 +374,16 @@ public interface IgniteBinary {
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     public BinaryType type(int typeId) throws BinaryObjectException;
+
+    /**
+     * Gets metadata for provided class name.
+     *
+     * @param typeName Type name.
+     * @param cacheName Cache name.
+     * @return Metadata.
+     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     */
+    public BinaryType type(String typeName, String cacheName) throws BinaryObjectException;
 
     /**
      * Gets metadata for all known types.
@@ -400,4 +419,23 @@ public interface IgniteBinary {
      * @return Binary type for registered enum.
      */
     public BinaryType registerEnum(String typeName, Map<String, Integer> vals) throws BinaryObjectException;
+
+    /**
+     *
+     * @param typeName
+     * @param fields
+     * @return
+     */
+    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+        throws BinaryObjectException;
+
+    /**
+     *
+     */
+    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldType);
+
+    /**
+     *
+     */
+    public BinaryType removeField(String typeName, String cacheName, String fieldName);
 }

@@ -47,6 +47,12 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
     public BinaryObjectBuilder builder(BinaryObject binaryObj);
 
     /**
+     * @param clsName Class name.
+     * @return Builder.
+     */
+    public BinaryObjectBuilder builder(String clsName, String cacheName);
+
+    /**
      * @param typeId Type ID.
      * @param newMeta New meta data.
      * @throws IgniteException In case of error.
@@ -102,6 +108,14 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
     public Map<Integer, BinaryType> metadata(Collection<Integer> typeIds) throws IgniteException;
 
     /**
+     * @param typeId Type ID.
+     * @param cacheName Cache name.
+     * @return Meta data.
+     * @throws IgniteException In case of error.
+     */
+    @Nullable public BinaryType metadata(int typeId, String cacheName) throws IgniteException;
+
+    /**
      * @return Metadata for all types.
      * @throws IgniteException In case of error.
      */
@@ -144,4 +158,38 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
      * @throws IgniteException If failed.
      */
     public Object marshalToBinary(Object obj) throws IgniteException;
+
+    /**
+     *
+     * @param typeName
+     * @param fields
+     * @return
+     * @throws IgniteException
+     */
+    public BinaryType addChangeControlledType(String typeName, Map<String, String> fields) throws IgniteException;
+
+    /**
+     *
+     * @param typeName
+     * @param cacheName
+     * @param fieldName
+     * @param fieldTypeName
+     * @return
+     * @throws IgniteException
+     */
+    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldTypeName)
+        throws IgniteException;
+
+    /**
+     *
+     * @param typeName
+     * @param cacheName
+     * @param fieldName
+     * @return
+     * @throws IgniteException
+     */
+    public BinaryType removeField(String typeName, String cacheName, String fieldName)
+        throws IgniteException;
+
+
 }

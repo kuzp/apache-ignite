@@ -98,6 +98,18 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
+    @Override public BinaryObjectBuilder builder(String typeName, String cacheName) {
+        guard();
+
+        try {
+            return proc.builder(typeName, cacheName);
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
     @Nullable @Override public BinaryType type(Class<?> cls) throws BinaryObjectException {
         guard();
 
@@ -132,6 +144,19 @@ public class IgniteBinaryImpl implements IgniteBinary {
             unguard();
         }
     }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public BinaryType type(String typeName, String cacheName) throws BinaryObjectException {
+        guard();
+
+        try {
+            return proc.metadata(proc.typeId(typeName), cacheName);
+        }
+        finally {
+            unguard();
+        }
+    }
+
 
     /** {@inheritDoc} */
     @Override public Collection<BinaryType> types() throws BinaryObjectException {
@@ -200,5 +225,42 @@ public class IgniteBinaryImpl implements IgniteBinary {
      */
     private void unguard() {
         ctx.gateway().readUnlock();
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+        throws BinaryObjectException {
+        guard();
+
+        try {
+            return proc.addChangeControlledType(typeName, fields);
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType addField(String typeName, String cacheName, String fieldName, String fieldTypeName) {
+        guard();
+
+        try {
+            return proc.addField(typeName, cacheName, fieldName, fieldTypeName);
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    public BinaryType removeField(String typeName, String cacheName, String fieldName) {
+        guard();
+
+        try {
+            return proc.removeField(typeName, cacheName, fieldName);
+        }
+        finally {
+            unguard();
+        }
     }
 }
