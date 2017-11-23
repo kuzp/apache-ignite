@@ -26,6 +26,9 @@ import org.apache.ignite.ml.math.impls.matrix.DenseLocalOnHeapMatrix;
 import org.apache.ignite.ml.math.impls.vector.DenseLocalOnHeapVector;
 import org.apache.ignite.ml.math.util.Tracer;
 import org.apache.ignite.ml.nn.graph.operation.MatrixByVectorMultiplication;
+import org.apache.ignite.ml.nn.graph.operation.ScalarAddition;
+import org.apache.ignite.ml.nn.graph.operation.Sigmoid;
+import org.apache.ignite.ml.nn.graph.operation.VectorDotProduct;
 import org.apache.ignite.ml.nn.graph.operation.VectorsAddition;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +45,7 @@ public class GraphSimpleTest {
      * A - matrix, b - vector, x - input
      */
     @Test
-    public void test(){
+    public void testEq(){
         Matrix a = new DenseLocalOnHeapMatrix(new double[][] {{1,0}, {0,-1}});
 
         Vector b = new DenseLocalOnHeapVector(new double[] {1,1});
@@ -52,8 +55,8 @@ public class GraphSimpleTest {
 
         InputNode x = new InputNode();
 
-        OperationNode y = new OperationNode(new MatrixByVectorMultiplication(), Arrays.asList(varA, x));
-        OperationNode z = new OperationNode(new VectorsAddition(), Arrays.asList(y, varB));
+        OperationNode y = new OperationNode<>(MatrixByVectorMultiplication.getInstance(), Arrays.asList(varA, x));
+        OperationNode z = new OperationNode<>(VectorsAddition.getInstance(), Arrays.asList(y, varB));
 
         Tensor[] input = {new DenseLocalOnHeapVector(new double[] {1, 2})};
 
@@ -75,5 +78,39 @@ public class GraphSimpleTest {
 
         Assert.assertTrue(outVec.get(0) == 2);
         Assert.assertTrue(outVec.get(1) == -1);
+    }
+
+    /**
+     * Simple perceptron comp graph.
+     *
+     * W^T * x + b = σ.
+     */
+    @Test
+    public void testPerceptron(){
+        VariableNode varW = new VariableNode<>(new DenseLocalOnHeapVector(new double[]{1, 1}));
+        VariableNode varB = new VariableNode<>(new ScalarTensor(0d));
+
+        InputNode<Vector> x = new InputNode<>();
+
+        OperationNode weightMult = new OperationNode<>(VectorDotProduct.getInstance(), varW, x);
+        OperationNode addition = new OperationNode<>(ScalarAddition.getInstance(), weightMult, varB);
+        OperationNode sigmoid = new OperationNode<>(Sigmoid.getInstance(), addition);
+
+        Tensor[] input = {new DenseLocalOnHeapVector(new double[] {3, 2})};
+
+        List<VariableNode> varNodes = Arrays.asList(varW, varB);
+        List<InputNode> inputNodes = Arrays.asList(x);
+        List<OperationNode> operationNodes = Arrays.asList(weightMult, addition, sigmoid);
+
+        ComputationGraph graph = new ComputationGraph(varNodes, inputNodes, operationNodes);
+
+        graph.addTop(sigmoid);
+        graph.setInput(input);
+
+        graph.compute();
+
+        Tensor output = graph.getTop().get(0).output();
+
+        assert ((ScalarTensor) output).value() == 0.9933071490757153;
     }
 }

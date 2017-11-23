@@ -27,6 +27,14 @@ import org.apache.ignite.ml.nn.graph.Operator;
  * TODO: add description.
  */
 public class MatrixByVectorMultiplication<T extends Vector> implements Operator<T> {
+    /**
+     * Build operator.
+     */
+    public static MatrixByVectorMultiplication getInstance(){
+        return new MatrixByVectorMultiplication();
+    }
+
+    /** {@inheritDoc} */
     @Override public T apply(List<Tensor> input) {
         assert input.size() == 2;
 

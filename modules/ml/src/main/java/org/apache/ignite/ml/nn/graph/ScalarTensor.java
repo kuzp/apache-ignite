@@ -25,6 +25,10 @@ import org.apache.ignite.ml.math.Tensor;
 public class ScalarTensor implements Tensor {
     private double value;
 
+    public ScalarTensor(double v) {
+        value = v;
+    }
+
     /**
      * @return Value.
      */
@@ -39,14 +43,17 @@ public class ScalarTensor implements Tensor {
         value = val;
     }
 
+    /** {@inheritDoc} */
     @Override public int[] shape() {
         return new int[0];
     }
 
+    /** {@inheritDoc} */
     @Override public Tensor tensorFold(Tensor tensor) {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override public Tensor tensorProduct(Tensor tensor) {
         return null;
     }

@@ -26,6 +26,13 @@ import org.apache.ignite.ml.nn.graph.Operator;
  * TODO: add description.
  */
 public class VectorsAddition<T extends Vector> implements Operator<T> {
+    /**
+     * Build operator.
+     */
+    public static VectorsAddition getInstance(){
+        return new VectorsAddition();
+    }
+
     /** {@inheritDoc} */
     @Override public T apply(List<Tensor> input) {
         assert input.size() == 2;

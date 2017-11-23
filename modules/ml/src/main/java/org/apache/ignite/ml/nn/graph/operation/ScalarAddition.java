@@ -18,21 +18,28 @@
 package org.apache.ignite.ml.nn.graph.operation;
 
 import java.util.List;
-import org.apache.ignite.ml.math.Matrix;
 import org.apache.ignite.ml.math.Tensor;
 import org.apache.ignite.ml.nn.graph.Operator;
+import org.apache.ignite.ml.nn.graph.ScalarTensor;
 
 /**
  * TODO: add description.
  */
-public class MatricesMultiplication<T extends Matrix> implements Operator<T> {
+public class ScalarAddition implements Operator<ScalarTensor> {
+    /**
+     * Build operator.
+     */
+    public static ScalarAddition getInstance(){
+        return new ScalarAddition();
+    }
+
     /** {@inheritDoc} */
-    @Override public T apply(List<Tensor> input) {
+    @Override public ScalarTensor apply(List<Tensor> input) {
         assert input.size() == 2;
 
-        Matrix left = (Matrix)input.get(0);
-        Matrix right = (Matrix)input.get(1);
+        ScalarTensor left = (ScalarTensor)input.get(0);
+        ScalarTensor right = (ScalarTensor)input.get(1);
 
-        return (T)left.times(right);
+        return new ScalarTensor(left.value() + right.value());
     }
 }

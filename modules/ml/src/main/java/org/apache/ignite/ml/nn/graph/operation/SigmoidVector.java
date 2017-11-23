@@ -18,21 +18,21 @@
 package org.apache.ignite.ml.nn.graph.operation;
 
 import java.util.List;
-import org.apache.ignite.ml.math.Matrix;
 import org.apache.ignite.ml.math.Tensor;
+import org.apache.ignite.ml.math.Vector;
+import org.apache.ignite.ml.math.functions.Functions;
 import org.apache.ignite.ml.nn.graph.Operator;
 
 /**
  * TODO: add description.
  */
-public class MatricesMultiplication<T extends Matrix> implements Operator<T> {
+public class SigmoidVector<T extends Vector> implements Operator<T> {
     /** {@inheritDoc} */
     @Override public T apply(List<Tensor> input) {
-        assert input.size() == 2;
+        assert input.size() == 1;
 
-        Matrix left = (Matrix)input.get(0);
-        Matrix right = (Matrix)input.get(1);
+        Vector vec = (Vector)input.get(0);
 
-        return (T)left.times(right);
+        return (T)vec.map(Functions.SIGMOID);
     }
 }

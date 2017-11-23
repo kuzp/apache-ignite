@@ -42,9 +42,28 @@ public class OperationNode<T extends Tensor> extends GraphNode<T> {
         this.operator = operator;
     }
 
+    /**
+     * Node with unary operation.
+     *
+     * @param operator
+     * @param input
+     */
     public OperationNode(Operator<T> operator, Node input){
         this(operator);
         inputNodes.add(input);
+    }
+
+    /**
+     * Node with binary operation.
+     *
+     * @param operator
+     * @param input1
+     * @param input2
+     */
+    public OperationNode(Operator<T> operator, Node input1, Node input2){
+        this(operator);
+        inputNodes.add(input1);
+        inputNodes.add(input2);
     }
 
     public OperationNode(Operator<T> operator, List<Node> inputNodes) {

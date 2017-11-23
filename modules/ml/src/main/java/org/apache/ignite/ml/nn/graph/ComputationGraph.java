@@ -29,16 +29,17 @@ public class ComputationGraph {
     private List<InputNode> input;
     private List<OperationNode> operations;
 
-    //
     private List<OperationNode> top = new LinkedList<>();
 
-    public ComputationGraph(List<VariableNode> vars, List<InputNode> input,
-        List<OperationNode> operations) {
+    public ComputationGraph(List<VariableNode> vars, List<InputNode> input, List<OperationNode> operations) {
         this.vars = vars;
         this.input = input;
         this.operations = operations;
     }
 
+    /**
+     * Compute all nodes val.
+     */
     public void compute(){
         for (OperationNode node: top)
             node.compute();
