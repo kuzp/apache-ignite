@@ -162,4 +162,10 @@
             animation-duration: 500ms;
         }
    }
+
+   .ignite-form-field.form-field-checkbox {
+        input[disabled] ~ * {
+            opacity: 0.5;
+        }
+   }
 }
