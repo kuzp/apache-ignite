@@ -89,9 +89,6 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
     /** Affinity key field name. */
     private String affFieldName;
 
-    /** Cache name. */
-    private String cacheName;
-
     /**
      * @param clsName Class name.
      * @param ctx Binary context.
@@ -337,6 +334,7 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
             }
 
             int schemaId = writer.schemaId();
+
             BinaryMetadata meta0 = ctx.metadata0(typeId);
 
             if (meta0.explicit())
@@ -643,12 +641,5 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
      */
     public void affinityFieldName(String affFieldName) {
         this.affFieldName = affFieldName;
-    }
-
-    /** */
-    public BinaryObjectBuilderImpl cacheName(String cacheName) {
-        this.cacheName = cacheName;
-
-        return this;
     }
 }
