@@ -49,9 +49,9 @@ include /app/helpers/jade/mixins
                     +number('Per node batch size:', `${model}.perNodeBatchSize`, '"perNodeBatchSize"', 'true', '100', '0', 'Number of file blocks collected on local node before sending batch to remote node')
                 .pc-form-grid-col-30
                     +number('Per node parallel batch count:', `${model}.perNodeParallelBatchCount`, '"perNodeParallelBatchCount"', 'true', '8', '0', 'Number of file block batches that can be concurrently sent to remote node')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Prefetch blocks:', `${model}.prefetchBlocks`, '"prefetchBlocks"', 'true', '0', '0', 'Number of pre-fetched blocks if specific file chunk is requested')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Sequential reads before prefetch:', `${model}.sequentialReadsBeforePrefetch`, '"sequentialReadsBeforePrefetch"', 'true', '0', '0', 'Amount of sequential block reads before prefetch is triggered')
 
                 //- Removed in ignite 2.0

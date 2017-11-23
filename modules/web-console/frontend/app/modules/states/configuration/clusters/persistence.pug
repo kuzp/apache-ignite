@@ -39,10 +39,10 @@ include /app/helpers/jade/mixins
                     +checkbox-enabled('Metrics enabled', `${model}.metricsEnabled`, '"PersistenceMetricsEnabled"', enabled, 'Flag indicating whether persistence metrics collection is enabled')
                 .pc-form-grid-col-60
                     +checkbox-enabled('Always write full pages', `${model}.alwaysWriteFullPages`, '"PersistenceAlwaysWriteFullPages"', enabled, 'Flag indicating whether always write full pages')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Checkpointing frequency:', `${model}.checkpointingFrequency`, '"PersistenceCheckpointingFrequency"', enabled, '180000', '1',
                     'Frequency which is a minimal interval when the dirty pages will be written to the Persistent Store')
-                .pc-form-grid-col-30
+                .pc-form-grid-col-60
                     +number('Checkpointing page buffer size:', `${model}.checkpointingPageBufferSize`, '"PersistenceCheckpointingPageBufferSize"', enabled, '268435456', '0',
                     'Amount of memory allocated for a checkpointing temporary buffer')
                 .pc-form-grid-col-60
@@ -51,18 +51,18 @@ include /app/helpers/jade/mixins
                     +text-enabled('WAL store path:', `${model}.walStorePath`, '"PersistenceWalStorePath"', enabled, 'false', 'Input store path', 'A path to the directory where WAL is stored')
                 .pc-form-grid-col-60
                     +text-enabled('WAL archive path:', `${model}.walArchivePath`, '"PersistenceWalArchivePath"', enabled, 'false', 'Input archive path', 'A path to the WAL archive directory')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('WAL segments:', `${model}.walSegments`, '"PersistenceWalSegments"', enabled, '10', '1', 'A number of WAL segments to work with')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('WAL segment size:', `${model}.walSegmentSize`, '"PersistenceWalSegmentSize"', enabled, '67108864', '0', 'Size of a WAL segment')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('WAL history size:', `${model}.walHistorySize`, '"PersistenceWalHistorySize"', enabled, '20', '1', 'A total number of checkpoints to keep in the WAL history')
                 .pc-form-grid-col-30
                     +number('WAL flush frequency:', `${model}.walFlushFrequency`, '"PersistenceWalFlushFrequency"', enabled, '2000', '1',
                     'How often will be fsync, in milliseconds. In background mode, exist thread which do fsync by timeout')
                 .pc-form-grid-col-30
                     +number('WAL fsync delay:', `${model}.walFsyncDelayNanos`, '"PersistenceWalFsyncDelay"', enabled, '1000', '1', 'WAL fsync delay, in nanoseconds')
-                .pc-form-grid-col-60
+                .pc-form-grid-col-30
                     +number('WAL record iterator buffer size:', `${model}.walRecordIteratorBufferSize`, '"PersistenceWalRecordIteratorBufferSize"', enabled, '67108864', '1',
                     'How many bytes iterator read from disk(for one reading), during go ahead WAL')
                 .pc-form-grid-col-30

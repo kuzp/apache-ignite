@@ -30,11 +30,11 @@ include /app/helpers/jade/mixins
 
                 .pc-form-grid-col-60
                     +checkbox('Enabled', enabled, '"fragmentizerEnabled"', 'Fragmentizer enabled flag')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Concurrent files:', `${model}.fragmentizerConcurrentFiles`, '"fragmentizerConcurrentFiles"', enabled, '0', '0', 'Number of files to process concurrently by fragmentizer')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-30
                     +number('Throttling block length:', `${model}.fragmentizerThrottlingBlockLength`, '"fragmentizerThrottlingBlockLength"', enabled, '16777216', '1', 'Length of file chunk to transmit before throttling is delayed')
-                .pc-form-grid-col-20
+                .pc-form-grid-col-60
                     +number('Throttling delay:', `${model}.fragmentizerThrottlingDelay`, '"fragmentizerThrottlingDelay"', enabled, '200', '0', 'Delay in milliseconds for which fragmentizer is paused')
             .pca-form-column-6
                 +preview-xml-java(model, 'igfsFragmentizer')
