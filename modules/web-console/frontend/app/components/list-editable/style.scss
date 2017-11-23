@@ -66,15 +66,15 @@ list-editable {
         justify-content: space-between;
         min-height: $min-height;
         padding: 5px 0;
-
+        background-color: var(--le-row-bg-color); // Ilya Borisov: does not work in IE11
         border-top: 1px solid #ddd;
 
         &:nth-child(odd) {
-            background-color: #ffffff;
+            --le-row-bg-color: #ffffff;
         }
 
         &:nth-child(even) {
-            background-color: #f9f9f9;
+            --le-row-bg-color: #f9f9f9;
         }
 
         &-index,
