@@ -156,8 +156,8 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                 .pc-form-grid-col-30
                     +number('Concurrency level:', model + '.concurrencyLevel', '"DataStorageConfigurationConcurrencyLevel"',
                     'true', 'availableProcessors', '2', 'The number of concurrent segments in Ignite internal page mapping tables')
-                .pc-form-grid-col-60
-                    .pc-form-grid__text-only-item System region
+                .pc-form-grid-col-60.pc-form-group__text-title
+                    span System region
                 .pc-form-group.pc-form-grid-row
                     .pc-form-grid-col-30
                         pc-form-field-size(
@@ -179,8 +179,8 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                             tip='Maximum data region size reserved for system cache'
                             on-scale-change='systemRegionMaxSizeScale = $event'
                         )
-                .pc-form-grid-col-60
-                    .pc-form-grid__text-only-item Default data region
+                .pc-form-grid-col-60.pc-form-group__text-title
+                    span Default data region
                 .pc-form-group.pc-form-grid-row
                     +data-region-form({
                         modelAt: dfltRegionModel,
