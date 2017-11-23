@@ -1351,12 +1351,12 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             else if (op instanceof SchemaAlterTableDropColumnOperation) {
                 SchemaAlterTableDropColumnOperation op0 = (SchemaAlterTableDropColumnOperation)op;
 
-                SchemaIndexCacheVisitor visitor =
-                    new SchemaIndexCacheVisitorImpl(this, cache.context(), cacheName, op0.tableName(), cancelTok);
+                //SchemaIndexCacheVisitor visitor =
+                //    new SchemaIndexCacheVisitorImpl(this, cache.context(), cacheName, op0.tableName(), cancelTok);
 
-                processDynamicDropColumn();
+                //processDynamicDropColumn();
 
-                idx.dynamicDropColumn();
+                //idx.dynamicDropColumn();
             }
             else
                 throw new SchemaOperationException("Unsupported operation: " + op);
