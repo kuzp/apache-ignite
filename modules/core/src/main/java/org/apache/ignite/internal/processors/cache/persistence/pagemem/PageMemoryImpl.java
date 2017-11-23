@@ -444,6 +444,8 @@ public class PageMemoryImpl implements PageMemoryEx {
         return isDirty(page);
     }
 
+    private static Benchmark allocatePageBenchmark = new Benchmark("PageMemoryImpl#acquirePageHit");
+
     /** {@inheritDoc} */
     @Override public long allocatePage(int cacheId, int partId, byte flags) throws IgniteCheckedException {
         assert flags == PageIdAllocator.FLAG_DATA && partId <= PageIdAllocator.MAX_PARTITION_ID ||
@@ -451,6 +453,8 @@ public class PageMemoryImpl implements PageMemoryEx {
             "flags = " + flags + ", partId = " + partId;
 
         long pageId = storeMgr.allocatePage(cacheId, partId, flags);
+
+        long time = System.nanoTime();
 
         assert PageIdUtils.pageIndex(pageId) > 0; //it's crucial for tracking pages (zero page is super one)
 
@@ -513,6 +517,8 @@ public class PageMemoryImpl implements PageMemoryEx {
         }
         finally {
             seg.writeLock().unlock();
+
+            allocatePageBenchmark.supply(System.nanoTime() - time);
         }
 
         //we have allocated 'tracking' page, we need to allocate regular one
@@ -546,7 +552,8 @@ public class PageMemoryImpl implements PageMemoryEx {
         return acquirePage(cacheId, pageId, false);
     }
 
-    private static Benchmark acquirePageBenchmark = new Benchmark("PageMemoryImpl#acquirePage");
+    private static Benchmark acquirePageHitBenchmark = new Benchmark("PageMemoryImpl#acquirePageHit");
+    private static Benchmark acquirePageMissBenchmark = new Benchmark("PageMemoryImpl#acquirePageMiss");
 
     /** {@inheritDoc} */
     @Override public long acquirePage(int cacheId, long pageId, boolean restore) throws IgniteCheckedException {
@@ -574,6 +581,8 @@ public class PageMemoryImpl implements PageMemoryEx {
                 long absPtr = seg.absolute(relPtr);
 
                 seg.acquirePage(absPtr);
+
+                acquirePageHitBenchmark.supply(System.nanoTime() - time);
 
                 return absPtr;
             }
@@ -681,7 +690,7 @@ public class PageMemoryImpl implements PageMemoryEx {
         }
         finally {
             seg.writeLock().unlock();
-            acquirePageBenchmark.supply(System.nanoTime() - time);
+            acquirePageMissBenchmark.supply(System.nanoTime() - time);
         }
     }
 
