@@ -66,11 +66,6 @@ public class NoOpBinary implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryType type(String typeName, String cacheName) throws BinaryObjectException {
-        throw unsupported();
-    }
-
-    /** {@inheritDoc} */
     @Override public Collection<BinaryType> types() throws BinaryObjectException {
         throw unsupported();
     }

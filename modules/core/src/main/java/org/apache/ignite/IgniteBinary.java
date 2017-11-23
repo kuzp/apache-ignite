@@ -367,16 +367,6 @@ public interface IgniteBinary {
     public BinaryType type(int typeId) throws BinaryObjectException;
 
     /**
-     * Gets metadata for provided class name.
-     *
-     * @param typeName Type name.
-     * @param cacheName Cache name.
-     * @return Metadata.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
-     */
-    public BinaryType type(String typeName, String cacheName) throws BinaryObjectException;
-
-    /**
      * Gets metadata for all known types.
      *
      * @return Metadata.

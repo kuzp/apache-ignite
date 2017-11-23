@@ -139,7 +139,7 @@ public class GridCacheBinaryObjectMetadataVersionTest extends GridCommonAbstract
 
         for (int node = 0; node < NODE_COUNT; node++) {
             assertEqualsCollections(F.asList("B", "C"),
-                grid(node).binary().type(typeName, cacheName).fieldNames());
+                grid(node).binary().type(typeName).fieldNames());
         }
     }
 

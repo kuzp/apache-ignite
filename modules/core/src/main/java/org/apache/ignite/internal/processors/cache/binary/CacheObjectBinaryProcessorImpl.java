@@ -485,19 +485,14 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     @Nullable @Override public BinaryType metadata(final int typeId) {
         BinaryMetadata meta = metadata0(typeId);
 
+        if (meta != null && meta.explicit()) {
+            BinaryMetadata.CacheSpecificMetadata cacheMeta = meta.cache();
+
+            if (cacheMeta != null)
+                return cacheMeta.metadata().wrap(binaryCtx);
+        }
+
         return meta != null ? meta.wrap(binaryCtx) : null;
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public BinaryType metadata(final int typeId, String cacheName) {
-        BinaryMetadata meta = metadata0(typeId);
-
-        if (!meta.explicit())
-            throw new BinaryObjectException("This method can only be used for explicit types");
-
-        BinaryMetadata.CacheSpecificMetadata cacheMeta = meta.cache();
-
-        return (cacheMeta == null) ? null: cacheMeta.metadata().wrap(binaryCtx);
     }
 
     /**

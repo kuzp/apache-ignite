@@ -102,14 +102,6 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
     public Map<Integer, BinaryType> metadata(Collection<Integer> typeIds) throws IgniteException;
 
     /**
-     * @param typeId Type ID.
-     * @param cacheName Cache name.
-     * @return Meta data.
-     * @throws IgniteException In case of error.
-     */
-    @Nullable public BinaryType metadata(int typeId, String cacheName) throws IgniteException;
-
-    /**
      * @return Metadata for all types.
      * @throws IgniteException In case of error.
      */

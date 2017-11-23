@@ -134,19 +134,6 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public BinaryType type(String typeName, String cacheName) throws BinaryObjectException {
-        guard();
-
-        try {
-            return proc.metadata(proc.typeId(typeName), cacheName);
-        }
-        finally {
-            unguard();
-        }
-    }
-
-
-    /** {@inheritDoc} */
     @Override public Collection<BinaryType> types() throws BinaryObjectException {
         guard();
 
