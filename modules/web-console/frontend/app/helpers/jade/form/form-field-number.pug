@@ -35,7 +35,7 @@ mixin ignite-form-field-number(label, model, name, disabled, required, placehold
         )&attributes(attributes.attributes)
 
     .ignite-form-field
-        +ignite-form-field__label(label, name, required)
+        +ignite-form-field__label(label, name, required, disabled)
             +tooltip(tip, tipOpts)
         .ignite-form-field__control
             .input-tip

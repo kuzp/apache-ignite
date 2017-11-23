@@ -124,6 +124,10 @@
         color: $gray-light;
         font-size: 12px;
         line-height: 12px;
+
+        &-disabled {
+            opacity: 0.5;   
+        }
     }
    .ignite-form-field__errors {
         color: $ignite-brand-primary;
