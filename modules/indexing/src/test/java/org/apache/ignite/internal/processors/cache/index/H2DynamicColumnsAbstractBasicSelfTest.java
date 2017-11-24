@@ -335,6 +335,10 @@ public abstract class H2DynamicColumnsAbstractBasicSelfTest extends DynamicColum
 
         run("ALTER TABLE test DROP COLUMN a");
 
+        //H2 optimizes it out to NoOperation which is not recognized as DDL by IgniteH2Indexing
+        //run("ALTER TABLE test DROP COLUMN IF EXISTS a");
+
+        //H2 throws parsing error (column not found) by itself
         assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
     }
 
