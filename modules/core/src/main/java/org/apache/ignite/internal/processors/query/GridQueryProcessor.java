@@ -1007,6 +1007,33 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 }
             }
         }
+        else if (op instanceof SchemaAlterTableDropColumnOperation) {
+            SchemaAlterTableDropColumnOperation op0 = (SchemaAlterTableDropColumnOperation)op;
+
+            type = type(cacheName, op0.tableName());
+
+            if (type == null) {
+                if (op0.ifTableExists())
+                    nop = true;
+                else
+                    err = new SchemaOperationException(SchemaOperationException.CODE_TABLE_NOT_FOUND,
+                        op0.tableName());
+            }
+            else {
+                for (QueryField col : op0.columns()) {
+                    if (!type.hasField(col.name())) {
+                        if (op0.ifExists()) {
+                            assert op0.columns().size() == 1;
+
+                            nop = true;
+                        }
+                        else
+                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
+                                col.name());
+                    }
+                }
+            }
+        }
         else
             err = new SchemaOperationException("Unsupported operation: " + op);
 
@@ -1137,6 +1164,33 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 }
             }
         }
+        else if (op instanceof SchemaAlterTableDropColumnOperation) {
+            SchemaAlterTableDropColumnOperation op0 = (SchemaAlterTableDropColumnOperation)op;
+
+            QueryEntity e = tblMap.get(op0.tableName());
+
+            if (e == null) {
+                if (op0.ifTableExists())
+                    nop = true;
+                else
+                    err = new SchemaOperationException(SchemaOperationException.CODE_TABLE_NOT_FOUND,
+                        op0.tableName());
+            }
+            else {
+                for (QueryField fld : op0.columns()) {
+                    if (!e.getFields().containsKey(fld.name())) {
+                        if (op0.ifExists()) {
+                            assert op0.columns().size() == 1;
+
+                            nop = true;
+                        }
+                        else
+                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
+                                fld.name());
+                    }
+                }
+            }
+        }
         else
             err = new SchemaOperationException("Unsupported operation: " + op);
 
@@ -1257,7 +1311,8 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     idxs.remove(idxKey);
                 }
                 else {
-                    assert op instanceof SchemaAlterTableAddColumnOperation;
+                    assert (op instanceof SchemaAlterTableAddColumnOperation ||
+                        op instanceof SchemaAlterTableDropColumnOperation);
 
                     // No-op - all processing is done at "local" stage
                     // as we must update both table and type descriptor atomically.
@@ -1351,12 +1406,10 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             else if (op instanceof SchemaAlterTableDropColumnOperation) {
                 SchemaAlterTableDropColumnOperation op0 = (SchemaAlterTableDropColumnOperation)op;
 
-                //SchemaIndexCacheVisitor visitor =
-                //    new SchemaIndexCacheVisitorImpl(this, cache.context(), cacheName, op0.tableName(), cancelTok);
+                processDynamicDropColumn(type, op0.columns());
 
-                //processDynamicDropColumn();
-
-                //idx.dynamicDropColumn();
+                idx.dynamicDropColumn(op0.schemaName(), op0.tableName(), op0.columns(), op0.ifTableExists(),
+                    op0.ifExists());
             }
             else
                 throw new SchemaOperationException("Unsupported operation: " + op);
@@ -2336,6 +2389,19 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
         for (GridQueryProperty p : props)
             d.addProperty(p, true);
+    }
+
+    /**
+     *
+     * @param d
+     * @param cols
+     * @throws IgniteCheckedException
+     */
+    private void processDynamicDropColumn(QueryTypeDescriptorImpl d, List<QueryField> cols) throws IgniteCheckedException {
+        for (QueryField field : cols) {
+            d.properties().remove(field.name());
+            d.fields().remove(field.name());
+        }
     }
 
     /**

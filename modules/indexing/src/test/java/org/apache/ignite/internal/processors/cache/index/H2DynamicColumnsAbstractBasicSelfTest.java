@@ -327,6 +327,18 @@ public abstract class H2DynamicColumnsAbstractBasicSelfTest extends DynamicColum
     }
 
     /**
+     *
+     * @throws Exception if failed.
+     */
+    public void testDropColumn() throws Exception {
+        run("CREATE TABLE test (id INT PRIMARY KEY, a INT, b CHAR)");
+
+        run("ALTER TABLE test DROP COLUMN a");
+
+        assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
+    }
+
+    /**
      * Test that {@code ADD COLUMN} fails for tables that have flat value.
      * @param tblName table name.
      */
