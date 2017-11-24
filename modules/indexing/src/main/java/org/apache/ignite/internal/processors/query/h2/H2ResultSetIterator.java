@@ -24,8 +24,10 @@ import java.util.NoSuchElementException;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.query.IgniteSQLException;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2ValueCacheObject;
 import org.apache.ignite.internal.util.GridCloseableIteratorAdapter;
+import org.apache.ignite.internal.util.lang.GridCloseableCursor;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.h2.jdbc.JdbcResultSet;
@@ -40,8 +42,6 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     private static final Field RESULT_FIELD;
     /** */
     private static final long serialVersionUID = 0L;
-    /** Local no copy. */
-    private static ThreadLocal<Boolean> tlLocalNoCopy = new ThreadLocal<>();
 
     /**
      * Initialize.
@@ -67,8 +67,8 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     private final boolean closeStmt;
     /** */
     private boolean hasRow;
-    /** Local no copy. */
-    private boolean localNoCopy;
+    /** Query context. */
+    private GridH2QueryContext qctx;
 
     /**
      * @param data Data array.
@@ -100,22 +100,18 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     }
 
     /**
-     * @return Is local no copy enabled.
-     */
-    public static boolean isLocalNoCopy() {
-        return tlLocalNoCopy != null && tlLocalNoCopy.get() != null && tlLocalNoCopy.get();
-    }
-
-    /**
      * @return {@code true} If next row was fetched successfully.
      */
     private boolean fetchNext() {
         if (data == null)
             return false;
 
-        Boolean old = tlLocalNoCopy.get();
+        GridH2QueryContext old = GridH2QueryContext.get();
 
-        tlLocalNoCopy.set(localNoCopy);
+        if (old != null)
+            GridH2QueryContext.clearThreadLocal();
+
+        GridH2QueryContext.set(qctx);
 
         try {
             if (!data.next())
@@ -147,7 +143,10 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
             throw new IgniteSQLException(e);
         }
         finally {
-            tlLocalNoCopy.set(old);
+            GridH2QueryContext.clearThreadLocal();
+
+            if (old != null)
+                GridH2QueryContext.set(old);
         }
     }
 
@@ -193,12 +192,21 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
         }
 
         U.closeQuiet(data);
+
+        if (qctx != null && qctx.cursor() != null) {
+            try {
+                qctx.cursor().close();
+            }
+            catch (Exception e) {
+                throw new IgniteCheckedException(e);
+            }
+        }
     }
     /**
-     * @param localNoCopy local no copy flag.
+     * @param qctx Query context.
      */
-    public void setLocalNoCopy(boolean localNoCopy) {
-        this.localNoCopy = localNoCopy;
+    protected void setQueryContext(GridH2QueryContext qctx) {
+        this.qctx = qctx;
     }
 
     /** {@inheritDoc} */

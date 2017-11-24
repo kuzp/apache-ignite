@@ -62,12 +62,15 @@ public class QueryCursorImpl<T> implements QueryCursorEx<T>, FieldsQueryCursor<T
     /** */
     private final GridQueryCancel cancel;
 
+    /** Is getAll disabled. */
+    private final boolean isGetAllDisabled;
+
     /**
      * @param iterExec Query executor.
      * @param cancel Cancellation closure.
      */
     public QueryCursorImpl(Iterable<T> iterExec, GridQueryCancel cancel) {
-        this(iterExec, cancel, true);
+        this(iterExec, cancel, true, false);
     }
 
     /**
@@ -79,12 +82,25 @@ public class QueryCursorImpl<T> implements QueryCursorEx<T>, FieldsQueryCursor<T
 
     /**
      * @param iterExec Query executor.
+     * @param cancel Query cancel.
      * @param isQry Result type flag - {@code true} for query, {@code false} for update operation.
      */
     public QueryCursorImpl(Iterable<T> iterExec, GridQueryCancel cancel, boolean isQry) {
+        this(iterExec, cancel, isQry, false);
+    }
+
+    /**
+     * @param iterExec Query executor.
+     * @param cancel Query cancel.
+     * @param isQry Result type flag - {@code true} for query, {@code false} for update operation.
+     * @param isGetAllDisabled Flag to disable getAll ({@code true} if 'withKeepBinary' is set for cache context
+     *      and 'localNoCopy' flag is set for query).
+     */
+    public QueryCursorImpl(Iterable<T> iterExec, GridQueryCancel cancel, boolean isQry, boolean isGetAllDisabled) {
         this.iterExec = iterExec;
         this.cancel = cancel;
         this.isQry = isQry;
+        this.isGetAllDisabled = isGetAllDisabled;
     }
 
     /** {@inheritDoc} */
@@ -109,6 +125,10 @@ public class QueryCursorImpl<T> implements QueryCursorEx<T>, FieldsQueryCursor<T
     /** {@inheritDoc} */
     @Override public List<T> getAll() {
         List<T> all = new ArrayList<>();
+
+        if (isGetAllDisabled)
+            throw new IgniteException("The method 'getAll' is prohibited when the '.withKeepBinary()' is used for " +
+                "the cache and 'localNoCopy' flag is set for the query");
 
         try {
             for (T t : this) // Implicitly calls iterator() to do all checks.

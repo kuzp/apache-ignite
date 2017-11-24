@@ -23,6 +23,7 @@ import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 import org.apache.ignite.internal.processors.query.h2.H2ResultSetIterator;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
 
@@ -60,7 +61,7 @@ public class H2RowFactory {
 
         final CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
 
-        if (H2ResultSetIterator.isLocalNoCopy())
+        if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy())
             rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.OFFHEAP_OBJ);
         else
             rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.FULL);
@@ -68,7 +69,7 @@ public class H2RowFactory {
         GridH2Row row;
 
         try {
-            if (H2ResultSetIterator.isLocalNoCopy()) {
+            if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy()) {
                 row = rowDesc.createRowOffheap(rowBuilder.key(),
                     PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime(),
                     rowBuilder.locker());
