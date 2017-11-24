@@ -38,6 +38,7 @@ import org.apache.ignite.cache.query.SqlQuery;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.processors.cache.IgniteCacheAbstractQuerySelfTest;
+import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 
 import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 
@@ -46,7 +47,7 @@ import static org.apache.ignite.cache.CacheMode.PARTITIONED;
  */
 public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfTest {
     /** Keys count. */
-    private static final int KEYS = 100_000;
+    private static final int KEYS = 1_000;
     /** Random. */
     private static Random RND = new Random();
 
@@ -149,7 +150,7 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
     /**
      * @throws Exception On failed.
      */
-    public void testQueryLocalNoCopyFlagBigObject() throws Exception {
+    public void _testQueryLocalNoCopySimpleBenchmark() throws Exception {
         IgniteCache<Integer, BigValue> cache = jcache(Integer.class, BigValue.class);
 
         for (int i = 0; i < KEYS; ++i)
@@ -158,7 +159,7 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
         SqlQuery query = new SqlQuery(BigValue.class, "search = ?");
         query.setArgs(5);
         query.setLocal(true);
-//        query.setLocalNoCopy(true);
+        query.setLocalNoCopy(true);
 
         System.out.println("+++ Benchmark");
 
@@ -166,8 +167,18 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
             long t0 = System.currentTimeMillis();
 
             for (int op = 0; op < 1000; ++op) {
-                cache.query(query).getAll();
+                QueryCursor cur = cache.withKeepBinary().query(query);
+
+                Iterator it = cur.iterator();
+
+                it.next();
+                it.next();
+
+//                System.out.println("Lock before close: " + CacheDataRowAdapter.OffheapPageLocker.dbgMap.size());
+                cur.close();
+//                System.out.println("Lock after  close: " + CacheDataRowAdapter.OffheapPageLocker.dbgMap.size());
             }
+
             System.out.println("Throughput: " + ((System.currentTimeMillis() - t0) / 1000.0));
         }
 

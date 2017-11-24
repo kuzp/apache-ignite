@@ -25,6 +25,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridReservable;
+import org.apache.ignite.internal.processors.cache.persistence.tree.BPlusTree;
+import org.apache.ignite.internal.util.lang.GridCloseableCursor;
+import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
@@ -82,6 +85,12 @@ public class GridH2QueryContext {
 
     /** */
     private GridH2CollocationModel qryCollocationMdl;
+
+    /** Local no copy flag. */
+    private boolean localNoCopy;
+
+    /** Cursor to close. */
+    private GridCloseableCursor cur;
 
     /**
      * @param locNodeId Local node ID.
@@ -480,6 +489,34 @@ public class GridH2QueryContext {
         this.pageSize = pageSize;
 
         return this;
+    }
+
+    /**
+     * @return Local no copy flag.
+     */
+    public boolean localNoCopy() {
+        return localNoCopy;
+    }
+
+    /**
+     * @param localNoCopy Local no copy flag.
+     */
+    public void localNoCopy(boolean localNoCopy) {
+        this.localNoCopy = localNoCopy;
+    }
+
+    /**
+     * @return Cursor.
+     */
+    public GridCloseableCursor cursor() {
+        return cur;
+    }
+
+    /**
+     * @param cur Cursor.
+     */
+    public void cursor(GridCloseableCursor cur) {
+        this.cur = cur;
     }
 
     /** {@inheritDoc} */

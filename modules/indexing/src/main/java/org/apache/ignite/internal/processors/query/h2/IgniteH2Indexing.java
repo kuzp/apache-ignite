@@ -1143,7 +1143,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
                     }
                 };
             }
-        }, cancel);
+        }, cancel, true, keepBinary && qry.isLocalNoCopy());
     }
 
     /**
@@ -1172,18 +1172,17 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
         Connection conn = connectionForThread(tbl.schemaName());
 
-        boolean localNoCopy = false;
-        if (ctx.cache().cache(cacheName) != null &&
-            ctx.cache().cache(cacheName).context().operationContextPerCall().localNoCopy()) {
-            H2Utils.session(conn).setLazyQueryExecution(true);
-
-            localNoCopy = true;
-        }
-
         H2Utils.setupConnection(conn, false, false);
 
         GridH2QueryContext.set(new GridH2QueryContext(nodeId, nodeId, 0, LOCAL).filter(filter)
             .distributedJoinMode(OFF));
+
+        if (ctx.cache().cache(cacheName) != null &&
+            ctx.cache().cache(cacheName).context().operationContextPerCall().localNoCopy()) {
+            H2Utils.session(conn).setLazyQueryExecution(true);
+
+            GridH2QueryContext.get().localNoCopy(true);
+        }
 
         GridRunningQueryInfo run = new GridRunningQueryInfo(qryIdGen.incrementAndGet(), qry, SQL, schemaName,
             U.currentTimeMillis(), null, true);
@@ -1193,7 +1192,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         try {
             ResultSet rs = executeSqlQueryWithTimer(conn, sql, params, true, 0, cancel);
 
-            return new H2KeyValueIterator(rs, localNoCopy);
+            return new H2KeyValueIterator(rs, GridH2QueryContext.get());
         }
         finally {
             GridH2QueryContext.clearThreadLocal();

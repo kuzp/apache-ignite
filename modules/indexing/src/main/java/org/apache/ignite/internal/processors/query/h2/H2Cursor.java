@@ -48,6 +48,11 @@ public class H2Cursor implements Cursor {
 
         this.cursor = cursor;
         this.filter = filter;
+
+        GridH2QueryContext qctx = GridH2QueryContext.get();
+
+        if (qctx != null && cursor instanceof GridCloseableCursor)
+            qctx.cursor((GridCloseableCursor)cursor);
     }
 
     /**

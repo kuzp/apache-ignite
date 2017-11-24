@@ -56,6 +56,7 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.util.PageHan
 import org.apache.ignite.internal.util.GridArrays;
 import org.apache.ignite.internal.util.GridLongList;
 import org.apache.ignite.internal.util.IgniteTree;
+import org.apache.ignite.internal.util.lang.GridCloseableCursor;
 import org.apache.ignite.internal.util.lang.GridCursor;
 import org.apache.ignite.internal.util.lang.GridTreePrinter;
 import org.apache.ignite.internal.util.typedef.F;
@@ -4389,7 +4390,7 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
      * Forward cursor.
      */
     @SuppressWarnings("unchecked")
-    private final class ForwardCursor implements GridCursor<T> {
+    private final class ForwardCursor implements GridCloseableCursor<T> {
         /** */
         private T[] rows = (T[])EMPTY;
 
@@ -4682,6 +4683,19 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
             assert r != null;
 
             return r;
+        }
+
+        /**
+         * @throws Exception On error.
+         */
+        @Override public void close() throws Exception {
+            for (int i = row; i < rows.length; ++i) {
+                T r = rows[i];
+
+                if (r instanceof CacheDataRow)
+                    ((CacheDataRow)r).unlock();
+
+            }
         }
     }
 

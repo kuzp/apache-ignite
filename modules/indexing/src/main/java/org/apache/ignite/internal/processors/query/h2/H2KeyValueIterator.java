@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.query.h2;
 
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.lang.IgniteBiTuple;
 
 import java.sql.ResultSet;
@@ -29,16 +30,15 @@ public class H2KeyValueIterator<K, V> extends H2ResultSetIterator<IgniteBiTuple<
     /** */
     private static final long serialVersionUID = 0L;
 
-
     /**
      * @param data Data array.
-     * @param localNoCopy local no copy flag.
+     * @param qctx Query context.
      * @throws IgniteCheckedException If failed.
      */
-    protected H2KeyValueIterator(ResultSet data, boolean localNoCopy) throws IgniteCheckedException {
+    protected H2KeyValueIterator(ResultSet data, GridH2QueryContext qctx) throws IgniteCheckedException {
         super(data, false, true);
 
-        setLocalNoCopy(localNoCopy);
+        setQueryContext(qctx);
     }
 
     /** {@inheritDoc} */
