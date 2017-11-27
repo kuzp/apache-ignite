@@ -462,17 +462,17 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
      * @param state Current cluster state.
      * @return {@code True} if state change from message can be applied to the current state.
      */
-    private static boolean isApplicable(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
-        if (msg.activate() != state.active())
-            return true;
+    protected boolean isApplicable(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
+        return !isEquivalent(msg, state);
+    }
 
-        if ((state.baselineTopology() == null) != (msg.baselineTopology() == null))
-            return true;
-
-        if (state.baselineTopology() == null && msg.baselineTopology() == null)
-            return false;
-
-        return !msg.baselineTopology().equals(state.baselineTopology());
+    /**
+     * @param msg State change message.
+     * @param state Current cluster state.
+     * @return {@code True} if states are equivalent.
+     */
+    private static boolean isEquivalent(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
+        return (msg.activate() == state.active() && BaselineTopology.equals(msg.baselineTopology(), state.baselineTopology()));
     }
 
     /** {@inheritDoc} */
@@ -727,7 +727,8 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
             storedCfgs,
             activate,
             blt,
-            forceChangeBaselineTopology);
+            forceChangeBaselineTopology,
+            System.currentTimeMillis());
 
         try {
             if (log.isInfoEnabled())
@@ -1036,6 +1037,16 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
 
             globalState = newState;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onExchangeFinishedOnCoordinator(IgniteInternalFuture exchangeFuture, boolean hasMovingPartitions) {
+        // no-op
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean evictionsAllowed() {
+        return true;
     }
 
     /**

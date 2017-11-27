@@ -250,7 +250,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
     /** */
     @GridToStringExclude
-    private volatile IgniteDhtPartitionsToReloadMap partsToReload = new IgniteDhtPartitionsToReloadMap();
+    private final IgniteDhtPartitionsToReloadMap partsToReload = new IgniteDhtPartitionsToReloadMap();
 
     /** */
     private final AtomicBoolean done = new AtomicBoolean();
@@ -2479,6 +2479,22 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         err = new IgniteCheckedException("Cluster state change failed.");
 
                         cctx.kernalContext().state().onStateChangeError(changeGlobalStateExceptions, req);
+                    }
+                    else {
+                        boolean hasMoving = !partsToReload.isEmpty();
+
+                        if (!hasMoving) {
+                            for (CacheGroupContext grpCtx : cctx.cache().cacheGroups()) {
+                                if (grpCtx.topology().hasMovingPartitions()) {
+                                    hasMoving = true;
+
+                                    break;
+                                }
+
+                            }
+                        }
+
+                        cctx.kernalContext().state().onExchangeFinishedOnCoordinator(this, hasMoving);
                     }
 
                     boolean active = !stateChangeErr && req.activate();
