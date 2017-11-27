@@ -23,8 +23,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.binary.BinaryReader;
@@ -39,6 +42,7 @@ import org.apache.ignite.cache.query.annotations.QuerySqlField;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.processors.cache.IgniteCacheAbstractQuerySelfTest;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
+import org.apache.ignite.testframework.GridTestUtils;
 
 import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 
@@ -145,6 +149,29 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
 
             assertTrue("Leak locks count: " + set.size(), set.isEmpty());
         }
+    }
+
+    /**
+     * @throws Exception On failed.
+     */
+    public void testQueryLocalNoCopyValidation() throws Exception {
+        final IgniteCache<Integer, BigValue> cache = jcache(Integer.class, BigValue.class);
+
+        GridTestUtils.assertThrows(log, new Callable<Void>() {
+            @Override public Void call() throws Exception {
+                cache.query(new SqlQuery(BigValue.class, "search = 1").setLocalNoCopy(true)).getAll();
+                return null;
+            }
+        }, CacheException.class, "The flag localNoOpy is not supported for distributed query");
+
+        GridTestUtils.assertThrows(log, new Callable<Void>() {
+            @Override public Void call() throws Exception {
+                cache.withKeepBinary().query(new SqlQuery(BigValue.class, "search = 1")
+                    .setLocal(true).setLocalNoCopy(true)).getAll();
+                return null;
+            }
+        }, IgniteException.class, "The method 'getAll' is prohibited when the '.withKeepBinary()' " +
+            "is used for the cache and 'localNoCopy' flag is set for the query");
     }
 
     /**
