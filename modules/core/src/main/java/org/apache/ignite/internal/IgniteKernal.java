@@ -813,6 +813,7 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         // Ack various information.
         ackAsciiLogo();
         ackConfigUrl();
+        ackConfig(cfg);
         ackDaemon();
         ackOsInfo();
         ackLanguageRuntime();
@@ -1981,6 +1982,17 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
 
         if (log.isInfoEnabled())
             log.info("Config URL: " + System.getProperty(IGNITE_CONFIG_URL, "n/a"));
+    }
+
+
+    /**
+     * Acks configuration.
+     */
+    private void ackConfig(IgniteConfiguration cfg) {
+        assert log != null;
+
+        if (log.isDebugEnabled())
+            log.debug("IgniteConfiguration: " + cfg);
     }
 
     /**
