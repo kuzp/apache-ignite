@@ -477,6 +477,11 @@ public class BinaryMetadata implements Externalizable {
         cacheMeta.addField(fieldName, fieldMeta);
     }
 
+    /**
+     *
+     * @param schemaId
+     * @return
+     */
     public int mapSchemaVersion(int schemaId) {
         CacheSpecificMetadata cacheMeta = changes;
 
@@ -623,6 +628,14 @@ public class BinaryMetadata implements Externalizable {
                     }
                 }
             }
+
+            //v->f1(vo1),f2(vo2),f3(vo3)
+            //BinaryObject.field()
+            //flag - versioned type
+            //cached version
+            //cached version_adapter
+            //field_order->mask
+            //
 
             return result;
         }
