@@ -1909,54 +1909,47 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
      *
      */
     public void applyUpdatesOnRecovery(
-        WALPointer pnt,
+        WALIterator it,
         IgnitePredicate<IgniteBiTuple<WALPointer, WALRecord>> recPredicate,
         IgnitePredicate<DataEntry> entryPredicate,
         Map<T2<Integer, Integer>, T2<Integer, Long>> partStates
     ) throws IgniteCheckedException {
-        cctx.kernalContext().query().skipFieldLookup(true);
+        while (it.hasNextX()) {
+            IgniteBiTuple<WALPointer, WALRecord> next = it.nextX();
 
-        try (WALIterator it = cctx.wal().replay(pnt)) {
-            while (it.hasNextX()) {
-                IgniteBiTuple<WALPointer, WALRecord> next = it.nextX();
+            WALRecord rec = next.get2();
 
-                WALRecord rec = next.get2();
+            if (!recPredicate.apply(next))
+                break;
 
-                if (!recPredicate.apply(next))
+            FileWALPointer p = (FileWALPointer)next.get1();
+
+            switch (rec.type()) {
+                case DATA_RECORD:
+                    DataRecord dataRec = (DataRecord)rec;
+
+                    for (DataEntry dataEntry : dataRec.writeEntries()) {
+                        if (entryPredicate.apply(dataEntry)) {
+                            int cacheId = dataEntry.cacheId();
+
+                            GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
+
+                            if (cacheCtx != null)
+                                applyUpdate(cacheCtx, dataEntry);
+                            else if (log != null)
+                                log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
+
+                        }
+                    }
+
                     break;
 
-                FileWALPointer p = (FileWALPointer)next.get1();
-
-                switch (rec.type()) {
-                    case DATA_RECORD:
-                        DataRecord dataRec = (DataRecord)rec;
-
-                        for (DataEntry dataEntry : dataRec.writeEntries()) {
-                            if (entryPredicate.apply(dataEntry)) {
-                                int cacheId = dataEntry.cacheId();
-
-                                GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
-
-                                if (cacheCtx != null)
-                                    applyUpdate(cacheCtx, dataEntry);
-                                else if (log != null)
-                                    log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
-
-                            }
-                        }
-
-                        break;
-
-                    default:
-                        // Skip other records.
-                }
+                default:
+                    // Skip other records.
             }
+        }
 
-            restorePartitionState(partStates);
-        }
-        finally {
-            cctx.kernalContext().query().skipFieldLookup(false);
-        }
+        restorePartitionState(partStates);
     }
 
     /**
