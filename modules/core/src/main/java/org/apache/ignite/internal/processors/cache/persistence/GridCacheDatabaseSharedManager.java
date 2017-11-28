@@ -1906,7 +1906,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /**
+     * Apply update from some iterator and with specific filters.
      *
+     * @param it WalIterator.
+     * @param recPredicate Wal record filter.
+     * @param entryPredicate Entry filter.
+     * @param partStates Partition to restore state.
      */
     public void applyUpdatesOnRecovery(
         WALIterator it,
@@ -1921,8 +1926,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             if (!recPredicate.apply(next))
                 break;
-
-            FileWALPointer p = (FileWALPointer)next.get1();
 
             switch (rec.type()) {
                 case DATA_RECORD:
