@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.processors.query.IgniteSQLException;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2ValueCacheObject;
@@ -38,10 +39,8 @@ import org.h2.value.Value;
 public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapter<T> {
     /** */
     private static final Field RESULT_FIELD;
-    /** */
-    private static final long serialVersionUID = 0L;
 
-    /**
+    /*
      * Initialize.
      */
     static {
@@ -56,15 +55,23 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
     }
 
     /** */
-    protected final Object[] row;
+    private static final long serialVersionUID = 0L;
+
     /** */
     private final ResultInterface res;
+
     /** */
     private final ResultSet data;
+
+    /** */
+    protected final Object[] row;
+
     /** */
     private final boolean closeStmt;
+
     /** */
     private boolean hasRow;
+
     /** Query context. */
     private GridH2QueryContext qctx;
 
@@ -104,16 +111,29 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
         if (data == null)
             return false;
 
-        GridH2QueryContext old = GridH2QueryContext.get();
+        GridH2QueryContext old = null;
 
-        if (old != null)
-            GridH2QueryContext.clearThreadLocal();
+        if (qctx != null) {
+            old = GridH2QueryContext.get();
 
-        GridH2QueryContext.set(qctx);
+            if (old != null)
+                GridH2QueryContext.clearThreadLocal();
+
+            GridH2QueryContext.set(qctx);
+        }
 
         try {
-            if (!data.next())
+            if (!data.next()) {
+
+                try {
+                    close0();
+                }
+                catch (IgniteCheckedException e) {
+                    throw new IgniteException(e);
+                }
+
                 return false;
+            }
 
             if (res != null) {
                 Value[] values = res.currentRow();
@@ -141,7 +161,8 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
             throw new IgniteSQLException(e);
         }
         finally {
-            GridH2QueryContext.clearThreadLocal();
+            if (qctx != null)
+                GridH2QueryContext.clearThreadLocal();
 
             if (old != null)
                 GridH2QueryContext.set(old);
@@ -176,6 +197,14 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
 
     /** {@inheritDoc} */
     @Override public void onClose() throws IgniteCheckedException {
+        close0();
+    }
+
+    /**
+     * Close cursor and ResultSet.
+     * @throws IgniteCheckedException On error.
+     */
+    private void close0() throws IgniteCheckedException {
         if (data == null)
             // Nothing to close.
             return;
@@ -200,6 +229,7 @@ public abstract class H2ResultSetIterator<T> extends GridCloseableIteratorAdapte
             }
         }
     }
+
     /**
      * @param qctx Query context.
      */

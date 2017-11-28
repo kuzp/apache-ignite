@@ -124,11 +124,11 @@ public class QueryCursorImpl<T> implements QueryCursorEx<T>, FieldsQueryCursor<T
 
     /** {@inheritDoc} */
     @Override public List<T> getAll() {
-        List<T> all = new ArrayList<>();
-
         if (isGetAllDisabled)
             throw new IgniteException("The method 'getAll' is prohibited when the '.withKeepBinary()' is used for " +
                 "the cache and 'localNoCopy' flag is set for the query");
+
+        List<T> all = new ArrayList<>();
 
         try {
             for (T t : this) // Implicitly calls iterator() to do all checks.

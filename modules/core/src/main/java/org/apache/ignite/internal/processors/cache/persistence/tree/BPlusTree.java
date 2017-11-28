@@ -4689,6 +4689,9 @@ public abstract class BPlusTree<L, T extends L> extends DataStructure implements
          * @throws Exception On error.
          */
         @Override public void close() throws Exception {
+            if (rows == null)
+                return;
+
             for (int i = row; i < rows.length; ++i) {
                 T r = rows[i];
 
