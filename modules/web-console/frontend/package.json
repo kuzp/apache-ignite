@@ -102,7 +102,6 @@
   },
   "devDependencies": {
     "chai": "4.1.0",
-    "type-detect": "4.0.3",
     "jasmine-core": "2.6.4",
     "karma": "1.7.0",
     "karma-babel-preprocessor": "6.0.1",
@@ -115,6 +114,9 @@
     "mocha": "3.4.2",
     "mocha-teamcity-reporter": "1.1.1",
     "phantomjs-prebuilt": "2.1.14",
-    "sinon": "2.3.8"
+    "sinon": "2.3.8",
+    "testcafe": "^0.18.5",
+    "testcafe-angular-selectors": "^0.3.0",
+    "type-detect": "4.0.3"
   }
 }
