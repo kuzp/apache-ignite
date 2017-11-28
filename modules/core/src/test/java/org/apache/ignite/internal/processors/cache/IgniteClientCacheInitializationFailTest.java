@@ -292,7 +292,7 @@ public class IgniteClientCacheInitializationFailTest extends GridCommonAbstractT
         }
 
         /** {@inheritDoc} */
-        @Override public void dynamicDropColumn(String schemaName, String tblName, List<QueryField> cols,
+        @Override public void dynamicDropColumn(String schemaName, String tblName, List<String> cols,
             boolean ifTblExists, boolean ifColExists) throws IgniteCheckedException {
             // No-op
         }

@@ -1270,10 +1270,10 @@ public class GridSqlQueryParser {
 
         ArrayList<Column> h2DropCols = ALTER_COLUMN_REMOVE_COLS.get(dropCol);
 
-        GridSqlColumn[] gridDropCols = new GridSqlColumn[h2DropCols.size()];
+        String[] gridDropCols = new String[h2DropCols.size()];
 
         for (int i = 0; i < h2DropCols.size(); i++)
-            gridDropCols[i] = parseColumn(h2DropCols.get(i));
+            gridDropCols[i] = h2DropCols.get(i).getName();
 
         res.columns(gridDropCols);
 

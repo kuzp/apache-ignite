@@ -945,7 +945,7 @@ public class GridH2Table extends TableBase {
      * @param cols
      * @param ifExists
      */
-    public void dropColumns(List<QueryField> cols, boolean ifExists) {
+    public void dropColumns(List<String> cols, boolean ifExists) {
         assert !ifExists || cols.size() == 1;
 
         lock(true);
@@ -953,13 +953,13 @@ public class GridH2Table extends TableBase {
         try {
             int size = columns.length;
 
-            for (QueryField col : cols) {
-                if (!doesColumnExist(col.name())) {
+            for (String name : cols) {
+                if (!doesColumnExist(name)) {
                     if (ifExists && cols.size() == 1)
                         return;
                     else
                         throw new IgniteSQLException("Column does not exist [tblName=" + getName() +
-                            ", colName=" + col.name() + ']');
+                            ", colName=" + name + ']');
                 }
 
                 size --;
@@ -974,8 +974,8 @@ public class GridH2Table extends TableBase {
             for (int i = 0; i < columns.length; i++) {
                 Column column = columns[i];
 
-                for (QueryField col : cols) {
-                    if (F.eq(col.name(), column.getName())) {
+                for (String name : cols) {
+                    if (F.eq(name, column.getName())) {
                         column = null;
 
                         break;

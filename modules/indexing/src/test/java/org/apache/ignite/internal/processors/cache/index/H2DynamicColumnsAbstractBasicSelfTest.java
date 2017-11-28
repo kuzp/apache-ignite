@@ -339,7 +339,9 @@ public abstract class H2DynamicColumnsAbstractBasicSelfTest extends DynamicColum
         //run("ALTER TABLE test DROP COLUMN IF EXISTS a");
 
         //H2 throws parsing error (column not found) by itself
-        assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
+        //assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
+
+        run("DROP TABLE test");
     }
 
     /**

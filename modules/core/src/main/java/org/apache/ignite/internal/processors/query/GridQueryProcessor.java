@@ -1020,16 +1020,15 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                         op0.tableName());
             }
             else {
-                for (QueryField col : op0.columns()) {
-                    if (!type.hasField(col.name())) {
+                for (String name : op0.columns()) {
+                    if (!type.hasField(name)) {
                         if (op0.ifExists()) {
                             assert op0.columns().size() == 1;
 
                             nop = true;
                         }
                         else
-                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
-                                col.name());
+                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND, name);
                     }
                 }
             }
@@ -1177,16 +1176,15 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                         op0.tableName());
             }
             else {
-                for (QueryField fld : op0.columns()) {
-                    if (!e.getFields().containsKey(fld.name())) {
+                for (String fldName : op0.columns()) {
+                    if (!e.getFields().containsKey(fldName)) {
                         if (op0.ifExists()) {
                             assert op0.columns().size() == 1;
 
                             nop = true;
                         }
                         else
-                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
-                                fld.name());
+                            err = new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND, fldName);
                     }
                 }
             }
@@ -2292,7 +2290,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @param ifExists Ignore operation if column does not exist.
      */
     public IgniteInternalFuture<?> dynamicColumnRemove(String cacheName, String schemaName, String tblName,
-        List<QueryField> cols, boolean ifTblExists, boolean ifExists) {
+        List<String> cols, boolean ifTblExists, boolean ifExists) {
 
         SchemaAlterTableDropColumnOperation op = new SchemaAlterTableDropColumnOperation(UUID.randomUUID(), cacheName,
             schemaName, tblName, cols, ifTblExists, ifExists);
@@ -2392,16 +2390,16 @@ public class GridQueryProcessor extends GridProcessorAdapter {
     }
 
     /**
+     * Remove fields from type descriptor.
      *
-     * @param d
-     * @param cols
+     * @param d Type descriptor to update.
+     * @param cols Columns to remove.
      * @throws IgniteCheckedException
      */
-    private void processDynamicDropColumn(QueryTypeDescriptorImpl d, List<QueryField> cols) throws IgniteCheckedException {
-        for (QueryField field : cols) {
-            d.properties().remove(field.name());
-            d.fields().remove(field.name());
-        }
+    private void processDynamicDropColumn(QueryTypeDescriptorImpl d, List<String> cols)
+        throws IgniteCheckedException {
+        for (String field : cols)
+            d.removeProperty(field);
     }
 
     /**

@@ -220,8 +220,8 @@ public class QuerySchema implements Serializable {
 
                 QueryEntity entity = ((List<QueryEntity>)entities).get(targetIdx);
 
-                for (QueryField field : op0.columns())
-                    entity.getFields().remove(field.name());
+                for (String field : op0.columns())
+                    entity.getFields().remove(field);
             }
         }
     }

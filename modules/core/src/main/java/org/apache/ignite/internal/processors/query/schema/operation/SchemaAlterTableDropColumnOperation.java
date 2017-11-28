@@ -19,7 +19,6 @@ package org.apache.ignite.internal.processors.query.schema.operation;
 
 import java.util.List;
 import java.util.UUID;
-import org.apache.ignite.internal.processors.query.QueryField;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
@@ -33,7 +32,7 @@ public class SchemaAlterTableDropColumnOperation extends SchemaAbstractAlterTabl
     private final String tblName;
 
     /** Columns to drop. */
-    private final List<QueryField> cols;
+    private final List<String> cols;
 
     /** Ignore operation if target table doesn't exist. */
     private final boolean ifTblExists;
@@ -52,7 +51,7 @@ public class SchemaAlterTableDropColumnOperation extends SchemaAbstractAlterTabl
      * @param ifExists Ignore operation if column does not exist.
      */
     public SchemaAlterTableDropColumnOperation(UUID opId, String cacheName, String schemaName, String tblName,
-        List<QueryField> cols, boolean ifTblExists, boolean ifExists) {
+        List<String> cols, boolean ifTblExists, boolean ifExists) {
         super(opId, cacheName, schemaName);
 
         this.tblName = tblName;
@@ -71,7 +70,7 @@ public class SchemaAlterTableDropColumnOperation extends SchemaAbstractAlterTabl
     /**
      * @return Columns to drop.
      */
-    public List<QueryField> columns() {
+    public List<String> columns() {
         return cols;
     }
 

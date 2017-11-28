@@ -386,13 +386,13 @@ public class DdlStatementsProcessor {
                         throw new SchemaOperationException("Cannot drop column(s) because table was created " +
                             "with " + PARAM_WRAP_VALUE + "=false option.");
 
-                    List<QueryField> cols = new ArrayList<>(cmd.columns().length);
+                    List<String> cols = new ArrayList<>(cmd.columns().length);
 
-                    for (GridSqlColumn col : cmd.columns()) {
-                        if (!tbl.doesColumnExist(col.columnName())) {
+                    for (String colName : cmd.columns()) {
+                        if (!tbl.doesColumnExist(colName)) {
                             if ((!cmd.ifExists() || cmd.columns().length != 1)) {
                                 throw new SchemaOperationException(SchemaOperationException.CODE_COLUMN_NOT_FOUND,
-                                    col.columnName());
+                                    colName);
                             }
                             else {
                                 cols = null;
@@ -401,11 +401,7 @@ public class DdlStatementsProcessor {
                             }
                         }
 
-                        QueryField field = new QueryField(col.columnName(),
-                            DataType.getTypeClassName(col.column().getType()),
-                            col.column().isNullable());
-
-                        cols.add(field);
+                        cols.add(colName);
                     }
 
                     if (cols != null) {

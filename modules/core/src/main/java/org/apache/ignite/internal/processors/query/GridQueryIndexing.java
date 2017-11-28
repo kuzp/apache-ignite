@@ -192,7 +192,7 @@ public interface GridQueryIndexing {
      * @throws IgniteCheckedException If failed.
      */
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public void dynamicDropColumn(String schemaName, String tblName, List<QueryField> cols, boolean ifTblExists,
+    public void dynamicDropColumn(String schemaName, String tblName, List<String> cols, boolean ifTblExists,
         boolean ifColExists) throws IgniteCheckedException;
 
     /**

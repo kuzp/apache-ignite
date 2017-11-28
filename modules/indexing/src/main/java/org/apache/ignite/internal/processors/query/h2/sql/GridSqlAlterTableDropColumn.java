@@ -28,7 +28,7 @@ public class GridSqlAlterTableDropColumn extends GridSqlStatement {
     private String tblName;
 
     /** Columns to drop. */
-    private GridSqlColumn[] cols;
+    private String[] cols;
 
     /** Quietly abort this command if column does not exist (honored only in single column case). */
     private boolean ifExists;
@@ -37,16 +37,16 @@ public class GridSqlAlterTableDropColumn extends GridSqlStatement {
     private boolean ifTblExists;
 
     /**
-     * @return Columns to add.
+     * @return Columns to drop.
      */
-    public GridSqlColumn[] columns() {
+    public String[] columns() {
         return cols;
     }
 
     /**
-     * @param cols Columns to add.
+     * @param cols Columns to drop.
      */
-    public void columns(GridSqlColumn[] cols) {
+    public void columns(String[] cols) {
         this.cols = cols;
     }
 
