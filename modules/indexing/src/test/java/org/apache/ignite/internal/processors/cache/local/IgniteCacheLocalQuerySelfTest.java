@@ -51,6 +51,7 @@ import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfTest {
     /** Keys count. */
     private static final int KEYS = 1_000;
+
     /** Random. */
     private static Random RND = new Random();
 
@@ -132,9 +133,11 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
             for (int i = begIdx + 1; i < KEYS; ++i)
                 set.add(new ValueObject(i));
 
-            Iterator<Cache.Entry<KeyObject, ValueObject>> it = cache.query(
+            QueryCursor<Cache.Entry<KeyObject, ValueObject>> cur = cache.query(
                 new SqlQuery<KeyObject, ValueObject>(ValueObject.class, "longVal > " + begIdx)
-                    .setLocalNoCopy(true).setLocal(true)).iterator();
+                    .setLocalNoCopy(true).setLocal(true));
+
+            Iterator<Cache.Entry<KeyObject, ValueObject>> it = cur.iterator();
 
             while (it.hasNext()) {
                 Cache.Entry<KeyObject, ValueObject> e = it.next();
@@ -146,7 +149,11 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
                 set.remove(e.getValue());
             }
 
-            assertTrue("Leak locks count: " + set.size(), set.isEmpty());
+            cur.close();
+
+//            System.out.println("+++ Lock after  close: " + CacheDataRowAdapter.OffheapPageLocker.dbgMap.size());
+
+            assertTrue("Not read expected values: " + set.size(), set.isEmpty());
         }
     }
 
@@ -176,6 +183,34 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
     /**
      * @throws Exception On failed.
      */
+    public void testQueryLocalNoCopySimpleBenchmark() throws Exception {
+        IgniteCache<Integer, BigValue> cache = jcache(Integer.class, BigValue.class);
+
+        for (int i = 0; i < KEYS; ++i)
+            cache.put(i, new BigValue(RND.nextInt(10)));
+
+        SqlQuery query = new SqlQuery(BigValue.class, "search = ?");
+        query.setArgs(5);
+        query.setLocal(true);
+        query.setLocalNoCopy(true);
+
+        System.out.println("+++ Benchmark");
+
+        long t0 = System.currentTimeMillis();
+
+        for (int op = 0; op < 1000; ++op) {
+            QueryCursor cur = cache.query(query);
+
+            cur.getAll();
+        }
+
+        System.out.println("Throughput: " + ((System.currentTimeMillis() - t0) / 1000.0));
+
+    }
+
+    /**
+     * @throws Exception On failed.
+     */
     public void _testQueryLocalNoCopySimpleBenchmark() throws Exception {
         IgniteCache<Integer, BigValue> cache = jcache(Integer.class, BigValue.class);
 
@@ -193,15 +228,11 @@ public class IgniteCacheLocalQuerySelfTest extends IgniteCacheAbstractQuerySelfT
             long t0 = System.currentTimeMillis();
 
             for (int op = 0; op < 1000; ++op) {
-                QueryCursor cur = cache.withKeepBinary().query(query);
+                QueryCursor cur = cache.query(query);
 
-                Iterator it = cur.iterator();
-
-                it.next();
-                it.next();
-
+                cur.getAll();
 //                System.out.println("Lock before close: " + CacheDataRowAdapter.OffheapPageLocker.dbgMap.size());
-                cur.close();
+//                cur.close();
 //                System.out.println("Lock after  close: " + CacheDataRowAdapter.OffheapPageLocker.dbgMap.size());
             }
 
