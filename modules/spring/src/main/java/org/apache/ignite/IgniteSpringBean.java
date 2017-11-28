@@ -432,6 +432,13 @@ public class IgniteSpringBean implements Ignite, DisposableBean, SmartInitializi
     }
 
     /** {@inheritDoc} */
+    @Override public void destroyCacheGroup(String cacheGroup) {
+        checkIgnite();
+
+        g.destroyCacheGroup(cacheGroup);
+    }
+
+    /** {@inheritDoc} */
     @Override public IgniteTransactions transactions() {
         checkIgnite();
 

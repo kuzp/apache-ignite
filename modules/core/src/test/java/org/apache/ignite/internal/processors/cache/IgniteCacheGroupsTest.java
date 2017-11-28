@@ -73,6 +73,8 @@ import org.apache.ignite.cache.store.CacheStore;
 import org.apache.ignite.cache.store.CacheStoreAdapter;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.DataRegionConfiguration;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.NearCacheConfiguration;
 import org.apache.ignite.internal.IgniteInternalFuture;
@@ -154,6 +156,13 @@ public class IgniteCacheGroupsTest extends GridCommonAbstractTest {
             cfg.setCacheConfiguration(ccfgs);
 
             ccfgs = null;
+        }
+
+        if (gridName.endsWith("pds")) {
+            DataStorageConfiguration memCfg = new DataStorageConfiguration().setDefaultDataRegionConfiguration(
+                    new DataRegionConfiguration().setMaxSize(200 * 1024 * 1024).setPersistenceEnabled(true));
+
+            cfg.setDataStorageConfiguration(memCfg);
         }
 
         return cfg;
@@ -1098,6 +1107,29 @@ public class IgniteCacheGroupsTest extends GridCommonAbstractTest {
         }
 
         assertTrue(locKeys.isEmpty());
+    }
+
+    /**
+     * Cache repeatable creation with pds enabled.
+     *
+     * @throws Exception If failed.
+     */
+    public void testCreateDestroyCaches10() throws Exception {
+        Ignite srv = startGrid("pds");
+
+        srv.active(true);
+
+        srv.createCache(new CacheConfiguration<Object, Object>("myCache"));
+
+        srv.destroyCache("myCache");
+
+        stopAllGrids();
+
+        srv = startGrid("pds");
+
+        srv.active(true);
+
+        srv.createCache(new CacheConfiguration<Object, Object>("myCache"));
     }
 
     /**

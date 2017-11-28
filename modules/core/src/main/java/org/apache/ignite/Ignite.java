@@ -374,6 +374,14 @@ public interface Ignite extends AutoCloseable {
     public void destroyCaches(Collection<String> cacheNames) throws CacheException;
 
     /**
+     * Stops and destroys all dynamically started caches with specified group.
+     *
+     * @param cacheGroup
+     * @throws CacheException If error occurs.
+     */
+    public void destroyCacheGroup(String cacheGroup) throws CacheException;
+
+    /**
      * Gets an instance of {@link IgniteCache} API. {@code IgniteCache} is a fully-compatible
      * implementation of {@code JCache (JSR 107)} specification.
      *

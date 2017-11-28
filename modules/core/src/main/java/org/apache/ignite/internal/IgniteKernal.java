@@ -166,6 +166,7 @@ import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.C1;
 import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.P1;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.CU;
@@ -3184,6 +3185,25 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         }
         catch (IgniteCheckedException e) {
             throw CU.convertToCacheException(e);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void destroyCacheGroup(@Nullable String cacheGrp) throws CacheException {
+        guard();
+
+        try {
+            checkClusterState();
+
+            IgniteInternalFuture<Boolean> stopFut = ctx.cache().destroyCacheGroup(cacheGrp);
+
+            stopFut.get();
+        }
+        catch (IgniteCheckedException e) {
+            throw CU.convertToCacheException(e);
+        }
+        finally {
+            unguard();
         }
     }
 

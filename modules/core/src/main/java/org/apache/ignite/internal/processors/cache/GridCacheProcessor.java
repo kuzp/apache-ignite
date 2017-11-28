@@ -2701,6 +2701,12 @@ public class GridCacheProcessor extends GridProcessorAdapter {
             return new GridFinishedFuture<>();
     }
 
+    public IgniteInternalFuture<Boolean> destroyCacheGroup(String cacheGrp) {
+        DynamicCacheChangeRequest req = DynamicCacheChangeRequest.stopGroupRequest(ctx, cacheGrp);
+
+        return F.first(initiateCacheChanges(F.asList(req)));
+    }
+
     /**
      * @param cacheName Cache name to destroy.
      * @param sql If the cache needs to be destroyed only if it was created as the result of SQL {@code CREATE TABLE}
@@ -2874,7 +2880,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
             DynamicCacheStartFuture fut = new DynamicCacheStartFuture(req.requestId());
 
             try {
-                if (req.stop()) {
+                if (req.stop() && !req.grpSign()) {
                     DynamicCacheDescriptor desc = cacheDescriptor(req.cacheName());
 
                     if (desc == null)
@@ -2918,7 +2924,9 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
         if (!sndReqs.isEmpty()) {
             try {
-                ctx.discovery().sendCustomEvent(new DynamicCacheChangeBatch(sndReqs));
+                DynamicCacheChangeBatch evt = new DynamicCacheChangeBatch(sndReqs);
+
+                ctx.discovery().sendCustomEvent(evt);
 
                 err = checkNodeState();
             }

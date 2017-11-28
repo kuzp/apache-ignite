@@ -300,6 +300,11 @@ public class IgniteMock implements Ignite {
     }
 
     /** {@inheritDoc} */
+    @Override public void destroyCacheGroup(String cacheGroup) {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
     @Override public IgniteTransactions transactions() {
         return null;
     }

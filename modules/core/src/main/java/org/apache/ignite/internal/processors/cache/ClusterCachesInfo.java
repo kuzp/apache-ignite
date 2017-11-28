@@ -50,10 +50,12 @@ import org.apache.ignite.internal.processors.query.QueryUtils;
 import org.apache.ignite.internal.processors.query.schema.SchemaOperationException;
 import org.apache.ignite.internal.util.GridConcurrentHashSet;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.P1;
 import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteInClosure;
+import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.plugin.CachePluginContext;
 import org.apache.ignite.plugin.CachePluginProvider;
@@ -443,6 +445,7 @@ class ClusterCachesInfo {
         final List<T2<DynamicCacheChangeRequest, AffinityTopologyVersion>> reqsToComplete = new ArrayList<>();
 
         for (DynamicCacheChangeRequest req : reqs) {
+
             if (req.template()) {
                 CacheConfiguration ccfg = req.startCacheConfiguration();
 
@@ -629,7 +632,7 @@ class ClusterCachesInfo {
                     exchangeActions.addCacheToResetLostPartitions(req, desc);
                 }
             }
-            else if (req.stop()) {
+            else if (req.stop() && !req.grpSign()) {
                 if (desc != null) {
                     if (req.sql() && !desc.sql()) {
                         ctx.cache().completeCacheStartFuture(req, false,
@@ -686,6 +689,58 @@ class ClusterCachesInfo {
                     }
                 }
             }
+            else if (req.grpSign())
+            {
+                Collection<String> cacheNames = F.view(registeredCaches.keySet(), filterGroup(req.cacheGrp()));
+
+                if (cacheNames.isEmpty())
+                    ctx.cache().completeCacheStartFuture(req, true, null);
+                else {
+                    CacheGroupDescriptor grpDesc = null;
+
+                    DynamicCacheDescriptor ddesc = null;
+
+                    for (String cacheName : cacheNames) {
+                        DynamicCacheChangeRequest req0 =
+                                DynamicCacheChangeRequest.stopRequest(ctx, cacheName, false, true);
+
+                        ddesc = registeredCaches.remove(cacheName);
+
+                        if (registeredCacheGrps.containsKey(ddesc.groupId())) {
+                            grpDesc = registeredCacheGrps.remove(ddesc.groupId());
+
+                            assert grpDesc != null;
+
+                            if (grpDesc.groupName() == null) {
+                                ctx.discovery().removeCacheGroup(grpDesc);
+
+                                exchangeActions.addCacheGroupToStop(grpDesc, true);
+                            }
+                        }
+
+                        exchangeActions.addCacheToStop(req0, ddesc);
+
+                        grpDesc.onCacheStopped(ddesc.cacheName(), ddesc.cacheId());
+                    }
+
+                    if (grpDesc.groupName() != null) {
+                        ctx.discovery().removeCacheGroup(grpDesc);
+
+                        exchangeActions.addCacheGroupToStop(grpDesc, true);
+                    }
+
+                    exchangeActions.addCacheToStop(req, ddesc);
+
+                    needExchange = true;
+
+                    assert exchangeActions.checkStopRequestConsistency(grpDesc.groupId());
+
+                    // It is not necessary to destroy single cache, cause group will be stopped anyway.
+                    for (ExchangeActions.CacheActionData action : exchangeActions.cacheStopRequests())
+                        if (action.descriptor().groupId() == grpDesc.groupId())
+                            action.request().destroy(false);
+                }
+            }
             else
                 assert false : req;
 
@@ -734,6 +789,23 @@ class ClusterCachesInfo {
         }
 
         return res;
+    }
+
+    /**
+     * Filter caches with specified group name
+     *
+     * @param grp Cache group name.
+     * @return Filtered collection.
+     */
+    private IgnitePredicate<String> filterGroup(@Nullable final String grp) {
+        return new P1<String>() {
+            @Override public boolean apply(String s) {
+                DynamicCacheDescriptor cache = registeredCaches.get(s);
+
+                return cache.cacheType() == CacheType.USER &&
+                    F.eq(registeredCaches.get(s).groupDescriptor().groupName(), grp);
+            }
+        };
     }
 
     /**

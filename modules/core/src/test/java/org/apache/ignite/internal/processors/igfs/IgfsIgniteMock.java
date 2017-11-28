@@ -400,6 +400,11 @@ public class IgfsIgniteMock implements IgniteEx {
     }
 
     /** {@inheritDoc} */
+    @Override public void destroyCacheGroup(String cacheGroup) {
+        throwUnsupported();
+    }
+
+    /** {@inheritDoc} */
     @Override public <K, V> IgniteCache<K, V> cache(@Nullable String name) {
         throwUnsupported();
 

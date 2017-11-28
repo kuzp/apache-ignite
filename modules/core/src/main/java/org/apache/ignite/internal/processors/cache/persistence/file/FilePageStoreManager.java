@@ -235,6 +235,10 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
 
         IgniteCheckedException ex = shutdown(old, /*clean files if destroy*/destroy, null);
 
+        File cacheWorkDir = cacheWorkDirectory(grp.config());
+
+        U.removeRecursive(cacheWorkDir.toPath());
+
         if (ex != null)
             throw ex;
     }

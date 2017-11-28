@@ -95,6 +95,12 @@ public class DynamicCacheChangeRequest implements Serializable {
     /** */
     private transient boolean locallyConfigured;
 
+    /** Cache group. */
+    private String cacheGrp;
+
+    /** Is group associated. */
+    private boolean grpSign;
+
     /**
      * @param reqId Unique request ID.
      * @param cacheName Cache stop name.
@@ -158,6 +164,20 @@ public class DynamicCacheChangeRequest implements Serializable {
         req.sql(sql);
         req.stop(true);
         req.destroy(destroy);
+
+        return req;
+    }
+
+    /**
+     * @param ctx Context.
+     * @return Cache group destroy request.
+     */
+    public static DynamicCacheChangeRequest stopGroupRequest(GridKernalContext ctx, String grp) {
+        DynamicCacheChangeRequest req = new DynamicCacheChangeRequest(UUID.randomUUID(), "", ctx.localNodeId());
+
+        req.cacheGrp(grp);
+        req.destroy(true);
+        req.stop(true);
 
         return req;
     }
@@ -238,6 +258,30 @@ public class DynamicCacheChangeRequest implements Serializable {
      */
     public void destroy(boolean destroy) {
         this.destroy = destroy;
+    }
+
+    /**
+     * @return Cache group.
+     */
+    public String cacheGrp(){
+        return cacheGrp;
+    }
+
+    /**
+     * Cache group change request.
+     * @param grp Cache group.
+     */
+    public void cacheGrp(String grp) {
+        this.cacheGrp = grp;
+
+        this.grpSign = true;
+    }
+
+    /**
+     * @return {@code True} if cache group signed.
+     */
+    public boolean grpSign() {
+        return grpSign;
     }
 
     /**
@@ -432,7 +476,7 @@ public class DynamicCacheChangeRequest implements Serializable {
             ", clientStartOnly=" + clientStartOnly +
             ", stop=" + stop +
             ", destroy=" + destroy +
-            ", disabledAfterStart" + disabledAfterStart +
+            ", disabledAfterStart=" + disabledAfterStart +
             ']';
     }
 }
