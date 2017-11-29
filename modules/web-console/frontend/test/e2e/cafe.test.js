@@ -1,14 +1,16 @@
 import { Role, Selector, ClientFunction   } from 'testcafe';
 import { AngularJSSelector } from 'testcafe-angular-selectors';
 
-const login = async t => {
+const IgniteUser = Role('http://localhost:9000/', async t => {
     await t
-        .navigateTo('http://localhost:9000/')
         .click('#signin_show')
         .typeText(AngularJSSelector.byModel('ui.email'), 'test@test.com')
         .typeText(AngularJSSelector.byModel('ui.password'), '12345')
         .click('#signin_submit');
-};
+
+    // close modal window
+    await t.click('.modal-header button.close');
+});
 
 const mouseenterTrigger = ClientFunction((selector = '') => {
     return new Promise(resolve => {
@@ -18,19 +20,15 @@ const mouseenterTrigger = ClientFunction((selector = '') => {
 });
 
 fixture `Checking main menu`
-    .beforeEach(async t => {
-        await login(t);
-
-        // close modal window
-        await t.click('.modal-header button.close');
-    })
     .page `http://localhost:9000/`;
 
 test('Main menu smoke test', async t => {
+    await t.setNativeDialogHandler(() => true);
+    await t.useRole(IgniteUser);
 
     await t
         .click(Selector('a').withAttribute('ui-sref','base.configuration.tabs'))
-        .expect(Selector('title').innerText).eql('Basic Configuration – Apache Ignite Web Console');
+        .expect(Selector('title').innerText).eql('Configure Clusters – Apache Ignite Web Console');
 
     await mouseenterTrigger('span:contains(Queries)');
     await t
