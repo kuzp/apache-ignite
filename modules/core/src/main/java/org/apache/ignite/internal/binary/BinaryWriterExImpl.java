@@ -82,6 +82,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** */
     private BinaryInternalMapper mapper;
 
+    /** Version of schema. */
+    private int schemaVersion;
+
     /**
      * @param ctx Context.
      */
@@ -270,6 +273,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         int offset;
 
         if (fieldCnt != 0) {
+            if (schemaVersion != 0)
+                schemaId = BinaryUtils.updateSchemaId(schemaId, schemaVersion);
+
             finalSchemaId = schemaId;
             offset = out.position() - start;
 
@@ -1847,7 +1853,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (schema != null)
             schema.build(builder, fieldCnt);
 
-        return builder.build();
+        if (schemaVersion == 0)
+            return builder.build();
+
+        return builder.build(schemaVersion);
     }
 
     /**
@@ -1909,5 +1918,21 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public BinaryContext context() {
         return ctx;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int schemaVersion() {
+        return schemaVersion;
+    }
+
+    /**
+     *
+     * @param schemaVersion
+     */
+    public void schemaVersion(int schemaVersion) {
+        this.schemaVersion = schemaVersion;
     }
 }

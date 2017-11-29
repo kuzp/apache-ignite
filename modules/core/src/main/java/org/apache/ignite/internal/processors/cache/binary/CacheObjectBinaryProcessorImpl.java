@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,9 +52,7 @@ import org.apache.ignite.internal.binary.BinaryMetadataHandler;
 import org.apache.ignite.internal.binary.BinaryObjectEx;
 import org.apache.ignite.internal.binary.BinaryObjectImpl;
 import org.apache.ignite.internal.binary.BinaryObjectOffheapImpl;
-import org.apache.ignite.internal.binary.BinaryObjectVersionAdapter;
 import org.apache.ignite.internal.binary.BinarySchema;
-import org.apache.ignite.internal.binary.BinarySchemaFieldState;
 import org.apache.ignite.internal.binary.BinaryTypeImpl;
 import org.apache.ignite.internal.binary.BinaryUtils;
 import org.apache.ignite.internal.binary.GridBinaryMarshaller;
@@ -484,13 +483,6 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     /** {@inheritDoc} */
     @Nullable @Override public BinaryType metadata(final int typeId) {
         BinaryMetadata meta = metadata0(typeId);
-
-        if (meta != null && meta.explicit()) {
-            BinaryMetadata.CacheSpecificMetadata cacheMeta = meta.cache();
-
-            if (cacheMeta != null)
-                return cacheMeta.metadata().wrap(binaryCtx);
-        }
 
         return meta != null ? meta.wrap(binaryCtx) : null;
     }
@@ -952,7 +944,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     }
 
     /** {@inheritDoc} */
-    public BinaryType addChangeControlledType(String typeName, Map<String, String> fields) throws IgniteException {
+    public BinaryType addVersionedType(String typeName, Map<String, String> fields) throws IgniteException {
         assert !F.isEmpty(typeName);
         assert fields != null;
 
@@ -990,8 +982,9 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String fieldName, String fieldTypeName)
+    public BinaryType modifyVersionedType(String typeName, Map<String, String> fieldsToAdd, List<String> fieldsToRemove)
         throws IgniteException {
+        assert fieldsToAdd != null || fieldsToRemove != null;
 
         int typeId = binaryCtx.typeId(typeName);
 
@@ -1001,69 +994,21 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             throw new IgniteException("Cannot add or remove fields for implicit types" +
                 " [typeName=" + typeName + ", typeId=" + typeId + "].");
 
-        meta0.addField(fieldName, new BinaryFieldMetadata(binaryCtx.typeId(fieldTypeName),
-            binaryCtx.fieldId(typeId, fieldName)));
+        Map<String, BinaryFieldMetadata> addFields = null;
 
-        binaryCtx.updateMetadata(typeId, meta0);
+        if (!F.isEmpty(fieldsToAdd)) {
+            addFields = new HashMap<>(fieldsToAdd.size());
 
-        return meta0.wrap(binaryCtx);
-    }
-
-    /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String fieldName)
-        throws IgniteException {
-
-        int typeId = binaryCtx.typeId(typeName);
-
-        BinaryMetadata meta0 = binaryCtx.metadata0(typeId);
-
-        if (!meta0.explicit())
-            throw new IgniteException("Cannot add or remove fields for implicit types" +
-                " [typeName=" + typeName + ", typeId=" + typeId + "].");
-
-        meta0.removeField(fieldName);
-
-        binaryCtx.updateMetadata(typeId, meta0);
-
-        return meta0.wrap(binaryCtx);
-    }
-
-    /**
-     *
-     * @param obj
-     * @return
-     * @throws IgniteException
-     */
-    public Object adaptObjectVersion(Object obj) throws IgniteException {
-        if (obj instanceof BinaryObject) {
-            BinaryObject binaryObject = (BinaryObject)obj;
-
-            int typeId = binaryObject.type().typeId();
-
-            BinaryMetadata metadata = metadata0(typeId);
-
-            if (!metadata.explicit())
-                return obj;
-
-            BinaryMetadata.CacheSpecificMetadata cacheSpecMeta = metadata.cache();
-
-            if (cacheSpecMeta == null)
-                return obj;
-
-            if (obj instanceof BinaryObjectImpl) {
-                BinaryObjectImpl binObjImpl = (BinaryObjectImpl)obj;
-
-                int schemaId = binObjImpl.schemaId();
-
-                Map<String, BinarySchemaFieldState> fldStates = cacheSpecMeta.getFieldStates(schemaId);
-
-                if (fldStates == null)
-                    return obj;
-
-                return new BinaryObjectVersionAdapter(binObjImpl, fldStates);
+            for (Map.Entry<String, String> entry : fieldsToAdd.entrySet()) {
+                addFields.put(entry.getKey(), new BinaryFieldMetadata(binaryCtx.typeId(entry.getValue()),
+                    binaryCtx.fieldId(typeId, entry.getKey())));
             }
         }
 
-        return obj;
+        meta0.addVersion(addFields, fieldsToRemove);
+
+        binaryCtx.updateMetadata(typeId, meta0);
+
+        return meta0.wrap(binaryCtx);
     }
 }

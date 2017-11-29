@@ -2073,6 +2073,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Bina
         if (userType) {
             int order;
 
+            BinaryMetadata m0 = ctx.metadata0(typeId);
+
+            if (m0.explicit()) {
+                if (schema.version() < m0.fieldVersion(name))
+                    return false;
+            }
+
             if (matching) {
                 int expOrder = matchingOrder++;
 

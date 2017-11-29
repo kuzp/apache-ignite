@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -407,23 +408,17 @@ public interface IgniteBinary {
      * @param fields
      * @return
      */
-    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+    public BinaryType registerVersionedType(String typeName, Map<String, String> fields)
         throws BinaryObjectException;
 
     /**
      *
      * @param typeName
-     * @param fieldName
-     * @param fieldType
+     * @param fieldsToAdd
+     * @param fieldsToRemove
      * @return
+     * @throws BinaryObjectException
      */
-    public BinaryType addField(String typeName, String fieldName, String fieldType);
-
-    /**
-     *
-     * @param typeName
-     * @param fieldName
-     * @return
-     */
-    public BinaryType removeField(String typeName, String fieldName);
+    public BinaryType modifyVersionedType(String typeName, Map<String, String> fieldsToAdd, List<String> fieldsToRemove)
+        throws BinaryObjectException;
 }

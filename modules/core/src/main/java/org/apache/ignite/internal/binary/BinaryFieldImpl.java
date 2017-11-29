@@ -288,6 +288,13 @@ public class BinaryFieldImpl implements BinaryFieldEx {
 
         assert schema != null;
 
+        BinaryMetadata m0 = ctx.metadata0(typeId);
+
+        if (m0.explicit()) {
+            if (schema.version() < m0.fieldVersion(fieldName))
+                return BinarySchema.ORDER_NOT_FOUND;
+        }
+
         return schema.order(fieldId);
     }
 

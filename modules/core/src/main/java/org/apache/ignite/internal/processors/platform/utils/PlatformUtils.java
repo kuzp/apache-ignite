@@ -1217,7 +1217,7 @@ public class PlatformUtils {
                 for (int j = 0; j < fieldCnt; j++)
                     fieldIds.add(reader.readInt());
 
-                schemas.add(new BinarySchema(id, fieldIds));
+                schemas.add(new BinarySchema(id, fieldIds, 0));
             }
         }
 

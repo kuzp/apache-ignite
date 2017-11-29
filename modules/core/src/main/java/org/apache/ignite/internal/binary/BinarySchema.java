@@ -76,6 +76,9 @@ public class BinarySchema implements Externalizable {
     /** ID 4. */
     private int id3;
 
+    /** Version. */
+    private int version;
+
     /**
      * {@link Externalizable} support.
      */
@@ -89,10 +92,11 @@ public class BinarySchema implements Externalizable {
      * @param schemaId Schema ID.
      * @param fieldIds Field IDs.
      */
-    public BinarySchema(int schemaId, List<Integer> fieldIds) {
+    public BinarySchema(int schemaId, List<Integer> fieldIds, int version) {
         assert fieldIds != null;
 
         this.schemaId = schemaId;
+        this.version = version;
 
         initialize(fieldIds);
     }
@@ -241,6 +245,8 @@ public class BinarySchema implements Externalizable {
 
         for (Integer id : ids)
             out.writeInt(id);
+
+        out.writeInt(version);
     }
 
     /** {@inheritDoc} */
@@ -267,6 +273,8 @@ public class BinarySchema implements Externalizable {
 
         for (int i = 0; i < idsCnt; i++)
             fieldIds.add(in.readInt());
+
+        version = in.readInt();
 
         initialize(fieldIds);
     }
@@ -430,6 +438,22 @@ public class BinarySchema implements Externalizable {
     }
 
     /**
+     *
+     * @return Version.
+     */
+    public int version() {
+        return version;
+    }
+
+    /**
+     *
+     * @param version
+     */
+    public void version(int version) {
+        this.version = version;
+    }
+
+    /**
      * Schema builder.
      */
     public static class Builder {
@@ -472,7 +496,19 @@ public class BinarySchema implements Externalizable {
          * @return Schema.
          */
         public BinarySchema build() {
-            return new BinarySchema(schemaId, fields);
+            return new BinarySchema(schemaId, fields, 0);
+        }
+
+        /**
+         *
+         * @param version
+         * @return
+         */
+        public BinarySchema build(int version) {
+            if (version != 0)
+                schemaId = BinaryUtils.updateSchemaId(schemaId, version);
+
+            return new BinarySchema(schemaId, fields, version);
         }
     }
 

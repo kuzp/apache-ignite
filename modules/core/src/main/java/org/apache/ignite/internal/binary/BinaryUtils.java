@@ -971,6 +971,11 @@ public class BinaryUtils {
         else {
             assert oldMeta.typeId() == newMeta.typeId();
 
+            if (newMeta.explicit() ^ oldMeta.explicit()) {
+                throw new BinaryObjectException("Binary type has different metadata types [typeName=" +
+                    oldMeta.typeName() + ", typeId=" + oldMeta.typeId() + ']');
+            }
+
             // Check type name.
             if (!F.eq(oldMeta.typeName(), newMeta.typeName())) {
                 throw new BinaryObjectException(
@@ -1018,23 +1023,38 @@ public class BinaryUtils {
                 changed = mergedEnumMap.size() > oldMeta.enumMap().size();
             }
 
-            for (Map.Entry<String, BinaryFieldMetadata> newField : newFields.entrySet()) {
-                BinaryFieldMetadata oldFieldMeta = mergedFields.put(newField.getKey(), newField.getValue());
+            int version = oldMeta.version();
+            Map<String, Integer> fldVerMap = oldMeta.fieldVersionMap();
 
-                if (oldFieldMeta == null)
-                    changed = true;
-                else {
-                    String oldFieldTypeName = fieldTypeName(oldFieldMeta.typeId());
-                    String newFieldTypeName = fieldTypeName(newField.getValue().typeId());
+            if (!oldMeta.explicit()) {
+                for (Map.Entry<String, BinaryFieldMetadata> newField : newFields.entrySet()) {
+                    BinaryFieldMetadata oldFieldMeta = mergedFields.put(newField.getKey(), newField.getValue());
 
-                    if (!F.eq(oldFieldTypeName, newFieldTypeName)) {
-                        throw new BinaryObjectException(
-                            "Binary type has different field types [" + "typeName=" + oldMeta.typeName() +
-                                ", fieldName=" + newField.getKey() +
-                                ", fieldTypeName1=" + oldFieldTypeName +
-                                ", fieldTypeName2=" + newFieldTypeName + ']'
-                        );
+                    if (oldFieldMeta == null)
+                        changed = true;
+                    else {
+                        String oldFieldTypeName = fieldTypeName(oldFieldMeta.typeId());
+                        String newFieldTypeName = fieldTypeName(newField.getValue().typeId());
+
+                        if (!F.eq(oldFieldTypeName, newFieldTypeName)) {
+                            throw new BinaryObjectException(
+                                "Binary type has different field types [" + "typeName=" + oldMeta.typeName() +
+                                    ", fieldName=" + newField.getKey() +
+                                    ", fieldTypeName1=" + oldFieldTypeName +
+                                    ", fieldTypeName2=" + newFieldTypeName + ']'
+                            );
+                        }
                     }
+                }
+            }
+            else {
+                // for explicit meta, we do not merge fields, just schemas
+                if (newMeta.version() > oldMeta.version()) {
+                    changed = true;
+
+                    version = newMeta.version();
+                    mergedFields = newMeta.fieldsMap();
+                    fldVerMap = newMeta.fieldVersionMap();
                 }
             }
 
@@ -1046,13 +1066,18 @@ public class BinaryUtils {
                     changed = true;
             }
 
-            if (newMeta.explicit() && oldMeta.explicit()) {
-                return newMeta;
-            }
-
             // Return either old meta if no changes detected, or new merged meta.
-            return changed ? new BinaryMetadata(oldMeta.typeId(), oldMeta.typeName(), mergedFields,
-                oldMeta.affinityKeyFieldName(), mergedSchemas, oldMeta.isEnum(), mergedEnumMap) : oldMeta;
+            if (!changed)
+                return oldMeta;
+
+            BinaryMetadata updMeta = new BinaryMetadata(oldMeta.typeId(), oldMeta.typeName(), mergedFields,
+                oldMeta.affinityKeyFieldName(), mergedSchemas, oldMeta.isEnum(), mergedEnumMap);
+
+            updMeta.explicit(oldMeta.explicit());
+            updMeta.version(version);
+            updMeta.fieldVersionMap(fldVerMap);
+
+            return updMeta;
         }
     }
 

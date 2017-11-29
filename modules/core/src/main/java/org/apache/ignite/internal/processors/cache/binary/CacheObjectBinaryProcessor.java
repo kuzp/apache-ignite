@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache.binary;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.apache.ignite.IgniteBinary;
 import org.apache.ignite.IgniteException;
@@ -152,26 +153,16 @@ public interface CacheObjectBinaryProcessor extends IgniteCacheObjectProcessor {
      * @return
      * @throws IgniteException
      */
-    public BinaryType addChangeControlledType(String typeName, Map<String, String> fields) throws IgniteException;
+    public BinaryType addVersionedType(String typeName, Map<String, String> fields) throws IgniteException;
 
     /**
      *
      * @param typeName
-     * @param fieldName
-     * @param fieldTypeName
+     * @param fieldsToAdd
+     * @param fieldsToRemove
      * @return
      * @throws IgniteException
      */
-    public BinaryType addField(String typeName, String fieldName, String fieldTypeName)
-        throws IgniteException;
-
-    /**
-     *
-     * @param typeName
-     * @param fieldName
-     * @return
-     * @throws IgniteException
-     */
-    public BinaryType removeField(String typeName, String fieldName)
+    public BinaryType modifyVersionedType(String typeName, Map<String, String> fieldsToAdd, List<String> fieldsToRemove)
         throws IgniteException;
 }

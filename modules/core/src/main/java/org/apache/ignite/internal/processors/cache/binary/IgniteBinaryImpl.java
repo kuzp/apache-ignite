@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache.binary;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.ignite.IgniteBinary;
@@ -203,12 +204,12 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+    public BinaryType registerVersionedType(String typeName, Map<String, String> fields)
         throws BinaryObjectException {
         guard();
 
         try {
-            return proc.addChangeControlledType(typeName, fields);
+            return proc.addVersionedType(typeName, fields);
         }
         finally {
             unguard();
@@ -216,23 +217,13 @@ public class IgniteBinaryImpl implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String fieldName, String fieldTypeName) {
+    public BinaryType modifyVersionedType(String typeName, Map<String, String> fieldsToAdd, List<String> fieldsToRemove)
+        throws BinaryObjectException {
+
         guard();
 
         try {
-            return proc.addField(typeName, fieldName, fieldTypeName);
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String fieldName) {
-        guard();
-
-        try {
-            return proc.removeField(typeName, fieldName);
+            return proc.modifyVersionedType(typeName, fieldsToAdd, fieldsToRemove);
         }
         finally {
             unguard();

@@ -333,21 +333,20 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
                 reader.position(start + BinaryUtils.length(reader, start));
             }
 
-            int schemaId = writer.schemaId();
-
             BinaryMetadata meta0 = ctx.metadata0(typeId);
 
             if (meta0.explicit())
-                writer.schemaId(meta0.mapSchemaVersion(schemaId));
+                writer.schemaVersion(meta0.version());
 
             //noinspection NumberEquality
             writer.postWrite(true, registeredType);
 
             // Update metadata if needed.
+            int schemaId = writer.schemaId();
 
             BinarySchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
 
-            if (schemaReg.schema(schemaId) == null && !meta0.explicit()) {
+            if (schemaReg.schema(schemaId) == null) {
                 String typeName = this.typeName;
 
                 if (typeName == null) {
@@ -358,6 +357,11 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
 
                 BinarySchema curSchema = writer.currentSchema();
 
+                if (meta0.explicit()) {
+
+                    curSchema.version(meta0.version());
+                }
+
                 String affFieldName0 = affFieldName;
 
                 if (affFieldName0 == null)
@@ -365,8 +369,14 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
 
                 ctx.registerUserClassName(typeId, typeName);
 
-                ctx.updateMetadata(typeId, new BinaryMetadata(typeId, typeName, fieldsMeta, affFieldName0,
-                    Collections.singleton(curSchema), false, null));
+                BinaryMetadata updMeta = new BinaryMetadata(typeId, typeName, fieldsMeta, affFieldName0,
+                    Collections.singleton(curSchema), false, null);
+
+                updMeta.explicit(meta0.explicit());
+                updMeta.version(meta0.version());
+                updMeta.fieldVersionMap(meta0.fieldVersionMap());
+
+                ctx.updateMetadata(typeId, updMeta);
 
                 schemaReg.addSchema(curSchema.schemaId(), curSchema);
             }

@@ -17,6 +17,7 @@
 package org.apache.ignite.internal.processors.cacheobject;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.ignite.IgniteBinary;
@@ -91,18 +92,14 @@ public class NoOpBinary implements IgniteBinary {
     }
 
     /** {@inheritDoc} */
-    public BinaryType registerChangeControlledType(String typeName, Map<String, String> fields)
+    public BinaryType registerVersionedType(String typeName, Map<String, String> fields)
         throws BinaryObjectException {
         throw unsupported();
     }
 
     /** {@inheritDoc} */
-    public BinaryType addField(String typeName, String fieldName, String fieldType) {
-        throw unsupported();
-    }
-
-    /** {@inheritDoc} */
-    public BinaryType removeField(String typeName, String fieldName) {
+    public BinaryType modifyVersionedType(String typeName, Map<String, String> fieldsToAdd, List<String> fieldsToRemove)
+        throws BinaryObjectException {
         throw unsupported();
     }
 }

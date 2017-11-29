@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.ignite.internal.binary.BinaryUtils;
-import org.apache.ignite.internal.processors.cache.binary.CacheObjectBinaryProcessorImpl;
 import org.apache.ignite.internal.util.MutableSingletonList;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -172,8 +171,7 @@ public class CacheObjectUtils {
             CacheObject co = (CacheObject)o;
 
             if (!co.isPlatformType() && keepBinary)
-                return ((CacheObjectBinaryProcessorImpl)ctx.kernalContext().cacheObjects())
-                    .adaptObjectVersion(o);
+                return o;
 
             // It may be a collection of binaries
             o = co.value(ctx, cpy);
