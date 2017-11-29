@@ -23,6 +23,7 @@ fixture `Checking main menu`
     .page `http://localhost:9000/`;
 
 test('Main menu smoke test', async t => {
+    // Set dialog handler before roles switching to prevent failure.
     await t.setNativeDialogHandler(() => true);
     await t.useRole(IgniteUser);
 
