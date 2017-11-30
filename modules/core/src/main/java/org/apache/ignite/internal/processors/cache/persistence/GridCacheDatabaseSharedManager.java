@@ -1738,6 +1738,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             cctx.pageStore().beginRecover();
         }
+        else
+            cctx.wal().allowCompressionUntil(status.startPtr);
 
         long start = U.currentTimeMillis();
         int applied = 0;
@@ -3384,6 +3386,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             }
 
             chp.walFilesDeleted = deleted;
+
+            if (!chp.cpPages.isEmpty())
+                cctx.wal().allowCompressionUntil(chp.cpEntry.checkpointMark());
         }
 
         /**

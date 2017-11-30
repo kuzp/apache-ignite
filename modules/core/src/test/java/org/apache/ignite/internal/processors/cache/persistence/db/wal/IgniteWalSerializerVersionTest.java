@@ -34,7 +34,7 @@ import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.TimeStampRecord;
 import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
-import org.apache.ignite.internal.processors.cache.persistence.wal.RecordSerializer;
+import org.apache.ignite.internal.processors.cache.persistence.wal.serializer.RecordSerializer;
 import org.apache.ignite.internal.processors.cache.persistence.wal.serializer.RecordV1Serializer;
 import org.apache.ignite.internal.processors.cache.persistence.wal.serializer.RecordV2Serializer;
 import org.apache.ignite.internal.util.typedef.internal.GPC;
@@ -77,6 +77,8 @@ public class IgniteWalSerializerVersionTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testCheckDifferentSerializerVersions() throws Exception {
+        System.setProperty(IGNITE_WAL_SERIALIZER_VERSION, "1");
+
         IgniteEx ig0 = (IgniteEx)startGrid();
 
         IgniteWriteAheadLogManager wal0 = ig0.context().cache().context().wal();
@@ -286,6 +288,8 @@ public class IgniteWalSerializerVersionTest extends GridCommonAbstractTest {
         stopAllGrids();
 
         deleteWorkFiles();
+
+        System.clearProperty(IGNITE_WAL_SERIALIZER_VERSION);
     }
 
     /** {@inheritDoc} */
@@ -295,6 +299,13 @@ public class IgniteWalSerializerVersionTest extends GridCommonAbstractTest {
         stopAllGrids();
 
         deleteWorkFiles();
+
+        System.clearProperty(IGNITE_WAL_SERIALIZER_VERSION);
+    }
+
+    /** {@inheritDoc} */
+    @Override protected void afterTestsStopped() throws Exception {
+        System.clearProperty(IGNITE_WAL_SERIALIZER_VERSION);
     }
 
     /**

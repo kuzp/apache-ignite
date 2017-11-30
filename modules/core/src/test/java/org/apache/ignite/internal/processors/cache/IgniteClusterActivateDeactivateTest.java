@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -785,7 +786,7 @@ public class IgniteClusterActivateDeactivateTest extends GridCommonAbstractTest 
         startWithCaches1(SRVS, CLIENTS);
 
         final Ignite srv = ignite(0);
-        Ignite client = ignite(SRVS);
+        IgniteEx client = grid(SRVS);
 
         if (persistenceEnabled())
             ignite(0).active(true);
@@ -826,7 +827,8 @@ public class IgniteClusterActivateDeactivateTest extends GridCommonAbstractTest 
         if (transition) {
             assertFalse(stateFut.get().isDone());
 
-            assertFalse(client.active());
+            // Public API method would block forever because we blocked the exchange message.
+            assertFalse(client.context().state().publicApiActiveState(false));
 
             spi1.waitForBlocked();
 
@@ -1137,56 +1139,6 @@ public class IgniteClusterActivateDeactivateTest extends GridCommonAbstractTest 
     }
 
     /**
-     * @param activate If {@code true} tests activation, otherwise deactivation.
-     * @throws Exception If failed.
-     */
-    private void stateChangeFailover3(boolean activate) throws Exception {
-        testDiscoSpi = true;
-
-        startNodesAndBlockStatusChange(4, 0, 0, !activate);
-
-        client = false;
-
-        IgniteInternalFuture startFut1 = GridTestUtils.runAsync(new Callable() {
-            @Override public Object call() throws Exception {
-                startGrid(4);
-
-                return null;
-            }
-        }, "start-node1");
-
-        IgniteInternalFuture startFut2 = GridTestUtils.runAsync(new Callable() {
-            @Override public Object call() throws Exception {
-                startGrid(5);
-
-                return null;
-            }
-        }, "start-node2");
-
-        U.sleep(1000);
-
-        // Stop all nodes participating in state change and not allow last node to finish exchange.
-        for (int i = 0; i < 4; i++)
-            ((TestTcpDiscoverySpi)ignite(i).configuration().getDiscoverySpi()).simulateNodeFailure();
-
-        for (int i = 0; i < 4; i++)
-            stopGrid(getTestIgniteInstanceName(i), true, false);
-
-        startFut1.get();
-        startFut2.get();
-
-        assertFalse(ignite(4).active());
-        assertFalse(ignite(5).active());
-
-        ignite(4).active(true);
-
-        for (int i = 0; i < 4; i++)
-            startGrid(i);
-
-        checkCaches1(6);
-    }
-
-    /**
      * @param exp If {@code true} there should be recorded messages.
      */
     private void checkRecordedMessages(boolean exp) {
@@ -1257,7 +1209,9 @@ public class IgniteClusterActivateDeactivateTest extends GridCommonAbstractTest 
      * @param node Node.
      * @param exp {@code True} if expect that cache is started on node.
      */
-    void checkCache(Ignite node, String cacheName, boolean exp) {
+    void checkCache(Ignite node, String cacheName, boolean exp) throws IgniteCheckedException {
+        ((IgniteEx)node).context().cache().context().exchange().lastTopologyFuture().get();
+
         ((IgniteEx)node).context().state().publicApiActiveState(true);
 
         GridCacheAdapter cache = ((IgniteKernal)node).context().cache().internalCache(cacheName);

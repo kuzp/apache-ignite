@@ -37,6 +37,7 @@ import org.apache.ignite.internal.pagemem.wal.record.LazyDataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.MemoryRecoveryRecord;
 import org.apache.ignite.internal.pagemem.wal.record.MetastoreDataRecord;
 import org.apache.ignite.internal.pagemem.wal.record.PageSnapshot;
+import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.DataPageInsertFragmentRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.DataPageInsertRecord;
@@ -87,7 +88,6 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusInne
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVersionIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.ByteBufferBackedDataInput;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWALPointer;
-import org.apache.ignite.internal.processors.cache.persistence.wal.RecordDataSerializer;
 import org.apache.ignite.internal.processors.cache.persistence.wal.record.HeaderRecord;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.cacheobject.IgniteCacheObjectProcessor;
@@ -111,11 +111,15 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
     /** Cache object processor to reading {@link DataEntry DataEntries} */
     private final IgniteCacheObjectProcessor co;
 
+    /** Serializer of {@link TxRecord} records. */
+    private TxRecordSerializer txRecordSerializer;
+
     /**
      * @param cctx Cache shared context.
      */
     public RecordDataV1Serializer(GridCacheSharedContext cctx) {
         this.cctx = cctx;
+        this.txRecordSerializer = new TxRecordSerializer();
         this.co = cctx.kernalContext().cacheObjects();
         this.pageSize = cctx.database().pageSize();
     }
@@ -285,8 +289,10 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
                 return /*cacheId*/ 4 + /*pageId*/ 8;
 
             case SWITCH_SEGMENT_RECORD:
-                // CRC is not loaded for switch segment.
-                return -CRC_SIZE;
+                return 0;
+
+            case TX_RECORD:
+                return txRecordSerializer.size((TxRecord)record);
 
             default:
                 throw new UnsupportedOperationException("Type: " + record.type());
@@ -415,9 +421,8 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
             case HEADER_RECORD:
                 long magic = in.readLong();
 
-                if (magic != HeaderRecord.MAGIC)
-                    throw new EOFException("Magic is corrupted [exp=" + U.hexLong(HeaderRecord.MAGIC) +
-                            ", actual=" + U.hexLong(magic) + ']');
+                if (magic != HeaderRecord.REGULAR_MAGIC && magic != HeaderRecord.COMPACTED_MAGIC)
+                    throw new EOFException("Magic is corrupted [actual=" + U.hexLong(magic) + ']');
 
                 int ver = in.readInt();
 
@@ -835,6 +840,11 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
             case SWITCH_SEGMENT_RECORD:
                 throw new EOFException("END OF SEGMENT");
 
+            case TX_RECORD:
+                res = txRecordSerializer.read(in);
+
+                break;
+
             default:
                 throw new UnsupportedOperationException("Type: " + type);
         }
@@ -950,7 +960,7 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
                 break;
 
             case HEADER_RECORD:
-                buf.putLong(HeaderRecord.MAGIC);
+                buf.putLong(HeaderRecord.REGULAR_MAGIC);
 
                 buf.putInt(((HeaderRecord)record).version());
 
@@ -1340,6 +1350,11 @@ public class RecordDataV1Serializer implements RecordDataSerializer {
 
                 buf.putInt(pageListMetaResetCntRecord.groupId());
                 buf.putLong(pageListMetaResetCntRecord.pageId());
+
+                break;
+
+            case TX_RECORD:
+                txRecordSerializer.write((TxRecord)record, buf);
 
                 break;
 
