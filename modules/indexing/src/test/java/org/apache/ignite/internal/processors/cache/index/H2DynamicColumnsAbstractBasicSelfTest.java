@@ -29,6 +29,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.processors.query.QueryField;
 import org.apache.ignite.internal.processors.query.QueryUtils;
+import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.testframework.config.GridTestProperties;
 
 import static org.apache.ignite.testframework.config.GridTestProperties.BINARY_MARSHALLER_USE_SIMPLE_NAME_MAPPER;
@@ -340,6 +341,51 @@ public abstract class H2DynamicColumnsAbstractBasicSelfTest extends DynamicColum
 
         //H2 throws parsing error (column not found) by itself
         //assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
+
+        run("DROP TABLE test");
+    }
+
+    /**
+     *
+     * @throws Exception if failed.
+     */
+    public void testDropColumnValues() throws Exception {
+        run("CREATE TABLE test(a INT PRIMARY KEY, b INT, c CHAR)");
+
+        run("INSERT INTO test(a, b, c) VALUES (1, 1, 'one'), (2, 2, 'two')");
+
+        List<List<?>> res = run("SELECT * FROM test ORDER BY a");
+
+        assertEquals(2, res.size());
+        assertEqualsCollections(F.asList(1, 1, "one"), res.get(0));
+        assertEqualsCollections(F.asList(2, 2, "two"), res.get(1));
+
+        run("ALTER TABLE test DROP COLUMN b");
+
+        run("INSERT INTO test(a, c) VALUES (3, 'three'), (4, 'four')");
+
+        res = run("SELECT * FROM test ORDER BY a");
+
+        assertEquals(4, res.size());
+        assertEqualsCollections(F.asList(1, "one"), res.get(0));
+        assertEqualsCollections(F.asList(2, "two"), res.get(1));
+        assertEqualsCollections(F.asList(3, "three"), res.get(2));
+        assertEqualsCollections(F.asList(4, "four"), res.get(3));
+
+        run("ALTER TABLE test ADD COLUMN b CHAR");
+
+        run("INSERT INTO test(a, b, c) VALUES (5, 'five', 'five'), (6, 'six', 'six')");
+
+        res = run("SELECT * FROM test ORDER BY a");
+
+        assertEquals(6, res.size());
+
+        assertEqualsCollections(F.asList(1, "one", null), res.get(0));
+        assertEqualsCollections(F.asList(2, "two", null), res.get(1));
+        assertEqualsCollections(F.asList(3, "three", null), res.get(2));
+        assertEqualsCollections(F.asList(4, "four", null), res.get(3));
+        assertEqualsCollections(F.asList(5, "five", "five"), res.get(4));
+        assertEqualsCollections(F.asList(6, "six", "six"), res.get(5));
 
         run("DROP TABLE test");
     }

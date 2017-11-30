@@ -19,6 +19,7 @@ package org.apache.ignite.internal.processors.query.h2.ddl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -268,6 +269,9 @@ public class DdlStatementsProcessor {
                 else {
                     QueryEntity e = toQueryEntity(cmd);
 
+                    if (cmd.wrapValue())
+                        ctx.cacheObjects().binary().registerVersionedType(e.getValueType(), e.getFields());
+
                     CacheConfiguration<?, ?> ccfg = new CacheConfiguration<>(cmd.tableName());
 
                     ccfg.setQueryEntities(Collections.singleton(e));
@@ -360,6 +364,14 @@ public class DdlStatementsProcessor {
                         if (!allFieldsNullable)
                             QueryUtils.checkNotNullAllowed(tbl.cache().config());
 
+                        Map<String, String> addedFields = new HashMap<>(cols.size());
+
+                        for (QueryField col : cols)
+                            addedFields.put(col.name(), col.typeName());
+
+                        ctx.cacheObjects().binary().modifyVersionedType(tbl.rowDescriptor().type().valueTypeName(),
+                            addedFields, null);
+
                         fut = ctx.query().dynamicColumnAdd(tbl.cacheName(), cmd.schemaName(),
                             tbl.rowDescriptor().type().tableName(), cols, cmd.ifTableExists(), cmd.ifNotExists());
                     }
@@ -406,6 +418,9 @@ public class DdlStatementsProcessor {
 
                     if (cols != null) {
                         assert tbl.rowDescriptor() != null;
+
+                        ctx.cacheObjects().binary().modifyVersionedType(tbl.rowDescriptor().type().valueTypeName(),
+                                null, cols);
 
                         fut = ctx.query().dynamicColumnRemove(tbl.cacheName(), cmd.schemaName(),
                             tbl.rowDescriptor().type().tableName(), cols, cmd.ifTableExists(), cmd.ifExists());
