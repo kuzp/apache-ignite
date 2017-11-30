@@ -23,6 +23,9 @@ export default [() => {
         if (t === 9223372036854775807)
             return 'Infinite';
 
+        if (t < 0)
+            return 'n/a';
+
         const a = (i, suffix) => i && i !== '00' ? i + suffix + ' ' : '';
 
         const cd = 24 * 60 * 60 * 1000;
@@ -36,6 +39,6 @@ export default [() => {
         const s = Math.floor((t - d * cd - h * ch - m * cm) / cs);
         const ms = Math.round(t % 1000);
 
-        return a(d, 'd') + a(h, 'h') + a(m, 'm') + a(s, 's') + (t === 0 || (t < cm && ms !== 0) ? ms + 'ms' : '');
+        return a(d, 'd') + a(h, 'h') + a(m, 'm') + a(s, 's') + (t < 1000 || (t < cm && ms !== 0) ? ms + 'ms' : '');
     };
 }];
