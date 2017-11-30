@@ -327,6 +327,24 @@ public abstract class H2DynamicColumnsAbstractBasicSelfTest extends DynamicColum
     }
 
     /**
+     *
+     * @throws Exception if failed.
+     */
+    public void testDropColumn() throws Exception {
+        run("CREATE TABLE test (id INT PRIMARY KEY, a INT, b CHAR)");
+
+        run("ALTER TABLE test DROP COLUMN a");
+
+        //H2 optimizes it out to NoOperation which is not recognized as DDL by IgniteH2Indexing
+        //run("ALTER TABLE test DROP COLUMN IF EXISTS a");
+
+        //H2 throws parsing error (column not found) by itself
+        //assertThrows("ALTER TABLE test DROP COLUMN a", "Column \"A\" not found");
+
+        run("DROP TABLE test");
+    }
+
+    /**
      * Test that {@code ADD COLUMN} fails for tables that have flat value.
      * @param tblName table name.
      */
