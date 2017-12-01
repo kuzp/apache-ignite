@@ -34,7 +34,8 @@ import org.apache.ignite.visor.commands.common.VisorTextTable
 import jline.console.ConsoleReader
 import org.jetbrains.annotations.Nullable
 import java.io._
-import java.lang.{Boolean => JavaBoolean}
+import java.lang.{Boolean => JavaBoolean, Integer => JavaInteger, Long => JavaLong, Character => JavaCharacter,
+    Short => JavaShort, Byte => JavaByte, Float => JavaFloat, Double => JavaDouble}
 import java.net._
 import java.text._
 import java.util.concurrent._
@@ -134,6 +135,24 @@ object visor extends VisorTag {
     /** Type alias for general event filter. */
     type EventFilter = Event => Boolean
 
+    private final val LOC = Locale.US
+
+    /** Date time format. */
+    private final val dtFmt = new SimpleDateFormat("MM/dd/yy, HH:mm:ss", LOC)
+
+    final val INPUT_TYPES: Seq[(String, (String => Object), Class[_])] = Seq(
+        ("java.lang.String", (value: String) => value, classOf[String]),
+        ("java.lang.Character", (value: String) => JavaCharacter.valueOf(value.head), classOf[String]),
+        ("java.lang.Integer", (value: String) => JavaInteger.valueOf(value), classOf[String]),
+        ("java.lang.Long", (value: String) => JavaLong.valueOf(value), classOf[String]),
+        ("java.lang.Short", (value: String) => JavaShort.valueOf(value), classOf[String]),
+        ("java.lang.Byte", (value: String) => JavaByte.valueOf(value), classOf[String]),
+        ("java.lang.Float", (value: String) => JavaFloat.valueOf(value), classOf[String]),
+        ("java.lang.Double", (value: String) => JavaDouble.valueOf(value), classOf[String]),
+        ("java.lang.Boolean", (value: String) => JavaBoolean.valueOf(value), classOf[String]),
+        ("java.util.Date - Value In Format day/month/year hour:minute:second", (value: String) => dtFmt.parse(value), classOf[String]),
+        ("java.util.UUID", (value: String) => UUID.fromString(value), classOf[String]))
+
     /** `Nil` is for empty list, `Til` is for empty tuple. */
     val Til: Arg = (null, null)
 
@@ -172,11 +191,6 @@ object visor extends VisorTag {
 
     /** */
     @volatile private var conTs: Long = 0
-
-    private final val LOC = Locale.US
-
-    /** Date time format. */
-    private final val dtFmt = new SimpleDateFormat("MM/dd/yy, HH:mm:ss", LOC)
 
     /** Date format. */
     private final val dFmt = new SimpleDateFormat("dd MMMM yyyy", LOC)
@@ -2050,6 +2064,50 @@ object visor extends VisorTag {
             case None => dflt
             case Some(s) if s.length == 0 => dflt
             case Some(s) => s
+        }
+    }
+
+    def askTypedValue(name: String): Option[Object] = {
+        val t = VisorTextTable()
+
+        t #= ("#", "Type description")
+
+        INPUT_TYPES.indices.foreach(i => t += (i, INPUT_TYPES(i)._1))
+
+        println("Available " + name + " types:")
+
+        t.render()
+
+        val a = ask("\nChoose " + name + " type ('c' to cancel) [0]: ", "0")
+
+        if (a.toLowerCase == "c")
+            None
+        else {
+            try {
+                val parser = INPUT_TYPES(a.toInt)._2
+
+                try {
+                    val input = readLineOpt("Input " + name + ": ")
+
+                    input.map(parser)
+                }
+                catch {
+                    case e: Throwable =>
+                        nl()
+
+                        warn("Failed to parse value to specified type")
+
+                        None
+                }
+            }
+            catch {
+                case e: Throwable =>
+                    nl()
+
+                    warn("Invalid selection: " + a)
+
+                    None
+            }
         }
     }
 
