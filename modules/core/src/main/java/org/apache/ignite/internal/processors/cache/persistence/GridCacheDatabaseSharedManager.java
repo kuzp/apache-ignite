@@ -2119,8 +2119,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
      *
      * @param highBound WALPointer.
      */
-    public void onWalTruncate(WALPointer highBound) {
-        checkpointHist.onWalTruncate(highBound);
+    public void onWalTruncated(WALPointer highBound) {
+        checkpointHist.onWalTruncated(highBound);
     }
 
     /**
@@ -3328,7 +3328,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
         /**
          * Callback on truncate wal.
          */
-        private void onWalTruncate(WALPointer ptr) {
+        private void onWalTruncated(WALPointer ptr) {
             FileWALPointer highBound = (FileWALPointer)ptr;
 
             List<CheckpointEntry> cpToRemove = new ArrayList<>();
