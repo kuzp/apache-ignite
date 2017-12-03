@@ -17,8 +17,6 @@
 
 package org.apache.ignite.internal.util.intset;
 
-import org.apache.ignite.internal.util.typedef.internal.U;
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -26,139 +24,119 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.ignite.lang.IgniteInClosure;
 
 /**
- * Holds set of integers.
- * <p>
- * Structure:
- * <p>
- * Each segment stores SEGMENT_SIZE values, possibly in compressed format.
- * <p>
- * Used storage format depends on segmen's fill factor.
- * <p>
- * Note: implementation is not thread safe.
- * <p>
- * TODO equals/hashcode
- * TODO FIXME cache bit masks like 1 << shift ?
- * TODO HashSegment worth it?
- * TODO replace power of two arythmetics with bit ops.
- * TODO fixme overflows ?
+ * Holds set of integers. <p> Structure: <p> Each segment stores SEGMENT_SIZE values, possibly in compressed format. <p>
+ * Used storage format depends on segmen's fill factor. <p> Note: implementation is not thread safe. <p> TODO
+ * equals/hashcode TODO FIXME cache bit masks like 1 << shift ? TODO HashSegment worth it? TODO replace power of two
+ * arythmetics with bit ops. TODO fixme overflows ? TODO optimization for increasing values (no sorting needed, need
+ * store max value)
  */
 public class GridIntSet implements Externalizable {
-    public static final GridIntSet EMPTY = new GridIntSet();
-
     /** */
     private static final long serialVersionUID = 0L;
 
-    static final short SEGMENT_SIZE = 1024; // Must be power of two.
+    /** */
+    private final Thresholds thresholds;
 
-    private static final int SEGMENT_SHIFT_BITS = Integer.numberOfTrailingZeros(SEGMENT_SIZE);
+    /** */
+    private final int segmentShift;
 
-    private static final int SHORT_BITS = Short.SIZE;
+    /** */
+    private Segment indices;
 
-    private static final int MAX_WORDS = SEGMENT_SIZE / SHORT_BITS;
-
-    private static final int WORD_SHIFT_BITS = 4;
-
-    private static final int THRESHOLD = MAX_WORDS;
-
-    private static final int THRESHOLD2 = SEGMENT_SIZE - THRESHOLD;
-
-    private static final int WORD_MASK = 0xFFFF;
-
-    private Segment indices = new ArraySegment(16);
-
+    /** */
     private Map<Short, Segment> segments = new HashMap<>();
 
+    /** */
     private int size;
+
+    /** Caches segment index for last update operation. */
+    private transient short segIdx;
+
+    public GridIntSet(int segmentSize) {
+        // TODO assert power of two for segmentSize.
+        this.thresholds = new Thresholds(segmentSize);
+
+        this.indices = new ArraySegment(thresholds, 4);
+
+        this.segmentShift = Integer.numberOfTrailingZeros(segmentSize);
+    }
+
+    /** Indices updater on conversion happened. */
+    private transient final IgniteInClosure<Segment> c1 = new IgniteInClosure<Segment>() {
+        @Override public void apply(Segment segment) {
+            indices = segment;
+        }
+    };
+
+    /** Segment updater on conversion happened. */
+    private final IgniteInClosure<Segment> c2 = new IgniteInClosure<Segment>() {
+        @Override public void apply(Segment segment) {
+            segments.put(segIdx, segment);
+        }
+    };
 
     /**
      * @param v V.
      */
     public boolean add(int v) {
-        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
+        segIdx = index(v);
 
-        short segVal = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = val(v);
 
         Segment seg;
 
-        try {
-            if (indices.add(segIdx))
-                segments.put(segIdx, (seg = new ArraySegment()));
-            else
-                seg = segments.get(segIdx);
-        } catch (ConversionException e) {
-            indices = e.segment;
+        if (indices.add(segIdx, c1))
+            segments.put(segIdx, (seg = new ArraySegment(thresholds)));
+        else
+            seg = segments.get(segIdx);
 
-            segments.put(segIdx, (seg = new ArraySegment()));
-        }
+        boolean added = seg.add(segVal, c2);
 
-        try {
-            boolean added = seg.add(segVal);
-
-            if (added)
-                size++;
-
-            return added;
-        } catch (ConversionException e) {
-            segments.put(segIdx, e.segment);
-
+        if (added)
             size++;
-        }
 
-        return true;
+        return added;
     }
 
     /**
      * @param v V.
      */
     public boolean remove(int v) {
-        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
+        segIdx = index(v);
 
-        short segVal = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = val(v);
 
         Segment seg = segments.get(segIdx);
 
         if (seg == null)
             return false;
 
-        try {
-            boolean rmv = seg.remove(segVal);
+        boolean rmv = seg.remove(segVal, c2);
 
-            if (rmv) {
-                size--;
-
-                if (seg.size() == 0) {
-                    try {
-                        indices.remove(segIdx);
-                    } catch (ConversionException e) {
-                        indices = e.segment;
-                    }
-
-                    segments.remove(segIdx);
-                }
-            }
-
-            return rmv;
-        } catch (ConversionException e) {
-            assert seg.size() != 0; // Converted segment cannot be empty.
-
-            segments.put(segIdx, e.segment);
-
+        if (rmv) {
             size--;
+
+            if (seg.cardinality() == 0) {
+                indices.remove(segIdx, c1);
+
+                segments.remove(segIdx);
+            }
         }
 
-        return true;
+        return rmv;
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        return cardinality() == 0;
     }
 
     public boolean contains(int v) {
-        short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
+        short segIdx = index(v);
 
-        short segVal = (short) (v & (SEGMENT_SIZE - 1));
+        short segVal = val(v);
 
         Segment segment = segments.get(segIdx);
 
@@ -171,7 +149,7 @@ public class GridIntSet implements Externalizable {
         if (idx == -1)
             return -1;
 
-        return segments.get(idx).first() + idx * SEGMENT_SIZE; // TODO FIXME use bit ops.
+        return segments.get(idx).first() + idx * thresholds.segmentSize; // TODO FIXME use bit ops.
     }
 
     public int last() {
@@ -180,18 +158,19 @@ public class GridIntSet implements Externalizable {
         if (idx == -1)
             return -1;
 
-        return segments.get(idx).last() + idx * SEGMENT_SIZE;
+        return segments.get(idx).last() + idx * thresholds.segmentSize;
     }
 
     private abstract class IteratorImpl implements Iterator {
+
         /** Segment index. */
         private short idx;
 
         /** Segment index iterator. */
-        private Iterator idxIter;
+        private InternalIterator idxIter;
 
         /** Current segment value iterator. */
-        private Iterator it;
+        private InternalIterator it;
 
         /** Current segment. */
         private Segment seg;
@@ -199,24 +178,55 @@ public class GridIntSet implements Externalizable {
         /** Current value. */
         private short cur;
 
+        /** */
+        private final IgniteInClosure<Segment> c1;
+
+        /** */
+        private final  IgniteInClosure<Segment> c2;
+
         public IteratorImpl() {
             this.idxIter = iter(indices);
+
+            this.c1 = new IgniteInClosure<Segment>() {
+                @Override public void apply(Segment segment) {
+                    segments.put(idx, segment);
+
+                    // Segment was changed, fetch new iterator and reposition it.
+                    it = iter(seg = segment);
+
+                    it.skipTo(cur);
+
+                    advance();
+                }
+            };
+
+            c2 = new IgniteInClosure<Segment>() {
+                @Override public void apply(Segment segment) {
+                    indices = segment;
+
+                    // Re-crete iterator and move it to right position.
+                    idxIter = iter(indices);
+
+                    idxIter.skipTo(idx);
+                }
+            };
         }
 
         /** */
         private void advance() {
             if (it == null || !it.hasNext())
                 if (idxIter.hasNext()) {
-                    idx = (short) idxIter.next();
+                    idx = (short)idxIter.next();
 
                     seg = segments.get(idx);
 
                     it = iter(seg);
-                } else
+                }
+                else
                     it = null;
         }
 
-        protected abstract Iterator iter(Segment segment);
+        protected abstract InternalIterator iter(Segment segment);
 
         @Override public boolean hasNext() {
             return idxIter.hasNext() || (it != null && it.hasNext());
@@ -225,39 +235,19 @@ public class GridIntSet implements Externalizable {
         @Override public int next() {
             advance();
 
-            cur = (short) it.next();
+            cur = (short)it.next();
 
-            return cur + idx * SEGMENT_SIZE;
+            return cur + idx * thresholds.segmentSize;
         }
 
         /** {@inheritDoc} */
         @Override public void remove() {
-            try {
-                it.remove();
+            it.remove(c1);
 
-                if (seg.size() == 0) {
-                    try {
-                        idxIter.remove();
-                    } catch (ConversionException e) {
-                        indices = e.segment;
+            if (seg.cardinality() == 0) {
+                idxIter.remove(c2);
 
-                        // Re-crete iterator and move it to right position.
-                        idxIter = iter(indices);
-
-                        idxIter.skipTo(idx);
-                    }
-
-                    segments.remove(idx);
-                }
-            } catch (ConversionException e) {
-                segments.put(idx, e.segment);
-
-                // Segment was changed, fetch new iterator and reposition it.
-                it = iter(seg = e.segment);
-
-                it.skipTo(cur);
-
-                advance();
+                segments.remove(idx);
             }
 
             size--;
@@ -265,11 +255,11 @@ public class GridIntSet implements Externalizable {
 
         /** {@inheritDoc} */
         @Override public void skipTo(int v) {
-            short segIdx = (short) (v >> SEGMENT_SHIFT_BITS);
+            short segIdx = index(v);
 
-            short segVal = (short) (v & (SEGMENT_SIZE - 1));
+            short segVal = val(v);
 
-            if (segIdx == idx) {
+            if (segIdx == idx && it != null) {
                 it.skipTo(segVal);
 
                 advance();
@@ -292,7 +282,7 @@ public class GridIntSet implements Externalizable {
     /** */
     public Iterator iterator() {
         return new IteratorImpl() {
-            @Override protected Iterator iter(Segment segment) {
+            @Override protected InternalIterator iter(Segment segment) {
                 return segment.iterator();
             }
         };
@@ -301,13 +291,13 @@ public class GridIntSet implements Externalizable {
     /** */
     public Iterator reverseIterator() {
         return new IteratorImpl() {
-            @Override protected Iterator iter(Segment segment) {
+            @Override protected InternalIterator iter(Segment segment) {
                 return segment.reverseIterator();
             }
         };
     }
 
-    public int size() {
+    public final int cardinality() {
         return size;
     }
 
@@ -322,16 +312,28 @@ public class GridIntSet implements Externalizable {
         public void skipTo(int val);
     }
 
+    static interface InternalIterator {
+        public boolean hasNext();
+
+        public int next();
+
+        public void remove(IgniteInClosure<Segment> clo);
+
+        // Next call must be hasNext to ensure value is present.
+        public void skipTo(int val);
+    }
+
     /** {@inheritDoc} */
     @Override public String toString() {
         StringBuilder b = new StringBuilder("[");
 
         Iterator it = iterator();
 
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             b.append(it.next());
 
-            if (it.hasNext()) b.append(", ");
+            if (it.hasNext())
+                b.append(", ");
         }
 
         b.append("]");
@@ -340,99 +342,76 @@ public class GridIntSet implements Externalizable {
     }
 
     /** */
-    interface Segment {
-        /** Segment data. */
-        public short[] data();
+    interface Segment extends Externalizable {
+        public boolean add(short val, IgniteInClosure<Segment> convertClo);
 
-        /**
-         * Returns number of element if array used to hold data.
-         * @return used elements count.
-         */
-        public int used();
-
-        public boolean add(short val) throws ConversionException;
-
-        public boolean remove(short base) throws ConversionException;
+        public boolean remove(short base, IgniteInClosure<Segment> convertClo);
 
         public boolean contains(short v);
 
-        public int size();
-
-        /**
-         * Returns min allowed size.
-         * @return Min size.
-         */
-        public int minSize();
-
-        /**
-         * Returns max allowed size.
-         * @return Max size.
-         */
-        public int maxSize();
+        public int cardinality();
 
         public short first();
 
         public short last();
 
-        public Iterator iterator();
+        public InternalIterator iterator();
 
-        public Iterator reverseIterator();
+        public InternalIterator reverseIterator();
     }
 
     /**
      * TODO store used counter.
      */
     static class BitSetSegment implements Segment {
-        private short[] words;
+        /** */
+        private static final int LONG_BITS = Long.SIZE;
+
+        /** */
+        private static final int WORD_SHIFT_BITS = 6;
+
+        /** */
+        private static final long WORD_MASK = 0xffffffffffffffffL;
+
+        private long[] words;
 
         private int count;
 
-        public BitSetSegment() {
-            this(0);
+        private Thresholds thresholds;
+
+        public BitSetSegment(Thresholds t, int maxVal) {
+            thresholds = t;
+            words = new long[wordIndex(maxVal)];
         }
 
-        public BitSetSegment(int maxVal) {
-            assert maxVal <= SEGMENT_SIZE;
-
-            words = new short[nextPowerOfTwo(wordIndex(maxVal))];
-        }
-
-        public BitSetSegment(short[] data) {
-            words = data;
-
-            assert U.isPow2(data.length);
-
-            for (short word : words)
-                count += Integer.bitCount(word);
-        }
-
-        @Override public int used() {
-            return words.length;
-        }
-
-        @Override public boolean add(short val) throws ConversionException {
+        /** {@inheritDoc} */
+        @Override public boolean add(short val, IgniteInClosure<Segment> convertClo) {
             int wordIdx = wordIndex(val);
 
             if (wordIdx >= words.length)
-                words = Arrays.copyOf(words, Math.max(words.length * 2, wordIdx + 1)); // TODO shift
+                words = Arrays.copyOf(words, Math.max(words.length << 1, wordIdx + 1));
 
-            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME bits
+            int wordBit = val - (wordIdx << WORD_SHIFT_BITS); // TODO use bit op to compute remainder
 
-            assert 0 <= wordBit && wordBit < SHORT_BITS : "Word bit is within range";
+            assert 0 <= wordBit && wordBit < LONG_BITS : "Word bit is within range";
 
-            int mask = (1 << wordBit);
+            long mask = 1L << wordBit;
 
-            boolean exists = (words[(wordIdx)] & mask) == mask;
+            boolean isSet = (words[(wordIdx)] & mask) != 0;
 
-            if (exists)
+            if (isSet)
                 return false;
 
-            if (count == THRESHOLD2) { // convert to inverted array set.
+            if (count == thresholds.threshold2) { // convert to inverted array set.
+                assert convertClo != null : "Unexpected conversion has occurred";
+
                 Segment seg = convertToInvertedArraySet();
 
-                seg.add(val);
+                seg.add(val, null);
 
-                throw new ConversionException(seg);
+                convertClo.apply(seg);
+
+                return true;
             }
 
             count++;
@@ -442,14 +421,15 @@ public class GridIntSet implements Externalizable {
             return true;
         }
 
-        @Override public boolean remove(short val) throws ConversionException {
+        /** {@inheritDoc} */
+        @Override public boolean remove(short val, IgniteInClosure<Segment> convertClo) {
             int wordIdx = wordIndex(val);
 
-            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+            int wordBit = val - (wordIdx << WORD_SHIFT_BITS); // TODO FIXME
 
-            int mask = 1 << wordBit;
+            long mask = 1L << wordBit;
 
-            boolean exists = (words[(wordIdx)] & mask) == mask;
+            boolean exists = (words[(wordIdx)] & mask) != 0;
 
             if (!exists)
                 return false;
@@ -458,17 +438,17 @@ public class GridIntSet implements Externalizable {
 
             words[wordIdx] &= ~mask;
 
-            if (count == THRESHOLD - 1)
-                throw new ConversionException(convertToArraySet());
+            if (count == thresholds.threshold1 - 1)
+                convertClo.apply(convertToArraySet());
 
             return true;
         }
 
         /** */
         private Segment convertToInvertedArraySet() throws ConversionException {
-            FlippedArraySegment seg = new FlippedArraySegment();
+            FlippedArraySegment seg = new FlippedArraySegment(thresholds, thresholds.threshold1);
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
             int i = 0;
 
@@ -476,27 +456,27 @@ public class GridIntSet implements Externalizable {
                 int id = it.next();
 
                 for (; i < id; i++)
-                    seg.remove((short) i);
+                    seg.remove((short)i, null);
 
                 i = id + 1;
             }
 
-            while(i < SEGMENT_SIZE)
-                seg.remove((short) i++);
+            while (i < thresholds.segmentSize)
+                seg.remove((short)i++, null);
 
             return seg;
         }
 
         /** */
         private Segment convertToArraySet() throws ConversionException {
-            ArraySegment seg = new ArraySegment(THRESHOLD);
+            ArraySegment seg = new ArraySegment(thresholds, thresholds.threshold1);
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
             while (it.hasNext()) {
                 int id = it.next();
 
-                seg.add((short) id);
+                seg.add((short)id, null);
             }
 
             return seg;
@@ -510,7 +490,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** TODO needs refactoring */
-        private static short nextSetBit(short[] words, int fromIdx) {
+        private static short nextSetBit(long[] words, int fromIdx) {
             if (fromIdx < 0)
                 return -1;
 
@@ -519,13 +499,13 @@ public class GridIntSet implements Externalizable {
             if (wordIdx >= words.length)
                 return -1;
 
-            int shift = fromIdx & (SHORT_BITS - 1);
+            int shift = fromIdx & (Long.SIZE - 1);
 
-            short word = (short)((words[wordIdx] & 0xFFFF) & (WORD_MASK << shift));
+            long word = words[wordIdx] & (WORD_MASK << shift);
 
             while (true) {
                 if (word != 0)
-                    return (short) ((wordIdx * SHORT_BITS) + Integer.numberOfTrailingZeros(word & 0xFFFF));
+                    return (short)((wordIdx * Long.SIZE) + Long.numberOfTrailingZeros(word));
 
                 if (++wordIdx == words.length)
                     return -1;
@@ -535,7 +515,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** */
-        private static short prevSetBit(short[] words, int fromIdx) {
+        private static short prevSetBit(long[] words, int fromIdx) {
             if (fromIdx < 0)
                 return -1;
 
@@ -544,15 +524,13 @@ public class GridIntSet implements Externalizable {
             if (wordIdx >= words.length)
                 return -1;
 
-            int shift = SHORT_BITS - (fromIdx & (SHORT_BITS - 1)) - 1;
-
-            short word = (short)((words[wordIdx] & 0xFFFF) & (WORD_MASK >> shift));
+            long word = words[wordIdx] & (WORD_MASK >>> -(fromIdx + 1));
 
             while (true) {
                 if (word != 0)
-                    return (short) ((wordIdx * SHORT_BITS) + SHORT_BITS - 1 - (Integer.numberOfLeadingZeros(word & 0xFFFF) - SHORT_BITS));
+                    return (short)((wordIdx + 1) * Long.SIZE - 1 - Long.numberOfLeadingZeros(word));
 
-                if (--wordIdx == -1)
+                if (wordIdx-- == 0)
                     return -1;
 
                 word = words[wordIdx];
@@ -563,30 +541,18 @@ public class GridIntSet implements Externalizable {
         @Override public boolean contains(short val) {
             int wordIdx = wordIndex(val);
 
-            if (wordIdx >= used())
+            if (wordIdx >= words.length)
                 return false;
 
-            short wordBit = (short) (val - wordIdx * SHORT_BITS); // TODO FIXME
+            int wordBit = val - (wordIdx << WORD_SHIFT_BITS);
 
-            int mask = 1 << wordBit;
+            long mask = 1L << wordBit;
 
-            return (words[wordIdx] & mask) == mask;
+            return (words[(wordIdx)] & mask) != 0;
         }
 
-        @Override public short[] data() {
-            return words;
-        }
-
-        @Override public int size() {
+        @Override public int cardinality() {
             return count;
-        }
-
-        @Override public int minSize() {
-            return THRESHOLD;
-        }
-
-        @Override public int maxSize() {
-            return THRESHOLD2;
         }
 
         @Override public short first() {
@@ -594,14 +560,14 @@ public class GridIntSet implements Externalizable {
         }
 
         @Override public short last() {
-            return prevSetBit(words, (used() << WORD_SHIFT_BITS) - 1);
+            return prevSetBit(words, (words.length << WORD_SHIFT_BITS) - 1);
         }
 
-        @Override public Iterator iterator() {
+        @Override public InternalIterator iterator() {
             return new BitSetIterator();
         }
 
-        @Override public Iterator reverseIterator() {
+        @Override public InternalIterator reverseIterator() {
             return new ReverseBitSetIterator();
         }
 
@@ -609,12 +575,13 @@ public class GridIntSet implements Externalizable {
         @Override public String toString() {
             StringBuilder b = new StringBuilder("[");
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 b.append(it.next());
 
-                if (it.hasNext()) b.append(", ");
+                if (it.hasNext())
+                    b.append(", ");
             }
 
             b.append("]");
@@ -623,7 +590,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** */
-        private class BitSetIterator implements Iterator {
+        private class BitSetIterator implements InternalIterator {
             /** */
             private int next;
 
@@ -649,9 +616,8 @@ public class GridIntSet implements Externalizable {
                 return cur;
             }
 
-            /** {@inheritDoc} */
-            @Override public void remove() {
-                BitSetSegment.this.remove((short) cur);
+            @Override public void remove(IgniteInClosure<Segment> clo) {
+                BitSetSegment.this.remove((short)cur, clo);
             }
 
             /** {@inheritDoc} */
@@ -661,7 +627,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** */
-        private class ReverseBitSetIterator implements Iterator {
+        private class ReverseBitSetIterator implements InternalIterator {
             /** */
             private int next;
 
@@ -688,8 +654,8 @@ public class GridIntSet implements Externalizable {
             }
 
             /** {@inheritDoc} */
-            @Override public void remove() {
-                BitSetSegment.this.remove((short) cur);
+            @Override public void remove(IgniteInClosure<Segment> clo) {
+                BitSetSegment.this.remove((short)cur, clo);
             }
 
             /** {@inheritDoc} */
@@ -700,10 +666,12 @@ public class GridIntSet implements Externalizable {
 
         /** {@inheritDoc} */
         @Override public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
-            BitSetSegment that = (BitSetSegment) o;
+            BitSetSegment that = (BitSetSegment)o;
 
             return Arrays.equals(words, that.words);
         }
@@ -712,88 +680,64 @@ public class GridIntSet implements Externalizable {
         @Override public int hashCode() {
             return Arrays.hashCode(words);
         }
+
+        /** {@inheritDoc} */
+        @Override public void writeExternal(ObjectOutput out) throws IOException {
+            // No-op.
+        }
+
+        /** {@inheritDoc} */
+        @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            // No-op.
+        }
     }
 
-    /** */
+    /**
+     * Sorted list of shorts.
+     */
     static class ArraySegment implements Segment {
+        /** */
+        protected final Thresholds thresholds;
+
         /** */
         private short[] data;
 
         /** */
         private short used;
 
-        /** */
-        public ArraySegment() {
-            this(0);
+        public ArraySegment(Thresholds thresholds) {
+            this(thresholds, 4);
         }
 
         /** */
-        public ArraySegment(int size) {
+        public ArraySegment(Thresholds thresholds, int size) {
+            this.thresholds = thresholds;
             this.data = new short[size];
         }
 
         /** */
-        public ArraySegment(short[] data, short used) {
-            this.data = data;
+        public boolean add(short val, IgniteInClosure<Segment> convertClo) throws ConversionException {
+            assert 0 <= used;
 
-            // Segment length must be power of two.
-            assert data.length == 0 || U.isPow2(data.length);
-
-            this.used = used;
-        }
-
-        /** {@inheritDoc} */
-        @Override public short[] data() {
-            return data;
-        }
-
-        /**
-         * @return Used items.
-         */
-        public int used() {
-            return used;
-        }
-
-        /** */
-        public boolean add(short val) throws ConversionException {
-            assert val < SEGMENT_SIZE: val;
-
-            if (used == 0) {
-                data = new short[1];
-
-                data[0] = val;
-
-                used++;
-
-                return true;
-            }
-
-            int freeIdx = used();
-
-            assert 0 <= freeIdx;
-
-            int idx = Arrays.binarySearch(data, 0, freeIdx, val);
+            int idx = used == 0 ? -1 : Arrays.binarySearch(data, 0, used, val);
 
             if (idx >= 0)
                 return false; // Already exists.
 
-            if (freeIdx == THRESHOLD) { // Convert to bit set on reaching threshold.
-                Segment converted = convertToBitSetSegment(val);
+            if (used == thresholds.threshold1) { // Convert to bit set on reaching threshold.
+                convertClo.apply(convertToBitSetSegment(val));
 
-                throw new ConversionException(converted);
+                return true;
             }
 
             int pos = -(idx + 1);
 
             // Insert a segment.
 
-            if (freeIdx >= data.length) {
-                int newSize = Math.min(data.length * 2, THRESHOLD);
+            if (used == data.length)
+                data = Arrays.copyOf(data, Math.min(data.length << 1, thresholds.threshold1));
 
-                data = Arrays.copyOf(data, newSize);
-            }
-
-            System.arraycopy(data, pos, data, pos + 1, freeIdx - pos);
+            System.arraycopy(data, pos, data, pos + 1, used - pos);
 
             data[pos] = val;
 
@@ -803,9 +747,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** {@inheritDoc} */
-        public boolean remove(short base) throws ConversionException {
-            assert base < SEGMENT_SIZE : base;
-
+        public boolean remove(short base, IgniteInClosure<Segment> convertClo) throws ConversionException {
             int idx = Arrays.binarySearch(data, 0, used, base);
 
             return idx >= 0 && remove0(idx);
@@ -838,47 +780,46 @@ public class GridIntSet implements Externalizable {
             return Arrays.binarySearch(data, 0, used, v) >= 0;
         }
 
-        @Override public int size() {
-            return used();
-        }
-
-        @Override public int minSize() {
-            return 0;
-        }
-
-        @Override public int maxSize() {
-            return THRESHOLD;
+        @Override public int cardinality() {
+            return used;
         }
 
         @Override public short first() {
-            return size() == 0 ? -1 : data[0]; // TODO FIXME size issue.
+            return cardinality() == 0 ? -1 : data[0];
         }
 
         @Override public short last() {
-            return size() == 0 ? -1 : data[used() - 1];
+            return cardinality() == 0 ? -1 : data[used - 1];
         }
 
         /** {@inheritDoc} */
-        public Iterator iterator() {
+        public InternalIterator iterator() {
             return new ArrayIterator();
         }
 
         /** {@inheritDoc} */
-        @Override public Iterator reverseIterator() {
+        @Override public InternalIterator reverseIterator() {
             return new ReverseArrayIterator();
         }
 
-        /** {@inheritDoc}
-         * @param val*/
+        /**
+         * {@inheritDoc}
+         *
+         * @param val
+         */
         private Segment convertToBitSetSegment(short val) throws ConversionException {
-            Segment seg = new BitSetSegment(val);
+            Segment seg = new BitSetSegment(thresholds, Math.max(last(), val));
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
-            while(it.hasNext())
-                seg.add((short) it.next());
+            while (it.hasNext())
+                seg.add((short)it.next(), null);
 
-            seg.add(val);
+            // Different behavior depending on segment type.
+            if (this.getClass() == ArraySegment.class)
+                seg.add(val, null);
+            else
+                seg.remove(val, null);
 
             return seg;
         }
@@ -887,12 +828,13 @@ public class GridIntSet implements Externalizable {
         @Override public String toString() {
             StringBuilder b = new StringBuilder("[");
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 b.append(it.next());
 
-                if (it.hasNext()) b.append(", ");
+                if (it.hasNext())
+                    b.append(", ");
             }
 
             b.append("]");
@@ -901,7 +843,7 @@ public class GridIntSet implements Externalizable {
         }
 
         /** */
-        class ArrayIterator implements Iterator {
+        class ArrayIterator implements InternalIterator {
             /** Word index. */
             private int cur;
 
@@ -916,19 +858,19 @@ public class GridIntSet implements Externalizable {
             }
 
             /** {@inheritDoc} */
-            @Override public void remove() {
-                ArraySegment.this.remove0((short) (--cur));
+            @Override public void remove(IgniteInClosure<Segment> clo) {
+                ArraySegment.this.remove0((short)(--cur));
             }
 
             @Override public void skipTo(int val) {
-                int idx = Arrays.binarySearch(data, 0, used(), (short) val);
+                int idx = Arrays.binarySearch(data, 0, used, (short)val);
 
                 cur = idx >= 0 ? idx : -(idx + 1);
             }
         }
 
         /** */
-        class ReverseArrayIterator implements Iterator {
+        class ReverseArrayIterator implements InternalIterator {
             /** Word index. */
             private int cur = used - 1;
 
@@ -943,13 +885,13 @@ public class GridIntSet implements Externalizable {
             }
 
             /** {@inheritDoc} */
-            @Override public void remove() throws ConversionException {
-                ArraySegment.this.remove0((short) (cur + 1));
+            @Override public void remove(IgniteInClosure<Segment> clo) throws ConversionException {
+                ArraySegment.this.remove0((short)(cur + 1));
             }
 
             /** {@inheritDoc} */
             @Override public void skipTo(int val) {
-                int idx = Arrays.binarySearch(data, 0, used(), (short) val);
+                int idx = Arrays.binarySearch(data, 0, used, (short)val);
 
                 cur = idx >= 0 ? idx : -(idx + 1) - 1;
             }
@@ -957,10 +899,12 @@ public class GridIntSet implements Externalizable {
 
         /** {@inheritDoc} */
         @Override public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
-            ArraySegment that = (ArraySegment) o;
+            ArraySegment that = (ArraySegment)o;
 
             if (used != that.used)
                 return false;
@@ -981,43 +925,38 @@ public class GridIntSet implements Externalizable {
 
             return res;
         }
+
+        /** {@inheritDoc} */
+        @Override public void writeExternal(ObjectOutput out) throws IOException {
+            // No-op.
+        }
+
+        /** {@inheritDoc} */
+        @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            // No-op.
+        }
     }
 
-    /** */
+    /**
+     * By default contains  all values from segment range.
+     */
     static class FlippedArraySegment extends ArraySegment {
         /**
          * Default constructor.
          */
-        public FlippedArraySegment() {
-            this(0);
-        }
-
-        /**
-         * @param size Size.
-         */
-        public FlippedArraySegment(int size) {
-            super(size);
-        }
-
-        public FlippedArraySegment(short[] buf, short used) {
-            super(buf, used);
+        public FlippedArraySegment(Thresholds thresholds, int size) {
+            super(thresholds, size);
         }
 
         /** {@inheritDoc} */
-        @Override public boolean add(short val) throws ConversionException {
-            return super.remove(val);
+        @Override public boolean add(short val, IgniteInClosure<Segment> conversionClo) throws ConversionException {
+            return super.remove(val, null);
         }
 
         /** {@inheritDoc} */
-        @Override public boolean remove(short base) throws ConversionException {
-            try {
-                return super.add(base);
-            } catch (ConversionException e) {
-                // Converted value will be included in converted set, have to remove it before proceeding.
-                e.segment.remove(base);
-
-                throw e;
-            }
+        @Override public boolean remove(final short val,
+            final IgniteInClosure<Segment> conversionClo) throws ConversionException {
+            return super.add(val, conversionClo);
         }
 
         /** {@inheritDoc} */
@@ -1026,44 +965,34 @@ public class GridIntSet implements Externalizable {
         }
 
         /** {@inheritDoc} */
-        @Override public int size() {
-            return SEGMENT_SIZE - super.size();
-        }
-
-        /** {@inheritDoc} */
-        @Override public int minSize() {
-            return THRESHOLD2;
-        }
-
-        /** {@inheritDoc} */
-        @Override public int maxSize() {
-            return SEGMENT_SIZE;
+        @Override public int cardinality() {
+            return thresholds.segmentSize - super.cardinality();
         }
 
         /** {@inheritDoc} */
         @Override public short first() {
-            Iterator iter = iterator();
+            InternalIterator iter = iterator();
 
             if (!iter.hasNext())
                 return -1;
 
-            return (short) iter.next();
+            return (short)iter.next();
         }
 
         /** {@inheritDoc} */
         @Override public short last() {
-            Iterator it = reverseIterator();
+            InternalIterator it = reverseIterator();
 
-            return (short) (it.hasNext() ? it.next(): -1);
+            return (short)(it.hasNext() ? it.next() : -1);
         }
 
         /** {@inheritDoc} */
-        @Override public Iterator iterator() {
+        @Override public InternalIterator iterator() {
             return new FlippedArrayIterator();
         }
 
         /** {@inheritDoc} */
-        @Override public Iterator reverseIterator() {
+        @Override public InternalIterator reverseIterator() {
             return new FlippedReverseArrayIterator();
         }
 
@@ -1071,12 +1000,13 @@ public class GridIntSet implements Externalizable {
         @Override public String toString() {
             StringBuilder b = new StringBuilder("[");
 
-            Iterator it = iterator();
+            InternalIterator it = iterator();
 
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 b.append(it.next());
 
-                if (it.hasNext()) b.append(", ");
+                if (it.hasNext())
+                    b.append(", ");
             }
 
             b.append("]");
@@ -1106,7 +1036,7 @@ public class GridIntSet implements Externalizable {
                     if (super.hasNext())
                         skipVal = super.next();
 
-                while(skipVal == next && next < SEGMENT_SIZE) {
+                while (skipVal == next && next < thresholds.segmentSize) {
                     if (super.hasNext())
                         skipVal = super.next();
 
@@ -1116,7 +1046,7 @@ public class GridIntSet implements Externalizable {
 
             /** {@inheritDoc} */
             @Override public boolean hasNext() {
-                return next < SEGMENT_SIZE;
+                return next < thresholds.segmentSize;
             }
 
             /** {@inheritDoc} */
@@ -1129,8 +1059,8 @@ public class GridIntSet implements Externalizable {
             }
 
             /** {@inheritDoc} */
-            @Override public void remove() {
-                FlippedArraySegment.this.remove((short) cur);
+            @Override public void remove(IgniteInClosure<Segment> clo) {
+                FlippedArraySegment.this.remove((short)cur, clo);
             }
 
             /** {@inheritDoc} */
@@ -1146,7 +1076,7 @@ public class GridIntSet implements Externalizable {
         /** */
         private class FlippedReverseArrayIterator extends ReverseArrayIterator {
             /** */
-            private int next = SEGMENT_SIZE - 1;
+            private int next = thresholds.segmentSize - 1;
 
             /** */
             private int cur;
@@ -1158,7 +1088,8 @@ public class GridIntSet implements Externalizable {
 
             /** */
             private void advance() {
-                while(super.hasNext() && super.next() == next && next-- >= 0);
+                while (super.hasNext() && super.next() == next && next-- >= 0)
+                    ;
             }
 
             /** {@inheritDoc} */
@@ -1176,8 +1107,8 @@ public class GridIntSet implements Externalizable {
             }
 
             /** {@inheritDoc} */
-            @Override public void remove() {
-                FlippedArraySegment.this.remove((short) cur);
+            @Override public void remove(IgniteInClosure<Segment> clo) {
+                FlippedArraySegment.this.remove((short)cur, clo);
             }
 
             /** {@inheritDoc} */
@@ -1216,78 +1147,27 @@ public class GridIntSet implements Externalizable {
 
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeByte(0); // Version.
-
-        writeSegment(out, indices);
-
-        Iterator it = indices.iterator();
-
-        while(it.hasNext()) {
-            short id = (short) it.next();
-
-            writeSegment(out, segments.get(id));
-        }
     }
 
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        in.readByte();
-
-        indices = readSegment(in);
-
-        Iterator it = indices.iterator();
-
-        while(it.hasNext()) {
-            short id = (short) it.next();
-
-            Segment seg = readSegment(in);
-
-            size += seg.size();
-
-            segments.put(id, seg);
-        }
-    }
-
-    private void writeSegment(ObjectOutput out, Segment segment) throws IOException {
-        int used = segment.used();
-
-        out.writeShort(used);
-
-        for(int i = 0; i < used; i++)
-            out.writeShort(segment.data()[i]);
-
-        out.writeByte(segment instanceof FlippedArraySegment ? 2 : segment instanceof BitSetSegment ? 1 : 0);
-    }
-
-    private Segment readSegment(ObjectInput in) throws IOException {
-        short used = in.readShort();
-
-        short[] buf = new short[used == 0 ? 0: nextPowerOfTwo(used - 1)];
-
-        for (int i = 0; i < used; i++)
-            buf[i] = in.readShort();
-
-        byte type = in.readByte();
-
-        return type == 0 ? new ArraySegment(buf, used) : type == 1 ? new BitSetSegment(buf) :
-                new FlippedArraySegment(buf, used);
     }
 
     @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
-        GridIntSet that = (GridIntSet) o;
+        GridIntSet that = (GridIntSet)o;
 
-        if (size != that.size) return false;
+        if (size != that.size)
+            return false;
 
-        if (!indices.equals(that.indices)) return false;
+        if (!indices.equals(that.indices))
+            return false;
 
         return segments.equals(that.segments);
-    }
-
-    private static int nextPowerOfTwo(int i) {
-        return 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(i));
     }
 
     @Override public int hashCode() {
@@ -1298,5 +1178,34 @@ public class GridIntSet implements Externalizable {
         res = 31 * res + size;
 
         return res;
+    }
+
+    public static class Thresholds {
+        final int segmentSize;
+
+        final int maxWords;
+
+        final int threshold1;
+
+        final int threshold2;
+
+        public Thresholds(int segmentSize) {
+            this.segmentSize = segmentSize;
+            this.maxWords = segmentSize >> 4;
+            this.threshold1 = maxWords;
+            this.threshold2 = segmentSize - maxWords;
+        }
+    }
+
+    private short index(int v) {
+        return (short)(v >> segmentShift);
+    }
+
+    private short val(int v) {
+        return (short)(v & (thresholds.segmentSize - 1));
+    }
+
+    public Thresholds thresholds() {
+        return thresholds;
     }
 }

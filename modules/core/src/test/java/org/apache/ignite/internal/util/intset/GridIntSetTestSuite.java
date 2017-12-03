@@ -28,6 +28,7 @@ public class GridIntSetTestSuite extends TestSuite {
     public static TestSuite suite() throws Exception {
         TestSuite suite = new TestSuite("Grid IntSet Test Suite");
 
+        suite.addTestSuite(GridIntSetSimpleSelfTest.class);
         suite.addTestSuite(GridIntSetArraySegmentSelfTest.class);
         suite.addTestSuite(GridIntSetBitsetSegmentSelfTest.class);
         suite.addTestSuite(GridIntSetFlippedArraySegmentSelfTest.class);

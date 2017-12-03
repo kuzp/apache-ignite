@@ -22,9 +22,16 @@ package org.apache.ignite.internal.util.intset;
  */
 public class GridIntSetArraySegmentSelfTest extends GridIntSetAbstractSelfTest {
     /** {@inheritDoc} */
-    @Override protected TestIntSet set() {
-        GridIntSet.ArraySegment seg = new GridIntSet.ArraySegment();
+    @Override protected GridIntSet set() {
+        GridIntSet set = new GridIntSet(1024);
 
-        return rndFill(new TestIntSetSegImpl(seg), seg.maxSize(), GridIntSet.SEGMENT_SIZE);
+        GridIntSet.Thresholds thresholds = set.thresholds();
+
+        return rndFill(set, thresholds.threshold1, thresholds.segmentSize);
+    }
+
+    /** {@inheritDoc} */
+    @Override protected int minSize(GridIntSet set) {
+        return 0;
     }
 }

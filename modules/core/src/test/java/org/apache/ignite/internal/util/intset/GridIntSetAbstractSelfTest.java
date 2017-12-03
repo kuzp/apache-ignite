@@ -17,31 +17,23 @@
 
 package org.apache.ignite.internal.util.intset;
 
-import org.apache.ignite.internal.util.GridRandom;
-import org.apache.ignite.internal.util.intset.GridIntSet;
-import org.apache.ignite.lang.IgniteOutClosure;
-import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
-import org.jsr166.ThreadLocalRandom8;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.apache.ignite.internal.util.GridRandom;
+import org.apache.ignite.lang.IgniteOutClosure;
+import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
+import org.jsr166.ThreadLocalRandom8;
 
 /**
  * Base class for {@link GridIntSet} tests.
  */
 public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest {
-    /** Max words. */
-    private static final int MAX_WORDS = GridIntSet.SEGMENT_SIZE / Short.SIZE;
-
-    protected static final int MAX_VALUES = GridIntSet.SEGMENT_SIZE * GridIntSet.SEGMENT_SIZE;
-
     private GridRandom gridRandom = new GridRandom();
 
     private long seed;
@@ -69,7 +61,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     }
 
     /** Creates actual set implementation for test. */
-    protected abstract TestIntSet set();
+    protected abstract GridIntSet set();
 
     /** */
     public void testRemoveAddRemoveIntSet() {
@@ -118,16 +110,14 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
     /** */
     public void testIterators() {
-        final TestIntSet set = set();
+        final GridIntSet set = set();
 
         testIterators0(new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override
-            public GridIntSet.Iterator apply() {
+            @Override public GridIntSet.Iterator apply() {
                 return set.iterator();
             }
         }, new IgniteOutClosure<GridIntSet.Iterator>() {
-            @Override
-            public GridIntSet.Iterator apply() {
+            @Override public GridIntSet.Iterator apply() {
                 return set.reverseIterator();
             }
         });
@@ -141,8 +131,8 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     /**
      * Tests array set.
      */
-    private void testRemoveAddRemoveRnd0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testRemoveAddRemoveRnd0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         List<Integer> vals = new ArrayList<>();
 
@@ -158,7 +148,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         for (Integer val : vals)
             assertTrue(set.contains(val));
 
-        int opCnt = set.size() - set.minSize();
+        int opCnt = set.cardinality() - minSize(set);
 
         // Randomize operations count.
         int cnt = gridRandom.nextInt(opCnt);
@@ -180,7 +170,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
             validateSize(set);
         }
 
-        assertEquals("Size", size - cnt, set.size());
+        assertEquals("Size", size - cnt, set.cardinality());
 
         assertContainsNothing(set, rndVals);
 
@@ -201,7 +191,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         // Randomize removal order.
         Collections.shuffle(rndVals);
 
-        assertEquals("After", size, set.size());
+        assertEquals("After", size, set.cardinality());
 
         for (Integer v : rndVals) {
             validateSize(set);
@@ -215,18 +205,18 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
         assertContainsNothing(set, rndVals);
 
-        assertEquals("Size", size - cnt, set.size());
+        assertEquals("Size", size - cnt, set.cardinality());
     }
 
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirst0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testRemoveFirst0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         int origSize = size;
 
-        int rmvCnt = set.size() - set.minSize();
+        int rmvCnt = set.cardinality() - minSize(set);
 
         int i = rmvCnt;
 
@@ -237,25 +227,25 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
             assertTrue(set.remove(val));
 
-            assertEquals(--size, set.size());
+            assertEquals(--size, set.cardinality());
 
             validateSize(set);
         }
 
-        assertEquals(origSize - rmvCnt, set.size());
+        assertEquals(origSize - rmvCnt, set.cardinality());
     }
 
     /**
      * Tests removal from left size.
      */
-    private void testRemoveFirstIter0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testRemoveFirstIter0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         int origSize = size;
 
         GridIntSet.Iterator iter = set.iterator();
 
-        int rmvCnt = set.size() - set.minSize();
+        int rmvCnt = set.cardinality() - minSize(set);
 
         int i = rmvCnt;
 
@@ -266,24 +256,24 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
             iter.remove();
 
-            assertEquals(--size, set.size());
+            assertEquals(--size, set.cardinality());
 
             validateSize(set);
 
-            assertTrue(set.size() >= set.minSize());
+            assertTrue(set.cardinality() >= minSize(set));
         }
 
-        assertEquals(origSize - rmvCnt, set.size());
+        assertEquals(origSize - rmvCnt, set.cardinality());
     }
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLast0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testRemoveLast0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         int origSize = size;
 
-        int rmvCnt = set.size() - set.minSize();
+        int rmvCnt = set.cardinality() - minSize(set);
 
         int i = rmvCnt;
 
@@ -294,25 +284,25 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
             assertTrue(set.remove(val));
 
-            assertEquals(--size, set.size());
+            assertEquals(--size, set.cardinality());
 
             validateSize(set);
         }
 
-        assertEquals(origSize - rmvCnt, set.size());
+        assertEquals(origSize - rmvCnt, set.cardinality());
     }
 
     /**
      * Tests removal from right side.
      */
-    private void testRemoveLastIter0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testRemoveLastIter0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         int origSize = size;
 
         GridIntSet.Iterator iter = set.reverseIterator();
 
-        int rmvCnt = set.size() - set.minSize();
+        int rmvCnt = set.cardinality() - minSize(set);
 
         int i = rmvCnt;
 
@@ -323,19 +313,19 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
             iter.remove();
 
-            assertEquals(--size, set.size());
+            assertEquals(--size, set.cardinality());
 
             validateSize(set);
         }
 
-        assertEquals(origSize - rmvCnt, set.size());
+        assertEquals(origSize - rmvCnt, set.cardinality());
     }
 
     /**
      * Tests forward skips.
      */
-    private void testSkipForward0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testSkipForward0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         List<Integer> tmp = new ArrayList<>(size);
 
@@ -344,9 +334,9 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         while(iter.hasNext())
             assertTrue(tmp.add(iter.next()));
 
-        assertEquals(set.size(), tmp.size());
+        assertEquals(set.cardinality(), tmp.size());
 
-        int i = set.size() - set.minSize();
+        int i = set.cardinality() - minSize(set);
 
         Iterator<Integer> it = tmp.iterator();
 
@@ -364,8 +354,8 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     /**
      * Tests backward skips with removals.
      */
-    private void testSkipBackward0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testSkipBackward0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         List<Integer> tmp = new ArrayList<>(size);
 
@@ -374,9 +364,9 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         while(iter.hasNext())
             assertTrue(tmp.add(iter.next()));
 
-        assertEquals(set.size(), tmp.size());
+        assertEquals(set.cardinality(), tmp.size());
 
-        int i = set.size() - set.minSize();
+        int i = set.cardinality() - minSize(set);
 
         Iterator<Integer> it = tmp.iterator();
 
@@ -394,8 +384,8 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     /**
      * Tests removal from right side.
      */
-    private void testSkipRemoveForward0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testSkipRemoveForward0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         List<Integer> tmp = new ArrayList<>(size);
 
@@ -404,9 +394,9 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         while(iter.hasNext())
             assertTrue(tmp.add(iter.next()));
 
-        assertEquals(set.size(), tmp.size());
+        assertEquals(set.cardinality(), tmp.size());
 
-        int i = set.size() - set.minSize();
+        int i = set.cardinality() - minSize(set);
 
         int rmvCnt = i;
 
@@ -424,14 +414,14 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
             iter.remove();
         }
 
-        assertEquals(size - rmvCnt, set.size());
+        assertEquals(size - rmvCnt, set.cardinality());
     }
 
     /**
      * Tests removal from right side.
      */
-    private void testSkipRemoveBackward0(TestIntSet set) throws GridIntSet.ConversionException {
-        int size = set.size();
+    private void testSkipRemoveBackward0(GridIntSet set) throws GridIntSet.ConversionException {
+        int size = set.cardinality();
 
         List<Integer> tmp = new ArrayList<>(size);
 
@@ -440,9 +430,9 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         while(iter.hasNext())
             assertTrue(tmp.add(iter.next()));
 
-        assertEquals(set.size(), tmp.size());
+        assertEquals(set.cardinality(), tmp.size());
 
-        int i = set.size() - set.minSize();
+        int i = set.cardinality() - minSize(set);
 
         int rmvCnt = i;
 
@@ -462,7 +452,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
             iter.remove();
         }
 
-        assertEquals(size - rmvCnt, set.size());
+        assertEquals(size - rmvCnt, set.cardinality());
     }
 
     /** */
@@ -489,23 +479,23 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
     /**
      * @param set Segment.
      */
-    private void validateSize(TestIntSet set) {
-        if (set instanceof TestIntSetSegImpl) {
-            TestIntSetSegImpl tmp = (TestIntSetSegImpl) set;
-
-            GridIntSet.Segment segment = tmp.segment();
-
-            assertTrue(String.valueOf(segment.size()), segment.minSize() <= segment.size() && segment.size() <= segment.maxSize());
-
-            assertTrue(String.valueOf(segment.data().length), segment.data().length <= MAX_WORDS);
-        }
+    private void validateSize(GridIntSet set) {
+//        if (set instanceof GridIntSetSegImpl) {
+//            GridIntSetSegImpl tmp = (GridIntSetSegImpl) set;
+//
+//            GridIntSet.Segment segment = tmp.segment();
+//
+//            assertTrue(String.valueOf(segment.size()), segment.minSize() <= segment.size() && segment.size() <= segment.maxSize());
+//
+//            assertTrue(String.valueOf(segment.data().length), segment.data().length <= MAX_WORDS);
+//        }
     }
 
     /**
      * @param set Segment.
      * @param vals Values.
      */
-    public void assertContainsNothing(TestIntSet set, Collection<Integer> vals) {
+    public void assertContainsNothing(GridIntSet set, Collection<Integer> vals) {
         for (Integer v : vals) {
             boolean val = set.contains(v);
 
@@ -517,7 +507,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
      * @param set Set.
      * @param vals Test values.
      */
-    public void assertContainsAll(TestIntSet set, Collection<Integer> vals) {
+    public void assertContainsAll(GridIntSet set, Collection<Integer> vals) {
         for (Integer v : vals) {
             boolean val = set.contains(v);
 
@@ -527,20 +517,20 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
 
     /**
      * @param set Set.
-     * @param size Resulting size.
-     * @param max Max.
+     * @param maxCardinality Max cardinality of the set.
+     * @param maxVal Max value in the set.
      */
-    protected TestIntSet rndFill(TestIntSet set, int size, int max) {
-        assert size <= max;
+    protected GridIntSet rndFill(GridIntSet set, int maxCardinality, int maxVal) {
+        assert maxCardinality <= maxVal;
 
-        boolean negate = size > max / 2;
+        boolean negate = maxCardinality > maxVal / 2;
 
-        int tmpCnt = negate ? max - size : size;
+        int tmpCnt = negate ? maxVal - maxCardinality : maxCardinality;
 
         SortedSet<Integer> buf = new TreeSet<>();
 
         while(buf.size() != tmpCnt) {
-            int rnd = gridRandom.nextInt(max);
+            int rnd = gridRandom.nextInt(maxVal);
 
             buf.add(rnd);
         }
@@ -559,13 +549,13 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
                 i = id + 1;
             }
 
-            while(i < max)
+            while(i < maxVal)
                 set.add((short) i++);
         } else
             for (Integer val : buf)
                 set.add(val);
 
-        assertEquals(size, set.size());
+        assertEquals(maxCardinality, set.cardinality());
 
         return set;
     }
@@ -575,7 +565,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
      *
      * @param set Segment.
      */
-    protected TestIntSet rndErase(TestIntSet set, int size, int max) {
+    protected GridIntSet rndErase(GridIntSet set, int size, int max) {
         assert size <= max;
 
         boolean negate  = size > max / 2;
@@ -608,7 +598,7 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
                 set.remove((short) i++);
         } else
             for (Integer val : buf)
-                set.add(val);
+                set.remove(val);
 
         return set;
     }
@@ -644,273 +634,11 @@ public abstract class GridIntSetAbstractSelfTest extends GridCommonAbstractTest 
         return ret;
     }
 
-    interface TestIntSet {
-        int size();
-
-        boolean remove(int val);
-
-        boolean contains(int val);
-
-        boolean add(int val);
-
-        int first();
-
-        GridIntSet.Iterator iterator();
-
-        int last();
-
-        GridIntSet.Iterator reverseIterator();
-
-        int minSize();
-
-        int maxSize();
-    }
-
-    static class TestIntSetSegImpl implements TestIntSet {
-        private GridIntSet.Segment seg;
-
-        public TestIntSetSegImpl(GridIntSet.Segment seg) {
-            this.seg = seg;
-        }
-
-        @Override public int size() {
-            return seg.size();
-        }
-
-        @Override public int first() {
-            return seg.first();
-        }
-
-        @Override public boolean remove(int val) {
-            return seg.remove((short) val);
-        }
-
-        @Override public boolean contains(int val) {
-            return seg.contains((short) val);
-        }
-
-        @Override public boolean add(int val) {
-            return seg.add((short) val);
-        }
-
-        @Override public GridIntSet.Iterator iterator() {
-            return seg.iterator();
-        }
-
-        @Override public int last() {
-            return seg.last();
-        }
-
-        @Override public GridIntSet.Iterator reverseIterator() {
-            return seg.reverseIterator();
-        }
-
-        GridIntSet.Segment segment() {
-            return seg;
-        }
-
-        @Override public int minSize() {
-            return seg.minSize();
-        }
-
-        @Override public int maxSize() {
-            return seg.maxSize();
-        }
-    }
-
-    static class TestIntSetImpl implements TestIntSet {
-        private final GridIntSet set;
-
-        public TestIntSetImpl() {
-            set = new GridIntSet();
-        }
-
-        @Override public int size() {
-            return set.size();
-        }
-
-        @Override public int first() {
-            return set.first();
-        }
-
-        @Override public boolean remove(int val) {
-            return set.remove(val);
-        }
-
-        @Override public boolean contains(int val) {
-            return set.contains(val);
-        }
-
-        @Override public boolean add(int val) {
-            return set.add(val);
-        }
-
-        @Override public GridIntSet.Iterator iterator() {
-            return set.iterator();
-        }
-
-        @Override public int last() {
-            return set.last();
-        }
-
-        @Override public GridIntSet.Iterator reverseIterator() {
-            return set.reverseIterator();
-        }
-
-        @Override public int minSize() {
-            return 0;
-        }
-
-        @Override public int maxSize() {
-            return MAX_VALUES;
-        }
-    }
-
-    static class TestIntSetArrayListImpl implements TestIntSet {
-        private final ArrayList<Integer> list;
-
-        public TestIntSetArrayListImpl() {
-            list = new ArrayList<>();
-        }
-
-        @Override public int size() {
-            return list.size();
-        }
-
-        @Override public int first() {
-            return list.get(0);
-        }
-
-        @Override public boolean remove(int val) {
-            return list.remove((Integer) val);
-        }
-
-        @Override public boolean contains(int val) {
-            return list.contains(val);
-        }
-
-        @Override public boolean add(int val) {
-            return list.add(val);
-        }
-
-        @Override public int last() {
-            return list.get(list.size() - 1);
-        }
-
-        @Override public GridIntSet.Iterator iterator() {
-            final ListIterator<Integer> it = list.listIterator();
-
-            return new GridIntSet.Iterator() {
-                @Override public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                @Override public int next() {
-                    return it.next();
-                }
-
-                @Override public void remove() {
-                    it.remove();
-                }
-
-                @Override public void skipTo(int val) {
-
-                }
-            };
-        }
-
-        @Override public GridIntSet.Iterator reverseIterator() {
-            final ListIterator<Integer> it = list.listIterator(list.size());
-
-            return new GridIntSet.Iterator() {
-                @Override public boolean hasNext() {
-                    return it.hasPrevious();
-                }
-
-                @Override public int next() {
-                    return it.previous();
-                }
-
-                @Override public void remove() {
-                    it.remove();
-                }
-
-                @Override public void skipTo(int val) {
-                }
-            };
-        }
-
-        @Override public int minSize() {
-            return 0;
-        }
-
-        @Override public int maxSize() {
-            return MAX_VALUES;
-        }
-    }
-
-    static class TestIntSetImpl3 implements TestIntSet {
-        private final HashSet<Integer> list;
-
-        public TestIntSetImpl3() {
-            list = new HashSet<>();
-        }
-
-        @Override public int size() {
-            return list.size();
-        }
-
-        @Override public int first() {
-            return list.iterator().next();
-        }
-
-        @Override public boolean remove(int val) {
-            return list.remove((Integer) val);
-        }
-
-        @Override public boolean contains(int val) {
-            return list.contains(val);
-        }
-
-        @Override public boolean add(int val) {
-            return list.add(val);
-        }
-
-        @Override public int last() {
-            return list.iterator().next();
-        }
-
-        @Override public GridIntSet.Iterator iterator() {
-            final Iterator<Integer> it = list.iterator();
-
-            return new GridIntSet.Iterator() {
-                @Override public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                @Override public int next() {
-                    return it.next();
-                }
-
-                @Override public void remove() {
-                    it.remove();
-                }
-
-                @Override public void skipTo(int val) {
-                }
-            };
-        }
-
-        @Override public GridIntSet.Iterator reverseIterator() {
-            return iterator();
-        }
-
-        @Override public int minSize() {
-            return 0;
-        }
-
-        @Override public int maxSize() {
-            return MAX_VALUES;
-        }
-    }
+    /**
+     * Set will no be cleared below returned cardinaly.
+     * @param set Set.
+     *
+     * @return Cardinality to preserve.
+     */
+    protected abstract int minSize(GridIntSet set);
 }

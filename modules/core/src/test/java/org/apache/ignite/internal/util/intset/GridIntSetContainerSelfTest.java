@@ -17,106 +17,23 @@
 
 package org.apache.ignite.internal.util.intset;
 
-import org.apache.ignite.internal.util.io.GridByteArrayInputStream;
-import org.apache.ignite.internal.util.io.GridByteArrayOutputStream;
-import org.apache.ignite.internal.util.typedef.internal.U;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * Test for {@link GridIntSet}.
+ * Advanced tests for {@link GridIntSet}.
  */
 public class GridIntSetContainerSelfTest extends GridIntSetAbstractSelfTest {
     /** {@inheritDoc} */
-    @Override protected TestIntSet set() {
-        TestIntSet set = new TestIntSetImpl();
-
-        return rndFill(set, MAX_VALUES / 10, MAX_VALUES);
+    @Override protected int minSize(GridIntSet set) {
+        return 0;
     }
 
-    /** */
-    public void testSet() {
-        GridIntSet set = new GridIntSet();
+    /** {@inheritDoc} */
+    @Override protected GridIntSet set() {
+        GridIntSet set = new GridIntSet(1024);
 
-        assertEquals(-1, set.first());
+        int total = set.thresholds().segmentSize * set.thresholds().segmentSize;
 
-        assertEquals(-1, set.last());
+        rndFill(set, total / 10, total);
 
-        assertFalse(set.iterator().hasNext());
-
-        assertFalse(set.reverseIterator().hasNext());
-
-        int size = GridIntSet.SEGMENT_SIZE;
-
-        for (int i = 0; i < size; i++)
-            assertTrue(set.add(i * size));
-
-        assertEquals("Size", size, set.size());
-
-        List<Integer> vals = toList(set.iterator());
-
-        List<Integer> vals2 = toList(set.reverseIterator());
-
-        Collections.reverse(vals2);
-
-        assertEqualsCollections(vals, vals2);
-
-        assertEquals("First", 0, set.first());
-
-        assertEquals("Last", (size - 1) * size, set.last());
-
-        for (int i = 0; i < size; i++)
-            assertTrue(set.contains(i * size));
-
-        for (int i = 0; i < size; i++)
-            assertTrue(set.remove(i * size));
-
-        assertEquals("Size", 0, set.size());
-    }
-
-    /** */
-    public void testSerialization() throws IOException, ClassNotFoundException {
-        GridIntSet set = new GridIntSet();
-
-        int size = GridIntSet.SEGMENT_SIZE;
-
-        for (int i = 0; i < size; i++)
-            assertTrue(set.add(i * size));
-
-        assertEquals("Size", size, set.size());
-
-        GridByteArrayOutputStream bos = new GridByteArrayOutputStream();
-
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-
-        oos.writeObject(set);
-
-        oos.close();
-
-        byte[] bytes = bos.toByteArray();
-
-        System.out.println(bytes.length);
-
-        ObjectInputStream ois = new ObjectInputStream(new GridByteArrayInputStream(bytes));
-
-        GridIntSet set2 = (GridIntSet) ois.readObject();
-
-        assertEquals(set, set2);
-    }
-
-    /** */
-    private List<Integer> toList(GridIntSet.Iterator it) {
-        List<Integer> l = new ArrayList<>();
-
-        while(it.hasNext())
-            l.add(it.next());
-
-        return l;
+        return set;
     }
 }

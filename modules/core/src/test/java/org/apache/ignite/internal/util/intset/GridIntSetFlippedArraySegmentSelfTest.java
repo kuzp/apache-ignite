@@ -22,12 +22,20 @@ package org.apache.ignite.internal.util.intset;
  */
 public class GridIntSetFlippedArraySegmentSelfTest extends GridIntSetAbstractSelfTest {
     /** {@inheritDoc} */
-    @Override protected TestIntSet set() {
-        GridIntSet.FlippedArraySegment seg = new GridIntSet.FlippedArraySegment();
+    @Override protected GridIntSet set() {
+        GridIntSet set = new GridIntSet(1024);
 
-        // FlippedArraySegment is full by default.
-        assertEquals(seg.maxSize(), seg.size());
+        GridIntSet.Thresholds thresholds = set.thresholds();
 
-        return rndErase(new TestIntSetSegImpl(seg), seg.maxSize() - seg.minSize(), GridIntSet.SEGMENT_SIZE);
+        for (int i = 0; i < thresholds.segmentSize; i++)
+            set.add(i);
+
+        rndErase(set, thresholds.threshold1, thresholds.segmentSize);
+
+        return set;
+    }
+
+    @Override protected int minSize(GridIntSet set) {
+        return set.thresholds().threshold2;
     }
 }
