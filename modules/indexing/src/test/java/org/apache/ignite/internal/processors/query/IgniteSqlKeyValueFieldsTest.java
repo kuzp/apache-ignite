@@ -44,7 +44,6 @@ import java.util.concurrent.Callable;
  * Test hidden _key, _val, _ver columns
  */
 public class IgniteSqlKeyValueFieldsTest  extends GridCommonAbstractTest {
-
     /** IP finder. */
     private static final TcpDiscoveryVmIpFinder IP_FINDER = new TcpDiscoveryVmIpFinder(true);
 

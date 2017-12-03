@@ -46,7 +46,6 @@ import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState;
 import org.apache.ignite.internal.processors.cache.query.GridCacheQueryRequest;
-import org.apache.ignite.internal.util.intset.GridIntSet;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
@@ -431,9 +430,9 @@ public class CacheScanPartitionQueryFallbackSelfTest extends GridCommonAbstractT
 
         AffinityTopologyVersion topVer = affMgr.affinityTopologyVersion();
 
-        GridIntSet parts = affMgr.primaryPartitions(node.id(), topVer);
+        Set<Integer> parts = affMgr.primaryPartitions(node.id(), topVer);
 
-        return new IgniteBiTuple<>(parts.first(), node.id());
+        return new IgniteBiTuple<>(F.first(parts), node.id());
     }
 
     /**
