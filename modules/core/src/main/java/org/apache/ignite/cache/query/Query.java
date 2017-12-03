@@ -20,6 +20,7 @@ package org.apache.ignite.cache.query;
 import java.io.Serializable;
 import java.util.Arrays;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
@@ -42,9 +43,6 @@ public abstract class Query<R> implements Serializable {
 
     /** Local flag. */
     private boolean loc;
-
-    /** Partitions for query */
-    private int[] parts;
 
     /**
      * Empty constructor.
@@ -99,44 +97,48 @@ public abstract class Query<R> implements Serializable {
     }
 
     /**
-     * Gets partitions for query, in ascending order.
+     * Prepares the partitions.
+     *
+     * @param parts Partitions.
      */
-    public int[] getPartitions() {
+    protected int[] prepare(int[] parts) {
+        if (parts == null)
+            return null;
+
+        A.notEmpty(parts, "Partitions");
+
+        boolean sorted = true;
+
+        // Try to do validation in one pass, if array is already sorted.
+        for (int i = 0; i < parts.length; i++) {
+            if (i < parts.length - 1)
+                if (parts[i] > parts[i + 1])
+                    sorted = false;
+                else if (sorted)
+                    validateDups(parts[i], parts[i + 1]);
+
+            A.ensure(0 <= parts[i] && parts[i] < CacheConfiguration.MAX_PARTITIONS_COUNT, "Illegal partition");
+        }
+
+        // Sort and validate again.
+        if (!sorted) {
+            Arrays.sort(parts);
+
+            for (int i = 0; i < parts.length; i++) {
+                if (i < parts.length - 1)
+                    validateDups(parts[i], parts[i + 1]);
+            }
+        }
+
         return parts;
     }
 
     /**
-     * Sets partitions for a query.
-     * The query will be executed only on nodes which are primary for specified partitions.
-     * Queries over replicated caches ignore this value.
-     * <p/>
-     * Note: there is a special convention for efficient handling of partition ranges.
-     * Pass negative value to enable partitions range mode, when pass start value and count.
-     * On example, passing {@code [-1, 50, 100]} will specify partitions in range {@code [50-150)}.
-     *
-     * @param parts Partitions.
-     * @return {@code this} for chaining.
+     * @param p1 Part 1.
+     * @param p2 Part 2.
      */
-    public Query<R> setPartitions(int... parts) {
-        this.parts = parts;
-
-        if (this.parts != null) {
-            A.notEmpty(parts, "Partitions");
-
-            // Validate partitions.
-            for (int i = 0; i < parts.length; i++) {
-                if (parts[0] >= 0 && i < parts.length - 1)
-                    A.ensure(parts[i] != parts[i + 1], "Partition duplicates are not allowed");
-
-                if (i > 0)
-                    A.ensure(parts[i] >= 0, "Partition number must be positive");
-            }
-
-            if (this.parts.length > 2 && this.parts[0] >= 0)
-                Arrays.sort(this.parts);
-        }
-
-        return this;
+    private void validateDups(int p1, int p2) {
+        A.ensure(p1 != p2, "Partition duplicates are not allowed: " + p1);
     }
 
     /** {@inheritDoc} */

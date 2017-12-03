@@ -22,6 +22,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.serializer.Deserializer;
@@ -40,13 +41,13 @@ import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.hadoop.io.BytesWritablePartiallyRawComparator;
 import org.apache.ignite.hadoop.io.PartiallyRawComparator;
 import org.apache.ignite.hadoop.io.TextPartiallyRawComparator;
-import org.apache.ignite.internal.processors.hadoop.HadoopClassLoader;
 import org.apache.ignite.internal.processors.hadoop.HadoopCommonUtils;
 import org.apache.ignite.internal.processors.hadoop.HadoopExternalSplit;
-import org.apache.ignite.internal.processors.hadoop.HadoopInputSplit;
-import org.apache.ignite.internal.processors.hadoop.HadoopJob;
+import org.apache.ignite.hadoop.HadoopInputSplit;
+import org.apache.ignite.internal.processors.hadoop.HadoopJobEx;
 import org.apache.ignite.internal.processors.hadoop.HadoopJobId;
 import org.apache.ignite.internal.processors.hadoop.HadoopJobProperty;
 import org.apache.ignite.internal.processors.hadoop.HadoopPartitioner;
@@ -60,6 +61,7 @@ import org.apache.ignite.internal.processors.hadoop.HadoopTaskType;
 import org.apache.ignite.internal.processors.hadoop.counter.HadoopCounter;
 import org.apache.ignite.internal.processors.hadoop.counter.HadoopCounters;
 import org.apache.ignite.internal.processors.hadoop.counter.HadoopCountersImpl;
+import org.apache.ignite.internal.processors.hadoop.impl.HadoopUtils;
 import org.apache.ignite.internal.processors.hadoop.impl.fs.HadoopLazyConcurrentMap;
 import org.apache.ignite.internal.processors.hadoop.impl.v1.HadoopV1CleanupTask;
 import org.apache.ignite.internal.processors.hadoop.impl.v1.HadoopV1MapTask;
@@ -155,6 +157,7 @@ public class HadoopV2TaskContext extends HadoopTaskContext {
 
         COMBINE_KEY_GROUPING_SUPPORTED = ok;
 
+        PARTIAL_COMPARATORS.put(ByteWritable.class.getName(), BytesWritablePartiallyRawComparator.class.getName());
         PARTIAL_COMPARATORS.put(Text.class.getName(), TextPartiallyRawComparator.class.getName());
     }
 
@@ -165,7 +168,7 @@ public class HadoopV2TaskContext extends HadoopTaskContext {
      * @param locNodeId Local node ID.
      * @param jobConfDataInput DataInput for read JobConf.
      */
-    public HadoopV2TaskContext(HadoopTaskInfo taskInfo, HadoopJob job, HadoopJobId jobId,
+    public HadoopV2TaskContext(HadoopTaskInfo taskInfo, HadoopJobEx job, HadoopJobId jobId,
         @Nullable UUID locNodeId, DataInput jobConfDataInput) throws IgniteCheckedException {
         super(taskInfo, job);
         this.locNodeId = locNodeId;
@@ -508,12 +511,6 @@ public class HadoopV2TaskContext extends HadoopTaskContext {
         FileSystem fs;
 
         try {
-            // This assertion uses .startsWith() instead of .equals() because task class loaders may
-            // be reused between tasks of the same job.
-            assert ((HadoopClassLoader)getClass().getClassLoader()).name()
-                .startsWith(HadoopClassLoader.nameForTask(taskInfo(), true));
-
-            // We also cache Fs there, all them will be cleared explicitly upon the Job end.
             fs = fileSystemForMrUserWithCaching(jobDir.toUri(), jobConf(), fsMap);
         }
         catch (IOException e) {
@@ -552,41 +549,58 @@ public class HadoopV2TaskContext extends HadoopTaskContext {
 
     /** {@inheritDoc} */
     @Override public <T> T runAsJobOwner(final Callable<T> c) throws IgniteCheckedException {
-        String user = job.info().user();
+        if (job.info().credentials() == null) {
+            String user = job.info().user();
 
-        user = IgfsUtils.fixUserName(user);
+            user = IgfsUtils.fixUserName(user);
 
-        assert user != null;
+            assert user != null;
 
-        String ugiUser;
+            String ugiUser;
 
-        try {
-            UserGroupInformation currUser = UserGroupInformation.getCurrentUser();
+            try {
+                UserGroupInformation currUser = UserGroupInformation.getCurrentUser();
 
-            assert currUser != null;
+                assert currUser != null;
 
-            ugiUser = currUser.getShortUserName();
+                ugiUser = currUser.getShortUserName();
+            }
+            catch (IOException ioe) {
+                throw new IgniteCheckedException(ioe);
+            }
+
+            try {
+                if (F.eq(user, ugiUser))
+                    // if current UGI context user is the same, do direct call:
+                    return c.call();
+                else {
+                    UserGroupInformation ugi = UserGroupInformation.getBestUGI(null, user);
+
+                    return ugi.doAs(new PrivilegedExceptionAction<T>() {
+                        @Override public T run() throws Exception {
+                            return c.call();
+                        }
+                    });
+                }
+            }
+            catch (Exception e) {
+                throw new IgniteCheckedException(e);
+            }
         }
-        catch (IOException ioe) {
-            throw new IgniteCheckedException(ioe);
-        }
-
-        try {
-            if (F.eq(user, ugiUser))
-                // if current UGI context user is the same, do direct call:
-                return c.call();
-            else {
-                UserGroupInformation ugi = UserGroupInformation.getBestUGI(null, user);
+        else {
+            try {
+                UserGroupInformation ugi = HadoopUtils.createUGI(job.info().user(), job.info().credentials());
 
                 return ugi.doAs(new PrivilegedExceptionAction<T>() {
-                    @Override public T run() throws Exception {
+                    @Override
+                    public T run() throws Exception {
                         return c.call();
                     }
                 });
             }
-        }
-        catch (Exception e) {
-            throw new IgniteCheckedException(e);
+            catch (Exception e) {
+                throw new IgniteCheckedException(e);
+            }
         }
     }
 
@@ -601,11 +615,16 @@ public class HadoopV2TaskContext extends HadoopTaskContext {
         if (clsName == null) {
             Class keyCls = conf.getMapOutputKeyClass();
 
-            if (keyCls != null) {
+            while (keyCls != null) {
                 clsName = PARTIAL_COMPARATORS.get(keyCls.getName());
 
-                if (clsName != null)
+                if (clsName != null) {
                     conf.set(HadoopJobProperty.JOB_PARTIALLY_RAW_COMPARATOR.propertyName(), clsName);
+
+                    break;
+                }
+
+                keyCls = keyCls.getSuperclass();
             }
         }
     }

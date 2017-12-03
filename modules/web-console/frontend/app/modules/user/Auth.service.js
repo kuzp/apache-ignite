@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-export default ['Auth', ['$http', '$rootScope', '$state', '$window', 'IgniteErrorPopover', 'IgniteMessages', 'gettingStarted', 'User', 'IgniteAgentMonitor',
-    ($http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User, agentMonitor) => {
+export default ['Auth', ['$http', '$rootScope', '$state', '$window', 'IgniteErrorPopover', 'IgniteMessages', 'gettingStarted', 'User',
+    ($http, $root, $state, $window, ErrorPopover, Messages, gettingStarted, User) => {
         return {
             forgotPassword(userInfo) {
                 $http.post('/api/v1/password/forgot', userInfo)
                     .then(() => $state.go('password.send'))
-                    .cacth(({data}) => ErrorPopover.show('forgot_email', Messages.errorMessage(null, data)));
+                    .catch(({data}) => ErrorPopover.show('forgot_email', Messages.errorMessage(null, data)));
             },
             auth(action, userInfo) {
                 $http.post('/api/v1/' + action, userInfo)
@@ -33,9 +33,7 @@ export default ['Auth', ['$http', '$rootScope', '$state', '$window', 'IgniteErro
                             .then((user) => {
                                 $root.$broadcast('user', user);
 
-                                $state.go('base.configuration.clusters');
-
-                                agentMonitor.init();
+                                $state.go('base.configuration.tabs');
 
                                 $root.gettingStarted.tryShow();
                             });

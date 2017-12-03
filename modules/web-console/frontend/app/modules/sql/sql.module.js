@@ -20,39 +20,42 @@ import angular from 'angular';
 import NotebookData from './Notebook.data';
 import Notebook from './Notebook.service';
 import notebook from './notebook.controller';
-import sql from './sql.controller';
+import controller from './sql.controller';
+
+import sqlTplUrl from 'app/../views/sql/sql.tpl.pug';
 
 angular.module('ignite-console.sql', [
     'ui.router'
 ])
-    .config(['$stateProvider', 'AclRouteProvider',
-        ($stateProvider, AclRoute) => {
-            // set up the states
-            $stateProvider
-                .state('base.sql', {
-                    url: '/sql',
-                    abstract: true,
-                    template: '<ui-view></ui-view>'
-                })
-                .state('base.sql.notebook', {
-                    url: '/notebook/{noteId}',
-                    templateUrl: '/sql/sql.html',
-                    onEnter: AclRoute.checkAccess('query'),
-                    metaTags: {
-                        title: 'Query notebook'
-                    }
-                })
-                .state('base.sql.demo', {
-                    url: '/demo',
-                    templateUrl: '/sql/sql.html',
-                    onEnter: AclRoute.checkAccess('query'),
-                    metaTags: {
-                        title: 'SQL demo'
-                    }
-                });
-        }]
-    )
-    .service('IgniteNotebookData', NotebookData)
-    .service('IgniteNotebook', Notebook)
-    .controller('notebookController', notebook)
-    .controller('sqlController', sql);
+.config(['$stateProvider', ($stateProvider) => {
+    // set up the states
+    $stateProvider
+        .state('base.sql', {
+            url: '/queries',
+            abstract: true,
+            template: '<ui-view></ui-view>'
+        })
+        .state('base.sql.notebook', {
+            url: '/notebook/{noteId}',
+            templateUrl: sqlTplUrl,
+            permission: 'query',
+            tfMetaTags: {
+                title: 'Query notebook'
+            },
+            controller,
+            controllerAs: '$ctrl'
+        })
+        .state('base.sql.demo', {
+            url: '/demo',
+            templateUrl: sqlTplUrl,
+            permission: 'query',
+            tfMetaTags: {
+                title: 'SQL demo'
+            },
+            controller,
+            controllerAs: '$ctrl'
+        });
+}])
+.service('IgniteNotebookData', NotebookData)
+.service('IgniteNotebook', Notebook)
+.controller('notebookController', notebook);

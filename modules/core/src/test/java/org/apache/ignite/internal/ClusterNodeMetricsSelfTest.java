@@ -18,19 +18,28 @@
 package org.apache.ignite.internal;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import org.apache.ignite.GridTestTask;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.ignite.cache.CacheMemoryMode;
+import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.eviction.fifo.FifoEvictionPolicy;
 import org.apache.ignite.cluster.ClusterMetrics;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.events.Event;
+import org.apache.ignite.internal.processors.cache.persistence.DataRegionMetricsImpl;
 import org.apache.ignite.internal.processors.task.GridInternal;
 import org.apache.ignite.internal.util.lang.GridAbsPredicate;
+import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.messaging.MessagingListenActor;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -41,6 +50,9 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.apache.ignite.testframework.junits.common.GridCommonTest;
 
 import static org.apache.ignite.events.EventType.EVT_NODE_METRICS_UPDATED;
+import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_BUILD_VER;
+import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_CLIENT_MODE;
+import static org.apache.ignite.internal.IgniteVersionUtils.VER_STR;
 
 /**
  * Grid node metrics self test.
@@ -62,11 +74,8 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
     /** Amount of cache entries. */
     private static final int MAX_VALS_AMOUNT = 400;
 
-    /** With OFFHEAP_VALUES policy. */
-    private final String OFF_HEAP_VALUE_NAME = "offHeapValuesCfg";
-
-    /** With ONHEAP_TIERED policy. */
-    private final String ON_HEAP_TIERED_NAME = "onHeapTieredCfg";
+    /** Cache name. */
+    private final String CACHE_NAME = "cache1";
 
     /** {@inheritDoc} */
     @Override protected void beforeTest() throws Exception {
@@ -79,8 +88,8 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
     }
 
     /** {@inheritDoc} */
-    @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
-        IgniteConfiguration cfg = super.getConfiguration(gridName);
+    @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
+        IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
 
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
 
@@ -89,63 +98,56 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
         cfg.setDiscoverySpi(spi);
 
         cfg.setCacheConfiguration();
-        cfg.setMetricsUpdateFrequency(0);
+        cfg.setMetricsUpdateFrequency(500);
 
-        CacheConfiguration<Integer, Object> offHeapValuesCfg = defaultCacheConfiguration();
-        offHeapValuesCfg.setName(OFF_HEAP_VALUE_NAME);
-        offHeapValuesCfg.setStatisticsEnabled(true);
-        offHeapValuesCfg.setMemoryMode(CacheMemoryMode.OFFHEAP_VALUES);
-        offHeapValuesCfg.setOffHeapMaxMemory(MAX_VALS_AMOUNT * VAL_SIZE);
-
-        CacheConfiguration<Integer, Object> onHeapTieredCfg = defaultCacheConfiguration();
-        onHeapTieredCfg.setName(ON_HEAP_TIERED_NAME);
-        onHeapTieredCfg.setStatisticsEnabled(true);
-        onHeapTieredCfg.setMemoryMode(CacheMemoryMode.ONHEAP_TIERED);
-        onHeapTieredCfg.setOffHeapMaxMemory(MAX_VALS_AMOUNT * VAL_SIZE);
+        CacheConfiguration<Integer, Object> ccfg = defaultCacheConfiguration();
+        ccfg.setName(CACHE_NAME);
+        ccfg.setStatisticsEnabled(true);
 
         FifoEvictionPolicy plc = new FifoEvictionPolicy();
         plc.setMaxMemorySize(MAX_VALS_AMOUNT * VAL_SIZE);
         plc.setMaxSize(0);
 
-        onHeapTieredCfg.setEvictionPolicy(plc);
+        ccfg.setEvictionPolicy(plc);
+        ccfg.setOnheapCacheEnabled(true);
 
-        return cfg.setCacheConfiguration(offHeapValuesCfg, onHeapTieredCfg);
+        return cfg.setCacheConfiguration(ccfg);
     }
 
     /**
      * @throws Exception If failed.
      */
     public void testAllocatedMemory() throws Exception {
-        Ignite ignite = grid();
+        IgniteEx ignite = grid();
 
-        final IgniteCache onHeapCache = ignite.getOrCreateCache(ON_HEAP_TIERED_NAME);
-        final IgniteCache offHeapCache = ignite.getOrCreateCache(OFF_HEAP_VALUE_NAME);
+        final IgniteCache cache = ignite.getOrCreateCache(CACHE_NAME);
 
-        long prevTieredOffHeapSize = onHeapCache.metrics().getOffHeapAllocatedSize();
-        long prevValuesOffHeapSize = offHeapCache.metrics().getOffHeapAllocatedSize();
+        DataRegionMetricsImpl memMetrics = getDefaultMemoryPolicyMetrics(ignite);
 
-        assertEquals(0, prevTieredOffHeapSize);
-        assertEquals(0, prevValuesOffHeapSize);
+        memMetrics.enableMetrics();
 
-        long prevClusterNonHeapMemoryUsed = ignite.cluster().metrics().getNonHeapMemoryUsed();
+        int pageSize = getPageSize(ignite);
 
-        fillCache(onHeapCache);
+        assertEquals(0, memMetrics.getTotalAllocatedPages());
 
-        assertTrue(onHeapCache.metrics().getOffHeapAllocatedSize() > (MAX_VALS_AMOUNT - 5)
-            * VAL_SIZE + prevTieredOffHeapSize);
-        assertEquals(0, offHeapCache.metrics().getOffHeapAllocatedSize());
+        fillCache(cache);
 
-        assertTrue(prevClusterNonHeapMemoryUsed < ignite.cluster().metrics().getNonHeapMemoryUsed());
+        assertTrue(memMetrics.getTotalAllocatedPages() * pageSize > MAX_VALS_AMOUNT
+            * VAL_SIZE);
+    }
 
-        prevClusterNonHeapMemoryUsed = ignite.cluster().metrics().getNonHeapMemoryUsed();
-        prevTieredOffHeapSize = onHeapCache.metrics().getOffHeapAllocatedSize();
+    /**
+     * @param ignite Ignite instance.
+     */
+    private DataRegionMetricsImpl getDefaultMemoryPolicyMetrics(IgniteEx ignite) throws IgniteCheckedException {
+        return ignite.context().cache().context().database().dataRegion(null).memoryMetrics();
+    }
 
-        fillCache(offHeapCache);
-
-        assertTrue(offHeapCache.metrics().getOffHeapAllocatedSize() > (MAX_VALS_AMOUNT - 5) * VAL_SIZE);
-        assertEquals(prevTieredOffHeapSize, onHeapCache.metrics().getOffHeapAllocatedSize());
-        assertTrue((MAX_VALS_AMOUNT - 5) * VAL_SIZE + prevClusterNonHeapMemoryUsed <
-            ignite.cluster().metrics().getNonHeapMemoryUsed());
+    /**
+     * @param ignite Ignite instance.
+     */
+    private int getPageSize(IgniteEx ignite) {
+        return ignite.context().cache().context().database().pageSize();
     }
 
     /**
@@ -182,16 +184,18 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
     public void testSingleTaskMetrics() throws Exception {
         Ignite ignite = grid();
 
-        ignite.compute().execute(new GridTestTask(), "testArg");
+        final CountDownLatch taskLatch = new CountDownLatch(2);
+        ignite.compute().executeAsync(new GridTestTask(taskLatch), "testArg");
 
         // Let metrics update twice.
-        final CountDownLatch latch = new CountDownLatch(2);
 
+        final CountDownLatch latch = new CountDownLatch(3);
         ignite.events().localListen(new IgnitePredicate<Event>() {
             @Override public boolean apply(Event evt) {
                 assert evt.type() == EVT_NODE_METRICS_UPDATED;
 
                 latch.countDown();
+                taskLatch.countDown();
 
                 return true;
             }
@@ -212,7 +216,7 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
         assert metrics.getAverageWaitingJobs() == 0;
         assert metrics.getCurrentActiveJobs() == 0;
         assert metrics.getCurrentCancelledJobs() == 0;
-        assert metrics.getCurrentJobExecuteTime() == 0;
+        assert metrics.getCurrentJobExecuteTime() > 0;
         assert metrics.getCurrentJobWaitTime() == 0;
         assert metrics.getCurrentWaitingJobs() == 0;
         assert metrics.getMaximumActiveJobs() == 1;
@@ -225,6 +229,7 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
         assert metrics.getTotalExecutedJobs() == 1;
         assert metrics.getTotalRejectedJobs() == 0;
         assert metrics.getTotalExecutedTasks() == 1;
+        assert metrics.getTotalJobsExecutionTime() > 0;
 
         assertTrue("MaximumJobExecuteTime=" + metrics.getMaximumJobExecuteTime() +
             " is less than AverageJobExecuteTime=" + metrics.getAverageJobExecuteTime(),
@@ -281,6 +286,7 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
         assert metrics.getTotalExecutedJobs() == 0;
         assert metrics.getTotalRejectedJobs() == 0;
         assert metrics.getTotalExecutedTasks() == 0;
+        assert metrics.getTotalJobsExecutionTime() == 0;
 
         assertTrue("MaximumJobExecuteTime=" + metrics.getMaximumJobExecuteTime() +
             " is less than AverageJobExecuteTime=" + metrics.getAverageJobExecuteTime(),
@@ -348,8 +354,7 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
         final Ignite ignite1 = startGrid(1);
 
         GridTestUtils.waitForCondition(new GridAbsPredicate() {
-            @Override
-            public boolean apply() {
+            @Override public boolean apply() {
                 return ignite0.cluster().nodes().size() == 2 && ignite1.cluster().nodes().size() == 2;
             }
         }, 3000L);
@@ -368,6 +373,44 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
     }
 
     /**
+     * Test JMX metrics.
+     *
+     * @throws Exception If failed.
+     */
+    public void testJmxClusterMetrics() throws Exception {
+        Ignite node = grid();
+
+        Ignite node1 = startGrid(1);
+
+        Ignition.setClientMode(true);
+
+        Ignite node2 = startGrid(2);
+
+        waitForDiscovery(node2, node1, node);
+
+        JmxClusterMetricsHelper h = new JmxClusterMetricsHelper(node.configuration());
+
+        assertEquals(node.cluster().topologyVersion(), h.attr("TopologyVersion"));
+
+        assertEquals(2, h.attr("TotalServerNodes"));
+        assertEquals(1, h.attr("TotalClientNodes"));
+
+        assertEquals(3, h.countNodes(ATTR_BUILD_VER, VER_STR, true, true));
+        assertEquals(2, h.countNodes(ATTR_BUILD_VER, VER_STR, true, false));
+        assertEquals(1, h.countNodes(ATTR_BUILD_VER, VER_STR, false, true));
+        assertEquals(0, h.countNodes(ATTR_BUILD_VER, VER_STR, false, false));
+
+        assertEquals(2, h.countNodes(ATTR_CLIENT_MODE, "false", true, true));
+        assertEquals(0, h.countNodes(ATTR_CLIENT_MODE, "false", false, false));
+        assertEquals(1, h.countNodes(ATTR_CLIENT_MODE, "true", true, true));
+
+        assertEquals(F.asMap(false, 2, true, 1), h.groupNodes(ATTR_CLIENT_MODE, true, true));
+        assertEquals(F.asMap(false, 2), h.groupNodes(ATTR_CLIENT_MODE, true, false));
+        assertEquals(F.asMap(true, 1), h.groupNodes(ATTR_CLIENT_MODE, false, true));
+        assertEquals(Collections.emptyMap(), h.groupNodes(ATTR_CLIENT_MODE, false, false));
+    }
+
+    /**
      * Test message.
      */
     @SuppressWarnings("UnusedDeclaration")
@@ -382,5 +425,71 @@ public class ClusterNodeMetricsSelfTest extends GridCommonAbstractTest {
     @GridInternal
     private static class TestInternalTask extends GridTestTask {
         // No-op.
+    }
+
+    /**
+     * Helper class to simplify ClusterMetricsMXBean testing.
+     */
+    private static class JmxClusterMetricsHelper {
+        /** MBean server. */
+        private final MBeanServer mbeanSrv;
+
+        /** ClusterMetrics MX bean name. */
+        private final ObjectName mbean;
+
+        /**
+         * @param cfg Ignite configuration.
+         * @throws MalformedObjectNameException Thrown in case of any errors.
+         */
+        private JmxClusterMetricsHelper(IgniteConfiguration cfg) throws MalformedObjectNameException {
+            this.mbeanSrv = cfg.getMBeanServer();
+
+            this.mbean = U.makeMBeanName(cfg.getIgniteInstanceName(), "Kernal",
+                ClusterMetricsMXBeanImpl.class.getSimpleName());
+        }
+
+        /**
+         * Invoke "countNodes" method through MBean server.
+         *
+         * @param attrName Node attribute name,
+         * @param attrVal Node attribute value,
+         * @param srv Include server nodes.
+         * @param client Include client nodes.
+         * @return Count of nodes filtered by node attribute.
+         * @throws Exception If failed.
+         */
+        private int countNodes(String attrName, String attrVal, boolean srv, boolean client) throws Exception {
+            String[] signature = {"java.lang.String", "java.lang.String", "boolean", "boolean"};
+            Object[] params = {attrName, attrVal, srv, client};
+
+            return (int)mbeanSrv.invoke(mbean, "countNodes", params, signature);
+        }
+
+        /**
+         * Invoke "groupNodes" method through MBean server.
+         *
+         * @param attrName Node attribute name.
+         * @param srv Include server nodes.
+         * @param client Include client nodes.
+         * @return The number of nodes grouped by node attribute name.
+         * @throws Exception If failed.
+         */
+        private Map groupNodes(String attrName, boolean srv, boolean client) throws Exception {
+            String[] signature = {"java.lang.String", "boolean", "boolean"};
+            Object[] params = {attrName, srv, client};
+
+            return (Map)mbeanSrv.invoke(mbean, "groupNodes", params, signature);
+        }
+
+        /**
+         * Get MBean attribute through MBean server.
+         *
+         * @param name Attribute name.
+         * @return Current value of attribute.
+         * @throws Exception If failed.
+         */
+        private Object attr(String name) throws Exception {
+            return mbeanSrv.getAttribute(mbean, name);
+        }
     }
 }

@@ -384,12 +384,12 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
                 return 'null';
 
             switch (clsName) {
-                case 'var':
-                    return item;
                 case 'byte':
                     return `(byte) ${item}`;
                 case 'float':
                     return `${item}f`;
+                case 'double':
+                    return `${item}`;
                 case 'long':
                     return `${item}L`;
                 case 'java.io.Serializable':
@@ -568,12 +568,17 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
                     break;
                 case 'EVENT_TYPES':
-                    if (prop.eventTypes.length === 1)
-                        this._setProperty(sb, id, prop.name, _.head(prop.eventTypes));
-                    else {
-                        sb.append(`int[] ${prop.id} = new int[${_.head(prop.eventTypes)}.length`);
+                    if (prop.eventTypes.length === 1) {
+                        const evtGrp = _.head(prop.eventTypes);
 
-                        _.forEach(_.tail(prop.eventTypes), (evtGrp) => {
+                        this._setProperty(sb, id, prop.name, evtGrp.label);
+                    }
+                    else {
+                        const evtGrp = _.map(prop.eventTypes, 'label');
+
+                        sb.append(`int[] ${prop.id} = new int[${_.head(evtGrp)}.length`);
+
+                        _.forEach(_.tail(evtGrp), (evtGrp) => {
                             sb.append(`    + ${evtGrp}.length`);
                         });
 
@@ -583,12 +588,12 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
                         sb.append('int k = 0;');
 
-                        _.forEach(prop.eventTypes, (evtGrp, evtIdx) => {
+                        _.forEach(evtGrp, (evtGrp, evtIdx) => {
                             sb.emptyLine();
 
                             sb.append(`System.arraycopy(${evtGrp}, 0, ${prop.id}, k, ${evtGrp}.length);`);
 
-                            if (evtIdx < prop.eventTypes.length - 1)
+                            if (evtIdx < evtGrp.length - 1)
                                 sb.append(`k += ${evtGrp}.length;`);
                         });
 
@@ -773,10 +778,14 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
                     break;
                 case 'ARRAY':
-                    imports.push(prop.typeClsName);
+                    if (!prop.varArg)
+                        imports.push(prop.typeClsName);
 
                     if (this._isBean(prop.typeClsName))
                         _.forEach(prop.items, (item) => imports.push(...this.collectBeanImports(item)));
+
+                    if (prop.typeClsName === 'java.lang.Class')
+                        _.forEach(prop.items, (item) => imports.push(item));
 
                     break;
                 case 'COLLECTION':
@@ -807,7 +816,7 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
     }
 
     static _prepareImports(imports) {
-        return _.sortedUniq(_.sortBy(_.filter(imports, (cls) => !cls.startsWith('java.lang.') && _.includes(cls, '.'))));
+        return _.sortedUniq(_.sortBy(_.filter(imports, (cls) => !_.startsWith(cls, 'java.lang.') && _.includes(cls, '.'))));
     }
 
     /**
@@ -820,10 +829,8 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
         _.forEach(bean.properties, (prop) => {
             switch (prop.clsName) {
                 case 'EVENT_TYPES':
-                    _.forEach(prop.eventTypes, (value) => {
-                        const evtGrp = _.find(this.eventGroups, {value});
-
-                        imports.push(`${evtGrp.class}.${evtGrp.value}`);
+                    _.forEach(prop.eventTypes, (grp) => {
+                        imports.push(`${grp.class}.${grp.value}`);
                     });
 
                     break;
@@ -1032,10 +1039,11 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
         return sb;
     }
 
-    static cluster(cluster, pkg, clsName, client) {
-        const cfg = this.generator.igniteConfiguration(cluster, client);
+    static cluster(cluster, targetVer, pkg, clsName, client) {
+        const cfg = this.generator.igniteConfiguration(cluster, targetVer, client);
 
-        const clientNearCaches = client ? _.filter(cluster.caches, (cache) => _.get(cache, 'clientNearConfiguration.enabled')) : [];
+        const clientNearCaches = client ? _.filter(cluster.caches, (cache) =>
+            cache.cacheMode === 'PARTITIONED' && _.get(cache, 'clientNearConfiguration.enabled')) : [];
 
         return this.igniteConfiguration(cfg, pkg, clsName, clientNearCaches);
     }
@@ -1232,7 +1240,7 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
                     tempVar = true;
 
-                    fldHashCode = `${javaName} != +0.0f ? Float.floatToIntBits(${javaName}) : 0`;
+                    fldHashCode = '(int) (ig_hash_temp ^ (ig_hash_temp >>> 32))';
 
                     break;
                 default:
@@ -1582,7 +1590,7 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
         const sb = new StringBuilder();
 
-        const imports = ['org.apache.ignite.Ignition', 'org.apache.ignite.Ignite'];
+        const imports = ['org.apache.ignite.Ignition'];
 
         if (demo) {
             imports.push('org.h2.tools.Server', 'java.sql.Connection', 'java.sql.PreparedStatement',
@@ -1597,6 +1605,9 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
 
             shortFactoryCls = this.javaTypes.shortClassName(factoryCls);
         }
+
+        if ((_.nonEmpty(clientNearCaches) || demo) && shortFactoryCls)
+            imports.push('org.apache.ignite.Ignite');
 
         sb.append(`package ${pkg};`)
             .emptyLine();
@@ -1643,6 +1654,8 @@ export default class IgniteJavaTransformer extends AbstractTransformer {
         }
 
         if ((_.nonEmpty(clientNearCaches) || demo) && shortFactoryCls) {
+            imports.push('org.apache.ignite.Ignite');
+
             sb.append(`Ignite ignite = Ignition.start(${cfgRef});`);
 
             _.forEach(clientNearCaches, (cache, idx) => {

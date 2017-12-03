@@ -18,7 +18,6 @@
 package org.apache.ignite.internal.processors.affinity;
 
 import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.internal.util.intset.GridIntSet;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -112,8 +111,8 @@ public class HistoryAffinityAssignment implements AffinityAssignment {
     }
 
     /** {@inheritDoc} */
-    @Override public GridIntSet primaryPartitions(UUID nodeId) {
-        GridIntSet res = new GridIntSet();
+    @Override public Set<Integer> primaryPartitions(UUID nodeId) {
+        Set<Integer> res = new HashSet<>();
 
         for (int p = 0; p < assignment.size(); p++) {
             List<ClusterNode> nodes = assignment.get(p);
@@ -126,8 +125,8 @@ public class HistoryAffinityAssignment implements AffinityAssignment {
     }
 
     /** {@inheritDoc} */
-    @Override public GridIntSet backupPartitions(UUID nodeId) {
-        GridIntSet res = new GridIntSet();
+    @Override public Set<Integer> backupPartitions(UUID nodeId) {
+        Set<Integer> res = new HashSet<>();
 
         for (int p = 0; p < assignment.size(); p++) {
             List<ClusterNode> nodes = assignment.get(p);
