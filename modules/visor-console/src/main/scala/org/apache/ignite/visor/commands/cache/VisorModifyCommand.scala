@@ -197,7 +197,11 @@ class VisorModifyCommand {
 
                 case None =>
                     askTypedValue("key") match {
-                        case Some
+                        case Some(k) if k.toString.nonEmpty => key = k
+                        case _ =>
+                            warn("Key can not be empty.")
+
+                            return
                     }
             }
 
@@ -214,7 +218,13 @@ class VisorModifyCommand {
                         }
 
                     case None =>
-                        askTypedValue("value").foreach(value = _)
+                        askTypedValue("value") match {
+                            case Some(v) if v.toString.nonEmpty => value = v
+                            case _ =>
+                                warn("Value can not be empty.")
+
+                                return
+                        }
                 }
             }
 
@@ -231,7 +241,7 @@ class VisorModifyCommand {
             val affinityNode = taskResult.getAffinityNode
 
             if (put) {
-                println("Put operation success" + "; Affinity node: " + affinityNode)
+                println("Put operation success" + "; Affinity node: " + nid8(affinityNode))
 
                 if (resultObj != null)
                     println("Previous value is: " + resultObj)
@@ -239,14 +249,14 @@ class VisorModifyCommand {
 
             if (get) {
                 if (resultObj != null)
-                    println("Value with specified key: " + resultObj + "; Affinity node: " + affinityNode)
+                    println("Value with specified key: " + resultObj + "; Affinity node: " + nid8(affinityNode))
                 else
                     println("Value with specified key not found")
             }
 
             if (remove) {
                 if (resultObj != null)
-                    println("Removed value: " + resultObj + "; Affinity node: " + affinityNode)
+                    println("Removed value: " + resultObj + "; Affinity node: " + nid8(affinityNode))
                 else
                     println("Value with specified key not found")
             }

@@ -142,16 +142,16 @@ object visor extends VisorTag {
 
     final val INPUT_TYPES: Seq[(String, (String => Object), Class[_])] = Seq(
         ("java.lang.String", (value: String) => value, classOf[String]),
-        ("java.lang.Character", (value: String) => JavaCharacter.valueOf(value.head), classOf[String]),
-        ("java.lang.Integer", (value: String) => JavaInteger.valueOf(value), classOf[String]),
-        ("java.lang.Long", (value: String) => JavaLong.valueOf(value), classOf[String]),
-        ("java.lang.Short", (value: String) => JavaShort.valueOf(value), classOf[String]),
-        ("java.lang.Byte", (value: String) => JavaByte.valueOf(value), classOf[String]),
-        ("java.lang.Float", (value: String) => JavaFloat.valueOf(value), classOf[String]),
-        ("java.lang.Double", (value: String) => JavaDouble.valueOf(value), classOf[String]),
-        ("java.lang.Boolean", (value: String) => JavaBoolean.valueOf(value), classOf[String]),
-        ("java.util.Date - Value In Format day/month/year hour:minute:second", (value: String) => dtFmt.parse(value), classOf[String]),
-        ("java.util.UUID", (value: String) => UUID.fromString(value), classOf[String]))
+        ("java.lang.Character", (value: String) => JavaCharacter.valueOf(value.head), classOf[JavaCharacter]),
+        ("java.lang.Integer", (value: String) => JavaInteger.valueOf(value), classOf[JavaInteger]),
+        ("java.lang.Long", (value: String) => JavaLong.valueOf(value), classOf[JavaLong]),
+        ("java.lang.Short", (value: String) => JavaShort.valueOf(value), classOf[JavaShort]),
+        ("java.lang.Byte", (value: String) => JavaByte.valueOf(value), classOf[JavaByte]),
+        ("java.lang.Float", (value: String) => JavaFloat.valueOf(value), classOf[JavaFloat]),
+        ("java.lang.Double", (value: String) => JavaDouble.valueOf(value), classOf[JavaDouble]),
+        ("java.lang.Boolean", (value: String) => JavaBoolean.valueOf(value), classOf[JavaBoolean]),
+        ("java.util.Date - Value In Format day/month/year hour:minute:second", (value: String) => dtFmt.parse(value), classOf[Date]),
+        ("java.util.UUID", (value: String) => UUID.fromString(value), classOf[UUID]))
 
     /** `Nil` is for empty list, `Til` is for empty tuple. */
     val Til: Arg = (null, null)
