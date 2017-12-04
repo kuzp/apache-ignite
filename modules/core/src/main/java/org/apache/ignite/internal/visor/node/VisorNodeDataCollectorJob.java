@@ -192,7 +192,7 @@ public class VisorNodeDataCollectorJob extends VisorJob<VisorNodeDataCollectorTa
                         if (ca == null || !ca.context().started())
                             continue;
 
-                        resCaches.add(new VisorCache(ignite, ca));
+                        resCaches.add(new VisorCache(ignite, ca, arg.isCollectCacheMetrics()));
                     }
                     catch(IllegalStateException | IllegalArgumentException e) {
                         if (debug && ignite.log() != null)
