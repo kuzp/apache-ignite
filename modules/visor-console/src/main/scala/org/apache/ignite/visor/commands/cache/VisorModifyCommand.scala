@@ -65,11 +65,11 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * ====Examples====
  * {{{
- *     modify -put
+ *     modify -put -c=@c0
  *         Put value into cache in interactive mode.
- *     modify -get
+ *     modify -get -c=@c0
  *         Get value from cache in interactive mode.
- *     modify -remove
+ *     modify -remove -c=@c0
  *         Remove value form cache in interactive mode.
  *     modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1
  *         Put value into cache with name cache with key of String type equal to key1
@@ -319,11 +319,11 @@ object VisorModifyCommand {
                 "Value of value"
         ),
         examples = Seq(
-            "modify -put" ->
+            "modify -put -c=@c0" ->
                 "Put value into cache in interactive mode.",
-            "modify -get" ->
+            "modify -get -c=@c0" ->
                 "Get value from cache in interactive mode.",
-            "modify -remove" ->
+            "modify -remove -c=@c0" ->
                 "Remove value form cache in interactive mode.",
             "modify -put -c=@c0 -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1" -> Seq(
                 "Put value into cache with name @c0 with key of String type equal to key1",
