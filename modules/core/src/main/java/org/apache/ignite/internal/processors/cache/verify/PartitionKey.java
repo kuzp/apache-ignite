@@ -16,12 +16,16 @@
 */
 package org.apache.ignite.internal.processors.cache.verify;
 
+import java.io.Serializable;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
  * Partition key - pair of cache group ID and partition ID.
  */
-public class PartitionKey {
+public class PartitionKey implements Serializable {
+    /** */
+    private static final long serialVersionUID = 0L;
+
     /** Group id. */
     private int grpId;
 

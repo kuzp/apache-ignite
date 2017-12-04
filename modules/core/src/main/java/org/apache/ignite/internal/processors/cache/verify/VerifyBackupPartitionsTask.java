@@ -59,6 +59,9 @@ import org.jetbrains.annotations.Nullable;
 @GridInternal
 public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
     Map<PartitionKey, List<PartitionHashRecord>>> {
+    /** */
+    private static final long serialVersionUID = 0L;
+
     /** {@inheritDoc} */
     @Nullable @Override public Map<? extends ComputeJob, ClusterNode> map(List<ClusterNode> subgrid, Set<String> cacheNames) throws IgniteException {
         Map<ComputeJob, ClusterNode> jobs = new HashMap<>();
@@ -109,6 +112,9 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
      *
      */
     public static class VerifyBackupPartitionsJob extends ComputeJobAdapter {
+        /** */
+        private static final long serialVersionUID = 0L;
+
         /** Ignite instance. */
         @IgniteInstanceResource
         private IgniteEx ignite;
@@ -160,8 +166,10 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
             else {
                 Collection<CacheGroupContext> groups = ignite.context().cache().cacheGroups();
 
-                for (CacheGroupContext grp : groups)
-                    grpIds.add(grp.groupId());
+                for (CacheGroupContext grp : groups) {
+                    if (!grp.systemCache())
+                        grpIds.add(grp.groupId());
+                }
             }
 
             Map<PartitionKey, PartitionHashRecord> res = new HashMap<>();

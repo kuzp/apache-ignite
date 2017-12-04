@@ -16,12 +16,16 @@
 */
 package org.apache.ignite.internal.processors.cache.verify;
 
+import java.io.Serializable;
 import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
  * Record containing partition checksum, primary flag and consistent ID of owner.
  */
-public class PartitionHashRecord {
+public class PartitionHashRecord implements Serializable {
+    /** */
+    private static final long serialVersionUID = 0L;
+
     /** Is primary flag. */
     private boolean isPrimary;
 
