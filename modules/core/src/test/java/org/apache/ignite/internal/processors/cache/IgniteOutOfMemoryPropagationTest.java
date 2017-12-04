@@ -47,16 +47,16 @@ public class IgniteOutOfMemoryPropagationTest extends GridCommonAbstractTest {
     public static final int NODES = 3;
 
     /** */
-    private CacheAtomicityMode atomicityMode;
+    private volatile CacheAtomicityMode atomicityMode;
 
     /** */
-    private CacheMode mode;
+    private volatile CacheMode mode;
 
     /** */
-    private int backupsCount;
+    private volatile int backupsCount;
 
     /** */
-    private CacheWriteSynchronizationMode writeSyncMode;
+    private volatile CacheWriteSynchronizationMode writeSyncMode;
 
     /** */
     private IgniteEx client;
@@ -88,7 +88,7 @@ public class IgniteOutOfMemoryPropagationTest extends GridCommonAbstractTest {
         for (CacheAtomicityMode atomicityMode : CacheAtomicityMode.values()) {
             for (CacheMode cacheMode : CacheMode.values()) {
                 for (CacheWriteSynchronizationMode writeSyncMode : CacheWriteSynchronizationMode.values()) {
-                    for (int backupsCount = 0; backupsCount < 1; backupsCount++) {
+                    for (int backupsCount = 0; backupsCount <= 1; backupsCount++) {
                         if (writeSyncMode == CacheWriteSynchronizationMode.FULL_ASYNC
                             || cacheMode == CacheMode.REPLICATED)
                             continue;
@@ -107,8 +107,8 @@ public class IgniteOutOfMemoryPropagationTest extends GridCommonAbstractTest {
                                 }
                             }
                         }
-                        else
-                            checkOOMPropagation(useStreamer, atomicityMode, cacheMode, writeSyncMode, backupsCount);
+
+                        checkOOMPropagation(useStreamer, atomicityMode, cacheMode, writeSyncMode, backupsCount);
                     }
                 }
             }
@@ -128,7 +128,7 @@ public class IgniteOutOfMemoryPropagationTest extends GridCommonAbstractTest {
         Throwable t = null;
 
         System.out.println("Checking conf: CacheAtomicityMode." + atomicityMode +
-            " CacheMode." + mode + " CacheWriteSynchronizationMode." + writeSyncMode + " backupsCount = " + backupsCount
+            " CacheMode." + cacheMode + " CacheWriteSynchronizationMode." + writeSyncMode + " backupsCount = " + backupsCount
             + " TransactionConcurrency." + concurrency + " TransactionIsolation." + isolation);
 
         initGrid(atomicityMode, cacheMode, writeSyncMode, backupsCount);
