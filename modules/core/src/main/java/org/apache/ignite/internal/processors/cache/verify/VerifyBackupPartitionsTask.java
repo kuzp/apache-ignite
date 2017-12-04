@@ -167,7 +167,7 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
                 Collection<CacheGroupContext> groups = ignite.context().cache().cacheGroups();
 
                 for (CacheGroupContext grp : groups) {
-                    if (!grp.systemCache())
+                    if (!grp.systemCache() && !grp.isLocal())
                         grpIds.add(grp.groupId());
                 }
             }
