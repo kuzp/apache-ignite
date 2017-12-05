@@ -61,6 +61,10 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
     /** */
     private static final long serialVersionUID = 0L;
 
+    /** Injected logger. */
+    @LoggerResource
+    private IgniteLogger log;
+
     /** {@inheritDoc} */
     @Nullable @Override public Map<? extends ComputeJob, ClusterNode> map(List<ClusterNode> subgrid, Set<String> cacheNames) throws IgniteException {
         Map<ComputeJob, ClusterNode> jobs = new HashMap<>();
@@ -78,6 +82,13 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
         Map<PartitionKey, List<PartitionHashRecord>> conflicts = new HashMap<>();
 
         for (ComputeJobResult res : results) {
+            if (res.getException() != null) {
+                log.warning("VerifyBackupPartitionsJob failed on node " +
+                    "[consistentId=" + res.getNode().consistentId() + "]", res.getException());
+
+                continue;
+            }
+
             Map<PartitionKey, PartitionHashRecord> nodeHashes = res.getData();
 
             for (Map.Entry<PartitionKey, PartitionHashRecord> e : nodeHashes.entrySet()) {
@@ -187,6 +198,9 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
 
                     int partHash = 0;
 
+                    if (!part.reserve())
+                        continue;
+
                     try {
                         GridIterator<CacheDataRow> it = grpCtx.offheap().partitionIterator(part.id());
 
@@ -203,6 +217,9 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
                             ", partId=" + part.id() + "]", e);
 
                         continue;
+                    }
+                    finally {
+                        part.release();
                     }
 
                     Object consId = ignite.context().discovery().localNode().consistentId();
