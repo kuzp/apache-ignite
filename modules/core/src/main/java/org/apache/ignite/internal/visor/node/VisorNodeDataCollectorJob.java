@@ -157,8 +157,11 @@ public class VisorNodeDataCollectorJob extends VisorJob<VisorNodeDataCollectorTa
         try {
             List<VisorMemoryMetrics> memoryMetrics = res.getMemoryMetrics();
 
-            for (DataRegionMetrics m : ignite.dataRegionMetrics())
-                memoryMetrics.add(new VisorMemoryMetrics(m));
+            // TODO: Should be really fixed in IGNITE-7111.
+            if (ignite.active()) {
+                for (DataRegionMetrics m : ignite.dataRegionMetrics())
+                    memoryMetrics.add(new VisorMemoryMetrics(m));
+            }
         }
         catch (Exception e) {
             res.setMemoryMetricsEx(new VisorExceptionWrapper(e));
