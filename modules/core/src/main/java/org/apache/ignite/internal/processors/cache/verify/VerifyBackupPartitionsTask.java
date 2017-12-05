@@ -40,7 +40,6 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartit
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.task.GridInternal;
 import org.apache.ignite.internal.util.lang.GridIterator;
-import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.resources.IgniteInstanceResource;
 import org.apache.ignite.resources.LoggerResource;
@@ -83,7 +82,7 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
 
             for (Map.Entry<PartitionKey, PartitionHashRecord> e : nodeHashes.entrySet()) {
                 if (!clusterHashes.containsKey(e.getKey()))
-                    clusterHashes.put(e.getKey(), new ArrayList<>());
+                    clusterHashes.put(e.getKey(), new ArrayList<PartitionHashRecord>());
 
                 clusterHashes.get(e.getKey()).add(e.getValue());
             }
