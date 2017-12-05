@@ -83,13 +83,6 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
         Map<PartitionKey, List<PartitionHashRecord>> conflicts = new HashMap<>();
 
         for (ComputeJobResult res : results) {
-            if (res.getException() != null) {
-                log.warning("VerifyBackupPartitionsJob failed on node " +
-                    "[consistentId=" + res.getNode().consistentId() + "]", res.getException());
-
-                continue;
-            }
-
             Map<PartitionKey, PartitionHashRecord> nodeHashes = res.getData();
 
             for (Map.Entry<PartitionKey, PartitionHashRecord> e : nodeHashes.entrySet()) {
@@ -124,8 +117,12 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
         ComputeJobResultPolicy superRes = super.result(res, rcvd);
 
         // Deny failover.
-        if (superRes == ComputeJobResultPolicy.FAILOVER)
+        if (superRes == ComputeJobResultPolicy.FAILOVER) {
             superRes = ComputeJobResultPolicy.WAIT;
+
+            log.warning("VerifyBackupPartitionsJob failed on node " +
+                "[consistentId=" + res.getNode().consistentId() + "]", res.getException());
+        }
 
         return superRes;
     }
