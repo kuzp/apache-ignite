@@ -73,6 +73,7 @@ import org.apache.ignite.internal.transactions.IgniteTxRollbackCheckedException;
 import org.apache.ignite.internal.transactions.IgniteTxTimeoutCheckedException;
 import org.apache.ignite.internal.util.GridLeanMap;
 import org.apache.ignite.internal.util.IgniteUtils;
+import org.apache.ignite.internal.util.future.GridCompoundFuture;
 import org.apache.ignite.internal.util.future.GridEmbeddedFuture;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
@@ -91,6 +92,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiClosure;
 import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteInClosure;
+import org.apache.ignite.lang.IgniteReducer;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.plugin.security.SecurityPermission;
 import org.apache.ignite.transactions.TransactionConcurrency;
@@ -107,8 +109,10 @@ import static org.apache.ignite.internal.processors.cache.GridCacheOperation.TRA
 import static org.apache.ignite.internal.processors.cache.GridCacheOperation.UPDATE;
 import static org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry.SER_READ_EMPTY_ENTRY_VER;
 import static org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry.SER_READ_NOT_EMPTY_VER;
+import static org.apache.ignite.transactions.TransactionState.ACTIVE;
 import static org.apache.ignite.transactions.TransactionState.COMMITTED;
 import static org.apache.ignite.transactions.TransactionState.COMMITTING;
+import static org.apache.ignite.transactions.TransactionState.LOCKING;
 import static org.apache.ignite.transactions.TransactionState.MARKED_ROLLBACK;
 import static org.apache.ignite.transactions.TransactionState.PREPARING;
 import static org.apache.ignite.transactions.TransactionState.ROLLED_BACK;
@@ -168,6 +172,8 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
     /** */
     @GridToStringExclude
     private TransactionProxyImpl proxy;
+
+    private volatile IgniteInternalFuture<Boolean> locFut;
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -561,10 +567,10 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
 
                 long timeout = remainingTime();
 
-                if (timeout == -1)
+                if (timeout == -1 || !state(LOCKING))
                     return new GridFinishedFuture<>(timeoutException());
 
-                IgniteInternalFuture<Boolean> fut = cacheCtx.cache().txLockAsync(enlisted,
+                IgniteInternalFuture<Boolean> fut = wrap(cacheCtx.cache().txLockAsync(enlisted,
                     timeout,
                     this,
                     /*read*/entryProcessor != null, // Needed to force load from store.
@@ -572,7 +578,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
                     isolation,
                     isInvalidate(),
                     -1L,
-                    -1L);
+                    -1L));
 
                 PLC1<GridCacheReturn> plc1 = new PLC1<GridCacheReturn>(ret) {
                     @Override public GridCacheReturn postLock(GridCacheReturn ret)
@@ -741,10 +747,10 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
 
                 long timeout = remainingTime();
 
-                if (timeout == -1)
+                if (timeout == -1 || !state(LOCKING))
                     return new GridFinishedFuture<>(timeoutException());
 
-                IgniteInternalFuture<Boolean> fut = cacheCtx.cache().txLockAsync(enlisted,
+                IgniteInternalFuture<Boolean> fut = wrap(cacheCtx.cache().txLockAsync(enlisted,
                     timeout,
                     this,
                     /*read*/invokeMap != null, // Needed to force load from store.
@@ -752,7 +758,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
                     isolation,
                     isInvalidate(),
                     -1L,
-                    -1L);
+                    -1L));
 
                 PLC1<GridCacheReturn> plc1 = new PLC1<GridCacheReturn>(ret) {
                     @Override public GridCacheReturn postLock(GridCacheReturn ret)
@@ -1558,10 +1564,10 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
 
             long timeout = remainingTime();
 
-            if (timeout == -1)
+            if (timeout == -1 || !state(LOCKING))
                 return new GridFinishedFuture<>(timeoutException());
 
-            IgniteInternalFuture<Boolean> fut = cacheCtx.cache().txLockAsync(enlisted,
+            IgniteInternalFuture<Boolean> fut = wrap(cacheCtx.cache().txLockAsync(enlisted,
                 timeout,
                 this,
                 false,
@@ -1569,7 +1575,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
                 isolation,
                 isInvalidate(),
                 -1L,
-                -1L);
+                -1L));
 
             PLC1<GridCacheReturn> plc1 = new PLC1<GridCacheReturn>(ret) {
                 @Override protected GridCacheReturn postLock(GridCacheReturn ret)
@@ -1650,6 +1656,35 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
         }
     }
 
+    private IgniteInternalFuture<Boolean> wrap(IgniteInternalFuture<Boolean> fut) {
+        locFut = fut;
+
+        GridCompoundFuture<Boolean, Boolean> f = new GridCompoundFuture<Boolean, Boolean>(new IgniteReducer<Boolean, Boolean>() {
+            private Boolean bool;
+
+            @Override public boolean collect(@Nullable Boolean bool) {
+                this.bool = bool;
+
+                return false;
+            }
+
+            @Override public Boolean reduce() {
+                return bool;
+            }
+        }) {
+            @Override protected boolean onDone(@Nullable Boolean res, @Nullable Throwable err, boolean cancel) {
+                state(ACTIVE);
+
+                return super.onDone(res, err, cancel);
+            }
+        };
+        f.add(fut);
+
+        f.markInitialized();
+
+        return f;
+    }
+
     /**
      * @param cacheCtx Cache context.
      * @param keys Keys to get.
@@ -1717,10 +1752,14 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
 
                 long timeout = remainingTime();
 
-                if (timeout == -1)
+                TransactionState[] h = new TransactionState[1];
+
+                boolean state = state(LOCKING, false, h);
+
+                if (timeout == -1 || (!state))
                     return new GridFinishedFuture<>(timeoutException());
 
-                IgniteInternalFuture<Boolean> fut = cacheCtx.cache().txLockAsync(lockKeys,
+                IgniteInternalFuture<Boolean> fut = wrap(cacheCtx.cache().txLockAsync(lockKeys,
                     timeout,
                     this,
                     true,
@@ -1728,7 +1767,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
                     isolation,
                     isInvalidate(),
                     createTtl,
-                    accessTtl);
+                    accessTtl));
 
                 final ExpiryPolicy expiryPlc0 = expiryPlc;
 
@@ -3271,6 +3310,16 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
      * @return Rollback future.
      */
     private IgniteInternalFuture<IgniteInternalTx> rollbackNearTxLocalAsync(final boolean onTimeout) {
+        TransactionState[] txStateHolder = new TransactionState[1];
+
+        if (state() != MARKED_ROLLBACK && !state(MARKED_ROLLBACK, onTimeout, txStateHolder))
+            return new GridFinishedFuture<>(onTimeout ? timeoutException() : null);
+
+        if (txStateHolder[0] == LOCKING)
+            return new GridFinishedFuture<>(onTimeout ? timeoutException() : null);
+
+        U.warn(log, "Transaction was rolled back because the timeout is reached: " + this);
+
         if (log.isDebugEnabled())
             log.debug("Rolling back near tx: " + this);
 
@@ -4121,21 +4170,25 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
 
     /** {@inheritDoc} */
     @Override public void onTimeout() {
-        if (state(MARKED_ROLLBACK, true) || (state() == MARKED_ROLLBACK)) {
+        TransactionState state = state();
+
+        if (state != ACTIVE && state != LOCKING)
+            return;
+
             cctx.kernalContext().closure().runLocalSafe(new Runnable() {
                 @Override public void run() {
                     // Note: if rollback asynchronously on timeout should not clear thread map
                     // since thread started tx still should be able to see this tx.
-                    rollbackNearTxLocalAsync(true);
+                        rollbackNearTxLocalAsync(true);
 
-                    U.warn(log, "Transaction was rolled back because the timeout is reached: " + GridNearTxLocal.this);
+
                 }
             });
-        }
-        else {
-            if (log.isDebugEnabled())
-                log.debug("Skip rollback tx on timeout: " + this);
-        }
+//        }
+//        else {
+//            if (log.isDebugEnabled())
+//                log.debug("Skip rollback tx on timeout: " + this);
+//        }
     }
 
     /**

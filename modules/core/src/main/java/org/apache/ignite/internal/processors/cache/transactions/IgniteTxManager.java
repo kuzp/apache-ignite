@@ -112,6 +112,7 @@ import static org.apache.ignite.internal.util.GridConcurrentFactory.newMap;
 import static org.apache.ignite.transactions.TransactionState.ACTIVE;
 import static org.apache.ignite.transactions.TransactionState.COMMITTED;
 import static org.apache.ignite.transactions.TransactionState.COMMITTING;
+import static org.apache.ignite.transactions.TransactionState.LOCKING;
 import static org.apache.ignite.transactions.TransactionState.MARKED_ROLLBACK;
 import static org.apache.ignite.transactions.TransactionState.PREPARED;
 import static org.apache.ignite.transactions.TransactionState.PREPARING;
@@ -756,7 +757,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
      * @return {@code True} if given transaction is explicitly started user transaction.
      */
     private boolean activeUserTx(@Nullable IgniteInternalTx tx) {
-        if (tx != null && tx.user() && tx.state() == ACTIVE) {
+        if (tx != null && tx.user() && (tx.state() == ACTIVE || tx.state() == LOCKING)) {
             assert tx instanceof GridNearTxLocal : tx;
 
             return true;
