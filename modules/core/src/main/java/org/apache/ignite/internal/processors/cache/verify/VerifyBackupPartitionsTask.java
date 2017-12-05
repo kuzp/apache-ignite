@@ -31,10 +31,11 @@ import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.compute.ComputeJob;
 import org.apache.ignite.compute.ComputeJobAdapter;
 import org.apache.ignite.compute.ComputeJobResult;
+import org.apache.ignite.compute.ComputeJobResultPolicy;
 import org.apache.ignite.compute.ComputeTaskAdapter;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.CacheGroupContext;
-import org.apache.ignite.internal.processors.cache.IgniteInternalCache;
+import org.apache.ignite.internal.processors.cache.DynamicCacheDescriptor;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
@@ -118,6 +119,17 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
         return conflicts;
     }
 
+    /** {@inheritDoc} */
+    @Override public ComputeJobResultPolicy result(ComputeJobResult res, List<ComputeJobResult> rcvd) {
+        ComputeJobResultPolicy superRes = super.result(res, rcvd);
+
+        // Deny failover.
+        if (superRes == ComputeJobResultPolicy.FAILOVER)
+            superRes = ComputeJobResultPolicy.WAIT;
+
+        return superRes;
+    }
+
     /**
      *
      */
@@ -151,15 +163,15 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
 
             if (cacheNames != null) {
                 for (String cacheName : cacheNames) {
-                    IgniteInternalCache<Object, Object> cache = ignite.cachex(cacheName);
+                    DynamicCacheDescriptor desc = ignite.context().cache().cacheDescriptor(cacheName);
 
-                    if (cache == null) {
+                    if (desc == null) {
                         missingCaches.add(cacheName);
 
                         continue;
                     }
 
-                    grpIds.add(cache.context().groupId());
+                    grpIds.add(desc.groupId());
                 }
 
                 if (!missingCaches.isEmpty()) {
@@ -193,15 +205,15 @@ public class VerifyBackupPartitionsTask extends ComputeTaskAdapter<Set<String>,
                 List<GridDhtLocalPartition> parts = grpCtx.topology().localPartitions();
 
                 for (GridDhtLocalPartition part : parts) {
-                    if (part.state() != GridDhtPartitionState.OWNING)
+                    if (!part.reserve())
                         continue;
 
                     int partHash = 0;
 
-                    if (!part.reserve())
-                        continue;
-
                     try {
+                        if (part.state() != GridDhtPartitionState.OWNING)
+                            continue;
+
                         GridIterator<CacheDataRow> it = grpCtx.offheap().partitionIterator(part.id());
 
                         while (it.hasNextX()) {
