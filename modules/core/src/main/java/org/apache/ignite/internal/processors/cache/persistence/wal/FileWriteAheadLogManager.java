@@ -30,9 +30,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -358,8 +360,124 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /**
      *
      */
-    public Collection<File> walFiles(WALPointer low, WALPointer high) {
-        return null;
+    public Collection<File> getAndReserveWalFiles(FileWALPointer low, FileWALPointer high) throws IgniteCheckedException {
+        FileArchiver archiver0 = archiver;
+
+        long reservedIdx = -1;
+        long lockedIdx = -1;
+
+        long lastArchivedIdx = archiver0.lastArchivedAbsoluteIndex();
+
+        if (low.index() > lastArchivedIdx) {
+            long locked;
+
+            if ((locked = lockIndex(high)) != low.index()) {
+                if (archiver0.lastArchivedAbsoluteIndex() <= low.index()) {
+                    if (reserve(low)) {
+                        reservedIdx = low.index();
+                        lockedIdx = locked;
+
+                        if (locked == -1)
+                            System.err.println("");
+                    }
+                    else
+                        throw new AssertionError();
+                }
+                else
+                    throw new AssertionError();
+            }
+        }
+        else if (reserve(low)) {
+            reservedIdx = low.index();
+
+            if (high.index() > lastArchivedIdx) {
+                //high is in work directory
+                lockedIdx = lockIndex(high);
+
+                if (lockedIdx == -1)
+                    throw new AssertionError();
+            }
+        }
+        else
+            throw new AssertionError("Couldn't reserve wal index. High.idx - " + high.index() +
+                ", low.idx - " + low.index() + ", lastArchivedIdx -" + lastArchivedIdx);
+
+
+        return collectFiles(reservedIdx, lockedIdx, high.index());
+    }
+
+    /**
+     * @param reservedIdx Reserved index.
+     * @param lockedId Locked id.
+     * @param highIdx High index.
+     */
+    private Collection<File> collectFiles(long reservedIdx, long lockedId, long highIdx) {
+        List<File> res = new ArrayList<>();
+
+        if (reservedIdx != -1) {
+            long border = lockedId != -1 ? lockedId : highIdx + 1;
+
+            for (long i = reservedIdx; i < border; i ++) {
+                String segmentName = FileDescriptor.fileName(i);
+
+                File file = new File(walArchiveDir, segmentName);
+
+                if (file.exists())
+                    res.add(file);
+                else if ((file = new File(walArchiveDir, segmentName + ".zip")).exists())
+                    res.add(file);
+                else
+                    throw new AssertionError();
+            }
+        }
+
+        if (lockedId != -1) {
+            for (long i = lockedId; i < highIdx + 1; i ++) {
+                String segmentName = FileDescriptor.fileName(i);
+
+                File file = new File(walWorkDir, segmentName);
+
+                if (file.exists())
+                    res.add(file);
+                else
+                    throw new AssertionError();
+            }
+        }
+
+        return res;
+    }
+
+    /**
+     * @param ptr Ptr.
+     */
+    private long lockIndex(FileWALPointer ptr) {
+        FileArchiver archiver0 = archiver;
+
+        long lastArchivedIdx = archiver0.lastArchivedAbsoluteIndex();
+
+        long locked = -1;
+
+        for (long i = lastArchivedIdx + 1; i <= ptr.index(); i++) {
+            if (!archiver0.checkCanReadArchiveOrReserveWorkSegment(i)) {
+                locked = i;
+
+                break;
+            }
+        }
+
+        if (locked == -1 && archiver0.lastArchivedAbsoluteIndex() < ptr.index())
+            throw new AssertionError("Couldn't lock wal index. idx - " + ptr.index() +
+                    ", lastArchivedIdx -" + lastArchivedIdx);
+
+        if (locked == -1)
+            System.err.println("");
+
+        return locked;
+    }
+
+
+    public void release(Collection<File> walFiles) {
+        //TODO
     }
 
     /**
@@ -1192,7 +1310,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         /** current thread stopping advice */
         private volatile boolean stopped;
 
-        /** */
+        /**
+         * Maps absolute segment index to reservation counter. If counter > 0 then we wouldn't delete all segments
+         * which >= reserved segment index.
+         */
         private NavigableMap<Long, Integer> reserved = new TreeMap<>();
 
         /**
