@@ -27,8 +27,14 @@ export default ['IgniteMessages', ['$alert', ($alert) => {
             if (err.hasOwnProperty('data'))
                 err = err.data;
 
-            if (err.hasOwnProperty('message'))
-                return prefix + err.message;
+            if (err.hasOwnProperty('message')) {
+                const message = err.message;
+
+                const errIndex = message.indexOf(' err=');
+                const showedMsg = errIndex >= 0 ? message.substring(errIndex + 5, message.length - 2) : message;
+
+                return prefix + showedMsg;
+            }
 
             if (_.nonEmpty(err.className)) {
                 if (_.isEmpty(prefix))
