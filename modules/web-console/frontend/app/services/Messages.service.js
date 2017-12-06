@@ -31,7 +31,7 @@ export default ['IgniteMessages', ['$alert', ($alert) => {
                 const message = err.message;
 
                 const errIndex = message.indexOf(' err=');
-                const showedMsg = errIndex >= 0 ? message.substring(errIndex + 5, message.length - 2) : message;
+                const showedMsg = errIndex >= 0 ? message.substring(errIndex + 5, message.length - 1) : message;
 
                 return prefix + showedMsg;
             }
