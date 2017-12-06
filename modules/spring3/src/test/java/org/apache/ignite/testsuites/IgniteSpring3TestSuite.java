@@ -42,7 +42,7 @@ import org.apache.ignite.transactions.spring.SpringTransactionManagerContextInje
 /**
  * Spring tests.
  */
-public class IgniteSpringTestSuite extends TestSuite {
+public class IgniteSpring3TestSuite extends TestSuite {
     /**
      * @return Test suite.
      * @throws Exception Thrown in case of the failure.
