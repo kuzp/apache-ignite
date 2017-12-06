@@ -38,6 +38,9 @@ public class GridSqlCreateIndex extends GridSqlStatement {
     /** Index to create. */
     private QueryIndex idx;
 
+    /** NOLOGGING flag */
+    private boolean noLogging;
+
     /**
      * @return Schema name for new index.
      */
@@ -81,6 +84,24 @@ public class GridSqlCreateIndex extends GridSqlStatement {
     }
 
     /**
+     * Indicates if WAL should be not written to during index creation.
+     *
+     * @return true if the WAL should be disabled, false otherwise.
+     */
+    public boolean noLogging() {
+        return noLogging;
+    }
+
+    /**
+     * Sets noLogging flag, which disables WAL during index creation.
+     *
+     * @param newVal true to disable WAL durnig index creation, false otherwise.
+     */
+    public void noLogging(boolean newVal) {
+        noLogging = newVal;
+    }
+
+    /**
      * @return Index to create.
      */
     public QueryIndex index() {
@@ -115,6 +136,9 @@ public class GridSqlCreateIndex extends GridSqlStatement {
         }
 
         sb.append(')');
+
+        if (noLogging)
+            sb.append(" NOLOGGING");
 
         return sb.toString();
     }

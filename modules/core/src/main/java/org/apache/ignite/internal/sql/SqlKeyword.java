@@ -129,6 +129,9 @@ public class SqlKeyword {
     /** Keyword: NCHAR. */
     public static final String NCHAR = "NCHAR";
 
+    /** Keyword: NOLOGGING. */
+    public static final String NOLOGGING = "NOLOGGING";
+
     /** Keyword: NOT. */
     public static final String NOT = "NOT";
 

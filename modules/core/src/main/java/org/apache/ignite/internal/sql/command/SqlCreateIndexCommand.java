@@ -77,6 +77,9 @@ public class SqlCreateIndexCommand implements SqlCommand {
     /** Inline size. Zero effectively disables inlining. */
     private int inlineSize = QueryIndex.DFLT_INLINE_SIZE;
 
+    /** NOLOGGING flag */
+    private boolean noLogging;
+
     /** {@inheritDoc} */
     @Override public String schemaName() {
         return schemaName;
@@ -106,6 +109,15 @@ public class SqlCreateIndexCommand implements SqlCommand {
      */
     public boolean ifNotExists() {
         return ifNotExists;
+    }
+
+    /**
+     * Indicates if NOLOGGING flag was specified. This flag disables WAL during index creation.
+     *
+     * @return true if the command has NOLOGGING option, false otherwise.
+     */
+    public boolean noLogging() {
+        return noLogging;
     }
 
     /**
@@ -156,6 +168,8 @@ public class SqlCreateIndexCommand implements SqlCommand {
 
         parseInlineSize(lex);
 
+        parseNoLogging(lex);
+
         return this;
     }
 
@@ -189,6 +203,19 @@ public class SqlCreateIndexCommand implements SqlCommand {
                 throw error(lex, "Inline size should be positive: " + stmtInlineSize);
 
             inlineSize = stmtInlineSize;
+        }
+    }
+
+    /**
+     * Parses NOLOGGING flag if exists and sets appropriate flag.
+     *
+     * @param lex The Lexer.
+     */
+    private void parseNoLogging(SqlLexer lex) {
+        if (matchesKeyword(lex.lookAhead(), INLINE_SIZE)) {
+            lex.shift();
+
+            noLogging = true;
         }
     }
 

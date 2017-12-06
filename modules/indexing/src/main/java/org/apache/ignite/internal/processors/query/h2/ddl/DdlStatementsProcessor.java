@@ -138,7 +138,7 @@ public class DdlStatementsProcessor {
                 newIdx.setInlineSize(cmd0.inlineSize());
 
                 fut = ctx.query().dynamicIndexCreate(tbl.cacheName(), cmd0.schemaName(), typeDesc.tableName(),
-                    newIdx, cmd0.ifNotExists());
+                    newIdx, cmd0.ifNotExists(), cmd0.noLogging());
             }
             else if (cmd instanceof SqlDropIndexCommand) {
                 SqlDropIndexCommand cmd0 = (SqlDropIndexCommand)cmd;
@@ -231,7 +231,7 @@ public class DdlStatementsProcessor {
                 newIdx.setFields(flds);
 
                 fut = ctx.query().dynamicIndexCreate(tbl.cacheName(), cmd.schemaName(), typeDesc.tableName(),
-                    newIdx, cmd.ifNotExists());
+                    newIdx, cmd.ifNotExists(), cmd.noLogging());
             }
             else if (stmt0 instanceof GridSqlDropIndex) {
                 GridSqlDropIndex cmd = (GridSqlDropIndex) stmt0;

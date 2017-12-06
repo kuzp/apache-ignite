@@ -40,9 +40,10 @@ public class SchemaIndexCreateOperation extends SchemaIndexAbstractOperation {
 
     /** Ignore operation if index exists. */
     private final boolean ifNotExists;
+    private boolean noLogging;
 
     /**
-     * Constructor.
+     * Constructs SchemaIndexCreateOperation object.
      *
      * @param opId Operation id.
      * @param cacheName Cache name.
@@ -50,14 +51,16 @@ public class SchemaIndexCreateOperation extends SchemaIndexAbstractOperation {
      * @param tblName Table name.
      * @param idx Index params.
      * @param ifNotExists Ignore operation if index exists.
+     * @param noLogging Disable WAL during index creation.
      */
     public SchemaIndexCreateOperation(UUID opId, String cacheName, String schemaName, String tblName, QueryIndex idx,
-        boolean ifNotExists) {
+        boolean ifNotExists, boolean noLogging) {
         super(opId, cacheName, schemaName);
 
         this.tblName = tblName;
         this.idx = idx;
         this.ifNotExists = ifNotExists;
+        this.noLogging = noLogging;
     }
 
     /** {@inheritDoc} */
@@ -84,6 +87,15 @@ public class SchemaIndexCreateOperation extends SchemaIndexAbstractOperation {
      */
     public boolean ifNotExists() {
         return ifNotExists;
+    }
+
+    /**
+     * Indicates if WAL should be not written to during index creation.
+     *
+     * @return true if the WAL should be disabled, false otherwise.
+     */
+    public boolean noLogging() {
+        return noLogging;
     }
 
     /** {@inheritDoc} */
