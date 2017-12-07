@@ -648,22 +648,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                     if (dhtVer == null)
                                         dhtVer = explicitVer != null ? explicitVer : writeVersion();
 
-                                    if (cacheCtx.group().persistenceEnabled()) {
-                                        if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
-                                            (op != READ || cctx.snapshot().needTxReadLogging())) {
-                                            ptr = cctx.wal().log(new DataRecord(new DataEntry(
-                                                cacheCtx.cacheId(),
-                                                txEntry.key(),
-                                                val,
-                                                op,
-                                                nearXidVersion(),
-                                                writeVersion(),
-                                                0,
-                                                txEntry.key().partition(),
-                                                txEntry.updateCounter())));
-                                        }
-                                    }
-
                                     if (op == CREATE || op == UPDATE) {
                                         assert val != null : txEntry;
 
@@ -692,6 +676,24 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
 
                                         if (updRes.success())
                                             txEntry.updateCounter(updRes.updatePartitionCounter());
+
+                                        if (cacheCtx.group().persistenceEnabled()) {
+                                            if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
+                                                    (op != READ || cctx.snapshot().needTxReadLogging())) {
+                                                System.err.println("NEW ENTRY PART CNT = " + txEntry.updateCounter() + " 3! ");
+
+                                                ptr = cctx.wal().log(new DataRecord(new DataEntry(
+                                                        cacheCtx.cacheId(),
+                                                        txEntry.key(),
+                                                        val,
+                                                        op,
+                                                        nearXidVersion(),
+                                                        writeVersion(),
+                                                        0,
+                                                        txEntry.key().partition(),
+                                                        txEntry.updateCounter())));
+                                            }
+                                        }
 
                                         if (nearCached != null && updRes.success()) {
                                             nearCached.innerSet(
@@ -740,6 +742,24 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
 
                                         if (updRes.success())
                                             txEntry.updateCounter(updRes.updatePartitionCounter());
+
+                                        if (cacheCtx.group().persistenceEnabled()) {
+                                            if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
+                                                    (op != READ || cctx.snapshot().needTxReadLogging())) {
+                                                System.err.println("NEW ENTRY PART CNT = " + txEntry.updateCounter() + " 3! ");
+
+                                                ptr = cctx.wal().log(new DataRecord(new DataEntry(
+                                                        cacheCtx.cacheId(),
+                                                        txEntry.key(),
+                                                        val,
+                                                        op,
+                                                        nearXidVersion(),
+                                                        writeVersion(),
+                                                        0,
+                                                        txEntry.key().partition(),
+                                                        txEntry.updateCounter())));
+                                            }
+                                        }
 
                                         if (nearCached != null && updRes.success()) {
                                             nearCached.innerRemove(

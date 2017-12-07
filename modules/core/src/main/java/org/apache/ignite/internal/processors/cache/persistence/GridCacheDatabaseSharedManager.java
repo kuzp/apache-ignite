@@ -2090,15 +2090,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 changed = updateState(part, stateId);
 
-                                if (stateId == GridDhtPartitionState.MOVING.ordinal() ||
-                                    stateId == GridDhtPartitionState.OWNING.ordinal()) {
+                                if (stateId == GridDhtPartitionState.OWNING.ordinal()
+                                        || (stateId == GridDhtPartitionState.MOVING.ordinal()
+                                                && part.initialUpdateCounter() < fromWal.get2())) {
+                                    part.initialUpdateCounter(fromWal.get2());
 
-                                    if (part.initialUpdateCounter() < fromWal.get2() ||
-                                        stateId == GridDhtPartitionState.MOVING.ordinal()) {
-                                        part.initialUpdateCounter(fromWal.get2());
-
-                                        changed = true;
-                                    }
+                                    changed = true;
                                 }
                             }
                             else
@@ -2169,8 +2166,15 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     locPart,
                     null);
 
-                if (dataEntry.partitionCounter() != 0)
+                if (dataEntry.partitionCounter() != 0) {
                     cacheCtx.offheap().onPartitionInitialCounterUpdated(partId, dataEntry.partitionCounter());
+
+                    if (dataEntry.partitionId() % 6 == 0 && dataEntry.cacheId() == CU.cacheId("cache")) {
+                        new Throwable(Thread.currentThread().getName() + " PARTITION COUNTER = "
+                                + dataEntry.partitionCounter() + ", part - " + dataEntry.partitionId() + ", curr - "
+                                + cacheCtx.offheap().lastUpdatedPartitionCounter(partId)).printStackTrace();
+                    }
+                }
 
                 break;
 

@@ -2590,6 +2590,9 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                     updateCntr = nextPartitionCounter(topVer, true, null);
 
                 if (walEnabled) {
+                    if (!preload)
+                        System.err.println("NEW ENTRY PART CNT = " + updateCntr + " 4! " + preload);
+
                     cctx.shared().wal().log(new DataRecord(new DataEntry(
                         cctx.cacheId(),
                         key,
@@ -3195,6 +3198,8 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         assert cctx.atomic();
 
         try {
+            System.err.println("NEW ENTRY PART CNT  = " + updCntr + " 2!");
+
             if (cctx.group().persistenceEnabled())
                 cctx.shared().wal().log(new DataRecord(new DataEntry(
                     cctx.cacheId(),
@@ -4476,6 +4481,8 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             if (updateCntr != null)
                 updateCntr0 = updateCntr;
+
+            System.err.println("NEW ENTRY PART CNT = " + updateCntr + ", new = " + updateCntr0);
 
             entry.logUpdate(op, null, newVer, 0, updateCntr0);
 

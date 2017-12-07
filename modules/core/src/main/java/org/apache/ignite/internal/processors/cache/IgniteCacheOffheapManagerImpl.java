@@ -1145,6 +1145,10 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 if (val0 >= val)
                     break;
 
+                if (partId()== 6 && grp.groupId() == CU.cacheId("cache") && Thread.currentThread().getName().endsWith("0%")) {
+                    new Throwable("UPDATE CNT FOR PART 6, updCntr = " + val).printStackTrace();
+                }
+
                 if (cntr.compareAndSet(val0, val))
                     break;
             }
@@ -1532,6 +1536,11 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
          * @return Next update index.
          */
         @Override public long nextUpdateCounter() {
+
+            if (partId()== 6 && grp.groupId() == CU.cacheId("cache") && Thread.currentThread().getName().endsWith("0%")) {
+                new Throwable("UPDATE CNT FOR PART 6, updCntr = " + (cntr.get() + 1)).printStackTrace();
+            }
+
             return cntr.incrementAndGet();
         }
 
@@ -1552,6 +1561,11 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         @Override public void init(long size, long updCntr, @Nullable Map<Integer, Long> cacheSizes) {
             initCntr = updCntr;
             storageSize.set(size);
+
+            if (partId()== 6 && grp.groupId() == CU.cacheId("cache") && Thread.currentThread().getName().endsWith("0%")) {
+                System.err.println("UPDATE CNT FOR PART 6, updCntr = " + updCntr);
+            }
+
             cntr.set(updCntr);
 
             if (cacheSizes != null) {
