@@ -495,9 +495,6 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      */
     public void restoreState(GridDhtPartitionState stateToRestore) {
         state.set(setPartState(state.get(),stateToRestore));
-        if (id % 6 == 0)
-            System.err.println(Thread.currentThread().getName() + " - " + grp.groupId() + " - " + id
-                    + " - restore - " + stateToRestore + " - " + updateCounter());
     }
 
     /**
@@ -508,8 +505,6 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     private boolean casState(long state, GridDhtPartitionState toState) {
         if (grp.persistenceEnabled()) {
             synchronized (this) {
-                if (id % 6 == 0)
-                    System.err.println(Thread.currentThread().getName() + " - " + grp.groupId() + " - " + id + " - " + toState + " - " + updateCounter());
                 boolean update = this.state.compareAndSet(state, setPartState(state, toState));
 
                 if (update)

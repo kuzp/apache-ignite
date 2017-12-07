@@ -2166,15 +2166,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     locPart,
                     null);
 
-                if (dataEntry.partitionCounter() != 0) {
+                if (dataEntry.partitionCounter() != 0)
                     cacheCtx.offheap().onPartitionInitialCounterUpdated(partId, dataEntry.partitionCounter());
-
-                    if (dataEntry.partitionId() % 6 == 0 && dataEntry.cacheId() == CU.cacheId("cache")) {
-                        new Throwable(Thread.currentThread().getName() + " PARTITION COUNTER = "
-                                + dataEntry.partitionCounter() + ", part - " + dataEntry.partitionId() + ", curr - "
-                                + cacheCtx.offheap().lastUpdatedPartitionCounter(partId)).printStackTrace();
-                    }
-                }
 
                 break;
 

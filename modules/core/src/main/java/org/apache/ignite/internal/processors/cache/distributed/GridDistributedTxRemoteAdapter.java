@@ -561,8 +561,6 @@ public abstract class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
                                                 if (dataEntries == null)
                                                     dataEntries = new ArrayList<>(entries.size());
 
-//                                                System.err.println("NEW ENTRY PART CNT = " + txEntry.updateCounter() + " 5! ");
-
                                                 dataEntries.add(
                                                     new DataEntry(
                                                         cacheCtx.cacheId(),

@@ -1145,10 +1145,6 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 if (val0 >= val)
                     break;
 
-                if (partId()== 6 && grp.groupId() == CU.cacheId("cache") && Thread.currentThread().getName().endsWith("0%")) {
-                    new Throwable("UPDATE CNT FOR PART 6, updCntr = " + val).printStackTrace();
-                }
-
                 if (cntr.compareAndSet(val0, val))
                     break;
             }

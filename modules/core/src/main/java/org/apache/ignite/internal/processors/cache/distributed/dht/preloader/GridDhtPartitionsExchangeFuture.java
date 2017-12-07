@@ -2119,23 +2119,12 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         cntrObj.nodes.add(nodeId);
                 }
 
-                if (part.id() % 6 == 0 && top.groupId() == CU.cacheId("cache")) {
-                    System.err.println("PUT LOCAL 1");
-                }
-
                 maxCntrs.put(part.id(), cntrObj);
             }
-            else if (maxCntr == null || cntr > maxCntr.cnt) {
+            else if (maxCntr == null || cntr > maxCntr.cnt)
                 maxCntrs.put(part.id(), new CounterWithNodes(cntr, cctx.localNodeId()));
-            }
-            else if (cntr == maxCntr.cnt) {
-                if (part.id() % 6 == 0 && top.groupId() == CU.cacheId("cache")) {
-                    new Throwable("PUT LOCAL 2").printStackTrace();
-
-                }
-
+            else if (cntr == maxCntr.cnt)
                 maxCntr.nodes.add(cctx.localNodeId());
-            }
         }
 
         int entryLeft = maxCntrs.size();
@@ -2192,19 +2181,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
             if (entryLeft != 0 && maxCntr == 0)
                 continue;
-
-            if (p % 6 == 0 && top.groupId() == CU.cacheId("cache")) {
-                SB sb = new SB("OWNERS for partId = " + p);
-
-                for (UUID node : e.getValue().nodes) {
-                    sb.a(cctx.discovery().node(node).consistentId()).a(", ");
-                }
-
-                sb.a("cnt = " + e.getValue().cnt);
-
-
-                System.err.println(sb.toString());
-            }
 
             Set<UUID> nodesToReload = top.setOwners(p, e.getValue().nodes, haveHistory.contains(p), entryLeft == 0);
 
@@ -2536,7 +2512,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      *
      */
     private void assignPartitionsStates() {
-        System.err.println("@@@ASSIGN PARTITION STATE@@@");
         for (Map.Entry<Integer, CacheGroupDescriptor> e : cctx.affinity().cacheGroups().entrySet()) {
             CacheGroupDescriptor grpDesc = e.getValue();
             if (grpDesc.config().getCacheMode() == CacheMode.LOCAL)
