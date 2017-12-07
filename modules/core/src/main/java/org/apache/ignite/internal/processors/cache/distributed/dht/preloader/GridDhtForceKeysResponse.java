@@ -171,7 +171,8 @@ public class GridDhtForceKeysResponse extends GridCacheMessage implements GridCa
                 info.marshal(cctx);
         }
 
-        if (err != null && errBytes == null)
+        // we should always marshall err even if it is null to have a backward compatibility with prev versions
+        if (errBytes == null)
             errBytes = U.marshal(ctx, err);
     }
 
