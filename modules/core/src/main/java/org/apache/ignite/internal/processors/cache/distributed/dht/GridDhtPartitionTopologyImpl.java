@@ -2005,74 +2005,74 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
      */
     private boolean checkEvictions(long updateSeq, AffinityAssignment aff) {
         boolean changed = false;
-//
-//        UUID locId = ctx.localNodeId();
-//
-//        for (int p = 0; p < locParts.length(); p++) {
-//            GridDhtLocalPartition part = locParts.get(p);
-//
-//            if (part == null)
-//                continue;
-//
-//            GridDhtPartitionState state = part.state();
-//
-//            if (state.active()) {
-//                List<ClusterNode> affNodes = aff.get(p);
-//
-//                if (!affNodes.contains(ctx.localNode())) {
-//                    List<ClusterNode> nodes = nodes(p, aff.topologyVersion(), OWNING, null);
-//                    Collection<UUID> nodeIds = F.nodeIds(nodes);
-//
-//                    // If all affinity nodes are owners, then evict partition from local node.
-//                    if (nodeIds.containsAll(F.nodeIds(affNodes))) {
-//                        part.reload(false);
-//
-//                        part.rent(false);
-//
-//                        updateSeq = updateLocal(part.id(), part.state(), updateSeq, aff.topologyVersion());
-//
-//                        changed = true;
-//
-//                        if (log.isDebugEnabled())
-//                            log.debug("Evicted local partition (all affinity nodes are owners): " + part);
-//                    }
-//                    else {
-//                        int ownerCnt = nodeIds.size();
-//                        int affCnt = affNodes.size();
-//
-//                        if (ownerCnt > affCnt) {
-//                            // Sort by node orders in ascending order.
-//                            Collections.sort(nodes, CU.nodeComparator(true));
-//
-//                            int diff = nodes.size() - affCnt;
-//
-//                            for (int i = 0; i < diff; i++) {
-//                                ClusterNode n = nodes.get(i);
-//
-//                                if (locId.equals(n.id())) {
-//                                    part.reload(false);
-//
-//                                    part.rent(false);
-//
-//                                    updateSeq = updateLocal(part.id(),
-//                                        part.state(),
-//                                        updateSeq,
-//                                        aff.topologyVersion());
-//
-//                                    changed = true;
-//
-//                                    if (log.isDebugEnabled())
-//                                        log.debug("Evicted local partition (this node is oldest non-affinity node): " +
-//                                            part);
-//
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
+
+        UUID locId = ctx.localNodeId();
+
+        for (int p = 0; p < locParts.length(); p++) {
+            GridDhtLocalPartition part = locParts.get(p);
+
+            if (part == null)
+                continue;
+
+            GridDhtPartitionState state = part.state();
+
+            if (state.active()) {
+                List<ClusterNode> affNodes = aff.get(p);
+
+                if (!affNodes.contains(ctx.localNode())) {
+                    List<ClusterNode> nodes = nodes(p, aff.topologyVersion(), OWNING, null);
+                    Collection<UUID> nodeIds = F.nodeIds(nodes);
+
+                    // If all affinity nodes are owners, then evict partition from local node.
+                    if (nodeIds.containsAll(F.nodeIds(affNodes))) {
+                        part.reload(false);
+
+                        part.rent(false);
+
+                        updateSeq = updateLocal(part.id(), part.state(), updateSeq, aff.topologyVersion());
+
+                        changed = true;
+
+                        if (log.isDebugEnabled())
+                            log.debug("Evicted local partition (all affinity nodes are owners): " + part);
+                    }
+                    else {
+                        int ownerCnt = nodeIds.size();
+                        int affCnt = affNodes.size();
+
+                        if (ownerCnt > affCnt) { //TODO !!! we could loss all owners in such case
+                            // Sort by node orders in ascending order.
+                            Collections.sort(nodes, CU.nodeComparator(true));
+
+                            int diff = nodes.size() - affCnt;
+
+                            for (int i = 0; i < diff; i++) {
+                                ClusterNode n = nodes.get(i);
+
+                                if (locId.equals(n.id())) {
+                                    part.reload(false);
+
+                                    part.rent(false);
+
+                                    updateSeq = updateLocal(part.id(),
+                                        part.state(),
+                                        updateSeq,
+                                        aff.topologyVersion());
+
+                                    changed = true;
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Evicted local partition (this node is oldest non-affinity node): " +
+                                            part);
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         return changed;
     }

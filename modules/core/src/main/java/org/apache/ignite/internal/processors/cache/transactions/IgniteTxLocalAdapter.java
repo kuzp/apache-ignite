@@ -677,6 +677,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                         if (updRes.success())
                                             txEntry.updateCounter(updRes.updatePartitionCounter());
 
+                                        //TODO
                                         if (cacheCtx.group().persistenceEnabled()) {
                                             if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
                                                     (op != READ || cctx.snapshot().needTxReadLogging())) {
@@ -743,6 +744,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                         if (updRes.success())
                                             txEntry.updateCounter(updRes.updatePartitionCounter());
 
+                                        //TODO
                                         if (cacheCtx.group().persistenceEnabled()) {
                                             if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
                                                     (op != READ || cctx.snapshot().needTxReadLogging())) {
