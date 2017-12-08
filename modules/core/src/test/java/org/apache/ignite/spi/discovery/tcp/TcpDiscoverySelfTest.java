@@ -92,6 +92,7 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.jetbrains.annotations.Nullable;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.ignite.events.EventType.EVT_JOB_MAPPED;
 import static org.apache.ignite.events.EventType.EVT_NODE_FAILED;
@@ -440,6 +441,41 @@ public class TcpDiscoverySelfTest extends GridCommonAbstractTest {
 
         // Metrics update interval is 40 seconds, but we should detect node failure faster.
         assert cnt.await(7, SECONDS);
+    }
+
+    /**
+     * @throws Exception If any error occurs.
+     */
+    public void testFailureDetectionOnReceiptError() throws Exception {
+        TestReceiptFailedDiscoverySpi spi = new TestReceiptFailedDiscoverySpi();
+
+        nodeSpi.set(spi);
+
+        Ignite g0 = startGrid(0);
+
+        final CountDownLatch cnt = new CountDownLatch(1);
+
+        g0.events().localListen(
+            new IgnitePredicate<Event>() {
+                @Override public boolean apply(Event evt) {
+                    cnt.countDown();
+
+                    return true;
+                }
+            },
+            EventType.EVT_NODE_FAILED
+        );
+
+        Ignite g1 = startGrid(1);
+
+        assertEquals(g0.cluster().nodes().size(), 2);
+
+        assertEquals(g1.cluster().nodes().size(), 2);
+
+        spi.receiptFailed = true;
+
+        assertTrue("Next node have to be failed within failureDetectionTimeout",
+            cnt.await(spi.failureDetectionTimeout() + 3000, MILLISECONDS));
     }
 
     /**
@@ -2635,6 +2671,22 @@ public class TcpDiscoverySelfTest extends GridCommonAbstractTest {
 
             if (msg instanceof TcpDiscoveryNodeAddedMessage)
                 stop = true;
+        }
+    }
+
+    /**
+     *
+     */
+    private static class TestReceiptFailedDiscoverySpi extends TcpDiscoverySpi {
+        /** */
+        public volatile boolean receiptFailed;
+
+        /** {@inheritDoc} */
+        @Override protected int readReceipt(Socket sock, long timeout) throws IOException {
+            if (receiptFailed)
+                throw new IOException("Simulate receipt failed");
+
+            return super.readReceipt(sock, timeout);
         }
     }
 
