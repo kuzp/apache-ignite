@@ -30,6 +30,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedManagerAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.partstate.PartitionAllocationMap;
 import org.apache.ignite.internal.processors.cluster.IgniteChangeGlobalStateSupport;
+import org.apache.ignite.lang.IgniteFuture;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -67,11 +68,11 @@ public class IgniteCacheSnapshotManager<T extends SnapshotOperation> extends Gri
      *
      * @return {@code true} if next operation must be snapshot, {@code false} if checkpoint must be executed.
      */
-    public boolean onMarkCheckPointBegin(
+    public IgniteFuture<?> onMarkCheckPointBegin(
         T snapshotOperation,
         PartitionAllocationMap map
     ) throws IgniteCheckedException {
-        return false;
+        return null;
     }
 
     /**
