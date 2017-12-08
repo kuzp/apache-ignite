@@ -19,6 +19,7 @@ package org.apache.ignite.internal.binary;
 
 import java.io.IOException;
 import java.io.ObjectOutput;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -1409,9 +1410,41 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         writeStringField(val);
     }
 
+    private static final Field STR_VAL;
+
+    static {
+        try {
+            STR_VAL = String.class.getDeclaredField("value");
+
+            STR_VAL.setAccessible(true);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public void writeString(@Nullable String val) throws BinaryObjectException {
-        doWriteString(val);
+        if (BinaryUtils.USE_UTF16) {
+            if (val == null)
+                out.writeByte(GridBinaryMarshaller.NULL);
+            else {
+                try {
+                    char[] strArr = (char[])STR_VAL.get(val);
+
+                    out.unsafeEnsure(1 + 4);
+                    out.unsafeWriteByte(GridBinaryMarshaller.STRING);
+                    out.unsafeWriteInt(strArr.length);
+
+                    out.writeCharArray(strArr);
+                }
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        else
+            doWriteString(val);
     }
 
     /** {@inheritDoc} */

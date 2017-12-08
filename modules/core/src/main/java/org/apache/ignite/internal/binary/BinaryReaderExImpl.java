@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.ignite.binary.BinaryCollectionFactory;
 import org.apache.ignite.binary.BinaryInvalidTypeException;
 import org.apache.ignite.binary.BinaryMapFactory;
@@ -1052,7 +1053,17 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Bina
 
     /** {@inheritDoc} */
     @Override @Nullable public String readString() throws BinaryObjectException {
-        return checkFlagNoHandles(STRING) == Flag.NORMAL ? BinaryUtils.doReadString(in) : null;
+        if (BinaryUtils.USE_UTF16) {
+            if (checkFlagNoHandles(STRING) == Flag.NORMAL) {
+                int strLen = in.readInt();
+
+                return new String(in.readCharArray(strLen));
+            }
+            else
+                return null;
+        }
+        else
+            return checkFlagNoHandles(STRING) == Flag.NORMAL ? BinaryUtils.doReadString(in) : null;
     }
 
     /** {@inheritDoc} */

@@ -74,6 +74,7 @@ import org.jsr166.ConcurrentHashMap8;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_BINARY_MARSHALLER_USE_STRING_SERIALIZATION_VER_2;
+import static org.apache.ignite.IgniteSystemProperties.IGNITE_BINARY_MARSHALLER_USE_UTF16;
 
 /**
  * Binary utils.
@@ -88,6 +89,10 @@ public class BinaryUtils {
     /** */
     public static final boolean USE_STR_SERIALIZATION_VER_2 = IgniteSystemProperties.getBoolean(
         IGNITE_BINARY_MARSHALLER_USE_STRING_SERIALIZATION_VER_2, false);
+
+    /** */
+    public static final boolean USE_UTF16 =
+        IgniteSystemProperties.getBoolean(IGNITE_BINARY_MARSHALLER_USE_UTF16, true);
 
     /** Map from class to associated write replacer. */
     public static final Map<Class, BinaryWriteReplacer> CLS_TO_WRITE_REPLACER = new HashMap<>();

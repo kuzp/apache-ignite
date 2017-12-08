@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -210,6 +211,9 @@ public class BinaryContext {
 
     /** */
     private final ConcurrentMap<Class<?>, BinaryClassDescriptor> descByCls = new ConcurrentHashMap8<>();
+
+    /** Mapping from type ID to class descriptor for default class loader. */
+    private final ConcurrentMap<Integer, BinaryClassDescriptor> descByTypeId = new ConcurrentHashMap<>();
 
     /** */
     private final Map<Integer, BinaryClassDescriptor> predefinedTypes = new HashMap<>();
@@ -678,8 +682,16 @@ public class BinaryContext {
         if (desc != null)
             return desc;
 
-        if (ldr == null)
+        boolean dfltLdr = ldr == null;
+
+        if (dfltLdr) {
+            desc = descByTypeId.get(typeId);
+
+            if (desc != null)
+                return desc;
+
             ldr = sysLdr;
+        }
 
         Class cls;
 
@@ -709,6 +721,9 @@ public class BinaryContext {
             assert desc.typeId() == typeId : "Duplicate typeId [typeId=" + typeId + ", cls=" + cls
                 + ", desc=" + desc + "]";
         }
+
+        if (dfltLdr)
+            descByTypeId.put(typeId, desc);
 
         return desc;
     }
