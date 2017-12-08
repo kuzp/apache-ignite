@@ -2090,15 +2090,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 changed = updateState(part, stateId);
 
-                                if (stateId == GridDhtPartitionState.MOVING.ordinal() ||
-                                    stateId == GridDhtPartitionState.OWNING.ordinal()) {
+                                if (stateId == GridDhtPartitionState.OWNING.ordinal()
+                                        || (stateId == GridDhtPartitionState.MOVING.ordinal()
+                                                && part.initialUpdateCounter() < fromWal.get2())) {
+                                    part.initialUpdateCounter(fromWal.get2());
 
-                                    if (part.initialUpdateCounter() < fromWal.get2() ||
-                                        stateId == GridDhtPartitionState.MOVING.ordinal()) {
-                                        part.initialUpdateCounter(fromWal.get2());
-
-                                        changed = true;
-                                    }
+                                    changed = true;
                                 }
                             }
                             else
