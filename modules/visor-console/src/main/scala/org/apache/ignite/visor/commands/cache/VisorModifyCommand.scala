@@ -20,6 +20,7 @@ package org.apache.ignite.visor.commands.cache
 import java.util.UUID
 
 import org.apache.ignite.internal.visor.cache._
+import org.apache.ignite.internal.util.lang.{GridFunc => F}
 import org.apache.ignite.internal.visor.util.VisorTaskUtils._
 import org.apache.ignite.visor.commands.cache.VisorModifyCommand._
 import org.apache.ignite.visor.visor._
@@ -124,6 +125,16 @@ class VisorModifyCommand {
         if (!isConnected)
             adviseToConnect()
         else {
+            def argNonEmpty(argLst: ArgList, arg: Option[String], key: String): Boolean = {
+                if (hasArgName(key, argLst) && arg.forall((a) => F.isEmpty(a))) {
+                    warn(s"Argument $key is specified and can not be empty")
+
+                    false
+                }
+                else
+                    true
+            }
+
             var argLst = parseArgs(args)
 
             val put = hasArgFlag("put", argLst)
@@ -167,8 +178,8 @@ class VisorModifyCommand {
             val keyValueStr = argValue("kv", argLst)
             var key: Object = null
 
-            if (keyTypeStr.isEmpty != keyValueStr.isEmpty) {
-                warn("Both key type and key value should be specified")
+            if (keyTypeStr.nonEmpty && keyValueStr.isEmpty) {
+                warn("Key value should be specified when key type is specified")
 
                 return
             }
@@ -177,11 +188,17 @@ class VisorModifyCommand {
             val valueValueStr = argValue("vv", argLst)
             var value: Object = null
 
-            if (valueTypeStr.isEmpty != valueValueStr.isEmpty) {
-                warn("Both value type and value value should be specified")
+            if (valueTypeStr.nonEmpty && valueValueStr.isEmpty) {
+                warn("Value value should be specified when value type is specified")
 
                 return
             }
+
+            if (!argNonEmpty(argLst, keyTypeStr, "kt")
+                || !argNonEmpty(argLst, keyValueStr, "kv")
+                || !argNonEmpty(argLst, valueTypeStr, "vt")
+                || !argNonEmpty(argLst, valueValueStr, "vv"))
+                return
 
             keyTypeStr match {
                 case Some(clsStr) =>
@@ -194,6 +211,9 @@ class VisorModifyCommand {
 
                             return
                     }
+
+                case None if keyValueStr.nonEmpty =>
+                    key = keyValueStr.get
 
                 case None =>
                     askTypedValue("key") match {
@@ -216,6 +236,12 @@ class VisorModifyCommand {
 
                                 return
                         }
+
+                    case None if valueValueStr.nonEmpty =>
+                        value = valueValueStr.get
+
+                    case None if keyValueStr.isDefined =>
+                        value = key
 
                     case None =>
                         askTypedValue("value") match {
