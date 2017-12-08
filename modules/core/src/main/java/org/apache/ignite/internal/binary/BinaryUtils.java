@@ -92,7 +92,7 @@ public class BinaryUtils {
 
     /** */
     public static final boolean USE_UTF16 =
-        IgniteSystemProperties.getBoolean(IGNITE_BINARY_MARSHALLER_USE_UTF16, true);
+        IgniteSystemProperties.getBoolean(IGNITE_BINARY_MARSHALLER_USE_UTF16, false);
 
     /** Map from class to associated write replacer. */
     public static final Map<Class, BinaryWriteReplacer> CLS_TO_WRITE_REPLACER = new HashMap<>();

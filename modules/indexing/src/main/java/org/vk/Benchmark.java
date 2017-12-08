@@ -23,7 +23,7 @@ public abstract  class Benchmark {
 
     private static final AtomicLong cnt = new AtomicLong();
 
-    public void run() {
+    public void run() throws Exception {
         System.out.println("Starting benchmark: " + getClass().getSimpleName());
 
         try {
@@ -69,9 +69,9 @@ public abstract  class Benchmark {
         }
     }
 
-    protected abstract void setup();
+    protected abstract void setup() throws Exception;
 
-    protected abstract void test();
+    protected abstract void test() throws Exception;
 
     protected abstract void tearDown();
 }

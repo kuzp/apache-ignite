@@ -10,62 +10,138 @@ import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 class CMAccums implements Binarylizable {
-//    private long historykey;
+
+    private static final AtomicLong CTR = new AtomicLong();
+
+//    public long historykey;
 //    @QuerySqlField (index=true)
 //    public String ActNumber;
 
     @QuerySqlField(index = true)
     public int CustomerId;
 
-    private String date;
-    private long id;
-    private String merchantNumber;
-    private double amount;
-    private String time;
+    @QuerySqlField
+    public String d;
 
-    private String cmhistory_String_Variable1;
-    private String profile_String_Variable1;
-    private long profile_long_Variable1;
-    private long seprof_long_Variable1;
-    private String cmhistory_String_Variable2;
-    private String trs_String_Variable1;
-    private String profile_String_Variable2;
-    private String seprof_String_Variable7;
-    private String profile_String_Variable3;
-    private String profile_String_Variable4;
-    private String cmhistory_String_Variable3;
-    private String trs_String_Variable2;
-    private String seprof_String_Variable2;
-    private String seprof_String_Variable3;
-    private long seprof_long_Variable2;
-    private long trs_long_Variable1;
-    private long trs_long_Variable2;
-    private String seprof_String_Variable4;
-    private String seprof_String_Variable5;
-    private long profile_long_Variable2;
-    private String trs_String_Variable3;
-    private String seprof_String_Variable6;
-    private double trs_double_Variable1;
-    private double trs_double_Variable2;
-    private double trs_double_Variable3;
-    private double trs_double_Variable4;
-    private double trs_double_Variable5;
-    private int trs_int_Variable1;
-    private double seprof_double_Variable;
-    private double seprof_double_Variable1;
-    private String profile_String_Variable5;
-    private String profile_String_Variable6;
+    @QuerySqlField
+    public long id;
+
+    @QuerySqlField
+    public String merchantNumber;
+
+    @QuerySqlField
+    public double amount;
+
+    @QuerySqlField
+    public String t;
+
+    @QuerySqlField
+    public String cmhistory_String_Variable1;
+
+    @QuerySqlField
+    public String profile_String_Variable1;
+
+    @QuerySqlField
+    public long profile_long_Variable1;
+
+    @QuerySqlField
+    public long seprof_long_Variable1;
+
+    @QuerySqlField
+    public String cmhistory_String_Variable2;
+
+    @QuerySqlField
+    public String trs_String_Variable1;
+
+    @QuerySqlField
+    public String profile_String_Variable2;
+
+    @QuerySqlField
+    public String seprof_String_Variable7;
+
+    @QuerySqlField
+    public String profile_String_Variable3;
+
+    @QuerySqlField
+    public String profile_String_Variable4;
+
+    @QuerySqlField
+    public String cmhistory_String_Variable3;
+
+    @QuerySqlField
+    public String trs_String_Variable2;
+
+    @QuerySqlField
+    public String seprof_String_Variable2;
+
+    @QuerySqlField
+    public String seprof_String_Variable3;
+
+    @QuerySqlField
+    public long seprof_long_Variable2;
+
+    @QuerySqlField
+    public long trs_long_Variable1;
+
+    @QuerySqlField
+    public long trs_long_Variable2;
+
+    @QuerySqlField
+    public String seprof_String_Variable4;
+
+    @QuerySqlField
+    public String seprof_String_Variable5;
+
+    @QuerySqlField
+    public long profile_long_Variable2;
+
+    @QuerySqlField
+    public String trs_String_Variable3;
+
+    @QuerySqlField
+    public String seprof_String_Variable6;
+
+    @QuerySqlField
+    public double trs_double_Variable1;
+
+    @QuerySqlField
+    public double trs_double_Variable2;
+
+    @QuerySqlField
+    public double trs_double_Variable3;
+
+    @QuerySqlField
+    public double trs_double_Variable4;
+
+    @QuerySqlField
+    public double trs_double_Variable5;
+
+    @QuerySqlField
+    public int trs_int_Variable1;
+
+    @QuerySqlField
+    public double seprof_double_Variable;
+
+    @QuerySqlField
+    public double seprof_double_Variable1;
+
+    @QuerySqlField
+    public String profile_String_Variable5;
+
+    @QuerySqlField
+    public String profile_String_Variable6;
 
     CMAccums(int CustomerId, Random rand) {
         this.CustomerId = CustomerId;
 
-        date = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
-        id = rand.nextLong();
+        d = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
+        id = CTR.incrementAndGet();
         merchantNumber = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
         amount = rand.nextDouble();
-        time = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
+        t = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
 
         cmhistory_String_Variable1 = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
         profile_String_Variable1 = RandomStringUtils.randomAlphabetic(rand.nextInt(12) + 1);
@@ -107,11 +183,11 @@ class CMAccums implements Binarylizable {
 
         BinaryRawWriter rawWriter = writer.rawWriter();
 
-        rawWriter.writeString(date);
+        rawWriter.writeString(d);
         rawWriter.writeLong(id);
         rawWriter.writeString(merchantNumber);
         rawWriter.writeDouble(amount);
-        rawWriter.writeString(time);
+        rawWriter.writeString(t);
 
         rawWriter.writeString(cmhistory_String_Variable1);
         rawWriter.writeString(profile_String_Variable1);
@@ -153,11 +229,11 @@ class CMAccums implements Binarylizable {
 
         BinaryRawReader rawReader = reader.rawReader();
 
-        date = rawReader.readString();
+        d = rawReader.readString();
         id = rawReader.readLong();
         merchantNumber = rawReader.readString();
         amount = rawReader.readDouble();
-        time = rawReader.readString();
+        t = rawReader.readString();
 
         cmhistory_String_Variable1 = rawReader.readString();
         profile_String_Variable1 = rawReader.readString();

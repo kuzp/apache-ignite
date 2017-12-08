@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -1056,6 +1057,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Bina
         if (BinaryUtils.USE_UTF16) {
             if (checkFlagNoHandles(STRING) == Flag.NORMAL) {
                 int strLen = in.readInt();
+
+//                byte[] array = in.array();
+//
+//                int pos = in.position();
+//
+//                String res = new String(array, pos, strLen * 2, StandardCharsets.UTF_16LE);
+//
+//                in.position(pos + strLen * 2);
+//
+//                return res;
 
                 return new String(in.readCharArray(strLen));
             }

@@ -685,10 +685,10 @@ public class BinaryContext {
         boolean dfltLdr = ldr == null;
 
         if (dfltLdr) {
-            desc = descByTypeId.get(typeId);
-
-            if (desc != null)
-                return desc;
+//            desc = descByTypeId.get(typeId);
+//
+//            if (desc != null)
+//                return desc;
 
             ldr = sysLdr;
         }
@@ -722,8 +722,8 @@ public class BinaryContext {
                 + ", desc=" + desc + "]";
         }
 
-        if (dfltLdr)
-            descByTypeId.put(typeId, desc);
+//        if (dfltLdr)
+//            descByTypeId.put(typeId, desc);
 
         return desc;
     }
