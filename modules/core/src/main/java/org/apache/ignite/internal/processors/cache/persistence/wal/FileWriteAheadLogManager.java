@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.sql.Time;
 import java.util.ArrayList;
@@ -1221,6 +1222,12 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
         try {
             Files.move(tmp.toPath(), file.toPath());
+        }
+        catch (FileAlreadyExistsException e) {
+            // Rollover() already created segment file.
+            tmp.delete();
+
+            return;
         }
         catch (IOException e) {
             throw new IgniteCheckedException("Failed to move temp file to a regular WAL segment file: " +
