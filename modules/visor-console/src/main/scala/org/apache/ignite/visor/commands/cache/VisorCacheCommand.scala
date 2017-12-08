@@ -212,7 +212,7 @@ class VisorCacheCommand {
         else if (!isActive) {
             warn("Can not perform the operation because the cluster is inactive.",
                 "Note, that the cluster is considered inactive by default if Ignite Persistent Store is used to let all the nodes join the cluster.",
-                "To activate the cluster execute following command: top -active.")
+                "To activate the cluster execute following command: top -activate.")
         }
         else {
             var argLst = parseArgs(args)

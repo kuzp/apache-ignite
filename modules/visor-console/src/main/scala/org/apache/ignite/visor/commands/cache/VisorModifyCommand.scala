@@ -45,9 +45,9 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * ====Specification====
  * {{{
- *     modify -put -c=<cache-name> {-kt=<key-type> -kv=<key-value>} {-vt=<value-type> -vv=<value-value>}
- *     modify -get -c=<cache-name> {-kt=<key-type> -kv=<key-value>}
- *     modify -remove -c=<cache-name> {-kt=<key-type> -kv=<key-value>}
+ *     modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>} {-vt=<value-type>} {-vv=<value-value>}
+ *     modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>}
+ *     modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>}
  * }}}
  *
  * ====Arguments====
@@ -55,13 +55,15 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *     -c=<cache-name>
  *         Name of the cache.
  *     -kt=<key-type>
- *         Type of key
+ *         Type of key. Default value is java.lang.String. Short type name can be specified.
  *     -kv=<key-value>
- *         Value of key
- *     -vt=<value-type>
- *         Type of value
+ *         Value of key. Asked in interactive mode when it is not specified.
+ *     -vt=<value-type>.
+ *         Type of value. Default value is java.lang.String. Short type name can be specified.
+ *         Value type is equals to key type when value is not specified.
  *     -vv=<value-type>
- *         Value of value
+ *         Value of value. Equals to key value when it is not specified.
+ *         Asked in interactive mode when key and value are not specified.
  * }}}
  *
  * ====Examples====
@@ -72,6 +74,9 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *         Get value from cache in interactive mode.
  *     modify -remove -c=@c0
  *         Remove value form cache in interactive mode.
+ *     modify -put -c=cache -kv=key1
+ *         Put value into cache with name cache with key of default String type equal to key1
+ *         and value equal to key.
  *     modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1
  *         Put value into cache with name cache with key of String type equal to key1
  *         and value of String type equal to value1
@@ -124,6 +129,11 @@ class VisorModifyCommand {
     def modify(args: String) {
         if (!isConnected)
             adviseToConnect()
+        else if (!isActive) {
+            warn("Can not perform the operation because the cluster is inactive.",
+                "Note, that the cluster is considered inactive by default if Ignite Persistent Store is used to let all the nodes join the cluster.",
+                "To activate the cluster execute following command: top -activate.")
+        }
         else {
             def argNonEmpty(argLst: ArgList, arg: Option[String], key: String): Boolean = {
                 if (hasArgName(key, argLst) && arg.forall((a) => F.isEmpty(a))) {
@@ -202,12 +212,18 @@ class VisorModifyCommand {
 
             keyTypeStr match {
                 case Some(clsStr) =>
-                    val cls = Class.forName(clsStr)
+                    try {
+                        INPUT_TYPES.find(_._3.getName.indexOf(clsStr) >= 0) match {
+                            case Some(t) => key = t._2(keyValueStr.get)
+                            case None =>
+                                warn("Specified type is not allowed")
 
-                    INPUT_TYPES.find(_._3 == cls) match {
-                        case Some(t) => key = t._2(keyValueStr.get)
-                        case None =>
-                            warn("Specified type is not allowed")
+                                return
+                        }
+                    }
+                    catch {
+                        case e: Throwable =>
+                            warn("Failed to read key: " + e.getMessage)
 
                             return
                     }
@@ -228,15 +244,20 @@ class VisorModifyCommand {
             if (put) {
                 valueTypeStr match {
                     case Some(clsStr) =>
-                        val cls = Class.forName(clsStr)
+                        try {
+                            INPUT_TYPES.find(_._3.getName.indexOf(clsStr) >= 0) match {
+                                case Some(t) => value = t._2(valueValueStr.get)
+                                case None => warn("Specified type is not allowed")
 
-                        INPUT_TYPES.find(_._3 == cls) match {
-                            case Some(t) => value = t._2(valueValueStr.get)
-                            case None => warn("Specified type is not allowed")
+                                    return
+                            }
+                        }
+                        catch {
+                            case e: Throwable =>
+                                warn("Failed to read value: " + e.getMessage)
 
                                 return
                         }
-
                     case None if valueValueStr.nonEmpty =>
                         value = valueValueStr.get
 
@@ -336,13 +357,17 @@ object VisorModifyCommand {
             "-c=<cache-name>" ->
                 "Name of the cache",
             "-kt=<key-type>" ->
-                "Type of key",
+                "Type of key. Default value is java.lang.String. Short type name can be specified.",
             "-kv=<key-value>" ->
-                "Value of key",
-            "-vt=<value-type>" ->
-                "Type of value",
-            "-vv=<value-type>" ->
-                "Value of value"
+                "Value of key. Asked in interactive mode when it is not specified.",
+            "-vt=<value-type>" -> Seq(
+                "Type of value. Default value is java.lang.String. Short type name can be specified.",
+                "Value type is equals to key type when value is not specified."
+            ),
+            "-vv=<value-type>" -> Seq(
+                "Value of value. Equals to key value when it is not specified.",
+                "Asked in interactive mode when key and value are not specified."
+            )
         ),
         examples = Seq(
             "modify -put -c=@c0" ->
@@ -351,6 +376,10 @@ object VisorModifyCommand {
                 "Get value from cache in interactive mode.",
             "modify -remove -c=@c0" ->
                 "Remove value form cache in interactive mode.",
+            "modify -put -c=cache -kv=key1" -> Seq(
+                "Put value into cache with name cache with key of default String type equal to key1",
+                "and value equal to key."
+            ),
             "modify -put -c=@c0 -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1" -> Seq(
                 "Put value into cache with name @c0 with key of String type equal to key1",
                 "and value of String type equal to value1"
