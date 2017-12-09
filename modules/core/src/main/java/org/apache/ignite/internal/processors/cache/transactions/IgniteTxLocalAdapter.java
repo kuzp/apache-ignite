@@ -680,9 +680,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                         //TODO
                                         if (cacheCtx.group().persistenceEnabled()) {
                                             if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
-                                                    (op != READ || cctx.snapshot().needTxReadLogging())) {
-                                                System.err.println("NEW ENTRY PART CNT = " + txEntry.updateCounter() + " 3! ");
-
+                                                    (op != READ || cctx.snapshot().needTxReadLogging()))
                                                 ptr = cctx.wal().log(new DataRecord(new DataEntry(
                                                         cacheCtx.cacheId(),
                                                         txEntry.key(),
@@ -693,7 +691,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                                         0,
                                                         txEntry.key().partition(),
                                                         txEntry.updateCounter())));
-                                            }
                                         }
 
                                         if (nearCached != null && updRes.success()) {
@@ -747,9 +744,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                         //TODO
                                         if (cacheCtx.group().persistenceEnabled()) {
                                             if (!writeEntries().isEmpty() && op != NOOP && op != RELOAD &&
-                                                    (op != READ || cctx.snapshot().needTxReadLogging())) {
-                                                System.err.println("NEW ENTRY PART CNT = " + txEntry.updateCounter() + " 3! ");
-
+                                                    (op != READ || cctx.snapshot().needTxReadLogging()))
                                                 ptr = cctx.wal().log(new DataRecord(new DataEntry(
                                                         cacheCtx.cacheId(),
                                                         txEntry.key(),
@@ -760,7 +755,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                                                         0,
                                                         txEntry.key().partition(),
                                                         txEntry.updateCounter())));
-                                            }
                                         }
 
                                         if (nearCached != null && updRes.success()) {
