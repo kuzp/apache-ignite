@@ -309,7 +309,7 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
                     "Switching to inactive state.");
 
                 ChangeGlobalStateFinishMessage msg =
-                    new ChangeGlobalStateFinishMessage(globalState.transitionRequestId(), false);
+                    new ChangeGlobalStateFinishMessage(globalState.transitionRequestId(), false, false);
 
                 onStateFinishMessage(msg);
 
@@ -327,7 +327,7 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
         if (msg.requestId().equals(state.transitionRequestId())) {
             log.info("Received state change finish message: " + msg.clusterActive());
 
-            globalState = globalState.finish();
+            globalState = globalState.finish(msg.success());
 
             ctx.cache().onStateChangeFinish(msg);
 
@@ -349,9 +349,11 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
     }
 
     /** {@inheritDoc} */
-    @Override public boolean onStateChangeMessage(AffinityTopologyVersion topVer,
+    @Override public boolean onStateChangeMessage(
+        AffinityTopologyVersion topVer,
         ChangeGlobalStateMessage msg,
-        DiscoCache discoCache) {
+        DiscoCache discoCache
+    ) {
         DiscoveryDataClusterState state = globalState;
 
         if (log.isInfoEnabled())
@@ -423,6 +425,7 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
                 transitionFuts.put(msg.requestId(), new GridFutureAdapter<Void>());
 
                 globalState = DiscoveryDataClusterState.createTransitionState(
+                    globalState,
                     msg.activate(),
                     msg.activate() ? msg.baselineTopology() : globalState.baselineTopology(),
                     msg.requestId(),

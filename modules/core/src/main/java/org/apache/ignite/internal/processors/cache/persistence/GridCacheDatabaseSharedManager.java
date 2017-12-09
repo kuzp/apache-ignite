@@ -2057,6 +2057,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             PageMemoryEx pageMem = (PageMemoryEx)grp.dataRegion().pageMemory();
 
             for (int i = 0; i < grp.affinity().partitions(); i++) {
+                T2<Integer, Long> restore = partStates.get(new T2<>(grpId, i));
+
                 if (storeMgr.exists(grpId, i)) {
                     storeMgr.ensure(grpId, i);
 
@@ -2081,10 +2083,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                         try {
                             PagePartitionMetaIO io = PagePartitionMetaIO.VERSIONS.forPage(pageAddr);
 
-                            T2<Integer, Long> fromWal = partStates.get(new T2<>(grpId, i));
-
-                            if (fromWal != null) {
-                                int stateId = fromWal.get1();
+                            if (restore != null) {
+                                int stateId = restore.get1();
 
                                 io.setPartitionState(pageAddr, (byte)stateId);
 
@@ -2092,8 +2092,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                 if (stateId == GridDhtPartitionState.OWNING.ordinal()
                                         || (stateId == GridDhtPartitionState.MOVING.ordinal()
-                                                && part.initialUpdateCounter() < fromWal.get2())) {
-                                    part.initialUpdateCounter(fromWal.get2());
+                                                && part.initialUpdateCounter() < restore.get2())) {
+                                    part.initialUpdateCounter(restore.get2());
 
                                     changed = true;
                                 }
@@ -2108,6 +2108,16 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     finally {
                         pageMem.releasePage(grpId, partMetaId, partMetaPage);
                     }
+                }
+                else if (restore != null) {
+                    GridDhtLocalPartition part = grp.topology().forceCreatePartition(i);
+
+                    assert part != null;
+
+                    // TODO: https://issues.apache.org/jira/browse/IGNITE-6097
+                    grp.offheap().onPartitionInitialCounterUpdated(i, 0);
+
+                    updateState(part, restore.get1());
                 }
             }
         }

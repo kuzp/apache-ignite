@@ -103,10 +103,10 @@ import static org.apache.ignite.transactions.TransactionIsolation.REPEATABLE_REA
  */
 public final class DataStructuresProcessor extends GridProcessorAdapter implements IgniteChangeGlobalStateSupport {
     /** */
-    private static final String DEFAULT_DS_GROUP_NAME = "default-ds-group";
+    public static final String DEFAULT_VOLATILE_DS_GROUP_NAME = "default-volatile-ds-group";
 
     /** */
-    private static final String DEFAULT_VOLATILE_DS_GROUP_NAME = "default-volatile-ds-group";
+    private static final String DEFAULT_DS_GROUP_NAME = "default-ds-group";
 
     /** */
     private static final String DS_CACHE_NAME_PREFIX = "datastructures_";
@@ -118,7 +118,7 @@ public final class DataStructuresProcessor extends GridProcessorAdapter implemen
     private static final int INITIAL_CAPACITY = 10;
 
     /** Initialization latch. */
-    private volatile CountDownLatch initLatch;
+    private volatile CountDownLatch initLatch = new CountDownLatch(1);
 
     /** Initialization failed flag. */
     private boolean initFailed;
@@ -179,8 +179,6 @@ public final class DataStructuresProcessor extends GridProcessorAdapter implemen
     @Override public void onKernalStart(boolean active) {
         if (ctx.config().isDaemon() || !active)
             return;
-
-        onBeforeActivate();
 
         onKernalStart0();
     }
@@ -674,6 +672,24 @@ public final class DataStructuresProcessor extends GridProcessorAdapter implemen
                 return null;
             }
         });
+    }
+
+    public void suspend(String cacheName) {
+        for (Map.Entry<GridCacheInternalKey, GridCacheRemovable> e : dsMap.entrySet()) {
+            String cacheName0 = ATOMICS_CACHE_NAME + "@" + e.getKey().groupName();
+
+            if (cacheName0.equals(cacheName))
+                e.getValue().suspend();
+        }
+    }
+
+    public void restart(IgniteInternalCache cache) {
+        for (Map.Entry<GridCacheInternalKey, GridCacheRemovable> e : dsMap.entrySet()) {
+            String cacheName0 = ATOMICS_CACHE_NAME + "@" + e.getKey().groupName();
+
+            if (cacheName0.equals(cache.name()))
+                e.getValue().restart(cache);
+        }
     }
 
     /**
