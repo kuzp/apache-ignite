@@ -45,9 +45,9 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * ====Specification====
  * {{{
- *     modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>} {-vt=<value-type>} {-vv=<value-value>}
- *     modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>}
- *     modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key-value>}
+ *     modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key>} {-vt=<value-type>} {-vv=<value>}
+ *     modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key>}
+ *     modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key>}
  * }}}
  *
  * ====Arguments====
@@ -56,13 +56,13 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *         Name of the cache.
  *     -kt=<key-type>
  *         Type of key. Default value is java.lang.String. Short type name can be specified.
- *     -kv=<key-value>
- *         Value of key. Asked in interactive mode when it is not specified.
+ *     -kv=<key>
+ *         Key. Asked in interactive mode when it is not specified.
  *     -vt=<value-type>.
  *         Type of value. Default value is java.lang.String. Short type name can be specified.
  *         Value type is equals to key type when value is not specified.
- *     -vv=<value-type>
- *         Value of value. Equals to key value when it is not specified.
+ *     -vv=<value>
+ *         Value. Equals to key when it is not specified.
  *         Asked in interactive mode when key and value are not specified.
  * }}}
  *
@@ -173,36 +173,36 @@ class VisorModifyCommand {
             }
 
             val keyTypeStr = argValue("kt", argLst)
-            val keyValueStr = argValue("kv", argLst)
+            val keyStr = argValue("kv", argLst)
             var key: Object = null
 
-            if (keyTypeStr.nonEmpty && keyValueStr.isEmpty) {
-                warn("Key value should be specified when key type is specified")
+            if (keyTypeStr.nonEmpty && keyStr.isEmpty) {
+                warn("Key should be specified when key type is specified")
 
                 return
             }
 
             val valueTypeStr = argValue("vt", argLst)
-            val valueValueStr = argValue("vv", argLst)
+            val valueStr = argValue("vv", argLst)
             var value: Object = null
 
-            if (valueTypeStr.nonEmpty && valueValueStr.isEmpty) {
-                warn("Value value should be specified when value type is specified")
+            if (valueTypeStr.nonEmpty && valueStr.isEmpty) {
+                warn("Value should be specified when value type is specified")
 
                 return
             }
 
             if (!argNonEmpty(argLst, keyTypeStr, "kt")
-                || !argNonEmpty(argLst, keyValueStr, "kv")
+                || !argNonEmpty(argLst, keyStr, "kv")
                 || !argNonEmpty(argLst, valueTypeStr, "vt")
-                || !argNonEmpty(argLst, valueValueStr, "vv"))
+                || !argNonEmpty(argLst, valueStr, "vv"))
                 return
 
             keyTypeStr match {
                 case Some(clsStr) =>
                     try {
                         INPUT_TYPES.find(_._3.getName.indexOf(clsStr) >= 0) match {
-                            case Some(t) => key = t._2(keyValueStr.get)
+                            case Some(t) => key = t._2(keyStr.get)
                             case None =>
                                 warn("Specified type is not allowed")
 
@@ -216,10 +216,10 @@ class VisorModifyCommand {
                             return
                     }
 
-                case None if keyValueStr.nonEmpty =>
-                    key = keyValueStr.get
+                case None if keyStr.nonEmpty =>
+                    key = keyStr.get
 
-                case None if put && valueValueStr.nonEmpty => // No-op.
+                case None if put && valueStr.nonEmpty => // No-op.
 
                 case None =>
                     askTypedValue("key") match {
@@ -236,7 +236,7 @@ class VisorModifyCommand {
                     case Some(clsStr) =>
                         try {
                             INPUT_TYPES.find(_._3.getName.indexOf(clsStr) >= 0) match {
-                                case Some(t) => value = t._2(valueValueStr.get)
+                                case Some(t) => value = t._2(valueStr.get)
                                 case None => warn("Specified type is not allowed")
 
                                     return
@@ -248,8 +248,8 @@ class VisorModifyCommand {
 
                                 return
                         }
-                    case None if valueValueStr.nonEmpty =>
-                        value = valueValueStr.get
+                    case None if valueStr.nonEmpty =>
+                        value = valueStr.get
 
                     case None =>
                         askTypedValue("value") match {
@@ -339,25 +339,35 @@ object VisorModifyCommand {
             "Remove value from cache."
         ),
         spec = Seq(
-            "modify -put -c=<cache-name> {-kt=<key-type> -kv=<key-value>} {-vt=<value-type> -vv=<value-value>}",
-            "modify -get -c=<cache-name> {-kt=<key-type> -kv=<key-value>}",
-            "modify -remove -c=<cache-name> {-kt=<key-type> -kv=<key-value>}"
+            "modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key>} {-vt=<value-type>} {-vv=<value>}",
+            "modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key>}",
+            "modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key>}"
     ),
         args = Seq(
             "-c=<cache-name>" ->
                 "Name of the cache",
-            "-kt=<key-type>" ->
-                "Type of key. Default value is java.lang.String. Short type name can be specified.",
-            "-kv=<key-value>" ->
-                "Value of key. Asked in interactive mode when it is not specified.",
-            "-vt=<value-type>" -> Seq(
-                "Type of value. Default value is java.lang.String. Short type name can be specified.",
-                "Value type is equals to key type when value is not specified."
+            "-put" -> Seq(
+                "Put value into cache and show its affinity node.",
+                "If the cache previously contained a mapping for the key, the old value is shown",
+                "Key and value are asked in interactive mode when they are not specified.",
+                "Key is equals to value when key is not specified."
             ),
-            "-vv=<value-type>" -> Seq(
-                "Value of value. Equals to key value when it is not specified.",
-                "Asked in interactive mode when key and value are not specified."
-            )
+            "-get" -> Seq(
+                "Get value from cache and show its affinity node.",
+                "Key is asked in interactive mode when it is not specified."
+            ),
+            "-remove" -> Seq(
+                "Remove value from cache and show its affinity node.",
+                "Key is asked in interactive mode when it is not specified."
+            ),
+            "-kt=<key-type>" ->
+                "Type of key. Default type is java.lang.String. Type name can be specified without package.",
+            "-kv=<key>" ->
+                "Key. Must be specified when key type is specified.",
+            "-vt=<value-type>" ->
+                "Type of value. Default type is java.lang.String. Type name can be specified without package.",
+            "-vv=<value>" ->
+                "Value. Must be specified when value type is specified."
         ),
         examples = Seq(
             "modify -put -c=@c0" ->
@@ -367,8 +377,8 @@ object VisorModifyCommand {
             "modify -remove -c=@c0" ->
                 "Remove value from cache with name taken from 'c0' memory variable in interactive mode.",
             "modify -put -c=cache -vv=value1" -> Seq(
-                "Put value into cache with name 'cache' with value of default String type equal to 'value1'",
-                "and a key is the same as value."
+                "Put the value 'value1' into the cache 'cache'.",
+                "Other params have default values: -kt = java.lang.String , -kv = value1, -vt = java.lang.String"
             ),
             "modify -put -c=@c0 -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1" -> Seq(
                 "Put value into cache with name taken from 'c0' memory variable",
