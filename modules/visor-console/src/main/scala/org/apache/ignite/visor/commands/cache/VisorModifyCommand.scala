@@ -273,29 +273,35 @@ class VisorModifyCommand {
                 key, value
             )
 
-            val taskResult = executeRandom(classOf[VisorCacheModifyTask], arg)
-            val resultObj = taskResult.getResult
-            val affinityNode = taskResult.getAffinityNode
+            try {
+                val taskResult = executeRandom(classOf[VisorCacheModifyTask], arg)
+                val resultObj = taskResult.getResult
+                val affinityNode = taskResult.getAffinityNode
 
-            if (put) {
-                println("Put operation success" + "; Affinity node: " + nid8(affinityNode))
+                if (put) {
+                    println("Put operation success" + "; Affinity node: " + nid8(affinityNode))
 
-                if (resultObj != null)
-                    println("Previous value is: " + resultObj)
+                    if (resultObj != null)
+                        println("Previous value is: " + resultObj)
+                }
+
+                if (get) {
+                    if (resultObj != null)
+                        println("Value with specified key: " + resultObj + "; Affinity node: " + nid8(affinityNode))
+                    else
+                        println("Value with specified key not found")
+                }
+
+                if (remove) {
+                    if (resultObj != null)
+                        println("Removed value: " + resultObj + "; Affinity node: " + nid8(affinityNode))
+                    else
+                        println("Value with specified key not found")
+                }
             }
-
-            if (get) {
-                if (resultObj != null)
-                    println("Value with specified key: " + resultObj + "; Affinity node: " + nid8(affinityNode))
-                else
-                    println("Value with specified key not found")
-            }
-
-            if (remove) {
-                if (resultObj != null)
-                    println("Removed value: " + resultObj + "; Affinity node: " + nid8(affinityNode))
-                else
-                    println("Value with specified key not found")
+            catch {
+                case e: Throwable =>
+                    warn("Failed to execute cache modify operation: " + e.getMessage)
             }
         }
     }
