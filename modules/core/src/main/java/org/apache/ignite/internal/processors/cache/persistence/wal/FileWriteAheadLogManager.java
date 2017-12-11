@@ -222,6 +222,9 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /** Factory to provide I/O interfaces for read/write operations with files */
     private final FileIOFactory ioFactory;
 
+    /** Next segment archived monitor. */
+    private final Object nextSegmentArchivedMonitor = new Object();
+
     /** Updater for {@link #currentHnd}, used for verify there are no concurrent update for current log segment handle */
     private static final AtomicReferenceFieldUpdater<FileWriteAheadLogManager, FileWriteHandle> currentHndUpd =
         AtomicReferenceFieldUpdater.newUpdater(FileWriteAheadLogManager.class, FileWriteHandle.class, "currentHnd");
@@ -368,121 +371,46 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     public Collection<File> getAndReserveWalFiles(FileWALPointer low, FileWALPointer high) throws IgniteCheckedException {
         FileArchiver archiver0 = archiver;
 
-        long reservedIdx = -1;
-        long lockedIdx = -1;
+        final long awaitIdx = high.index() - 1;
 
-        long lastArchivedIdx = archiver0.lastArchivedAbsoluteIndex();
+        awaitSegmentArchived(archiver0, awaitIdx);
 
-        if (low.index() > lastArchivedIdx) {
-            long locked;
+        if (!reserve(low))
+            throw new IgniteCheckedException("WAL archive segment has been deleted [idx=" + low.index() + "]");
 
-            if ((locked = lockIndex(high)) != low.index()) {
-                if (archiver0.lastArchivedAbsoluteIndex() <= low.index()) {
-                    if (reserve(low)) {
-                        reservedIdx = low.index();
-                        lockedIdx = locked;
-
-                        if (locked == -1)
-                            System.err.println("");
-                    }
-                    else
-                        throw new AssertionError();
-                }
-                else
-                    throw new AssertionError();
-            }
-        }
-        else if (reserve(low)) {
-            reservedIdx = low.index();
-
-            if (high.index() > lastArchivedIdx) {
-                //high is in work directory
-                lockedIdx = lockIndex(high);
-
-                if (lockedIdx == -1)
-                    throw new AssertionError();
-            }
-        }
-        else
-            throw new AssertionError("Couldn't reserve wal index. High.idx - " + high.index() +
-                ", low.idx - " + low.index() + ", lastArchivedIdx -" + lastArchivedIdx);
-
-
-        return collectFiles(reservedIdx, lockedIdx, high.index());
-    }
-
-    /**
-     * @param reservedIdx Reserved index.
-     * @param lockedId Locked id.
-     * @param highIdx High index.
-     */
-    private Collection<File> collectFiles(long reservedIdx, long lockedId, long highIdx) {
         List<File> res = new ArrayList<>();
 
-        if (reservedIdx != -1) {
-            long border = lockedId != -1 ? lockedId : highIdx + 1;
+        for (long i = low.index(); i < high.index(); i++) {
+            String segmentName = FileDescriptor.fileName(i);
 
-            for (long i = reservedIdx; i < border; i ++) {
-                String segmentName = FileDescriptor.fileName(i);
+            File file = new File(walArchiveDir, segmentName);
 
-                File file = new File(walArchiveDir, segmentName);
-
-                if (file.exists())
-                    res.add(file);
-                else if ((file = new File(walArchiveDir, segmentName + ".zip")).exists())
-                    res.add(file);
-                else
-                    throw new AssertionError();
-            }
-        }
-
-        if (lockedId != -1) {
-            for (long i = lockedId; i < highIdx + 1; i ++) {
-                String segmentName = FileDescriptor.fileName(i);
-
-                File file = new File(walWorkDir, segmentName);
-
-                if (file.exists())
-                    res.add(file);
-                else
-                    throw new AssertionError();
-            }
+            if (file.exists())
+                res.add(file);
+            else if ((file = new File(walArchiveDir, segmentName + ".zip")).exists())
+                res.add(file);
+            else
+                throw new IgniteCheckedException("WAL archive segment has been deleted [idx=" + i + "]");
         }
 
         return res;
     }
 
     /**
-     * @param ptr Ptr.
+     * @param archiver0 Archiver.
+     * @param awaitIdx Method will wait archivation of that index.
      */
-    private long lockIndex(FileWALPointer ptr) {
-        FileArchiver archiver0 = archiver;
-
-        long lastArchivedIdx = archiver0.lastArchivedAbsoluteIndex();
-
-        long locked = -1;
-
-        for (long i = lastArchivedIdx + 1; i <= ptr.index(); i++) {
-            if (!archiver0.checkCanReadArchiveOrReserveWorkSegment(i)) {
-                locked = i;
-
-                break;
+    private void awaitSegmentArchived(FileArchiver archiver0, long awaitIdx) throws IgniteInterruptedCheckedException {
+        synchronized (nextSegmentArchivedMonitor) {
+            while (archiver0.lastArchivedAbsoluteIndex() < awaitIdx) {
+                try {
+                    nextSegmentArchivedMonitor.wait(2000);
+                }
+                catch (InterruptedException e) {
+                    throw new IgniteInterruptedCheckedException(e);
+                }
             }
         }
-
-        if (locked == -1 && archiver0.lastArchivedAbsoluteIndex() < ptr.index())
-            throw new AssertionError("Couldn't lock wal index. idx - " + ptr.index() +
-                    ", lastArchivedIdx -" + lastArchivedIdx);
-
-        if (locked == -1)
-            System.err.println("");
-
-        return locked;
-    }
-
-
-    public void release(Collection<File> walFiles) {
-        //TODO
     }
 
     /**
@@ -870,8 +798,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             if (archiver0 != null && archiver0.reserved(desc.idx))
                 return deleted;
 
+            long lastArchived = archiver0 != null ? archiver0.lastArchivedAbsoluteIndex() : lastArchivedIndex();
+
             // We need to leave at least one archived segment to correctly determine the archive index.
-            if (desc.idx + 1 < highPtr.index()) {
+            if (desc.idx < highPtr.index() && desc.idx < lastArchived) {
                 if (!desc.file.delete())
                     U.warn(log, "Failed to remove obsolete WAL segment (make sure the process has enough rights): " +
                         desc.file.getAbsolutePath());
@@ -1459,7 +1389,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
                         synchronized (this) {
                             // Then increase counter to allow rollover on clean working file
-                            changeLastArchivedIndexAndWakeupCompressor(toArchive);
+                            changeLastArchivedIndexAndNotifyWaiters(toArchive);
 
                             notifyAll();
                         }
@@ -1485,11 +1415,15 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         /**
          * @param idx Index.
          */
-        private void changeLastArchivedIndexAndWakeupCompressor(long idx) {
+        private void changeLastArchivedIndexAndNotifyWaiters(long idx) {
             lastAbsArchivedIdx = idx;
 
             if (compressor != null)
                 compressor.onNextSegmentArchived();
+
+            synchronized (nextSegmentArchivedMonitor) {
+                nextSegmentArchivedMonitor.notifyAll();
+            }
         }
 
         /**
