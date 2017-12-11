@@ -26,6 +26,8 @@ import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Data store for H2 rows.
  */
@@ -45,6 +47,8 @@ public class H2RowFactory {
         this.cctx = cctx;
     }
 
+    private static final ConcurrentHashMap<Long, GridH2Row> ROW_CACHE = new ConcurrentHashMap<>();
+
     /**
      * !!! This method must be invoked in read or write lock of referring index page. It is needed to
      * !!! make sure that row at this link will be invisible, when the link will be removed from
@@ -55,36 +59,30 @@ public class H2RowFactory {
      * @throws IgniteCheckedException If failed.
      */
     public GridH2Row getRow(long link) throws IgniteCheckedException {
-        // TODO Avoid extra garbage generation. In upcoming H2 1.4.193 Row will become an interface,
-        // TODO we need to refactor all this to return CacheDataRowAdapter implementing Row here.
+        GridH2Row row = ROW_CACHE.get(link);
 
-        final CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
+        if (row == null) {
+            // TODO Avoid extra garbage generation. In upcoming H2 1.4.193 Row will become an interface,
+            // TODO we need to refactor all this to return CacheDataRowAdapter implementing Row here.
 
-        if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy())
-            rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.OFFHEAP_OBJ);
-        else
+            final CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
+
             rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.FULL);
 
-        GridH2Row row;
+            try {
+                row = rowDesc.createRow(rowBuilder.key(), PageIdUtils.partId(link), rowBuilder.value(),
+                    rowBuilder.version(), rowBuilder.expireTime());
 
-        try {
-            if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy()) {
-                row = rowDesc.createRowOffheap(rowBuilder.key(),
-                    PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime(),
-                    rowBuilder.locker());
+                row.link = link;
             }
-            else {
-                row = rowDesc.createRow(rowBuilder.key(),
-                    PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime());
+            catch (IgniteCheckedException e) {
+                throw new IgniteException(e);
             }
 
-            row.link = link;
-        }
-        catch (IgniteCheckedException e) {
-            throw new IgniteException(e);
-        }
+            assert row.ver != null;
 
-        assert row.ver != null;
+            ROW_CACHE.put(link, row);
+        }
 
         return row;
     }
