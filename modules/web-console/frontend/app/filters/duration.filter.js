@@ -23,9 +23,6 @@ export default [() => {
         if (t === 9223372036854775807)
             return 'Infinite';
 
-        if (t < 0)
-            return 'n/a';
-
         const a = (i, suffix) => i && i !== '00' ? i + suffix + ' ' : '';
 
         const cd = 24 * 60 * 60 * 1000;
