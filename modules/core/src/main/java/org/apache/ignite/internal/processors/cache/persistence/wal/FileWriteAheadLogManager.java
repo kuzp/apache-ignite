@@ -28,7 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.sql.Time;
 import java.util.ArrayList;
@@ -1169,10 +1168,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         if (allFiles.length == 0) {
             File first = new File(walWorkDir, FileDescriptor.fileName(0));
 
-            createFile(first, true);
+            createFile(first);
         }
         else
-            checkFiles(0, false, true, null);
+            checkFiles(0, false, null);
     }
 
     /**
@@ -1212,7 +1211,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      * @param file File to create.
      * @throws IgniteCheckedException If failed.
      */
-    private void createFile(File file, boolean failIfAlreadyExists) throws IgniteCheckedException {
+    private void createFile(File file) throws IgniteCheckedException {
         if (log.isDebugEnabled())
             log.debug("Creating new file [exists=" + file.exists() + ", file=" + file.getAbsolutePath() + ']');
 
@@ -1224,13 +1223,6 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
             Files.move(tmp.toPath(), file.toPath());
         }
         catch (IOException e) {
-            if (!failIfAlreadyExists && (e instanceof FileAlreadyExistsException)) {
-                // Rollover() already created segment file.
-                tmp.delete();
-
-                return;
-            }
-
             throw new IgniteCheckedException("Failed to move temp file to a regular WAL segment file: " +
                 file.getAbsolutePath(), e);
         }
@@ -1644,7 +1636,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
          * {@link FileWriteAheadLogManager#checkOrPrepareFiles()}
          */
         private void allocateRemainingFiles() throws IgniteCheckedException {
-            checkFiles(1, true, false, new IgnitePredicate<Integer>() {
+            checkFiles(1, true, new IgnitePredicate<Integer>() {
                 @Override public boolean apply(Integer integer) {
                     return !checkStop();
                 }
@@ -1966,12 +1958,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
      *
      * @param startWith Start with.
      * @param create Flag create file.
-     * @param failIfAlreadyExists If false, file creating conflict will be tolerated.
      * @param p Predicate Exit condition.
      * @throws IgniteCheckedException if validation or create file fail.
      */
-    private void checkFiles(int startWith, boolean create, boolean failIfAlreadyExists, IgnitePredicate<Integer> p)
-        throws IgniteCheckedException {
+    private void checkFiles(int startWith, boolean create, IgnitePredicate<Integer> p) throws IgniteCheckedException {
         for (int i = startWith; i < dsCfg.getWalSegments() && (p == null || (p != null && p.apply(i))); i++) {
             File checkFile = new File(walWorkDir, FileDescriptor.fileName(i));
 
@@ -1987,7 +1977,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                         ", configSize=" + dsCfg.getWalSegments() + ']');
             }
             else if (create)
-                createFile(checkFile, failIfAlreadyExists);
+                createFile(checkFile);
         }
     }
 
