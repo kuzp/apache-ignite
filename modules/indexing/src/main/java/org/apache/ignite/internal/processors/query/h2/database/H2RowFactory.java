@@ -21,6 +21,9 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
+import org.apache.ignite.internal.processors.cache.GridCacheEntryEx;
+import org.apache.ignite.internal.processors.cache.GridCacheEntryRemovedException;
+import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
@@ -82,6 +85,27 @@ public class H2RowFactory {
             assert row.ver != null;
 
             ROW_CACHE.put(link, row);
+        }
+        else {
+            CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
+
+            rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.KEY_ONLY);
+
+            KeyCacheObject key = rowBuilder.key();
+
+            key.partition(PageIdUtils.partId(link));
+
+            GridCacheEntryEx entry = cctx.cache().peekEx(key);
+
+            if (entry != null) {
+                try {
+                    row = rowDesc.createRow(rowBuilder.key(), PageIdUtils.partId(link), entry.valueBytes(),
+                        entry.version(), entry.expireTime());
+                }
+                catch (GridCacheEntryRemovedException e) {
+                    // No-op.
+                }
+            }
         }
 
         return row;

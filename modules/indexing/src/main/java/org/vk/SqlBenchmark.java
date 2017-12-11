@@ -17,18 +17,17 @@
 
 package org.vk;
 
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
-import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.cache.query.SqlQuery;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.configuration.PersistentStoreConfiguration;
+import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.util.typedef.internal.U;
-import org.apache.ignite.lang.IgniteBiPredicate;
 
 import java.io.File;
 import java.sql.Connection;
@@ -58,6 +57,9 @@ public class SqlBenchmark extends Benchmark {
 
         IgniteConfiguration nodeCfg = new IgniteConfiguration().setLocalHost("127.0.0.1");
 
+//        nodeCfg.setPersistentStoreConfiguration(new PersistentStoreConfiguration());
+//        nodeCfg.getPersistentStoreConfiguration().setWalMode(WALMode.BACKGROUND);
+
 //        nodeCfg.setDataStorageConfiguration(new DataStorageConfiguration());
 //        nodeCfg.getDataStorageConfiguration().getDefaultDataRegionConfiguration().setPersistenceEnabled(false);
 //        nodeCfg.getDataStorageConfiguration().setWalMode(WALMode.BACKGROUND);
@@ -71,6 +73,7 @@ public class SqlBenchmark extends Benchmark {
 
         CacheConfiguration<Integer, CMAccums> cfg = new CacheConfiguration<Integer, CMAccums>("sql").setAffinity(aff);
 
+        cfg.setOnheapCacheEnabled(true);
         //cfg.setQueryParallelism(8);
 
         cfg.setIndexedTypes(Integer.class, CMAccums.class);
@@ -90,7 +93,7 @@ public class SqlBenchmark extends Benchmark {
 //
 //        Connection conn = ds.getConnection();
 
-        Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "root", "root");
+        Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "root", null);
 
 //        // PG
 //        Connection conn = DriverManager.getConnection("jdbc:postgresql:postgres", "ppoze", "Test");
@@ -178,7 +181,7 @@ public class SqlBenchmark extends Benchmark {
     private static final boolean USE_JDBC = false;
 
     private static final boolean LOAD_DB = false;
-    private static final boolean USE_DB = true;
+    private static final boolean USE_DB = false;
 
     private static boolean EXPLAIN = true;
     private static boolean PRINT_CNT = true;
@@ -186,7 +189,7 @@ public class SqlBenchmark extends Benchmark {
     private static volatile PreparedStatement IGNITE_STMT;
 
     @Override protected void test() throws Exception {
-        int arg = ThreadLocalRandom.current().nextInt(10);
+        int arg = 5;//ThreadLocalRandom.current().nextInt(10);
 
         if (USE_DB) {
             dbStmt.setInt(1, arg);
