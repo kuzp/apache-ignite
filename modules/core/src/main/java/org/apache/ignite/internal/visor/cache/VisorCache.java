@@ -240,7 +240,7 @@ public class VisorCache extends VisorDataTransferObject {
      * @return Number of entries in cache in heap and off-heap.
      */
     public long size() {
-        return getSize() + (metrics != null ? metrics.getOffHeapEntriesCount() : 0L);
+        return size + (metrics != null ? metrics.getOffHeapEntriesCount() : 0L);
     }
 
     /**
