@@ -38,7 +38,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  * +-----------------------------------------------------------------------------------------+
  * | modify -get    | Get value with specified key from cache.                               |
  * +-----------------------------------------------------------------------------------------+
- * | modify -remove | Remove value with specified key form cache.                            |
+ * | modify -remove | Remove value with specified key from cache.                            |
  * +-----------------------------------------------------------------------------------------+
  *
  * }}}
@@ -73,7 +73,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *     modify -get -c=@c0
  *         Get value from cache in interactive mode.
  *     modify -remove -c=@c0
- *         Remove value form cache in interactive mode.
+ *         Remove value from cache in interactive mode.
  *     modify -put -c=cache -kv=key1
  *         Put value into cache with name cache with key of default String type equal to key1
  *         and value equal to key.
@@ -89,40 +89,28 @@ import scala.language.{implicitConversions, reflectiveCalls}
  */
 class VisorModifyCommand {
     /**
-     * Prints error message and advise.
-     *
-     * @param errMsgs Error messages.
-     */
-    private def scold(errMsgs: Any*) {
-        assert(errMsgs != null)
-
-        warn(errMsgs: _*)
-        warn("Type 'help cache' to see how to use this command.")
-    }
-
-    /**
      * ===Command===
      * Modify cache value in specified cache.
      *
      * ===Examples===
-     * <ex>modify -put</ex>
-     *     Put value into cache in interactive mode.
+     * <ex>modify -put -c=@c0</ex>
+     *     Put value into cache with name taken from 'c0' memory variable in interactive mode.
      * <br>
      * <ex>modify -get</ex>
-     *     Get value from cache in interactive mode.
+     *     Get value from cache with name taken from 'c0' memory variable in interactive mode.
      * <br>
      * <ex>modify -remove</ex>
-     *     Remove value form cache in interactive mode.
+     *     Remove value from cache with name taken from 'c0' memory variable in interactive mode.
      * <br>
      * <ex>modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1</ex>
-     *     Put value into cache with name cache with key of String type equal to key1
-     *     and value of String type equal to value1
+     *     Put value into cache with name 'cache' with key of String type equal to 'key1'
+     *     and value of String type equal to 'value1'
      * <br>
      * <ex>modify -get -c=cache -kt=java.lang.String -kv=key1</ex>
-     *     Get value from cache with name cache with key of String type equal to key1
+     *     Get value from cache with name 'cache' with key of String type equal to 'key1'
      * <br>
      * <ex>modify -remove -c=cache -kt=java.lang.String -kv=key1</ex>
-     *     Remove value from cache with name cache with key of String type equal to key1.
+     *     Remove value from cache with name 'cache' with key of String type equal to 'key1'.
      *
      * @param args Command arguments.
      */
@@ -169,7 +157,7 @@ class VisorModifyCommand {
                 return
             }
 
-            var cacheName = argValue("c", argLst) match {
+            val cacheName = argValue("c", argLst) match {
                 case Some(dfltName) if dfltName == DFLT_CACHE_KEY || dfltName == DFLT_CACHE_NAME =>
                     argLst = argLst.filter(_._1 != "c") ++ Seq("c" -> null)
 
@@ -231,6 +219,8 @@ class VisorModifyCommand {
                 case None if keyValueStr.nonEmpty =>
                     key = keyValueStr.get
 
+                case None if put && valueValueStr.nonEmpty => // No-op.
+
                 case None =>
                     askTypedValue("key") match {
                         case Some(k) if k.toString.nonEmpty => key = k
@@ -261,9 +251,6 @@ class VisorModifyCommand {
                     case None if valueValueStr.nonEmpty =>
                         value = valueValueStr.get
 
-                    case None if keyValueStr.isDefined =>
-                        value = key
-
                     case None =>
                         askTypedValue("value") match {
                             case Some(v) if v.toString.nonEmpty => value = v
@@ -273,6 +260,9 @@ class VisorModifyCommand {
                                 return
                         }
                 }
+
+                if (key == null)
+                    key = value
             }
 
             if ((get || remove) && valueTypeStr.nonEmpty)
@@ -316,7 +306,7 @@ class VisorModifyCommand {
      *
      * ===Examples===
      * <ex>modify -put -c=@c0</ex>
-     * Put entity in cache with alias @c0 in interactive mode
+     * Put entity in cache with name taken from 'c0' memory variable in interactive mode
      */
     def modify() {
         this.modify("")
@@ -371,23 +361,23 @@ object VisorModifyCommand {
         ),
         examples = Seq(
             "modify -put -c=@c0" ->
-                "Put value into cache in interactive mode.",
+                "Put value into cache with name taken from 'c0' memory variable in interactive mode.",
             "modify -get -c=@c0" ->
-                "Get value from cache in interactive mode.",
+                "Get value from cache with name taken from 'c0' memory variable in interactive mode.",
             "modify -remove -c=@c0" ->
-                "Remove value form cache in interactive mode.",
-            "modify -put -c=cache -kv=key1" -> Seq(
-                "Put value into cache with name cache with key of default String type equal to key1",
-                "and value equal to key."
+                "Remove value from cache with name taken from 'c0' memory variable in interactive mode.",
+            "modify -put -c=cache -vv=value1" -> Seq(
+                "Put value into cache with name 'cache' with value of default String type equal to 'value1'",
+                "and a key is the same as value."
             ),
             "modify -put -c=@c0 -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1" -> Seq(
-                "Put value into cache with name @c0 with key of String type equal to key1",
-                "and value of String type equal to value1"
+                "Put value into cache with name taken from 'c0' memory variable",
+                "with key of String type equal to 'key1' and value of String type equal to 'value1'"
             ),
             "modify -get -c=@c0 -kt=java.lang.String -kv=key1" ->
-                "Get value from cache with name @c0 with key of String type equal to key1",
+                "Get value from cache with name taken from 'c0' memory variable with key of String type equal to key1",
             "modify -remove -c=@c0 -kt=java.lang.String -kv=key1" ->
-                "Remove value from cache with name @c0 with key of String type equal to key1."
+                "Remove value from cache with name taken from 'c0' memory variable with key of String type equal to key1."
         ),
         emptyArgs = cmd.modify,
         withArgs = cmd.modify
@@ -396,5 +386,5 @@ object VisorModifyCommand {
     /**
      * Singleton.
      */
-    def apply() = cmd
+    def apply(): VisorModifyCommand = cmd
 }
