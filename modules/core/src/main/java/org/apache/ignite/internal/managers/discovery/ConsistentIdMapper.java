@@ -80,7 +80,8 @@ public class ConsistentIdMapper {
         UUID constId = map.get(nodeConstId);
 
         if (constId == null)
-            throw new IllegalStateException("Unable to find UUID by constId [nodeId=" + nodeConstId + ", topVer=" + topVer + ']');
+            throw new IllegalStateException("Unable to find UUID by constId [nodeId=" + nodeConstId +
+                ", topVer=" + topVer + ", map=" + map + ']');
 
         return constId;
     }

@@ -2311,7 +2311,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                 aliveNodesByConsId.put(node.consistentId(), node);
             }
 
-            List<BaselineNode >baselineNodes0 = new ArrayList<>(blt.size());
+            List<BaselineNode> baselineNodes0 = new ArrayList<>(blt.size());
 
             for (Object consId : blt.consistentIds()) {
                 ClusterNode srvNode = aliveNodesByConsId.get(consId);
@@ -2323,6 +2323,11 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             }
 
             baselineNodes = baselineNodes0;
+
+            U.debug(log, "Calculated discoCache [topVer=" + topVer +
+                ", baselineNodes=" + baselineNodes0 +
+                ", consIdxToNodeId=" + consIdxToNodeId +
+                ", nodeIdToConsIdx=" + nodeIdToConsIdx + ']');
         }
         else {
             nodeIdToConsIdx = null;
