@@ -40,7 +40,7 @@ public class H2RowCacheRegistry {
      * @return Row cache or {@code null} if none available.
      */
     @Nullable public H2RowCache get(GridCacheContext cctx) {
-        return caches.get(cctx.groupId());
+        return caches != null ? caches.get(cctx.groupId()) : null;
     }
 
     /**

@@ -73,7 +73,7 @@ public class SqlBenchmark extends Benchmark {
 
         CacheConfiguration<Integer, CMAccums> cfg = new CacheConfiguration<Integer, CMAccums>("sql").setAffinity(aff);
 
-        cfg.setOnheapCacheEnabled(true);
+        cfg.setSqlOnheapCacheEnabled(true);
         //cfg.setQueryParallelism(8);
 
         cfg.setIndexedTypes(Integer.class, CMAccums.class);
