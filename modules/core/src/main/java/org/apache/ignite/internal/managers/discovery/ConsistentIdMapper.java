@@ -59,7 +59,8 @@ public class ConsistentIdMapper {
         Short constId = m.get(nodeId);
 
         if (constId == null)
-            throw new IllegalStateException("Unable to find consistentId by UUID [nodeId=" + nodeId + ", topVer=" + topVer + ']');
+            throw new IllegalStateException("Unable to find consistentId by UUID [nodeId=" + nodeId +
+                ", topVer=" + topVer + ", map=" + m + ']');
 
         return constId;
     }
