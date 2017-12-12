@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.query.h2.database;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.pagemem.wal.IgniteWriteAheadLogManager;
@@ -27,13 +28,16 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.BPlusTree;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.BPlusMetaIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.reuse.ReuseList;
+import org.apache.ignite.internal.processors.query.h2.H2RowCache;
 import org.apache.ignite.internal.processors.query.h2.database.io.H2ExtrasInnerIO;
 import org.apache.ignite.internal.processors.query.h2.database.io.H2ExtrasLeafIO;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOnheap;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.h2.result.SearchRow;
 import org.h2.table.IndexColumn;
 import org.h2.value.Value;
+import org.jetbrains.annotations.Nullable;
 
 /**
  */
@@ -60,7 +64,12 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
         }
     };
 
+    /** Row cache. */
+    private final H2RowCache rowCache;
+
     /**
+     * Constructor.
+     *
      * @param name Tree name.
      * @param reuseList Reuse list.
      * @param grpId Cache group ID.
@@ -69,6 +78,7 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
      * @param rowStore Row data store.
      * @param metaPageId Meta page ID.
      * @param initNew Initialize new index.
+     * @param rowCache Row cache.
      * @throws IgniteCheckedException If failed.
      */
     protected H2Tree(
@@ -83,7 +93,8 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
         boolean initNew,
         IndexColumn[] cols,
         List<InlineIndexHelper> inlineIdxs,
-        int inlineSize
+        int inlineSize,
+        @Nullable H2RowCache rowCache
     ) throws IgniteCheckedException {
         super(name, grpId, pageMem, wal, globalRmvId, metaPageId, reuseList);
 
@@ -105,16 +116,35 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
         for (int i = 0; i < cols.length; i++)
             columnIds[i] = cols[i].column.getColumnId();
 
+        this.rowCache = rowCache;
+
         setIos(H2ExtrasInnerIO.getVersions(inlineSize), H2ExtrasLeafIO.getVersions(inlineSize));
 
         initTree(initNew, inlineSize);
     }
 
     /**
-     * @return Row store.
+     * Create row from link.
+     *
+     * @param link Link.
+     * @return Row.
+     * @throws IgniteCheckedException if failed.
      */
-    public H2RowFactory getRowFactory() {
-        return rowStore;
+    public GridH2Row createRowFromLink(long link) throws IgniteCheckedException {
+        if (rowCache != null) {
+            GridH2Row row = rowCache.get(link);
+
+            if (row == null) {
+                row = rowStore.getRow(link);
+
+                if (row instanceof GridH2KeyValueRowOnheap)
+                    rowCache.put((GridH2KeyValueRowOnheap)row);
+            }
+
+            return row;
+        }
+        else
+            return rowStore.getRow(link);
     }
 
     /** {@inheritDoc} */
@@ -158,6 +188,7 @@ public abstract class H2Tree extends BPlusTree<SearchRow, GridH2Row> {
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     @Override protected int compare(BPlusIO<SearchRow> io, long pageAddr, int idx,
         SearchRow row) throws IgniteCheckedException {
         if (inlineSize() == 0)

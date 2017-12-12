@@ -44,12 +44,16 @@ public class CacheQueryObjectValueContext implements CacheObjectValueContext {
 
     /** {@inheritDoc} */
     @Override public boolean copyOnGet() {
-        return true;
+        // TODO: Proper handling.
+//        return true;
+        return false;
     }
 
     /** {@inheritDoc} */
     @Override public boolean storeValue() {
-        return false;
+        // TODO: Proper handling.
+//        return false;
+        return true;
     }
 
     /** {@inheritDoc} */

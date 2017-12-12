@@ -36,6 +36,8 @@ public class H2RowFactory {
     private final GridH2RowDescriptor rowDesc;
 
     /**
+     * Constructor.
+     *
      * @param rowDesc Row descriptor.
      * @param cctx Cache context.
      */
@@ -56,16 +58,16 @@ public class H2RowFactory {
     public GridH2Row getRow(long link) throws IgniteCheckedException {
         // TODO Avoid extra garbage generation. In upcoming H2 1.4.193 Row will become an interface,
         // TODO we need to refactor all this to return CacheDataRowAdapter implementing Row here.
+        GridH2Row row;
 
         final CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
 
         rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.FULL);
 
-        GridH2Row row;
-
         try {
             row = rowDesc.createRow(rowBuilder.key(),
                 PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime());
+
 
             row.link = link;
         }

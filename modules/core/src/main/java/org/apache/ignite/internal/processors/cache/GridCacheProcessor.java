@@ -1030,7 +1030,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
                     assert desc != null : cctx.name();
 
-                    ctx.query().onCacheStop0(cctx.name(), false);
+                    ctx.query().onCacheStop0(cctx, false);
                     ctx.query().onCacheStart0(cctx, desc.schema());
                 }
             }
