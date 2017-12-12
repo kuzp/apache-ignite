@@ -34,13 +34,13 @@ public class H2RowCacheRegistry {
     private volatile Map<Integer, H2RowCache> caches;
 
     /**
-     * Get row cache for the given cache.
+     * Get row cache for the given cache group.
      *
-     * @param cctx Cache context.
+     * @param grpId Cache group ID.
      * @return Row cache or {@code null} if none available.
      */
-    @Nullable public H2RowCache forCache(GridCacheContext cctx) {
-        return caches != null ? caches.get(cctx.groupId()) : null;
+    @Nullable public H2RowCache forGroup(int grpId) {
+        return caches != null ? caches.get(grpId) : null;
     }
 
     /**
