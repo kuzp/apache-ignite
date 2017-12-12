@@ -101,6 +101,4 @@ public class H2RowCache {
                 iter.remove();
         }
     }
-
-    // TODO: Handle type unregister.
 }
