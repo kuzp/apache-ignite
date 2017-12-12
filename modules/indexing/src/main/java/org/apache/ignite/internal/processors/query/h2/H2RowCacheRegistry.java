@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.query.h2;
 
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,16 @@ public class H2RowCacheRegistry {
 
     /** Row caches for specific cache groups. */
     private volatile Map<Integer, H2RowCache> caches;
+
+    /**
+     * Get row cache for the given cache.
+     *
+     * @param cctx Cache context.
+     * @return Row cache or {@code null} if none available.
+     */
+    @Nullable public H2RowCache get(GridCacheContext cctx) {
+        return caches.get(cctx.groupId());
+    }
 
     /**
      * Callback invoked on cache registration within indexing.

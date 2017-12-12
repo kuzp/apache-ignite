@@ -268,6 +268,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /** */
     private final ConcurrentMap<Long, GridRunningQueryInfo> runs = new ConcurrentHashMap8<>();
 
+    /** Row cache. */
+    private final H2RowCacheRegistry rowCache = new H2RowCacheRegistry();
+
     /** */
     private final ThreadLocal<H2ConnectionWrapper> connCache = new ThreadLocal<H2ConnectionWrapper>() {
         @Nullable @Override public H2ConnectionWrapper get() {
@@ -777,7 +780,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
             final int segments = tbl.rowDescriptor().context().config().getQueryParallelism();
 
-            return new H2TreeIndex(cctx, tbl, name, pk, cols, inlineSize, segments);
+            H2RowCache cache = rowCache.get(cctx);
+
+            return new H2TreeIndex(cctx, cache, tbl, name, pk, cols, inlineSize, segments);
         }
         catch (IgniteCheckedException e) {
             throw new IgniteException(e);

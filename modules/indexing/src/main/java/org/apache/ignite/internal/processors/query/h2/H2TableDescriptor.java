@@ -179,7 +179,7 @@ public class H2TableDescriptor implements GridH2SystemIndexFactory {
      */
     H2RowFactory rowFactory(GridH2RowDescriptor rowDesc) {
         if (cctx.affinityNode())
-            return new H2RowFactory(idx, rowDesc, cctx);
+            return new H2RowFactory(rowDesc, cctx);
 
         return null;
     }

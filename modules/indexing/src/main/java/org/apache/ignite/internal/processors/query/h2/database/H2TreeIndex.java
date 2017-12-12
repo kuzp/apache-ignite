@@ -28,6 +28,8 @@ import org.apache.ignite.internal.processors.cache.persistence.RootPage;
 import org.apache.ignite.internal.processors.cache.persistence.tree.BPlusTree;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.query.h2.H2Cursor;
+import org.apache.ignite.internal.processors.query.h2.H2RowCache;
+import org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2IndexBase;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Table;
@@ -64,10 +66,14 @@ public class H2TreeIndex extends GridH2IndexBase {
     private final List<InlineIndexHelper> inlineIdxs;
 
     /** Cache context. */
-    private GridCacheContext<?, ?> cctx;
+    private final GridCacheContext<?, ?> cctx;
+
+    /** Thread-local row cache for search operation. */
+    private final ThreadLocal<H2RowCache> rowCache = new ThreadLocal<>();
 
     /**
      * @param cctx Cache context.
+     * @param rowCache Row cache.
      * @param tbl Table.
      * @param name Index name.
      * @param pk Primary key.
@@ -77,6 +83,7 @@ public class H2TreeIndex extends GridH2IndexBase {
      */
     public H2TreeIndex(
         GridCacheContext<?, ?> cctx,
+        @Nullable H2RowCache rowCache,
         GridH2Table tbl,
         String name,
         boolean pk,
@@ -87,6 +94,7 @@ public class H2TreeIndex extends GridH2IndexBase {
         assert segmentsCnt > 0 : segmentsCnt;
 
         this.cctx = cctx;
+
         IndexColumn[] cols = colsList.toArray(new IndexColumn[colsList.size()]);
 
         IndexColumn.mapColumns(cols, tbl);
@@ -118,7 +126,8 @@ public class H2TreeIndex extends GridH2IndexBase {
                     page.isAllocated(),
                     cols,
                     inlineIdxs,
-                    computeInlineSize(inlineIdxs, inlineSize)) {
+                    computeInlineSize(inlineIdxs, inlineSize),
+                    rowCache) {
                     @Override public int compareValues(Value v1, Value v2) {
                         return v1 == v2 ? 0 : table.compareTypeSafe(v1, v2);
                     }
