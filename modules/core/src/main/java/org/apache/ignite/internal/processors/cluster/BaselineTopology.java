@@ -101,6 +101,8 @@ public class BaselineTopology implements Serializable {
             consistentIdMapping.put(consistentId, compactId++);
         }
 
+        U.debug("Constructed baseline mapping: " + consistentIdMapping);
+
         branchingHist = new ArrayList<>();
 
         branchingHist.add(branchingPntHash);

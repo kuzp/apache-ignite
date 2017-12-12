@@ -2327,7 +2327,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             U.debug(log, "Calculated discoCache [topVer=" + topVer +
                 ", baselineNodes=" + baselineNodes0 +
                 ", consIdxToNodeId=" + consIdxToNodeId +
-                ", nodeIdToConsIdx=" + nodeIdToConsIdx + ']');
+                ", nodeIdToConsIdx=" + nodeIdToConsIdx +
+                ", consIdMapping=" + m + ']');
         }
         else {
             nodeIdToConsIdx = null;
