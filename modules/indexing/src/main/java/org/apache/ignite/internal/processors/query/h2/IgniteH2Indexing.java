@@ -2191,6 +2191,8 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /** {@inheritDoc} */
     @Override public void registerCache(String cacheName, String schemaName, GridCacheContext<?, ?> cctx)
         throws IgniteCheckedException {
+        rowCache.onCacheRegistered(cctx);
+
         if (!isDefaultSchema(schemaName)) {
             synchronized (schemaMux) {
                 H2Schema schema = new H2Schema(schemaName);
@@ -2212,7 +2214,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     }
 
     /** {@inheritDoc} */
-    @Override public void unregisterCache(String cacheName, boolean destroy) {
+    @Override public void unregisterCache(GridCacheContext cctx, boolean destroy) {
+        rowCache.onCacheUnregistered(cctx);
+
+        String cacheName = cctx.name();
+
         String schemaName = schema(cacheName);
 
         H2Schema schema = schemas.get(schemaName);
