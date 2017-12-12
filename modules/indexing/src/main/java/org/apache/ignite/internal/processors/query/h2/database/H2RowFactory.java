@@ -25,6 +25,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheEntryEx;
 import org.apache.ignite.internal.processors.cache.GridCacheEntryRemovedException;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
+import org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
@@ -35,6 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Data store for H2 rows.
  */
 public class H2RowFactory {
+    /** Indexing. */
+    private final IgniteH2Indexing idx;
+
     /** */
     private final GridCacheContext<?,?> cctx;
 
@@ -42,10 +46,14 @@ public class H2RowFactory {
     private final GridH2RowDescriptor rowDesc;
 
     /**
+     * Constructor.
+     *
+     * @param idx Indexing.
      * @param rowDesc Row descriptor.
      * @param cctx Cache context.
      */
-    public H2RowFactory(GridH2RowDescriptor rowDesc, GridCacheContext<?,?> cctx) {
+    public H2RowFactory(IgniteH2Indexing idx, GridH2RowDescriptor rowDesc, GridCacheContext<?,?> cctx) {
+        this.idx = idx;
         this.rowDesc = rowDesc;
         this.cctx = cctx;
     }

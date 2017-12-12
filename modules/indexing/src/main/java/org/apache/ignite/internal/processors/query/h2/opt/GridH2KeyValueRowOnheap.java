@@ -61,4 +61,15 @@ public class GridH2KeyValueRowOnheap extends GridH2AbstractKeyValueRow {
 
         return link;
     }
+
+    public String tableName() {
+        return desc.
+    }
+
+    /**
+     * @return Cache ID of associated row.
+     */
+    public int cacheId() {
+        return desc.context().cacheId();
+    }
 }
