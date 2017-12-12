@@ -22,7 +22,6 @@ import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
-import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
 
@@ -37,6 +36,8 @@ public class H2RowFactory {
     private final GridH2RowDescriptor rowDesc;
 
     /**
+     * Constructor.
+     *
      * @param rowDesc Row descriptor.
      * @param cctx Cache context.
      */
@@ -57,26 +58,15 @@ public class H2RowFactory {
     public GridH2Row getRow(long link) throws IgniteCheckedException {
         // TODO Avoid extra garbage generation. In upcoming H2 1.4.193 Row will become an interface,
         // TODO we need to refactor all this to return CacheDataRowAdapter implementing Row here.
+        GridH2Row row;
 
         final CacheDataRowAdapter rowBuilder = new CacheDataRowAdapter(link);
 
-        if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy())
-            rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.OFFHEAP_OBJ);
-        else
-            rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.FULL);
-
-        GridH2Row row;
+        rowBuilder.initFromLink(cctx.group(), CacheDataRowAdapter.RowData.FULL);
 
         try {
-            if (GridH2QueryContext.get() != null && GridH2QueryContext.get().localNoCopy()) {
-                row = rowDesc.createRowOffheap(rowBuilder.key(),
-                    PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime(),
-                    rowBuilder.locker());
-            }
-            else {
-                row = rowDesc.createRow(rowBuilder.key(),
-                    PageIdUtils.partId(link), rowBuilder.value(), rowBuilder.version(), rowBuilder.expireTime());
-            }
+            row = rowDesc.createRow(rowBuilder.key(), PageIdUtils.partId(link), rowBuilder.value(),
+                rowBuilder.version(), rowBuilder.expireTime());
 
             row.link = link;
         }
