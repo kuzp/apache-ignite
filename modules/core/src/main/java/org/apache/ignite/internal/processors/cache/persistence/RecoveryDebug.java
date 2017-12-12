@@ -160,7 +160,7 @@ public class RecoveryDebug implements AutoCloseable {
             try {
                 fc.force(true);
 
-//                fc.close();
+                fc.close();
             }
             catch (IOException e) {
                 U.error(null, "Fail close recovery dump file.", e);
