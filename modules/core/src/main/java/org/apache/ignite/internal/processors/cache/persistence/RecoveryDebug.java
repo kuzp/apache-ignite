@@ -84,8 +84,8 @@ public class RecoveryDebug implements AutoCloseable {
                 if (!tmpDir.mkdir())
                     return;
 
-            File f = new File(tmpDir, "recovery-" + constId + "-" +
-                sdf.get().format(new Date(time)) + ".log");
+            File f = new File(tmpDir, "recovery-" +
+                sdf.get().format(new Date(time)) + "-" + constId  +".log");
 
             f.createNewFile();
 
@@ -160,7 +160,7 @@ public class RecoveryDebug implements AutoCloseable {
             try {
                 fc.force(true);
 
-                fc.close();
+//                fc.close();
             }
             catch (IOException e) {
                 U.error(null, "Fail close recovery dump file.", e);
