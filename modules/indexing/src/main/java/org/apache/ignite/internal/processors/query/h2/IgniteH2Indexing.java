@@ -780,7 +780,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
             final int segments = tbl.rowDescriptor().context().config().getQueryParallelism();
 
-            H2RowCache cache = rowCache.get(cctx);
+            H2RowCache cache = rowCache.forCache(cctx);
 
             return new H2TreeIndex(cctx, cache, tbl, name, pk, cols, inlineSize, segments);
         }
