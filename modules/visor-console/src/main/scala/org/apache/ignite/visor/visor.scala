@@ -1343,13 +1343,19 @@ object visor extends VisorTag {
     }
 
     /**
-     * Prints standard 'not connected' error message.
+     * Check connection state and show inform message when Visor console is not connected to cluster.
+     *
+     * @return `True` when Visor console is connected to cluster.
      */
-    def adviseToConnect() {
-        warn(
-            "Visor is disconnected.",
-            "Type 'open' to connect Visor console or 'help open' to get help."
-        )
+    def checkConnected(): Boolean = {
+        isCon || {
+            warn(
+                "Visor is disconnected.",
+                "Type 'open' to connect Visor console or 'help open' to get help."
+            )
+
+            false
+        }
     }
 
     /**
@@ -2152,41 +2158,6 @@ object visor extends VisorTag {
     }
 
     /**
-     * Asks user to choose node id8.
-     *
-     * @return `Option` for node id8.
-     */
-    def askNodeId(): Option[String] = {
-        assert(isConnected)
-
-        val ids = ignite.cluster.forRemotes().nodes().map(nid8).toList
-
-        ids.indices.foreach(i => println((i + 1) + ": " + ids(i)))
-
-        nl()
-
-        println("C: Cancel")
-
-        nl()
-
-        readLineOpt("Choose node: ") match {
-            case Some("c") | Some("C") | None => None
-            case Some(idx) =>
-                try
-                    Some(ids(idx.toInt - 1))
-                catch {
-                    case _: Throwable =>
-                        if (idx.isEmpty)
-                            warn("Index can't be empty.")
-                        else
-                            warn("Invalid index: " + idx + ".")
-
-                        None
-                }
-        }
-    }
-
-    /**
      * Adds close callback. Added function will be called every time
      * command `close` is called.
      *
@@ -2242,9 +2213,7 @@ object visor extends VisorTag {
      * Disconnects from the grid.
      */
     def close() {
-        if (!isConnected)
-            adviseToConnect()
-        else {
+        if (checkConnected()) {
             if (pool != null) {
                 pool.shutdown()
 
@@ -2379,9 +2348,7 @@ object visor extends VisorTag {
     def log(args: String) {
         assert(args != null)
 
-        if (!isConnected)
-            adviseToConnect()
-        else {
+        if (checkConnected()) {
             def scold(errMsgs: Any*) {
                 assert(errMsgs != null)
 

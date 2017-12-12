@@ -19,13 +19,13 @@ package org.apache.ignite.visor.commands.cache
 
 import java.util.UUID
 
-import org.apache.ignite.internal.visor.cache._
 import org.apache.ignite.internal.util.lang.{GridFunc => F}
+import org.apache.ignite.internal.util.scala.impl
+import org.apache.ignite.internal.visor.cache._
 import org.apache.ignite.internal.visor.util.VisorTaskUtils._
-import org.apache.ignite.visor.commands.cache.VisorModifyCommand._
+import org.apache.ignite.visor.commands.cache.VisorCacheModifyCommand._
+import org.apache.ignite.visor.commands.common.VisorConsoleCommand
 import org.apache.ignite.visor.visor._
-
-import scala.language.{implicitConversions, reflectiveCalls}
 
 /**
  * ==Overview==
@@ -45,7 +45,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * ====Specification====
  * {{{
- *     modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key>} {-vt=<value-type>} {-vv=<value>}
+ *     modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key>} {-vt=<value-type>} {-v=<value>}
  *     modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key>}
  *     modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key>}
  * }}}
@@ -61,7 +61,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *     -vt=<value-type>.
  *         Type of value. Default value is java.lang.String. Short type name can be specified.
  *         Value type is equals to key type when value is not specified.
- *     -vv=<value>
+ *     -v=<value>
  *         Value. Equals to key when it is not specified.
  *         Asked in interactive mode when key and value are not specified.
  * }}}
@@ -77,7 +77,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *     modify -put -c=cache -kv=key1
  *         Put value into cache with name cache with key of default String type equal to key1
  *         and value equal to key.
- *     modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1
+ *     modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -v=value1
  *         Put value into cache with name cache with key of String type equal to key1
  *         and value of String type equal to value1
  *     modify -get -c=cache -kt=java.lang.String -kv=key1
@@ -87,7 +87,9 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * }}}
  */
-class VisorModifyCommand {
+class VisorCacheModifyCommand extends VisorConsoleCommand {
+    @impl protected val name = "modify"
+
     /**
      * ===Command===
      * Modify cache value in specified cache.
@@ -102,27 +104,20 @@ class VisorModifyCommand {
      * <ex>modify -remove</ex>
      *     Remove value from cache with name taken from 'c0' memory variable in interactive mode.
      * <br>
-     * <ex>modify -put -c=cache -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1</ex>
+     * <ex>modify -put -c=cache -kt=java.lang.String -k=key1 -vt=lava.lang.String -v=value1</ex>
      *     Put value into cache with name 'cache' with key of String type equal to 'key1'
      *     and value of String type equal to 'value1'
      * <br>
-     * <ex>modify -get -c=cache -kt=java.lang.String -kv=key1</ex>
+     * <ex>modify -get -c=cache -kt=java.lang.String -k=key1</ex>
      *     Get value from cache with name 'cache' with key of String type equal to 'key1'
      * <br>
-     * <ex>modify -remove -c=cache -kt=java.lang.String -kv=key1</ex>
+     * <ex>modify -remove -c=cache -kt=java.lang.String -k=key1</ex>
      *     Remove value from cache with name 'cache' with key of String type equal to 'key1'.
      *
      * @param args Command arguments.
      */
     def modify(args: String) {
-        if (!isConnected)
-            adviseToConnect()
-        else if (!isActive) {
-            warn("Can not perform the operation because the cluster is inactive.",
-                "Note, that the cluster is considered inactive by default if Ignite Persistent Store is used to let all the nodes join the cluster.",
-                "To activate the cluster execute following command: top -activate.")
-        }
-        else {
+        if (checkConnected() && checkActiveState()) {
             def argNonEmpty(argLst: ArgList, arg: Option[String], key: String): Boolean = {
                 if (hasArgName(key, argLst) && arg.forall((a) => F.isEmpty(a))) {
                     warn(s"Argument $key is specified and can not be empty")
@@ -173,7 +168,7 @@ class VisorModifyCommand {
             }
 
             val keyTypeStr = argValue("kt", argLst)
-            val keyStr = argValue("kv", argLst)
+            val keyStr = argValue("k", argLst)
             var key: Object = null
 
             if (keyTypeStr.nonEmpty && keyStr.isEmpty) {
@@ -183,7 +178,7 @@ class VisorModifyCommand {
             }
 
             val valueTypeStr = argValue("vt", argLst)
-            val valueStr = argValue("vv", argLst)
+            val valueStr = argValue("v", argLst)
             var value: Object = null
 
             if (valueTypeStr.nonEmpty && valueStr.isEmpty) {
@@ -193,9 +188,9 @@ class VisorModifyCommand {
             }
 
             if (!argNonEmpty(argLst, keyTypeStr, "kt")
-                || !argNonEmpty(argLst, keyStr, "kv")
+                || !argNonEmpty(argLst, keyStr, "k")
                 || !argNonEmpty(argLst, valueTypeStr, "vt")
-                || !argNonEmpty(argLst, valueStr, "vv"))
+                || !argNonEmpty(argLst, valueStr, "v"))
                 return
 
             keyTypeStr match {
@@ -322,9 +317,9 @@ class VisorModifyCommand {
 /**
  * Companion object that does initialization of the command.
  */
-object VisorModifyCommand {
+object VisorCacheModifyCommand {
     /** Singleton command */
-    private val cmd = new VisorModifyCommand
+    private val cmd = new VisorCacheModifyCommand
 
     /** Default cache name to show on screen. */
     private final val DFLT_CACHE_NAME = escapeName(null)
@@ -345,9 +340,9 @@ object VisorModifyCommand {
             "Remove value from cache."
         ),
         spec = Seq(
-            "modify -put -c=<cache-name> {-kt=<key-type>} {-kv=<key>} {-vt=<value-type>} {-vv=<value>}",
-            "modify -get -c=<cache-name> {-kt=<key-type>} {-kv=<key>}",
-            "modify -remove -c=<cache-name> {-kt=<key-type>} {-kv=<key>}"
+            "modify -put -c=<cache-name> {-kt=<key-type>} {-k=<key>} {-vt=<value-type>} {-v=<value>}",
+            "modify -get -c=<cache-name> {-kt=<key-type>} {-k=<key>}",
+            "modify -remove -c=<cache-name> {-kt=<key-type>} {-k=<key>}"
     ),
         args = Seq(
             "-c=<cache-name>" ->
@@ -368,11 +363,11 @@ object VisorModifyCommand {
             ),
             "-kt=<key-type>" ->
                 "Type of key. Default type is java.lang.String. Type name can be specified without package.",
-            "-kv=<key>" ->
+            "-k=<key>" ->
                 "Key. Must be specified when key type is specified.",
             "-vt=<value-type>" ->
                 "Type of value. Default type is java.lang.String. Type name can be specified without package.",
-            "-vv=<value>" ->
+            "-v=<value>" ->
                 "Value. Must be specified when value type is specified."
         ),
         examples = Seq(
@@ -382,17 +377,17 @@ object VisorModifyCommand {
                 "Get value from cache with name taken from 'c0' memory variable in interactive mode.",
             "modify -remove -c=@c0" ->
                 "Remove value from cache with name taken from 'c0' memory variable in interactive mode.",
-            "modify -put -c=cache -vv=value1" -> Seq(
+            "modify -put -c=cache -v=value1" -> Seq(
                 "Put the value 'value1' into the cache 'cache'.",
-                "Other params have default values: -kt = java.lang.String , -kv = value1, -vt = java.lang.String"
+                "Other params have default values: -kt = java.lang.String , -k = value1, -vt = java.lang.String"
             ),
-            "modify -put -c=@c0 -kt=java.lang.String -kv=key1 -vt=lava.lang.String -vv=value1" -> Seq(
+            "modify -put -c=@c0 -kt=java.lang.String -k=key1 -vt=lava.lang.String -v=value1" -> Seq(
                 "Put value into cache with name taken from 'c0' memory variable",
                 "with key of String type equal to 'key1' and value of String type equal to 'value1'"
             ),
-            "modify -get -c=@c0 -kt=java.lang.String -kv=key1" ->
+            "modify -get -c=@c0 -kt=java.lang.String -k=key1" ->
                 "Get value from cache with name taken from 'c0' memory variable with key of String type equal to key1",
-            "modify -remove -c=@c0 -kt=java.lang.String -kv=key1" ->
+            "modify -remove -c=@c0 -kt=java.lang.String -k=key1" ->
                 "Remove value from cache with name taken from 'c0' memory variable with key of String type equal to key1."
         ),
         emptyArgs = cmd.modify,
@@ -402,5 +397,5 @@ object VisorModifyCommand {
     /**
      * Singleton.
      */
-    def apply(): VisorModifyCommand = cmd
+    def apply(): VisorCacheModifyCommand = cmd
 }
