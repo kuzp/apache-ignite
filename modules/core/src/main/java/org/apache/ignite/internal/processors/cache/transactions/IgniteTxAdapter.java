@@ -1106,8 +1106,14 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
 
                         BaselineTopology baselineTop = cctx.kernalContext().state().clusterState().baselineTopology();
 
-                        Map<Short, Collection<Short>> participatingNodes = consistentIdMapper
-                            .mapToCompactIds(topVer, txNodes, baselineTop);
+                        Map<Short, Collection<Short>> participatingNodes = null;
+                        try {
+                            participatingNodes = consistentIdMapper
+                                .mapToCompactIds(topVer, txNodes, baselineTop);
+                        }
+                        catch (IllegalStateException e) {
+                            throw new IllegalStateException("Failed to map nodes for WAL: " + txNodes, e);
+                        }
 
                         TxRecord txRecord = new TxRecord(
                             state,
