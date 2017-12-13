@@ -17,41 +17,72 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 // Fire me up!
+
+const Express = require('express');
 
 module.exports = {
     implements: 'api-server',
-    inject: ['require(express)', 'configure', 'routes']
-};
-
-module.exports.factory = function(Express, configure, routes) {
-    /**
-     * Connected agents manager.
-     */
-    class ApiServer {
+    inject: ['settings', 'configure', 'routes'],
+    factory(settings, configure, routes) {
         /**
-         * @param {Server} srv
+         * Connected agents manager.
          */
-        attach(srv) {
-            const app = new Express();
+        class ApiServer {
+            /**
+             * @param {Server} srv
+             */
+            attach(srv) {
+                const app = new Express();
 
-            configure.express(app);
+                configure.express(app);
 
-            routes.register(app);
+                routes.register(app);
 
-            // Catch 404 and forward to error handler.
-            app.use((req, res) => {
-                if (req.xhr)
-                    return res.status(404).send({ error: 'Not Found: ' + req.originalUrl });
+                if (settings.packaged) {
+                    const staticDir = path.join(process.cwd(), 'libs/frontend');
 
-                return res.sendStatus(404);
-            });
+                    try {
+                        fs.accessSync(staticDir, fs.F_OK);
 
-            srv.addListener('request', app);
+                        app.use('/', Express.static(staticDir));
 
-            return app;
+                        app.get('*', function(req, res) {
+                            res.sendFile(path.join(staticDir, 'index.html'));
+                        });
+                    }
+                    catch (e) {
+                        console.log(`Failed to find folder with frontend files: ${staticDir}`);
+                    }
+                }
+
+                // Catch 404 and forward to error handler.
+                app.use((req, res) => {
+                    if (req.xhr)
+                        return res.status(404).send({ error: 'Not Found: ' + req.originalUrl });
+
+                    return res.sendStatus(404);
+                });
+
+                // Production error handler: no stacktraces leaked to user.
+                app.use((err, req, res) => {
+                    res.status(err.status || 500);
+
+                    res.render('error', {
+                        message: err.message,
+                        error: {}
+                    });
+                });
+
+                srv.addListener('request', app);
+
+                return app;
+            }
         }
-    }
 
-    return new ApiServer();
+        return new ApiServer();
+    }
 };
