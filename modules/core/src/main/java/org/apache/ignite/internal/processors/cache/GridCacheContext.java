@@ -1513,7 +1513,7 @@ public class GridCacheContext<K, V> implements Externalizable {
         if (debug) {
             GridDhtPartitionFullMap fullMap = dht().topology().partitionMap(false);
 
-            U.debug("Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry=" + entry +
+            U.debug(log, "Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry=" + entry +
                 ", fullMap=" + fullMap.toFullString() + ']');
         }
 
