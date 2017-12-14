@@ -51,11 +51,11 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
 
             app.all('/api/v1/configuration/*', _mustAuthenticated);
 
-            app.use('/api/v1/configuration', configurationsRoute);
             app.use('/api/v1/configuration/clusters', clustersRoute);
             app.use('/api/v1/configuration/domains', domainsRoute);
             app.use('/api/v1/configuration/caches', cachesRoute);
             app.use('/api/v1/configuration/igfs', igfssRoute);
+            app.use('/api/v1/configuration', configurationsRoute);
 
             app.use('/api/v1/notebooks', _mustAuthenticated, notebooksRoute);
             app.use('/api/v1/downloads', _mustAuthenticated, downloadsRoute);
