@@ -137,8 +137,10 @@ object visor extends VisorTag {
 
     private final val LOC = Locale.US
 
+    /** Date format. */
+    private final val dateFmt = new SimpleDateFormat("yyyy-MM-dd", LOC)
     /** Date time format. */
-    private final val dtFmt = new SimpleDateFormat("MM/dd/yy, HH:mm:ss", LOC)
+    private final val timeFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LOC)
 
     final val INPUT_TYPES: Seq[(String, (String => Object), Class[_])] = Seq(
         ("java.lang.String", (value: String) => value, classOf[String]),
@@ -150,8 +152,13 @@ object visor extends VisorTag {
         ("java.lang.Float", (value: String) => JavaFloat.valueOf(value), classOf[JavaFloat]),
         ("java.lang.Double", (value: String) => JavaDouble.valueOf(value), classOf[JavaDouble]),
         ("java.lang.Boolean", (value: String) => JavaBoolean.valueOf(value), classOf[JavaBoolean]),
-        ("java.util.Date - Value In Format day/month/year hour:minute:second", (value: String) => dtFmt.parse(value), classOf[Date]),
-        ("java.util.UUID", (value: String) => UUID.fromString(value), classOf[UUID]))
+        ("java.util.Date - Value in format yyyy-MM-dd {HH:mm:ss}",
+            (value: String) => try
+                timeFmt.parse(value)
+            catch {
+                case e: ParseException => dateFmt.parse(value)
+            }, classOf[Date]),
+        ("java.util.UUID - Value like this: CC03C3B0-C03D-4B02-82AF-3E0F85414BA6", (value: String) => UUID.fromString(value), classOf[UUID]))
 
     /** `Nil` is for empty list, `Til` is for empty tuple. */
     val Til: Arg = (null, null)
@@ -191,9 +198,6 @@ object visor extends VisorTag {
 
     /** */
     @volatile private var conTs: Long = 0
-
-    /** Date format. */
-    private final val dFmt = new SimpleDateFormat("dd MMMM yyyy", LOC)
 
     private final val DEC_FMT_SYMS = new DecimalFormatSymbols(LOC)
 
@@ -1180,7 +1184,7 @@ object visor extends VisorTag {
      * @param ts Timestamp.
      */
     def formatDateTime(ts: Long): String =
-        dtFmt.format(ts)
+        timeFmt.format(ts)
 
     /**
      * Returns string representation of the date provided. Result formatted using
@@ -1189,7 +1193,7 @@ object visor extends VisorTag {
      * @param date Date.
      */
     def formatDateTime(date: Date): String =
-        dtFmt.format(date)
+        timeFmt.format(date)
 
     /**
      * Returns string representation of the timestamp provided. Result formatted
@@ -1198,7 +1202,7 @@ object visor extends VisorTag {
      * @param ts Timestamp.
      */
     def formatDate(ts: Long): String =
-        dFmt.format(ts)
+        dateFmt.format(ts)
 
     /**
      * Returns string representation of the date provided. Result formatted using
@@ -1207,7 +1211,7 @@ object visor extends VisorTag {
      * @param date Date.
      */
     def formatDate(date: Date): String =
-        dFmt.format(date)
+        dateFmt.format(date)
 
     /**
      * Base class for memory units.

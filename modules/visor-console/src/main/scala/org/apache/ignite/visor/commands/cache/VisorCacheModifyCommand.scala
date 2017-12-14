@@ -17,7 +17,7 @@
 
 package org.apache.ignite.visor.commands.cache
 
-import java.util.UUID
+import java.util.{Calendar, Date, GregorianCalendar, UUID}
 
 import org.apache.ignite.internal.util.lang.{GridFunc => F}
 import org.apache.ignite.internal.util.scala.impl
@@ -270,7 +270,19 @@ class VisorCacheModifyCommand extends VisorConsoleCommand {
 
             try {
                 val taskResult = executeRandom(classOf[VisorCacheModifyTask], arg)
-                val resultObj = taskResult.getResult
+                val resultObj = taskResult.getResult match {
+                    case d: Date =>
+                        val cal = new GregorianCalendar()
+                        cal.setTime(d)
+
+                        if (cal.get(Calendar.HOUR_OF_DAY) == 0 && cal.get(Calendar.MINUTE) == 0
+                            && cal.get(Calendar.SECOND) == 0)
+                            formatDate(d)
+                        else
+                            formatDateTime(d)
+
+                    case v => v
+                }
                 val affinityNode = taskResult.getAffinityNode
 
                 if (put) {
