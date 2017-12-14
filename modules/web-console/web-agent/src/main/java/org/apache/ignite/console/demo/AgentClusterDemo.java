@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteServices;
 import org.apache.ignite.Ignition;
@@ -38,7 +39,9 @@ import org.apache.ignite.console.demo.service.DemoServiceKeyAffinity;
 import org.apache.ignite.console.demo.service.DemoServiceMultipleInstances;
 import org.apache.ignite.console.demo.service.DemoServiceNodeSingleton;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.processors.cache.persistence.filename.PdsConsistentIdProcessor;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.logger.slf4j.Slf4jLogger;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -56,9 +59,9 @@ import static org.apache.ignite.IgniteSystemProperties.IGNITE_UPDATE_NOTIFIER;
 import static org.apache.ignite.configuration.DataStorageConfiguration.DFLT_DATA_REGION_INITIAL_SIZE;
 import static org.apache.ignite.console.demo.AgentDemoUtils.newScheduledThreadPool;
 import static org.apache.ignite.events.EventType.EVTS_DISCOVERY;
-import static org.apache.ignite.internal.visor.util.VisorTaskUtils.VISOR_TASK_EVTS;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_REST_JETTY_ADDRS;
 import static org.apache.ignite.internal.IgniteNodeAttributes.ATTR_REST_JETTY_PORT;
+import static org.apache.ignite.internal.visor.util.VisorTaskUtils.VISOR_TASK_EVTS;
 
 /**
  * Demo for cluster features like SQL and Monitoring.
@@ -88,12 +91,14 @@ public class AgentClusterDemo {
      * @param client If {@code true} then start client node.
      * @return IgniteConfiguration
      */
-    private static IgniteConfiguration igniteConfiguration(int basePort, int gridIdx, boolean client) {
+    private static IgniteConfiguration igniteConfiguration(int basePort, int gridIdx, boolean client)
+        throws IgniteCheckedException {
         IgniteConfiguration cfg = new IgniteConfiguration();
 
         cfg.setIgniteInstanceName((client ? "demo-client-" : "demo-server-" ) + gridIdx);
         cfg.setLocalHost("127.0.0.1");
         cfg.setEventStorageSpi(new MemoryEventStorageSpi());
+        cfg.setWorkDirectory(U.workDirectory(null, null));
 
         int[] evts = new int[EVTS_DISCOVERY.length + VISOR_TASK_EVTS.length];
 
@@ -137,8 +142,10 @@ public class AgentClusterDemo {
         dataRegCfg.setName("demo");
         dataRegCfg.setMetricsEnabled(true);
         dataRegCfg.setMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
+        dataRegCfg.setPersistenceEnabled(true);
 
         DataStorageConfiguration dataStorageCfg = new DataStorageConfiguration();
+        dataStorageCfg.setStoragePath(PdsConsistentIdProcessor.DB_DEFAULT_FOLDER);
         dataStorageCfg.setDefaultDataRegionConfiguration(dataRegCfg);
         dataStorageCfg.setSystemRegionMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
 
@@ -200,7 +207,17 @@ public class AgentClusterDemo {
                     IgniteEx ignite = null;
 
                     try {
-                        ignite = (IgniteEx)Ignition.start(igniteConfiguration(port, idx, false));
+                        IgniteConfiguration cfg = igniteConfiguration(port, idx, false);
+
+                        if (idx == 0) {
+                            U.resolveWorkDirectory(
+                                cfg.getWorkDirectory(),
+                                cfg.getDataStorageConfiguration().getStoragePath(),
+                                true
+                            );
+                        }
+
+                        ignite = (IgniteEx)Ignition.start(cfg);
 
                         if (idx == 0) {
                             Collection<String> jettyAddrs = ignite.localNode().attribute(ATTR_REST_JETTY_ADDRS);
@@ -236,7 +253,11 @@ public class AgentClusterDemo {
                     }
                     finally {
                         if (idx == NODE_CNT) {
-                            deployServices(ignite.services(ignite.cluster().forServers()));
+                            if (ignite != null) {
+                                ignite.active(true);
+
+                                deployServices(ignite.services(ignite.cluster().forServers()));
+                            }
 
                             log.info("DEMO: All embedded nodes for demo successfully started");
 
