@@ -1889,7 +1889,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
             }
 
             onError(new IgniteTxTimeoutCheckedException("Failed to acquire lock within " +
-                "provided timeout for transaction [timeout=" + tx.timeout() + ", tx=" + tx + ']'));
+                "provided timeout for transaction [timeout=" + tx.timeout() + ", tx=" + CU.txString(tx) + ']'));
         }
 
         /** {@inheritDoc} */

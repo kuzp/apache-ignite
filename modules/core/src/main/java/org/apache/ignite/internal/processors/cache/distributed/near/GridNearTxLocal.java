@@ -4134,7 +4134,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter implements GridTimeou
         }
         else {
             if (log.isDebugEnabled())
-                log.debug("Skip rollback tx on timeout: " + this);
+                log.debug("Skip rollback tx on timeout: " + CU.txString(this));
         }
     }
 
