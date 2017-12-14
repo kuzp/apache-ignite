@@ -479,7 +479,7 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
      * @param state Current cluster state.
      * @return {@code True} if states are equivalent.
      */
-    private static boolean isEquivalent(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
+    protected static boolean isEquivalent(ChangeGlobalStateMessage msg, DiscoveryDataClusterState state) {
         return (msg.activate() == state.active() && BaselineTopology.equals(msg.baselineTopology(), state.baselineTopology()));
     }
 
@@ -525,7 +525,7 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
      * @param activate New state.
      * @return State change error.
      */
-    private IgniteCheckedException concurrentStateChangeError(boolean activate) {
+    protected IgniteCheckedException concurrentStateChangeError(boolean activate) {
         return new IgniteCheckedException("Failed to " + prettyStr(activate) +
             ", because another state change operation is currently in progress: " + prettyStr(!activate));
     }
