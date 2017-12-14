@@ -80,9 +80,9 @@ export default class IgniteConfirmBatch {
 
         /**
          * Show confirm all dialog.
-         *
-         * @param confirmMessageFn Function to generate a confirm message.
-         * @param itemsToConfirm Array of element to process by confirm.
+         * @template T
+         * @param {(T) => string} confirmMessageFn Function to generate a confirm message.
+         * @param {Array<T>} [itemsToConfirm] Array of element to process by confirm.
          */
         this.confirm = function confirm(confirmMessageFn, itemsToConfirm) {
             scope.deferred = $q.defer();

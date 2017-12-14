@@ -27,6 +27,17 @@ import ObjectID from 'bson-objectid';
 import {uniqueName} from 'app/utils/uniqueName';
 import {defaultNames} from '../../defaultNames';
 
+// eslint-disable-next-line
+import {UIRouter} from '@uirouter/angularjs'
+import {default as IgniteConfirmBatch} from 'app/services/ConfirmBatch.service';
+import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
+import {default as ConfigEffects} from 'app/components/page-configure/store/effects';
+import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
+// eslint-disable-next-line
+import {default as AgentManager} from 'app/modules/agent/AgentModal.service'
+import {default as SqlTypes} from 'app/services/SqlTypes.service';
+import {default as JavaTypes} from 'app/services/JavaTypes.service';
+
 function _mapCaches(caches = []) {
     return caches.map((cache) => {
         return {label: cache.name, value: cache._id, cache};
@@ -72,9 +83,42 @@ const DFLT_REPLICATED_CACHE = {
 const CACHE_TEMPLATES = [DFLT_PARTITIONED_CACHE, DFLT_REPLICATED_CACHE];
 
 export class ModalImportModels {
-    static $inject = ['$uiRouter', 'ConfigSelectors', 'ConfigEffects', 'ConfigureState', '$http', 'IgniteConfirm', 'IgniteConfirmBatch', 'IgniteFocus', 'SqlTypes', 'JavaTypes', 'IgniteMessages', '$scope', '$rootScope', 'AgentManager', 'IgniteActivitiesData', 'IgniteLoading', 'IgniteFormUtils', 'IgniteLegacyUtils'];
+    /** 
+     * Cluster ID to import models into
+     * @type {string}
+     */
+    clusterID;
+
+    /** @type {ng.ICompiledExpression} */
+    onHide;
+
+    static $inject = ['$uiRouter', ConfigSelectors.name, ConfigEffects.name, ConfigureState.name, '$http', 'IgniteConfirm', IgniteConfirmBatch.name, 'IgniteFocus', SqlTypes.name, JavaTypes.name, 'IgniteMessages', '$scope', '$rootScope', 'AgentManager', 'IgniteActivitiesData', 'IgniteLoading', 'IgniteFormUtils', 'IgniteLegacyUtils'];
+    /**
+     * @param {UIRouter} $uiRouter
+     * @param {ConfigSelectors} ConfigSelectors
+     * @param {ConfigEffects} ConfigEffects
+     * @param {ConfigureState} ConfigureState
+     * @param {ng.IHttpService} $http
+     * @param {IgniteConfirmBatch} ConfirmBatch
+     * @param {SqlTypes} SqlTypes
+     * @param {JavaTypes} JavaTypes
+     * @param {ng.IScope} $scope
+     * @param {ng.IRootScopeService} $root
+     * @param {AgentManager} agentMgr
+     */
     constructor($uiRouter, ConfigSelectors, ConfigEffects, ConfigureState, $http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils) {
-        Object.assign(this, {$uiRouter, ConfigSelectors, ConfigEffects, ConfigureState, $http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils});
+        this.$uiRouter = $uiRouter;
+        this.ConfirmBatch = ConfirmBatch;
+        this.$http = $http;
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigEffects = ConfigEffects;
+        this.ConfigureState = ConfigureState;
+        this.$root = $root;
+        this.$scope = $scope;
+        this.agentMgr = agentMgr;
+        this.JavaTypes = JavaTypes;
+        this.SqlTypes = SqlTypes;
+        Object.assign(this, {Confirm, Focus, Messages, ActivitiesData, Loading, FormUtils, LegacyUtils});
     }
     loadData() {
         return Observable.of(this.clusterID)
