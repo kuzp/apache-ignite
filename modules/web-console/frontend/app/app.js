@@ -262,7 +262,7 @@ angular.module('ignite-console', [
 .service(...ChartColors)
 .service(...IgniteConfirm)
 .service(Confirm.name, Confirm)
-.service(...ConfirmBatch)
+.service('IgniteConfirmBatch', ConfirmBatch)
 .service(...CopyToClipboard)
 .service(...Countries)
 .service(...Focus)
