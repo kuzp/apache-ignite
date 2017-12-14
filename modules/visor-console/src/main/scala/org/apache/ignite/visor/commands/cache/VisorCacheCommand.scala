@@ -41,25 +41,27 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * ==Help==
  * {{{
- * +-----------------------------------------------------------------------------------------+
- * | cache          | Prints statistics about caches from specified node on the entire grid. |
- * |                | Output sorting can be specified in arguments.                          |
- * |                |                                                                        |
- * |                | Output abbreviations:                                                  |
- * |                |     #   Number of nodes.                                               |
- * |                |     H/h Number of cache hits.                                          |
- * |                |     M/m Number of cache misses.                                        |
- * |                |     R/r Number of cache reads.                                         |
- * |                |     W/w Number of cache writes.                                        |
- * +-----------------------------------------------------------------------------------------+
- * | cache -clear   | Clears all entries from cache on all nodes.                            |
- * +-----------------------------------------------------------------------------------------+
- * | cache -scan    | List all entries in cache with specified name.                         |
- * +-----------------------------------------------------------------------------------------+
- * | cache -stop    | Stop cache with specified name.                                        |
- * +-----------------------------------------------------------------------------------------+
- * | cache -reset   | Reset metrics for cache with specified name.                           |
- * +-----------------------------------------------------------------------------------------+
+ * +-------------------------------------------------------------------------------------------+
+ * | cache            | Prints statistics about caches from specified node on the entire grid. |
+ * |                  | Output sorting can be specified in arguments.                          |
+ * |                  |                                                                        |
+ * |                  | Output abbreviations:                                                  |
+ * |                  |     #   Number of nodes.                                               |
+ * |                  |     H/h Number of cache hits.                                          |
+ * |                  |     M/m Number of cache misses.                                        |
+ * |                  |     R/r Number of cache reads.                                         |
+ * |                  |     W/w Number of cache writes.                                        |
+ * +-------------------------------------------------------------------------------------------+
+ * | cache -clear     | Clears all entries from cache on all nodes.                            |
+ * +-------------------------------------------------------------------------------------------+
+ * | cache -scan      | List all entries in cache with specified name.                         |
+ * +-------------------------------------------------------------------------------------------+
+ * | cache -stop      | Stop cache with specified name.                                        |
+ * +-------------------------------------------------------------------------------------------+
+ * | cache -reset     | Reset metrics for cache with specified name.                           |
+ * +-------------------------------------------------------------------------------------------+
+ * | cache -rebalance | Re-balance partitions for cache with specified name.                   |
+ * +-------------------------------------------------------------------------------------------+
  *
  * }}}
  *
@@ -72,6 +74,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *     cache -scan -c=<cache-name> {-id=<node-id>|id8=<node-id8>} {-p=<page size>} {-system}
  *     cache -stop -c=<cache-name>
  *     cache -reset -c=<cache-name>
+ *     cache -rebalance -c=<cache-name>
  * }}}
  *
  * ====Arguments====
@@ -116,6 +119,8 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *          Stop cache with specified name.
  *     -reset
  *          Reset metrics for cache with specified name.
+ *     -rebalance
+ *          Re-balance partitions for cache with specified name.
  *     -p=<page size>
  *         Number of object to fetch from cache at once.
  *         Valid range from 1 to 100.
@@ -152,6 +157,8 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *         Stops cache with name 'cache'.
  *     cache -reset -c=cache
  *         Reset metrics for cache with name 'cache'.
+ *     cache -rebalance -c=cache
+ *         Re-balance partitions for cache with name 'cache'.
  *
  * }}}
  */
@@ -242,9 +249,10 @@ class VisorCacheCommand extends VisorConsoleCommand {
             // Get cache stats data from all nodes.
             val aggrData = cacheData(node, cacheName, showSystem)
 
-            if (hasArgFlagIn("clear", "scan", "stop", "reset")) {
+            if (hasArgFlagIn("clear", "scan", "stop", "reset", "rebalance")) {
                 if (cacheName.isEmpty)
-                    askForCache("Select cache from:", node, showSystem && !hasArgFlagIn("clear", "stop", "reset"), aggrData) match {
+                    askForCache("Select cache from:", node, showSystem
+                        && !hasArgFlagIn("clear", "stop", "reset", "rebalance"), aggrData) match {
                         case Some(name) =>
                             argLst = argLst ++ Seq("c" -> name)
 
@@ -254,25 +262,34 @@ class VisorCacheCommand extends VisorConsoleCommand {
                     }
 
                 cacheName.foreach(name => {
-                    if (hasArgFlag("scan", argLst))
-                        VisorCacheScanCommand().scan(argLst, node)
-                    else {
-                        if (aggrData.nonEmpty && !aggrData.exists(cache => F.eq(cache.getName, name) && cache.isSystem)) {
-                            if (hasArgFlag("clear", argLst))
-                                VisorCacheClearCommand().clear(argLst, node)
-                            else if (hasArgFlag("stop", argLst))
-                                VisorCacheStopCommand().stop(argLst, node)
-                            else if (hasArgFlag("reset", argLst))
-                              VisorCacheResetCommand().reset(argLst, node)
-                        }
-                        else {
-                            if (hasArgFlag("clear", argLst))
-                                warn("Clearing of system cache is not allowed: " + name)
-                            else if (hasArgFlag("stop", argLst))
-                                warn("Stopping of system cache is not allowed: " + name)
-                            else if (hasArgFlag("reset", argLst))
-                                warn("Reset metrics of system cache is not allowed: " + name)
-                        }
+                    aggrData.find(cache => F.eq(cache.getName, name)) match {
+                        case Some(cache) =>
+                            if (!cache.isSystem) {
+                                if (hasArgFlag("scan", argLst))
+                                    VisorCacheScanCommand().scan(argLst, node)
+                                else if (hasArgFlag("clear", argLst))
+                                    VisorCacheClearCommand().clear(argLst, node)
+                                else if (hasArgFlag("stop", argLst))
+                                    VisorCacheStopCommand().stop(argLst, node)
+                                else if (hasArgFlag("reset", argLst))
+                                    VisorCacheResetCommand().reset(argLst, node)
+                                else if (hasArgFlag("rebalance", argLst))
+                                    VisorCacheRebalanceCommand().rebalance(argLst, node)
+                            }
+                            else {
+                                if (hasArgFlag("scan", argLst))
+                                    warn("Scan of system cache is not allowed: " + name)
+                                else if (hasArgFlag("clear", argLst))
+                                    warn("Clearing of system cache is not allowed: " + name)
+                                else if (hasArgFlag("stop", argLst))
+                                    warn("Stopping of system cache is not allowed: " + name)
+                                else if (hasArgFlag("reset", argLst))
+                                    warn("Reset metrics of system cache is not allowed: " + name)
+                                else if (hasArgFlag("rebalance", argLst))
+                                    warn("Re-balance partitions of system cache is not allowed: " + name)
+                            }
+                        case None =>
+                            warn("Cache with specified name not found: " + name)
                     }
                 })
 
@@ -692,7 +709,8 @@ object VisorCacheCommand {
             "cache -clear {-c=<cache-name>} {-id=<node-id>|id8=<node-id8>}",
             "cache -scan -c=<cache-name> {-id=<node-id>|id8=<node-id8>} {-p=<page size>}",
             "cache -stop -c=<cache-name>",
-            "cache -reset -c=<cache-name>"
+            "cache -reset -c=<cache-name>",
+            "cache -rebalance -c=<cache-name>"
   ),
         args = Seq(
             "-id8=<node-id>" -> Seq(
@@ -712,21 +730,12 @@ object VisorCacheCommand {
                 "Name of the cache.",
                 "Note you can also use '@c0' ... '@cn' variables as shortcut to <cache-name>."
             ),
-            "-clear" -> Seq(
-                "Clears cache."
-            ),
-            "-system" -> Seq(
-                "Enable showing of information about system caches."
-            ),
-            "-scan" -> Seq(
-                "Prints list of all entries from cache."
-            ),
-            "-stop" -> Seq(
-                "Stop cache with specified name."
-            ),
-            "-reset" -> Seq(
-                "Reset metrics of cache with specified name."
-            ),
+            "-clear" -> "Clears cache.",
+            "-system" -> "Enable showing of information about system caches.",
+            "-scan" -> "Prints list of all entries from cache.",
+            "-stop" -> "Stop cache with specified name.",
+            "-reset" -> "Reset metrics of cache with specified name.",
+            "-rebalance" -> "Re-balance partitions for cache with specified name.",
             "-s=hi|mi|rd|wr|cn" -> Seq(
                 "Defines sorting type. Sorted by:",
                 "   hi Hits.",
@@ -783,7 +792,8 @@ object VisorCacheCommand {
                 " with page of 50 items from all nodes with this cache."),
             "cache -scan -c=cache -id8=12345678" -> "Prints list entries from cache with name 'cache' and node '12345678' ID8.",
             "cache -stop -c=@c0" -> "Stop cache with name taken from 'c0' memory variable.",
-            "cache -reset -c=@c0" -> "Reset metrics for cache with name taken from 'c0' memory variable."
+            "cache -reset -c=@c0" -> "Reset metrics for cache with name taken from 'c0' memory variable.",
+            "cache -rebalance -c=cache" -> "Re-balance partitions for cache with name 'cache'."
         ),
         emptyArgs = cmd.cache,
         withArgs = cmd.cache
