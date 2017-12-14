@@ -920,7 +920,7 @@ export default class {
                     });
 
                     // Await for demo caches.
-                    if (!$ctrl.demoStarted && $root.IgniteDemoMode && _.nonEmpty(cacheNames)) {
+                    if (!$ctrl.demoStarted && $root.IgniteDemoMode && nonEmpty(cacheNames)) {
                         $ctrl.demoStarted = true;
 
                         Loading.finish('sqlLoading');
