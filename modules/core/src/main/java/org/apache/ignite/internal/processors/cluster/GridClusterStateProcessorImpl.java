@@ -70,6 +70,7 @@ import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgniteRunnable;
+import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.resources.IgniteInstanceResource;
 import org.apache.ignite.spi.IgniteNodeValidationResult;
 import org.apache.ignite.spi.discovery.DiscoveryDataBag;
@@ -329,6 +330,8 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
 
             globalState = globalState.finish(msg.success());
 
+            afterStateChangeFinished(msg.id(), msg.success());
+
             ctx.cache().onStateChangeFinish(msg);
 
             TransitionOnJoinWaitFuture joinFut = this.joinFut;
@@ -346,6 +349,11 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
         }
         else
             U.warn(log, "Received state finish message with unexpected ID: " + msg);
+    }
+
+    /** */
+    protected void afterStateChangeFinished(IgniteUuid msgId, boolean success) {
+        // no-op
     }
 
     /** {@inheritDoc} */
@@ -882,23 +890,25 @@ public class GridClusterStateProcessorImpl extends GridProcessorAdapter implemen
         assert !F.isEmpty(errs);
 
         // Revert caches start if activation request fail.
-        if (req.activate()) {
-            try {
-                cacheProc.onKernalStopCaches(true);
+        if (req.activeChanged()) {
+            if (req.activate()) {
+                try {
+                    cacheProc.onKernalStopCaches(true);
 
-                cacheProc.stopCaches(true);
+                    cacheProc.stopCaches(true);
 
-                sharedCtx.affinity().removeAllCacheInfo();
+                    sharedCtx.affinity().removeAllCacheInfo();
 
-                if (!ctx.clientNode())
-                    sharedCtx.deactivate();
+                    if (!ctx.clientNode())
+                        sharedCtx.deactivate();
+                }
+                catch (Exception e) {
+                    U.error(log, "Failed to revert activation request changes", e);
+                }
             }
-            catch (Exception e) {
-                U.error(log, "Failed to revert activation request changes", e);
+            else {
+                //todo https://issues.apache.org/jira/browse/IGNITE-5480
             }
-        }
-        else {
-            //todo https://issues.apache.org/jira/browse/IGNITE-5480
         }
 
         GridChangeGlobalStateFuture fut = changeStateFuture(req.initiatorNodeId(), req.requestId());
