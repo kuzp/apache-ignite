@@ -43,7 +43,8 @@ module.exports.factory = function(publicRoute, adminRoute, profilesRoute, demoRo
                 res.status(401).send('Access denied. You are not authorized to access this page.');
             };
 
-            // Registering the standard routes
+            // Registering the standard routes.
+            // NOTE: Order is important!
             app.use('/api/v1/', publicRoute);
             app.use('/api/v1/admin', _mustAuthenticated, _adminOnly, adminRoute);
             app.use('/api/v1/profile', _mustAuthenticated, profilesRoute);
