@@ -823,10 +823,10 @@ export class ModalImportModels {
              * @returns {string} Generated message.
              */
             function overwriteMessage(meta) {
-                return '<span>' +
-                    'Domain model with name &quot;' + meta.newDomainModel.databaseTable + '&quot; already exist.<br/><br/>' +
-                    'Are you sure you want to overwrite it?' +
-                    '</span>';
+                return `
+                    Domain model with name &quot;${meta.newDomainModel.databaseTable}&quot; already exists.
+                    Are you sure you want to overwrite it?
+                `;
             }
 
             const itemsToConfirm = _.filter(batch, (item) => item.confirm);
