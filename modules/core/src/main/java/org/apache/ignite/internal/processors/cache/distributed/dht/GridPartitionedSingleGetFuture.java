@@ -242,6 +242,9 @@ public class GridPartitionedSingleGetFuture extends GridCacheFutureAdapter<Objec
             if (!F.isEmpty(invalidParts)) {
                 AffinityTopologyVersion updTopVer = cctx.shared().exchange().readyAffinityVersion();
 
+                if (!(updTopVer.compareTo(topVer) > 0))
+                    System.out.println("???");
+
                 assert updTopVer.compareTo(topVer) > 0 : "Got invalid partitions for local node but topology " +
                     "version did not change [topVer=" + topVer + ", updTopVer=" + updTopVer +
                     ", invalidParts=" + invalidParts + ']';
