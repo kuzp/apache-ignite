@@ -303,7 +303,7 @@ public class BaselineTopology implements Serializable {
      * @param id ID of BaselineTopology to build.
      * @return Baseline topology consisting of given nodes.
      */
-    @Nullable public static BaselineTopology build(Collection<BaselineNode> nodes, int id) {
+    @Nullable public static BaselineTopology build(Collection<? extends BaselineNode> nodes, int id) {
         if (nodes == null)
             return null;
 
@@ -326,7 +326,7 @@ public class BaselineTopology implements Serializable {
     /**
      * @param nodes Nodes.
      */
-    boolean updateHistory(Collection<BaselineNode> nodes) {
+    boolean updateHistory(Collection<? extends BaselineNode> nodes) {
         long newTopHash = calculateTopologyHash(nodes);
 
         if (branchingPntHash != newTopHash) {
@@ -343,7 +343,7 @@ public class BaselineTopology implements Serializable {
     /**
      * @param nodes Nodes.
      */
-    private long calculateTopologyHash(Collection<BaselineNode> nodes) {
+    private long calculateTopologyHash(Collection<? extends BaselineNode> nodes) {
         long res = 0;
 
         Set<Object> bltConsIds = nodeMap.keySet();
