@@ -140,6 +140,8 @@ public interface IgniteCacheOffheapManager {
     /**
      * @param cctx Cache context.
      * @param c Closure.
+     * @param amount Limit of processed entries by single call, {@code -1} for no limit.
+     * @return {@code True} if unprocessed expired entries remains.
      * @throws IgniteCheckedException If failed.
      */
     public boolean expire(GridCacheContext cctx, IgniteInClosure2X<GridCacheEntryEx, GridCacheVersion> c, int amount)
@@ -511,6 +513,27 @@ public interface IgniteCacheOffheapManager {
          * @throws IgniteCheckedException If failed.
          */
         public void clear(int cacheId) throws IgniteCheckedException;
+
+        /**
+         * Gets the number of entries pending expire.
+         *
+         * @return Number of pending entries.
+         * @throws IgniteCheckedException If failed to get number of pending entries.
+         */
+        public long expiredSize() throws IgniteCheckedException;
+
+        /**
+         * Removes all expired records associated with logical cache with given ID.
+         *
+         * @param cctx Cache context.
+         * @param c Closure.
+         * @param amount Limit of processed entries by single call, {@code -1} for no limit.
+         * @return number of purged entries.
+         * @throws IgniteCheckedException If failed.
+         */
+        public int purgeExpired(GridCacheContext cctx,
+            IgniteInClosure2X<GridCacheEntryEx, GridCacheVersion> c,
+            int amount) throws IgniteCheckedException;
 
         /**
          * @return Row store.

@@ -93,9 +93,6 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
     protected final ConcurrentMap<Integer, CacheDataStore> partDataStores = new ConcurrentHashMap<>();
 
     /** */
-    protected PendingEntriesTree pendingEntries;
-
-    /** */
     private volatile boolean hasPendingEntries;
 
     /** */
@@ -139,20 +136,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
     }
 
     /** {@inheritDoc} */
-    public void onCacheStarted(GridCacheContext cctx) throws IgniteCheckedException {
-        if (cctx.affinityNode() && cctx.ttl().eagerTtlEnabled() && pendingEntries == null) {
-            String name = "PendingEntries";
-
-                long rootPage = allocateForTree();
-
-                pendingEntries = new PendingEntriesTree(
-                    grp,
-                    name,
-                    grp.dataRegion().pageMemory(),
-                    rootPage,
-                    grp.reuseList(),
-                    true);
-            }
+    public void onCacheStarted(GridCacheContext cctx) throws IgniteCheckedException{
+       // No-op.
     }
 
     /**
@@ -173,9 +158,6 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         try {
             for (CacheDataStore store : cacheDataStores())
                 destroyCacheDataStore(store);
-
-            if (pendingEntries != null)
-                pendingEntries.destroy();
         }
         catch (IgniteCheckedException e) {
             throw new IgniteException(e.getMessage(), e);
@@ -200,18 +182,6 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
                 for (CacheDataStore store : cacheDataStores())
                     store.clear(cacheId);
-
-                if (pendingEntries != null) {
-                    PendingRow row = new PendingRow(cacheId);
-
-                    GridCursor<PendingRow> cursor = pendingEntries.find(row, row, PendingEntriesTree.WITHOUT_KEY);
-
-                    while (cursor.next()) {
-                        boolean res = pendingEntries.removex(cursor.get());
-
-                        assert res;
-                    }
-                }
             }
         }
         catch (IgniteCheckedException e) {
@@ -886,7 +856,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
      */
     protected CacheDataStore createCacheDataStore0(int p)
         throws IgniteCheckedException {
-        final long rootPage = allocateForTree();
+        final long dataTreeRootPage = allocateForTree();
 
         CacheDataRowStore rowStore = new CacheDataRowStore(grp, grp.freeList(), p);
 
@@ -897,10 +867,20 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             idxName,
             grp.reuseList(),
             rowStore,
-            rootPage,
+            dataTreeRootPage,
             true);
 
-        return new CacheDataStoreImpl(p, idxName, rowStore, dataTree);
+        long pendingTreeRootPage = allocateForTree();
+
+        PendingEntriesTree pendingTree = new PendingEntriesTree(
+            grp,
+            "PendingEntries-" + p,
+            grp.dataRegion().pageMemory(),
+            pendingTreeRootPage,
+            grp.reuseList(),
+            true);
+
+        return new CacheDataStoreImpl(p, idxName, rowStore, dataTree, pendingTree);
     }
 
     /** {@inheritDoc} */
@@ -960,51 +940,17 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
     ) throws IgniteCheckedException {
         assert !cctx.isNear() : cctx.name();
 
-        if (hasPendingEntries && pendingEntries != null) {
-            GridCacheVersion obsoleteVer = null;
+        if(!hasPendingEntries)
+            return false;
 
-            long now = U.currentTimeMillis();
+        int cleared = 0;
 
-            GridCursor<PendingRow> cur;
+        //TODO: ignite-5874 randomize parition collection if amount!=-1 ?
+        for(CacheDataStore store :cacheDataStores()) {
+            cleared += store.purgeExpired(cctx, c,amount - cleared);
 
-            if (grp.sharedGroup())
-                cur = pendingEntries.find(new PendingRow(cctx.cacheId()), new PendingRow(cctx.cacheId(), now, 0));
-            else
-                cur = pendingEntries.find(null, new PendingRow(CU.UNDEFINED_CACHE_ID, now, 0));
-
-            if (!cur.next())
-                return false;
-
-            int cleared = 0;
-
-            cctx.shared().database().checkpointReadLock();
-
-            try {
-                do {
-                    PendingRow row = cur.get();
-
-                    if (amount != -1 && cleared > amount)
-                        return true;
-
-                    if (row.key.partition() == -1)
-                        row.key.partition(cctx.affinity().partition(row.key));
-
-                    assert row.key != null && row.link != 0 && row.expireTime != 0 : row;
-
-                    if (pendingEntries.removex(row)) {
-                        if (obsoleteVer == null)
-                            obsoleteVer = ctx.versions().next();
-
-                        c.apply(cctx.cache().entryEx(row.key), obsoleteVer);
-                    }
-
-                    cleared++;
-                }
-                while (cur.next());
-            }
-            finally {
-                cctx.shared().database().checkpointReadUnlock();
-            }
+            if (amount != -1 && cleared >= amount)
+                return true;
         }
 
         return false;
@@ -1012,7 +958,12 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
     /** {@inheritDoc} */
     @Override public long expiredSize() throws IgniteCheckedException {
-        return pendingEntries != null ? pendingEntries.size() : 0;
+        long size = 0;
+
+        for (CacheDataStore store : cacheDataStores())
+            size += store.expiredSize();
+
+        return size;
     }
 
     /**
@@ -1030,6 +981,9 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
         /** */
         private final CacheDataTree dataTree;
+
+        /** */
+        private PendingEntriesTree pendingTree;
 
         /** Update counter. */
         protected final AtomicLong cntr = new AtomicLong();
@@ -1053,12 +1007,14 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             int partId,
             String name,
             CacheDataRowStore rowStore,
-            CacheDataTree dataTree
+            CacheDataTree dataTree,
+            PendingEntriesTree pendingTree
         ) {
             this.partId = partId;
             this.name = name;
             this.rowStore = rowStore;
             this.dataTree = dataTree;
+            this.pendingTree = pendingTree;
         }
 
         /**
@@ -1344,15 +1300,15 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             if (oldRow != null) {
                 assert oldRow.link() != 0 : oldRow;
 
-                if (pendingEntries != null && oldRow.expireTime() != 0)
-                    pendingEntries.removex(new PendingRow(cacheId, oldRow.expireTime(), oldRow.link()));
+                if (pendingTree != null && oldRow.expireTime() != 0)
+                    pendingTree.removex(new PendingRow(cacheId, oldRow.expireTime(), oldRow.link()));
 
                 if (newRow.link() != oldRow.link())
                     rowStore.removeRow(oldRow.link());
             }
 
-            if (pendingEntries != null && expireTime != 0) {
-                pendingEntries.putx(new PendingRow(cacheId, expireTime, newRow.link()));
+            if (pendingTree != null && expireTime != 0) {
+                pendingTree.putx(new PendingRow(cacheId, expireTime, newRow.link()));
 
                 hasPendingEntries = true;
             }
@@ -1393,8 +1349,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 assert cacheId == CU.UNDEFINED_CACHE_ID || oldRow.cacheId() == cacheId :
                     "Incorrect cache ID [expected=" + cacheId + ", actual=" + oldRow.cacheId() + "].";
 
-                if (pendingEntries != null && oldRow.expireTime() != 0)
-                    pendingEntries.removex(new PendingRow(cacheId, oldRow.expireTime(), oldRow.link()));
+                if (pendingTree != null && oldRow.expireTime() != 0)
+                    pendingTree.removex(new PendingRow(cacheId, oldRow.expireTime(), oldRow.link()));
 
                 decrementSize(cctx.cacheId());
             }
@@ -1485,6 +1441,9 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 }
             });
 
+            if (pendingTree != null)
+                pendingTree.destroy();
+
             if (exception.get() != null)
                 throw new IgniteCheckedException("Fail destroy store", exception.get());
         }
@@ -1494,40 +1453,111 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             assert cacheId != CU.UNDEFINED_CACHE_ID;
             assert ctx.database().checkpointLockIsHeldByThread();
 
-            if (cacheSize(cacheId) == 0)
-                return;
-
             Exception ex = null;
 
-            GridCursor<? extends CacheDataRow> cur =
-                cursor(cacheId, null, null, CacheDataRowAdapter.RowData.KEY_ONLY);
+            // Clear dataTree
+            if (cacheSize(cacheId) != 0) {
+                GridCursor<? extends CacheDataRow> cur =
+                    cursor(cacheId, null, null, CacheDataRowAdapter.RowData.KEY_ONLY);
 
-            while (cur.next()) {
-                CacheDataRow row = cur.get();
+                while (cur.next()) {
+                    CacheDataRow row = cur.get();
 
-                assert row.link() != 0 : row;
+                    assert row.link() != 0 : row;
 
-                try {
-                    boolean res = dataTree.removex(row);
+                    try {
+                        boolean res = dataTree.removex(row);
 
-                    assert res : row;
+                        assert res : row;
 
-                    rowStore.removeRow(row.link());
+                        rowStore.removeRow(row.link());
 
-                    decrementSize(cacheId);
+                        decrementSize(cacheId);
+                    }
+                    catch (IgniteCheckedException e) {
+                        U.error(log, "Fail remove row [link=" + row.link() + "]");
+
+                        if (ex == null)
+                            ex = e;
+                        else
+                            ex.addSuppressed(e);
+                    }
                 }
-                catch (IgniteCheckedException e) {
-                    U.error(log, "Fail remove row [link=" + row.link() + "]");
+            }
 
-                    if (ex == null)
-                        ex = e;
-                    else
-                        ex.addSuppressed(e);
+            // Clear pendingTree
+            if (pendingTree != null) {
+                PendingRow row = new PendingRow(cacheId);
+
+                GridCursor<PendingRow> cursor = pendingTree.find(row, row, PendingEntriesTree.WITHOUT_KEY);
+
+                while (cursor.next()) {
+                    boolean res = pendingTree.removex(cursor.get());
+
+                    assert res;
                 }
             }
 
             if (ex != null)
                 throw new IgniteCheckedException("Fail destroy store", ex);
+        }
+
+        /** {@inheritDoc} */
+        @Override public long expiredSize() throws IgniteCheckedException {
+            return pendingTree != null ? pendingTree.size() : 0;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int purgeExpired(GridCacheContext cctx, IgniteInClosure2X<GridCacheEntryEx, GridCacheVersion> c,
+            int amount) throws IgniteCheckedException {
+
+            long now = U.currentTimeMillis();
+
+            GridCursor<PendingRow> cur;
+
+            if (grp.sharedGroup())
+                cur = pendingTree.find(new PendingRow(cctx.cacheId()), new PendingRow(cctx.cacheId(), now, 0));
+            else
+                cur = pendingTree.find(null, new PendingRow(CU.UNDEFINED_CACHE_ID, now, 0));
+
+            if (!cur.next())
+                return 0;
+
+            cctx.shared().database().checkpointReadLock();
+
+            try {
+                GridCacheVersion obsoleteVer = null;
+
+                int cleared = 0;
+
+                do {
+                    PendingRow row = cur.get();
+
+                    if (amount != -1 && cleared > amount)
+                        return cleared;
+
+                    //TODO: ignite-5874 get partition from row link.
+                    if (row.key.partition() == -1)
+                        row.key.partition(cctx.affinity().partition(row.key));
+
+                    assert row.key != null && row.link != 0 && row.expireTime != 0 : row;
+
+                    if (pendingTree.removex(row)) {
+                        if (obsoleteVer == null)
+                            obsoleteVer = ctx.versions().next();
+
+                        c.apply(cctx.cache().entryEx(row.key), obsoleteVer);
+                    }
+
+                    cleared++;
+                }
+                while (cur.next());
+
+                return cleared;
+            }
+            finally {
+                cctx.shared().database().checkpointReadUnlock();
+            }
         }
 
         /** {@inheritDoc} */

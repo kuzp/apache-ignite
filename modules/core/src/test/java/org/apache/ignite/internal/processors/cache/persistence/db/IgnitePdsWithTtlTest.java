@@ -41,7 +41,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
     public static final String CACHE = "expirableCache";
 
     /** */
-    public static final int DURATION_SEC = 10;
+    public static final int DURATION_SEC = 15;
 
     /** */
     public static final int ENTRIES = 7000;
@@ -142,7 +142,7 @@ public class IgnitePdsWithTtlTest extends GridCommonAbstractTest {
                 for (int i = 0; i < 50; i++)
                     cache.get(i); // touch entries
 
-            final long timeout = DURATION_SEC * 1000 + CLEANUP_WORKER_SLEEP_INTERVAL;
+            final long timeout = DURATION_SEC * 1000 + 2*CLEANUP_WORKER_SLEEP_INTERVAL;
             Thread.sleep(timeout);
 
             System.out.println("After sleep {{");

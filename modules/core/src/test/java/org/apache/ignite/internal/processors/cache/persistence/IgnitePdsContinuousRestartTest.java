@@ -17,13 +17,17 @@
 
 package org.apache.ignite.internal.processors.cache.persistence;
 
+import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteCheckedException;
@@ -31,12 +35,15 @@ import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.util.tostring.GridToStringInclude;
+import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
@@ -94,6 +101,8 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
         ccfg1.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
         ccfg1.setAffinity(new RendezvousAffinityFunction(false, 128));
         ccfg1.setBackups(2);
+        ccfg1.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 1)));
+//        ccfg1.setIndexedTypes(Integer.class, Person.class);
 
         cfg.setCacheConfiguration(ccfg1);
 
@@ -254,10 +263,13 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
                 Random rnd = ThreadLocalRandom.current();
 
                 while (!done.get()) {
-                    Map<Integer, Integer> map = new TreeMap<>();
+                    Map<Integer, Person> map = new TreeMap<>();
 
-                    for (int i = 0; i < batch; i++)
-                        map.put(rnd.nextInt(ENTRIES_COUNT), rnd.nextInt());
+                        for (int i = 0; i < batch; i++) {
+                            int key = rnd.nextInt(ENTRIES_COUNT);
+
+                            map.put(key, new Person("fn"+key,"ln"+key));
+                        }
 
                     cache.putAll(map);
                 }
@@ -285,5 +297,51 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
         done.set(true);
 
         busyFut.get();
+    }
+
+
+    /**
+     *
+     */
+    static class Person implements Serializable {
+        /** */
+        @GridToStringInclude
+        @QuerySqlField(index = true, groups = "full_name")
+        String fName;
+
+        /** */
+        @GridToStringInclude
+        @QuerySqlField(index = true, groups = "full_name")
+        String lName;
+
+        /**
+         * @param fName First name.
+         * @param lName Last name.
+         */
+        public Person(String fName, String lName) {
+            this.fName = fName;
+            this.lName = lName;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(Person.class, this);
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            IgnitePersistentStoreCacheGroupsTest.Person person = (IgnitePersistentStoreCacheGroupsTest.Person)o;
+            return Objects.equals(fName, person.fName) &&
+                Objects.equals(lName, person.lName);
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            return Objects.hash(fName, lName);
+        }
     }
 }
