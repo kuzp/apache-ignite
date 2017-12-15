@@ -83,7 +83,7 @@ form(novalidate name=form)
     div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'ZooKeeper'`)
         +discovery-zookeeper(model)
     div.pcb-form-flex-grid.panel-details(ng-if=`${modelDiscoveryKind} === 'Kubernetes'`)
-        +discovery-kubernetes(model)        
+        +discovery-kubernetes(model)
 
     .docs-header(style='margin-top:30px')
         h1 Step 2. Caches Configuration
@@ -156,7 +156,7 @@ form(novalidate name=form)
                 protect-from-bs-select-render
             )
                 | + Select from existing caches
-        
+
     hr
 
     div.pcb-buttons-group

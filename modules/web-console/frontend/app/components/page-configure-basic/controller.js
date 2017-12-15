@@ -26,14 +26,17 @@ export default class PageConfigureBasicController {
         'Clusters',
         'ConfigureState',
         'ConfigurationDownload',
-        'IgniteVersion'
+        'IgniteVersion',
+        'IgniteUnsavedChangesGuard'
     ];
 
-    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version) {
-        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version});
+    constructor($scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, UnsavedChangesGuard) {
+        Object.assign(this, {$scope, pageService, Clusters, ConfigureState, ConfigurationDownload, Version, UnsavedChangesGuard});
     }
 
     $onInit() {
+        this.UnsavedChangesGuard.install(this.$scope, () => this.form.$dirty, '$ctrl.form');
+
         this.subscription = this.getObservable(this.ConfigureState.state$, this.Version.currentSbj).subscribe();
         this.discoveries = this.Clusters.discoveries;
         this.minMemorySize = this.Clusters.minMemoryPolicySize;
@@ -59,8 +62,7 @@ export default class PageConfigureBasicController {
             clustersMenu: this.getClustersMenu(state.list.clusters),
             defaultMemoryPolicy: this.getDefaultClusterMemoryPolicy(state.configureBasic.cluster, version),
             memorySizeInputVisible: this.getMemorySizeInputVisibility(version)
-        }))
-        .do((value) => this.applyValue(value));
+        })).do((value) => this.applyValue(value));
     }
 
     applyValue(value) {
@@ -101,7 +103,12 @@ export default class PageConfigureBasicController {
     }
 
     save() {
-        return this.pageService.saveClusterAndCaches(this.state.cluster, this.allClusterCaches);
+        return this.pageService.saveClusterAndCaches(this.state.cluster, this.allClusterCaches).then((payload) => {
+            return new Promise((resolve) => {
+                this.form.$dirty = true;
+                resolve(payload);
+            });
+        });
     }
 
     saveAndDownload() {

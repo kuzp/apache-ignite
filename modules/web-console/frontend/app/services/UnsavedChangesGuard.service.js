@@ -20,11 +20,11 @@ const MSG = 'You have unsaved changes.\n\nAre you sure you want to discard them?
 // Service that show confirmation about unsaved changes on user change location.
 export default ['IgniteUnsavedChangesGuard', ['$rootScope', ($root) => {
     return {
-        install(scope, customDirtyCheck = () => scope.ui.inputForm.$dirty) {
+        install(scope, customDirtyCheck = () => scope.ui.inputForm.$dirty, formScopePath = 'ui.inputForm') {
             scope.$on('$destroy', () => window.onbeforeunload = null);
 
             const unbind = $root.$on('$stateChangeStart', (event) => {
-                if (_.get(scope, 'ui.inputForm', false) && customDirtyCheck()) {
+                if (_.get(scope, formScopePath, false) && customDirtyCheck()) {
                     if (!confirm(MSG)) // eslint-disable-line no-alert
                         event.preventDefault();
                     else
@@ -32,7 +32,7 @@ export default ['IgniteUnsavedChangesGuard', ['$rootScope', ($root) => {
                 }
             });
 
-            window.onbeforeunload = () => _.get(scope, 'ui.inputForm.$dirty', false) ? MSG : null;
+            window.onbeforeunload = () => _.get(scope, formScopePath, false) ? MSG : null;
         }
     };
 }]];
