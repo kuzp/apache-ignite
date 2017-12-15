@@ -33,6 +33,7 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.eviction.EvictableEntry;
+import org.apache.ignite.internal.NodeStoppingException;
 import org.apache.ignite.internal.pagemem.wal.StorageException;
 import org.apache.ignite.internal.pagemem.wal.record.DataEntry;
 import org.apache.ignite.internal.pagemem.wal.record.DataRecord;
@@ -592,16 +593,23 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                     long expireTime = expireTimeExtras();
 
                     if (expireTime > 0 && (expireTime - U.currentTimeMillis() <= 0)) {
-                        if (onExpired((CacheObject)cctx.unwrapTemporary(val), null)) {
-                            val = null;
-                            evt = false;
+                        //TODO: ignite-5874 move to proper place
+                        cctx.shared().database().checkpointReadLock();
+                        try {
+                            if (onExpired((CacheObject)cctx.unwrapTemporary(val), null)) {
+                                val = null;
+                                evt = false;
 
-                            if (cctx.deferredDelete()) {
-                                deferred = true;
-                                ver0 = ver;
+                                if (cctx.deferredDelete()) {
+                                    deferred = true;
+                                    ver0 = ver;
+                                }
+                                else
+                                    obsolete = true;
                             }
-                            else
-                                obsolete = true;
+                        }
+                        finally {
+                            cctx.shared().database().checkpointReadUnlock();
                         }
                     }
                 }
@@ -644,8 +652,16 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                 evt = false;
             }
 
-            if (ret != null && expiryPlc != null)
-                updateTtl(expiryPlc);
+            if (ret != null && expiryPlc != null) {
+                //TODO: ignite-5874 move to proper place
+                cctx.shared().database().checkpointReadLock();
+                try {
+                    updateTtl(expiryPlc);
+                }
+                finally {
+                    cctx.shared().database().checkpointReadUnlock();
+                }
+            }
 
             if (retVer) {
                 resVer = (isNear() && cctx.transactional()) ? ((GridNearCacheEntry)this).dhtVersion() : this.ver;
@@ -1342,7 +1358,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             if (readThrough && needVal && old == null &&
                 (cctx.readThrough() && (op == GridCacheOperation.TRANSFORM || cctx.loadPreviousValue()))) {
-                    old0 = readThrough(null, key, false, subjId, taskName);
+                old0 = readThrough(null, key, false, subjId, taskName);
 
                 old = cctx.toCacheObject(old0);
 
@@ -2437,8 +2453,16 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                 else {
                     CacheObject val = this.val;
 
-                    if (val != null && expiryPlc != null)
-                        updateTtl(expiryPlc);
+                    if (val != null && expiryPlc != null) {
+                        //TODO: ignite-5874 move to proper place
+                        cctx.shared().database().checkpointReadLock();
+                        try {
+                            updateTtl(expiryPlc);
+                        }
+                        finally {
+                            cctx.shared().database().checkpointReadUnlock();
+                        }
+                    }
 
                     return val;
                 }
@@ -2983,6 +3007,10 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                         obsolete = true;
                 }
             }
+        }
+        catch (NodeStoppingException ignore) {
+            if(log.isDebugEnabled())
+                log.warning("Node stopping while removing expired value.", ignore);
         }
         catch (IgniteCheckedException e) {
             U.error(log, "Failed to clean up expired cache entry: " + this, e);
