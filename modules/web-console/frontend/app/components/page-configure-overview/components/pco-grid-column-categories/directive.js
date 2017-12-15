@@ -24,6 +24,9 @@ const visibilityChanged = (a, b) => {
     return !isEqual(map(a, 'visible'), map(b, 'visible'));
 };
 
+/** @type {(cd: uiGrid.IGridColumn) => boolean} */
+const notSelectionColumn = (cc) => cc.colDef.name !== 'selectionRowHeaderCol';
+
 export default function() {
     return {
         require: '^uiGrid',
@@ -32,7 +35,7 @@ export default function() {
                 if (!grid.grid.options.enableColumnCategories) return;
                 grid.grid.api.core.registerColumnsProcessor((cp) => {
                     const oldCategories = grid.grid.options.categories;
-                    const newCategories = uniqBy(cp.map(({colDef: cd}) => {
+                    const newCategories = uniqBy(cp.filter(notSelectionColumn).map(({colDef: cd}) => {
                         cd.categoryDisplayName = cd.categoryDisplayName || cd.displayName;
                         return {
                             name: cd.categoryDisplayName || cd.displayName,
