@@ -318,6 +318,15 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         }
     }
 
+    public Set<Integer> waitGroups() {
+        synchronized (mux) {
+            if (waitInfo == null || !waitInfo.topVer.equals(lastAffVer) )
+                return Collections.emptySet();
+
+            return new HashSet<>(waitInfo.waitGrps.keySet());
+        }
+    }
+
     /**
      * @param waitInfo Cache rebalance information.
      * @return Message.
