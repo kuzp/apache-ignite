@@ -1515,6 +1515,11 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                     log.debug("Mapping entry to DHT nodes [nodes=" + U.toShortString(dhtNodes) +
                         ", entry=" + entry + ']');
 
+                if (GridCacheContext.debug)
+                    U.debug(log, "Mapping entry to DHT nodes [nodes=" + U.toShortString(dhtNodes) +
+                        ", entry=" + entry +
+                        ", blt=" + cctx.discovery().discoCache(tx.topologyVersion()).baselineNodes() + ']');
+
                 for (int i = 1; i < dhtNodes.size(); i++) {
                     ClusterNode node = dhtNodes.get(i);
 

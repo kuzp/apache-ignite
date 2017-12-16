@@ -42,6 +42,7 @@ import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.cluster.NodeOrderComparator;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.managers.discovery.DiscoCache;
+import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cluster.BaselineTopology;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.typedef.F;
@@ -198,6 +199,9 @@ public class GridAffinityAssignmentCache {
 
         affCache.put(topVer, new HistoryAffinityAssignment(assignment));
         head.set(assignment);
+
+        if (GridCacheContext.debug)
+            U.debug(log, "initialize [topVer=" + topVer + ", affAss=" + affAssignment + ']');
 
         for (Map.Entry<AffinityTopologyVersion, AffinityReadyFuture> entry : readyFuts.entrySet()) {
             if (entry.getKey().compareTo(topVer) <= 0) {
@@ -407,6 +411,9 @@ public class GridAffinityAssignmentCache {
 
         affCache.put(topVer, new HistoryAffinityAssignment(assignmentCpy));
         head.set(assignmentCpy);
+
+        if (GridCacheContext.debug)
+            U.debug(log, "On client event topology change [topVer=" + topVer + ", assCpy=" + assignmentCpy + ']');
 
         for (Map.Entry<AffinityTopologyVersion, AffinityReadyFuture> entry : readyFuts.entrySet()) {
             if (entry.getKey().compareTo(topVer) <= 0) {
