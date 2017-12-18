@@ -2502,9 +2502,11 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     else {
                         boolean hasMoving = !partsToReload.isEmpty();
 
+                        Set<Integer> waitGrps = cctx.affinity().waitGroups();
+
                         if (!hasMoving) {
                             for (CacheGroupContext grpCtx : cctx.cache().cacheGroups()) {
-                                if (grpCtx.topology().hasMovingPartitions()) {
+                                if (waitGrps.contains(grpCtx.groupId()) && grpCtx.topology().hasMovingPartitions()) {
                                     hasMoving = true;
 
                                     break;

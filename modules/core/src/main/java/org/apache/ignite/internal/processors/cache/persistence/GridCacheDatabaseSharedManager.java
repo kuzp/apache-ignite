@@ -518,15 +518,22 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             storePageMem.start();
 
-            restoreMemory(status, true, storePageMem);
+            checkpointReadLock();
 
-            metaStorage = new MetaStorage(cctx.wal(), regCfg, memMetrics, true);
+            try {
+                restoreMemory(status, true, storePageMem);
 
-            metaStorage.init(this);
+                metaStorage = new MetaStorage(cctx.wal(), regCfg, memMetrics, true);
 
-            applyLastUpdates(status, true);
+                metaStorage.init(this);
 
-            notifyMetastorageReadyForRead();
+                applyLastUpdates(status, true);
+
+                notifyMetastorageReadyForRead();
+            }
+            finally {
+                checkpointReadUnlock();
+            }
 
             metaStorage = null;
 
@@ -2250,7 +2257,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 if (tag != null) {
                     tmpWriteBuf.rewind();
 
-                    PageStore store = storeMgr.writeInternal(fullId.groupId(), fullId.pageId(), tmpWriteBuf, tag);
+                    PageStore store = storeMgr.writeInternal(fullId.groupId(), fullId.pageId(), tmpWriteBuf, tag, true);
 
                     tmpWriteBuf.rewind();
 
@@ -3053,6 +3060,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                         fullId, tmpWriteBuf, persStoreMetrics.metricsEnabled() ? tracker : null);
 
                     if (tag != null) {
+                        assert PageIO.getType(tmpWriteBuf) != 0 : "Invalid state. Type is 0! pageId = " + U.hexLong(fullId.pageId());
+                        assert PageIO.getVersion(tmpWriteBuf) != 0 : "Invalid state. Version is 0! pageId = " + U.hexLong(fullId.pageId());
+
                         tmpWriteBuf.rewind();
 
                         if (persStoreMetrics.metricsEnabled()) {
@@ -3074,9 +3084,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                         tmpWriteBuf.rewind();
 
-                        PageIO.setCrc(writeAddr, 0);
-
-                        PageStore store = storeMgr.writeInternal(grpId, fullId.pageId(), tmpWriteBuf, tag);
+                        PageStore store = storeMgr.writeInternal(grpId, fullId.pageId(), tmpWriteBuf, tag, false);
 
                         updStores.add(store);
                     }
