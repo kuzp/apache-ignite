@@ -17,6 +17,8 @@
 
 import angular from 'angular';
 
+import {default as ActivitiesData} from 'app/core/activities/Activities.data';
+
 // Common directives.
 import previewPanel from './configuration/preview-panel.directive.js';
 
@@ -45,11 +47,24 @@ const shortCachesResolve = ['ConfigSelectors', 'ConfigureState', 'ConfigEffects'
     .toPromise();
 }];
 
+/**
+ * @param {ActivitiesData} ActivitiesData
+ * @param {uirouter.UIRouter} $uiRouter
+ */
+function initConfiguration(ActivitiesData, $uiRouter) {
+    $uiRouter.transitionService.onSuccess({to: 'base.configuration.**'}, (transition) => {
+        ActivitiesData.post({group: 'configuration', action: transition.targetState().name()});
+    });
+}
+
+initConfiguration.$inject = ['IgniteActivitiesData', '$uiRouter'];
+
 angular.module('ignite-console.states.configuration', ['ui.router'])
     .directive(...previewPanel)
     // Services.
     .service('IgniteSummaryZipper', IgniteSummaryZipper)
     .service('IgniteConfigurationResource', ConfigurationResource)
+    .run(initConfiguration)
     // Configure state provider.
     .config(['$stateProvider', ($stateProvider) => {
         // Setup the states.
