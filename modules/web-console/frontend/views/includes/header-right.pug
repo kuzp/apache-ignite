@@ -31,5 +31,6 @@ web-console-header-extension
         data-trigger='hover focus'
         data-container='self'
     )
-        span {{$root.user.firstName}} {{$root.user.lastName}}
+        div.user-name-wrapper
+            div.user-name {{$root.user.firstName}} {{$root.user.lastName}}
             span.caret
