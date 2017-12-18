@@ -17,6 +17,18 @@
 
 ignite-list-of-registered-users {
   display: block;
+
+  .user-cell {
+    display: flex;
+    overflow-wrap: normal;
+    white-space: normal;
+
+    label {
+      height: 22px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 }
 
 .list-of-registered-users {
