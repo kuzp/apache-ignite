@@ -2329,12 +2329,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 exchCtx.events().processEvents(this);
 
-                DiscoveryCustomMessage customMsg = null;
-
-                if (firstDiscoEvt instanceof DiscoveryCustomEvent)
-                    customMsg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
-
-                if (exchCtx.events().hasServerLeft() || (customMsg != null && (customMsg instanceof SnapshotDiscoveryMessage || customMsg instanceof ChangeGlobalStateMessage)))
+                if (exchCtx.events().hasServerLeft())
                     idealAffDiff = cctx.affinity().onServerLeftWithExchangeMergeProtocol(this);
                 else
                     cctx.affinity().onServerJoinWithExchangeMergeProtocol(this, true);
@@ -2391,6 +2386,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage discoveryCustomMessage = ((DiscoveryCustomEvent) firstDiscoEvt).customMessage();
 
+                assert idealAffDiff == null;
+
                 if (discoveryCustomMessage instanceof DynamicCacheChangeBatch) {
                     if (exchActions != null) {
                         assignPartitionsStates();
@@ -2399,11 +2396,16 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                         if (!F.isEmpty(caches))
                             resetLostPartitions(caches);
+
+                        idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
                     }
                 }
                 else if (discoveryCustomMessage instanceof SnapshotDiscoveryMessage
-                        && ((SnapshotDiscoveryMessage)discoveryCustomMessage).needAssignPartitions())
+                        && ((SnapshotDiscoveryMessage)discoveryCustomMessage).needAssignPartitions()) {
                     assignPartitionsStates();
+
+                    idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
+                }
             }
             else {
                 if (exchCtx.events().hasServerJoin())
