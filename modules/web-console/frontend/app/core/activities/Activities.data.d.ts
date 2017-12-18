@@ -15,26 +15,23 @@
  * limitations under the License.
  */
 
-export default class ActivitiesData {
-    static $inject = ['$http', '$state'];
-
-    /**
-     * @param {ng.IHttpService} $http
-     * @param {uirouter.StateService} $state
-     */
-    constructor($http, $state) {
-        this.$http = $http;
-        this.$state = $state;
-    }
-
-    post(options = {}) {
-        let { group, action } = options;
-
-        // TODO IGNITE-5466: since upgrade to UIRouter 1, "url.source" is undefined.
-        // Actions like that won't be saved to DB. Think of a better solution later.
-        action = action || this.$state.$current.url.source || '';
-        group = group || (action.match(/^\/([^/]+)/) || [])[1];
-
-        return this.$http.post('/api/v1/activities/page', { group, action });
-    }
+interface IActivityDataResponse {
+    action: string,
+    amount: number,
+    date: string,
+    group: string,
+    owner: string,
+    _id: string
 }
+
+/**
+ * Activities data service
+ */
+declare class ActivitiesData {
+    /** 
+     * Posts activity to backend, sends current state if no options specified
+     */
+    post({group, action}?:{group?: string, action?: string}): ng.IPromise<ng.IHttpResponse<IActivityDataResponse>>    
+}
+
+export default ActivitiesData

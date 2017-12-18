@@ -37,6 +37,8 @@ import {default as ConfigureState} from 'app/components/page-configure/services/
 import {default as AgentManager} from 'app/modules/agent/AgentModal.service'
 import {default as SqlTypes} from 'app/services/SqlTypes.service';
 import {default as JavaTypes} from 'app/services/JavaTypes.service';
+// eslint-disable-next-line
+import {default as ActivitiesData} from 'app/core/activities/Activities.data';
 
 function _mapCaches(caches = []) {
     return caches.map((cache) => {
@@ -105,6 +107,7 @@ export class ModalImportModels {
      * @param {ng.IScope} $scope
      * @param {ng.IRootScopeService} $root
      * @param {AgentManager} agentMgr
+     * @param {ActivitiesData} ActivitiesData
      */
     constructor($uiRouter, ConfigSelectors, ConfigEffects, ConfigureState, $http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils) {
         this.$uiRouter = $uiRouter;
@@ -118,7 +121,8 @@ export class ModalImportModels {
         this.agentMgr = agentMgr;
         this.JavaTypes = JavaTypes;
         this.SqlTypes = SqlTypes;
-        Object.assign(this, {Confirm, Focus, Messages, ActivitiesData, Loading, FormUtils, LegacyUtils});
+        this.ActivitiesData = ActivitiesData;
+        Object.assign(this, {Confirm, Focus, Messages, Loading, FormUtils, LegacyUtils});
     }
     loadData() {
         return Observable.of(this.clusterID)
