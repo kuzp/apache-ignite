@@ -2329,7 +2329,12 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 exchCtx.events().processEvents(this);
 
-                if (exchCtx.events().hasServerLeft())
+                DiscoveryCustomMessage customMsg = null;
+
+                if (firstDiscoEvt instanceof DiscoveryCustomEvent)
+                    customMsg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
+
+                if (exchCtx.events().hasServerLeft() || (customMsg != null && (customMsg instanceof SnapshotDiscoveryMessage || customMsg instanceof ChangeGlobalStateMessage)))
                     idealAffDiff = cctx.affinity().onServerLeftWithExchangeMergeProtocol(this);
                 else
                     cctx.affinity().onServerJoinWithExchangeMergeProtocol(this, true);
@@ -2427,7 +2432,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 msg.resultTopologyVersion(resTopVer);
 
-                if (exchCtx.events().hasServerLeft())
+                if (idealAffDiff != null)
                     msg.idealAffinityDiff(idealAffDiff);
             }
 
@@ -2898,6 +2903,14 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             }
             else if (localJoinExchange() && !exchCtx.fetchAffinityOnJoin())
                 cctx.affinity().onLocalJoin(this, msg, resTopVer);
+            else if (firstDiscoEvt instanceof DiscoveryCustomEvent ){
+                DiscoveryCustomMessage customMsg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
+
+                // TODO : make more generic
+                if (customMsg instanceof SnapshotDiscoveryMessage || customMsg instanceof ChangeGlobalStateMessage) {
+                    cctx.affinity().applyIdealAffinityDiff(this, msg);
+                }
+            }
 
             updatePartitionFullMap(resTopVer, msg);
 

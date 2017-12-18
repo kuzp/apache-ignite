@@ -1256,6 +1256,10 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
      */
     public void mergeExchangesOnServerLeft(final GridDhtPartitionsExchangeFuture fut,
         final GridDhtPartitionsFullMessage msg) {
+        applyIdealAffinityDiff(fut, msg);
+    }
+
+    public void applyIdealAffinityDiff(final GridDhtPartitionsExchangeFuture fut, final GridDhtPartitionsFullMessage msg) {
         final Map<Long, ClusterNode> nodesByOrder = new HashMap<>();
 
         final Map<Object, List<List<ClusterNode>>> affCache = new HashMap<>();
