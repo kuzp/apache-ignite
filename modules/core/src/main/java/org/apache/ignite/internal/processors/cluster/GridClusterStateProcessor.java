@@ -860,6 +860,9 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
 
     /** {@inheritDoc} */
     @Nullable @Override public IgniteNodeValidationResult validateNode(ClusterNode node, DiscoveryDataBag.JoiningNodeDiscoveryData discoData) {
+        if (node.isClient() || node.isDaemon())
+            return null;
+
         if (discoData.joiningNodeData() == null) {
             if (globalState.baselineTopology() != null) {
                 String msg = "Node not supporting BaselineTopology" +
