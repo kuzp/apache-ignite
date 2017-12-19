@@ -1952,15 +1952,21 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                         for (DataEntry dataEntry : dataRec.writeEntries()) {
                             if (entryPredicate.apply(dataEntry)) {
-                                int cacheId = dataEntry.cacheId();
+                                checkpointReadLock();
 
-                                GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
+                                try {
+                                    int cacheId = dataEntry.cacheId();
 
-                                if (cacheCtx != null)
-                                    applyUpdate(cacheCtx, dataEntry);
-                                else if (log != null)
-                                    log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
+                                    GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
 
+                                    if (cacheCtx != null)
+                                        applyUpdate(cacheCtx, dataEntry);
+                                    else if (log != null)
+                                        log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
+                                }
+                                finally {
+                                    checkpointReadUnlock();
+                                }
                             }
                         }
                     }
@@ -2100,32 +2106,37 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     // TODO: https://issues.apache.org/jira/browse/IGNITE-6097
                     grp.offheap().onPartitionInitialCounterUpdated(i, 0);
 
-                    long partMetaId = pageMem.partitionMetaPageId(grpId, i);
-                    long partMetaPage = pageMem.acquirePage(grpId, partMetaId);
+                    checkpointReadLock();
 
                     try {
-                        long pageAddr = pageMem.writeLock(grpId, partMetaId, partMetaPage);
-
-                        boolean changed = false;
+                        long partMetaId = pageMem.partitionMetaPageId(grpId, i);
+                        long partMetaPage = pageMem.acquirePage(grpId, partMetaId);
 
                         try {
-                            PagePartitionMetaIO io = PagePartitionMetaIO.VERSIONS.forPage(pageAddr);
+                            long pageAddr = pageMem.writeLock(grpId, partMetaId, partMetaPage);
 
-                            if (restore != null) {
-                                int stateId = restore.get1();
+                            boolean changed = false;
 
-                                io.setPartitionState(pageAddr, (byte)stateId);
+                            try {
+                                PagePartitionMetaIO io = PagePartitionMetaIO.VERSIONS.forPage(pageAddr);
 
-                                changed = updateState(part, stateId);
+                                if (restore != null) {
+                                    int stateId = restore.get1();
+
+                                    io.setPartitionState(pageAddr, (byte)stateId);
+
+                                    changed = updateState(part, stateId);
 
                                 if (stateId == GridDhtPartitionState.OWNING.ordinal()
-                                        || (stateId == GridDhtPartitionState.MOVING.ordinal()
-                                                && part.initialUpdateCounter() < restore.get2())) {
-                                    part.initialUpdateCounter(restore.get2());
+                                    || (stateId == GridDhtPartitionState.MOVING.ordinal()
 
-                                    changed = true;
+                                    &&part.initialUpdateCounter() < restore.get2() )) {
+                                        part.initialUpdateCounter(restore.get2());
+
+                                        changed = true;
+                                    }
                                 }
-                            }
+
                             else
                                 changed = updateState(part, (int)io.getPartitionState(pageAddr));
                         }
@@ -2134,7 +2145,10 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                         }
                     }
                     finally {
-                        pageMem.releasePage(grpId, partMetaId, partMetaPage);
+                        pageMem.releasePage(grpId, partMetaId, partMetaPage);}
+                    }
+                    finally {
+                        checkpointReadUnlock();
                     }
                 }
                 else if (restore != null) {
