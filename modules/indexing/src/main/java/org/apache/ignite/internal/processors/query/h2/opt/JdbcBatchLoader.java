@@ -1,6 +1,6 @@
 package org.apache.ignite.internal.processors.query.h2.opt;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import java.sql.DriverManager;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -13,6 +13,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ *  Loader via JDBC.
+ */
 public class JdbcBatchLoader {
     /** */
     private static final String SQL_CREATE = "CREATE TABLE IF NOT EXISTS Person(" +
@@ -68,12 +71,7 @@ public class JdbcBatchLoader {
 
         log("Connecting to IGNITE...");
 
-        ComboPooledDataSource dataSrc = new ComboPooledDataSource();
-
-        dataSrc.setDriverClass("org.apache.ignite.IgniteJdbcThinDriver");
-        dataSrc.setJdbcUrl("jdbc:ignite:thin://" + addr);
-
-        try(Connection conn = dataSrc.getConnection()) {
+        try(Connection conn = DriverManager.getConnection("jdbc:ignite:thin://" + addr)) {
             Statement stmt = conn.createStatement();
 
             stmt.execute(SQL_CREATE);
@@ -87,7 +85,7 @@ public class JdbcBatchLoader {
             long start = System.currentTimeMillis();
 
             for (int i = 0; i < cnt; i++)
-                exec.execute(new Worker(dataSrc, i, batch, latch));
+                exec.execute(new Worker(addr, i, batch, latch));
 
             latch.await();
 
@@ -100,8 +98,6 @@ public class JdbcBatchLoader {
         }
 
         U.shutdownNow(JdbcBatchLoader.class, exec, null);
-
-        dataSrc.close();
     }
 
     /**
@@ -109,7 +105,7 @@ public class JdbcBatchLoader {
      */
     private static class Worker implements Runnable {
         /** */
-        private final ComboPooledDataSource dataSrc;
+        private final String addr;
 
         /** */
         private final int packet;
@@ -125,13 +121,13 @@ public class JdbcBatchLoader {
 
         /**
          *
-         * @param dataSrc Data source.
+         * @param addr Connect to addr.
          * @param packet Packet ID.
          * @param batch Batch size.
          * @param latch Control latch to complete loading.
          */
-        private Worker(ComboPooledDataSource dataSrc, int packet, int batch, CountDownLatch latch) {
-            this.dataSrc = dataSrc;
+        private Worker(String addr, int packet, int batch, CountDownLatch latch) {
+            this.addr = addr;
             this.packet = packet;
             this.latch = latch;
 
@@ -141,7 +137,7 @@ public class JdbcBatchLoader {
 
         /** {@inheritDoc} */
         @Override public void run() {
-            try(Connection conn = dataSrc.getConnection()) {
+            try(Connection conn = DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1")) {
                 PreparedStatement pstmt = conn.prepareStatement(SQL_INSERT);
 
                 for (int i = start; i < finish; i++) {

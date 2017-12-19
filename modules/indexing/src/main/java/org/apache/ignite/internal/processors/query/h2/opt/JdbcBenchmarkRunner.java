@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.LongAdder;
+//import java.util.concurrent.atomic.LongAdder;
 
 public class JdbcBenchmarkRunner {
     private static final long KEY_CNT = 50_000_000;
@@ -22,7 +22,7 @@ public class JdbcBenchmarkRunner {
 
     private static final int BATCH_SIZE = 1000;
 
-    private static final LongAdder OPS = new LongAdder();
+//    private static final LongAdder OPS = new LongAdder();
 
     private static volatile boolean done;
 
@@ -56,7 +56,7 @@ public class JdbcBenchmarkRunner {
                     @Override public void run() {
                         while (!done) {
                             long startTime = System.currentTimeMillis();
-                            long startOps = OPS.longValue();
+//                            long startOps = OPS.longValue();
 
                             try {
                                 Thread.sleep(3000L);
@@ -66,12 +66,12 @@ public class JdbcBenchmarkRunner {
                             }
 
                             long endTime = System.currentTimeMillis();
-                            long endOps = OPS.longValue();
+//                            long endOps = OPS.longValue();
+//
+//                            double t = 1000 * (double)(endOps - startOps) / (double)(endTime - startTime);
 
-                            double t = 1000 * (double)(endOps - startOps) / (double)(endTime - startTime);
-
-                            if (!done)
-                                System.out.println("Throughput: " + String.format("%1$,.2f", t) + " ops/sec");
+//                            if (!done)
+//                                System.out.println("Throughput: " + String.format("%1$,.2f", t) + " ops/sec");
                         }
                     }
                 }).start();
@@ -90,7 +90,7 @@ public class JdbcBenchmarkRunner {
                         @SuppressWarnings("InfiniteLoopStatement")
                         @Override public void run() {
                             try (Connection conn = connect()) {
-                                startBarrier.await();
+//                                startBarrier.await();
 
                                 doUpdate(conn, i0);
 
@@ -100,7 +100,7 @@ public class JdbcBenchmarkRunner {
                                 System.out.println("ERROR: " + e);
                             }
                             finally {
-                                stopLatch.countDown();
+//                                stopLatch.countDown();
                             }
                         }
                     }).start();
@@ -139,7 +139,7 @@ public class JdbcBenchmarkRunner {
 
                     stmt.execute();
 
-                    OPS.increment();
+//                    OPS.increment();
                 }
             }
             else {
@@ -159,7 +159,7 @@ public class JdbcBenchmarkRunner {
                     if (curSize == BATCH_SIZE) {
                         stmt.executeBatch();
 
-                        OPS.add(curSize);
+//                        OPS.add(curSize);
 
                         curSize = 0;
                     }
@@ -168,7 +168,7 @@ public class JdbcBenchmarkRunner {
                 if (curSize > 0) {
                     stmt.executeBatch();
 
-                    OPS.add(curSize);
+//                    OPS.add(curSize);
                 }
             }
 
