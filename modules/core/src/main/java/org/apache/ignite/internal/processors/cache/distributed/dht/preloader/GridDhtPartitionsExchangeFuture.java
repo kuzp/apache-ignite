@@ -598,7 +598,9 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     exchange = onCacheChangeRequest(crdNode);
                 }
                 else if (msg instanceof SnapshotDiscoveryMessage) {
-                    exchange = onCustomMessageNoAffinityChange(crdNode);
+                    centralizedAff = ((SnapshotDiscoveryMessage)msg).needAssignPartitions();
+
+                    exchange = onCustomMessageNoAffinityChange(crdNode, ((SnapshotDiscoveryMessage)msg).needAssignPartitions());
                 }
                 else {
                     assert affChangeMsg != null : this;
@@ -929,8 +931,9 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      * @param crd Coordinator flag.
      * @return Exchange type.
      */
-    private ExchangeType onCustomMessageNoAffinityChange(boolean crd) {
-        cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
+    private ExchangeType onCustomMessageNoAffinityChange(boolean crd, boolean forceRecalculation) {
+        if (!forceRecalculation)
+            cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
 
         return cctx.kernalContext().clientNode() ? ExchangeType.CLIENT : ExchangeType.ALL;
     }
@@ -2397,14 +2400,14 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         if (!F.isEmpty(caches))
                             resetLostPartitions(caches);
 
-                        idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
+//                        idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
                     }
                 }
                 else if (discoveryCustomMessage instanceof SnapshotDiscoveryMessage
                         && ((SnapshotDiscoveryMessage)discoveryCustomMessage).needAssignPartitions()) {
                     assignPartitionsStates();
 
-                    idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
+//                    idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
                 }
             }
             else {
