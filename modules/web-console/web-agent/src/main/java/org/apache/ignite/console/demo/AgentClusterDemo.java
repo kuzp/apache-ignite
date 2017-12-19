@@ -145,6 +145,7 @@ public class AgentClusterDemo {
         dataRegCfg.setPersistenceEnabled(true);
 
         DataStorageConfiguration dataStorageCfg = new DataStorageConfiguration();
+        dataStorageCfg.setMetricsEnabled(true);
         dataStorageCfg.setStoragePath(PdsConsistentIdProcessor.DB_DEFAULT_FOLDER);
         dataStorageCfg.setDefaultDataRegionConfiguration(dataRegCfg);
         dataStorageCfg.setSystemRegionMaxSize(DFLT_DATA_REGION_INITIAL_SIZE);
