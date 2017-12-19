@@ -1945,20 +1945,27 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
             switch (rec.type()) {
                 case DATA_RECORD:
-                    DataRecord dataRec = (DataRecord)rec;
+                    checkpointReadLock();
 
-                    for (DataEntry dataEntry : dataRec.writeEntries()) {
-                        if (entryPredicate.apply(dataEntry)) {
-                            int cacheId = dataEntry.cacheId();
+                    try {
+                        DataRecord dataRec = (DataRecord) rec;
 
-                            GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
+                        for (DataEntry dataEntry : dataRec.writeEntries()) {
+                            if (entryPredicate.apply(dataEntry)) {
+                                int cacheId = dataEntry.cacheId();
 
-                            if (cacheCtx != null)
-                                applyUpdate(cacheCtx, dataEntry);
-                            else if (log != null)
-                                log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
+                                GridCacheContext cacheCtx = cctx.cacheContext(cacheId);
 
+                                if (cacheCtx != null)
+                                    applyUpdate(cacheCtx, dataEntry);
+                                else if (log != null)
+                                    log.warning("Cache (cacheId=" + cacheId + ") is not started, can't apply updates.");
+
+                            }
                         }
+                    }
+                    finally {
+                        checkpointReadUnlock();
                     }
 
                     break;
@@ -1968,7 +1975,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             }
         }
 
-        restorePartitionState(partStates);
+        checkpointReadLock();
+
+        try {
+            restorePartitionState(partStates);
+        }
+        finally {
+            checkpointReadUnlock();
+        }
     }
 
     /**
