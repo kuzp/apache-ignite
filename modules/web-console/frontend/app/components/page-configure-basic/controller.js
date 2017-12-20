@@ -29,6 +29,7 @@ import ConfigSelectors from 'app/components/page-configure/store/selectors';
 import Caches from 'app/services/Caches';
 import Clusters from 'app/services/Clusters';
 import IgniteVersion from 'app/services/Version.service';
+import {default as ConfigChangesGuard} from 'app/components/page-configure/services/ConfigChangesGuard';
 
 export default class PageConfigureBasicController {
     /** @type {ng.IFormController} */
@@ -48,12 +49,13 @@ export default class PageConfigureBasicController {
      * @param {Caches} Caches
      * @param {IgniteVersion} IgniteVersion
      * @param {JQLite} $element
-     * @param {object} ConfigChangesGuard
+     * @param {ConfigChangesGuard} ConfigChangesGuard
      * @param {object} IgniteFormUtils
      * @param {ng.IScope} $scope
      */
     constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {conf, ConfigChangesGuard, IgniteFormUtils});
+        Object.assign(this, {conf, IgniteFormUtils});
+        this.ConfigChangesGuard = ConfigChangesGuard;
         this.$uiRouter = $uiRouter;
         this.$scope = $scope;
         this.$element = $element;
