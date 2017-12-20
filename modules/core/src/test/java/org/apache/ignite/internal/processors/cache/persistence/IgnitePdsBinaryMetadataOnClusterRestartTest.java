@@ -17,6 +17,7 @@
 package org.apache.ignite.internal.processors.cache.persistence;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.ignite.Ignite;
@@ -35,6 +36,7 @@ import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
+import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
@@ -58,9 +60,15 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
     /** */
     private boolean clientMode;
 
+    /** */
+    private String customWorkSubDir;
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
+
+        if (customWorkSubDir != null)
+            cfg.setWorkDirectory(Paths.get(U.defaultWorkDirectory(), customWorkSubDir).toString());
 
         cfg.setClientMode(clientMode);
 
@@ -96,6 +104,111 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
             .setCacheMode(CacheMode.REPLICATED));
 
         return cfg;
+    }
+
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
+     */
+    public void testUpdatedBinaryMetadataIsPreservedOnJoinToOldCoordinator() throws Exception {
+        customWorkSubDir = "nodeA_workDir";
+        IgniteEx ignite0 = startGrid(0);
+
+        customWorkSubDir = "nodeB_workDir";
+        IgniteEx ignite1 = startGrid(1);
+
+        ignite0.active(true);
+
+        IgniteCache<Object, Object> cache0 = ignite0.cache(CACHE_NAME);
+
+        BinaryObject bo = ignite0
+            .binary()
+            .builder(DYNAMIC_TYPE_NAME)
+            .setField(DYNAMIC_INT_FIELD_NAME, 10)
+            .build();
+
+        cache0.put(2, bo);
+
+        stopGrid(0);
+
+        IgniteCache<Object, Object> cache1 = ignite1.cache(CACHE_NAME);
+
+        bo = ignite1
+            .binary()
+            .builder(DYNAMIC_TYPE_NAME)
+            .setField(DYNAMIC_INT_FIELD_NAME, 20)
+            .setField(DYNAMIC_STR_FIELD_NAME, "str")
+            .build();
+
+        cache1.put(3, bo);
+
+        stopAllGrids();
+
+        customWorkSubDir = "nodeA_workDir";
+        startGrid(0);
+
+        customWorkSubDir = "nodeB_workDir";
+        startGrid(1);
+
+        awaitPartitionMapExchange();
+
+        examineDynamicMetadata(2, contentExaminer0);
+
+        examineDynamicMetadata(2, contentExaminer1);
+    }
+
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
+     */
+    public void testNewBinaryMetadataIsWrittenOnOldCoordinator() throws Exception {
+        customWorkSubDir = "nodeA_workDir";
+        IgniteEx ignite0 = startGrid(0);
+
+        customWorkSubDir = "nodeB_workDir";
+        IgniteEx ignite1 = startGrid(1);
+
+        ignite0.active(true);
+
+        IgniteCache<Object, Object> cache0 = ignite0.cache(CACHE_NAME);
+
+        BinaryObject bObj0 = ignite0.binary().builder("DynamicType0").setField("intField", 10).build();
+
+        cache0.put(0, bObj0);
+
+        stopGrid(0);
+
+        IgniteCache<Object, Object> cache1 = ignite1.cache(CACHE_NAME);
+
+        BinaryObject bObj1 = ignite1.binary().builder("DynamicType1").setField("strField", "str").build();
+
+        cache1.put(1, bObj1);
+
+        stopAllGrids();
+
+        customWorkSubDir = "nodeA_workDir";
+        ignite0 = startGrid(0);
+
+        customWorkSubDir = "nodeB_workDir";
+        startGrid(1);
+
+        awaitPartitionMapExchange();
+
+        stopGrid(1);
+
+        cache0 = ignite0.cache(CACHE_NAME).withKeepBinary();
+
+        bObj0 = (BinaryObject) cache0.get(0);
+        bObj1 = (BinaryObject) cache0.get(1);
+
+        assertEquals("DynamicType0", binaryTypeName(bObj0));
+        assertEquals("DynamicType1", binaryTypeName(bObj1));
+
+        assertEquals(10, bObj0.field("intField"));
+        assertEquals("str", bObj1.field("strField"));
+    }
+
+    /** */
+    private String binaryTypeName(BinaryObject bObj) {
+        return bObj.type().typeName();
     }
 
     /**
@@ -350,6 +463,8 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
         stopAllGrids();
 
         cleanIgniteWorkDir();
+
+        customWorkSubDir = null;
     }
 
     /**
