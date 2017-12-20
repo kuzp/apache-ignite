@@ -1,9 +1,7 @@
 package org.apache.ignite.internal.processors.query.h2.opt;
 
 import java.sql.DriverManager;
-import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.configuration.IgniteConfiguration;
+import java.sql.SQLException;
 import org.apache.ignite.internal.util.typedef.internal.U;
 
 import java.sql.Connection;
@@ -41,19 +39,15 @@ public class JdbcBatchLoader {
      * @param args Command line arguments.
      */
     public static void main(String[] args) {
-        IgniteConfiguration cfg = new IgniteConfiguration().setLocalHost("127.0.0.1");
+        try {
+            JdbcBatchLoader ldr = new JdbcBatchLoader();
 
-        try (Ignite node = Ignition.start(cfg)) {
-            try {
-                JdbcBatchLoader ldr = new JdbcBatchLoader();
+            ldr.load(1_000_000, 8, "35.205.143.36:9603");
+        }
+        catch (Exception e) {
+            log("Failed to load data into cloud");
 
-                ldr.load(10_000_000, 10_000, 1, "127.0.0.1");
-            }
-            catch (Exception e) {
-                log("Failed to load data into cloud");
-
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
     }
 
@@ -61,12 +55,11 @@ public class JdbcBatchLoader {
      * Load data into cloud.
      *
      * @param total Total number of rows to lad.
-     * @param batch Batch size.
      * @param threads How many threads to use.
      * @param addr JDBC endpoint address.
      * @throws Exception If failed to load data to cloud.
      */
-    public void load(int total, int batch, int threads, String addr) throws Exception {
+    public void load(int total, int threads, String addr) throws Exception {
         ExecutorService exec = Executors.newFixedThreadPool(threads);
 
         log("Connecting to IGNITE...");
@@ -76,6 +69,7 @@ public class JdbcBatchLoader {
 
             stmt.execute(SQL_CREATE);
 
+            int batch = total / threads;
             int cnt = total / batch;
 
             CountDownLatch latch = new CountDownLatch(cnt);
@@ -137,7 +131,7 @@ public class JdbcBatchLoader {
 
         /** {@inheritDoc} */
         @Override public void run() {
-            try(Connection conn = DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1")) {
+            try(Connection conn = DriverManager.getConnection("jdbc:ignite:thin://" + addr)) {
                 PreparedStatement pstmt = conn.prepareStatement(SQL_INSERT);
 
                 for (int i = start; i < finish; i++) {
@@ -159,7 +153,7 @@ public class JdbcBatchLoader {
             finally {
                 latch.countDown();
 
-//                log("Processed packed: " + packet);
+                log("Processed packed: " + packet);
             }
         }
     }
