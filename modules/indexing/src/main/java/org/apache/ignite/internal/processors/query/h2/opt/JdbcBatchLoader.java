@@ -1,7 +1,6 @@
 package org.apache.ignite.internal.processors.query.h2.opt;
 
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import org.apache.ignite.internal.util.typedef.internal.U;
 
 import java.sql.Connection;
@@ -42,7 +41,7 @@ public class JdbcBatchLoader {
         try {
             JdbcBatchLoader ldr = new JdbcBatchLoader();
 
-            ldr.load(1_000_000, 8, "35.205.143.36:9603");
+            ldr.load(10_000_000, 1000, 8, "35.205.143.36:9415");
         }
         catch (Exception e) {
             log("Failed to load data into cloud");
@@ -55,11 +54,12 @@ public class JdbcBatchLoader {
      * Load data into cloud.
      *
      * @param total Total number of rows to lad.
+     * @param batch Batch size.
      * @param threads How many threads to use.
      * @param addr JDBC endpoint address.
      * @throws Exception If failed to load data to cloud.
      */
-    public void load(int total, int threads, String addr) throws Exception {
+    public void load(int total, int batch, int threads, String addr) throws Exception {
         ExecutorService exec = Executors.newFixedThreadPool(threads);
 
         log("Connecting to IGNITE...");
@@ -69,8 +69,8 @@ public class JdbcBatchLoader {
 
             stmt.execute(SQL_CREATE);
 
-            int batch = total / threads;
-            int cnt = total / batch;
+            int packetSz = total / threads;
+            int cnt = total / packetSz;
 
             CountDownLatch latch = new CountDownLatch(cnt);
 
@@ -79,11 +79,9 @@ public class JdbcBatchLoader {
             long start = System.currentTimeMillis();
 
             for (int i = 0; i < cnt; i++)
-                exec.execute(new Worker(addr, i, batch, latch));
+                exec.execute(new Worker(addr, i, packetSz, batch, latch));
 
             latch.await();
-
-            stmt.execute("FLUSH");
 
             U.closeQuiet(stmt);
 
@@ -102,7 +100,10 @@ public class JdbcBatchLoader {
         private final String addr;
 
         /** */
-        private final int packet;
+        private final int grp;
+
+        /** */
+        private final int batch;
 
         /** */
         private final CountDownLatch latch;
@@ -116,23 +117,29 @@ public class JdbcBatchLoader {
         /**
          *
          * @param addr Connect to addr.
-         * @param packet Packet ID.
+         * @param grp Group ID.
+         * @param packetSz Packet ID.
          * @param batch Batch size.
          * @param latch Control latch to complete loading.
          */
-        private Worker(String addr, int packet, int batch, CountDownLatch latch) {
+        private Worker(String addr, int grp, int packetSz, int batch, CountDownLatch latch) {
             this.addr = addr;
-            this.packet = packet;
+            this.grp = grp;
+            this.batch = batch;
             this.latch = latch;
 
-            start = packet * batch;
-            finish = start + batch;
+            start = grp * packetSz;
+            finish = start + packetSz;
         }
 
         /** {@inheritDoc} */
         @Override public void run() {
+            log("Start group: " + grp);
+
             try(Connection conn = DriverManager.getConnection("jdbc:ignite:thin://" + addr)) {
                 PreparedStatement pstmt = conn.prepareStatement(SQL_INSERT);
+
+                int j = 0;
 
                 for (int i = start; i < finish; i++) {
                     pstmt.setInt(1, i);
@@ -141,19 +148,35 @@ public class JdbcBatchLoader {
                     pstmt.setInt(4, 200);
 
                     pstmt.addBatch();
+
+                    j++;
+
+                    if (j == batch) {
+                        pstmt.executeBatch();
+
+                        j = 0;
+                    }
                 }
 
-                pstmt.executeBatch();
+                if (j > 0)
+                    pstmt.executeBatch();
+
+                Statement stmt = conn.createStatement();
+
+                stmt.execute("FLUSH");
+
+                U.closeQuiet(stmt);
+                U.closeQuiet(pstmt);
             }
             catch (Throwable e) {
-                log("Failed to load packet: [packet=" + packet + ", err=" + e.getMessage() + "]");
+                log("Failed to load group: [grp=" + grp + ", err=" + e.getMessage() + "]");
 
                 e.printStackTrace();
             }
             finally {
                 latch.countDown();
 
-                log("Processed packed: " + packet);
+                log("Finished group: " + grp);
             }
         }
     }
