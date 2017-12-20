@@ -21,15 +21,4 @@ nav.pca-menu
                 svg(ng-if='::item.icon' ignite-icon='{{::item.icon}}').icon-left
                 |{{::item.text}}
 
-ui-view(
-    cluster='$ctrl.cluster'
-    cluster-items='$ctrl.clusterItems'
-    item-to-edit='$ctrl.itemToEdit'
-
-    on-item-add='$ctrl.onItemAdd($event)'
-    on-item-change='$ctrl.onItemChange($event)'
-    on-item-remove='$ctrl.onItemRemove({$event: $event})'
-    on-edit-cancel='$ctrl.onEditCancel()'
-
-    on-advanced-save='$ctrl.onAdvancedSave({$event: $event})'
-)
+ui-view
