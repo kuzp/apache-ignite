@@ -41,7 +41,7 @@ public class JdbcBatchLoader {
         try {
             JdbcBatchLoader ldr = new JdbcBatchLoader();
 
-            ldr.load(10_000_000, 1000, 8, "35.205.143.36:9415");
+            ldr.load(10_000_000, 1000, 8, "xx.xx.xx.xx:yyyy");
         }
         catch (Exception e) {
             log("Failed to load data into cloud");
@@ -69,16 +69,15 @@ public class JdbcBatchLoader {
 
             stmt.execute(SQL_CREATE);
 
-            int packetSz = total / threads;
-            int cnt = total / packetSz;
-
-            CountDownLatch latch = new CountDownLatch(cnt);
+            CountDownLatch latch = new CountDownLatch(threads);
 
             log("Start loading of " + total + " records...");
 
             long start = System.currentTimeMillis();
 
-            for (int i = 0; i < cnt; i++)
+            int packetSz = total / threads;
+
+            for (int i = 0; i < threads; i++)
                 exec.execute(new Worker(addr, i, packetSz, batch, latch));
 
             latch.await();
