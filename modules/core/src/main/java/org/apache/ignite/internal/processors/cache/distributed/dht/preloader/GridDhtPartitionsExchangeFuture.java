@@ -587,6 +587,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage msg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
 
+                centralizedAff = DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(msg);
+
                 if (msg instanceof ChangeGlobalStateMessage) {
                     assert exchActions != null && !exchActions.empty();
 
@@ -598,9 +600,10 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     exchange = onCacheChangeRequest(crdNode);
                 }
                 else if (msg instanceof SnapshotDiscoveryMessage) {
-                    centralizedAff = ((SnapshotDiscoveryMessage)msg).needAssignPartitions();
-
-                    exchange = onCustomMessageNoAffinityChange(crdNode, ((SnapshotDiscoveryMessage)msg).needAssignPartitions());
+                    if (!centralizedAff)
+                        exchange = onCustomMessageNoAffinityChange(crdNode);
+                    else
+                        exchange = cctx.kernalContext().clientNode() ? ExchangeType.CLIENT : ExchangeType.ALL;
                 }
                 else {
                     assert affChangeMsg != null : this;
@@ -931,9 +934,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      * @param crd Coordinator flag.
      * @return Exchange type.
      */
-    private ExchangeType onCustomMessageNoAffinityChange(boolean crd, boolean forceRecalculation) {
-        if (!forceRecalculation)
-            cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
+    private ExchangeType onCustomMessageNoAffinityChange(boolean crd) {
+        cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
 
         return cctx.kernalContext().clientNode() ? ExchangeType.CLIENT : ExchangeType.ALL;
     }
@@ -2389,8 +2391,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage discoveryCustomMessage = ((DiscoveryCustomEvent) firstDiscoEvt).customMessage();
 
-                assert idealAffDiff == null;
-
                 if (discoveryCustomMessage instanceof DynamicCacheChangeBatch) {
                     if (exchActions != null) {
                         assignPartitionsStates();
@@ -2399,16 +2399,11 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                         if (!F.isEmpty(caches))
                             resetLostPartitions(caches);
-
-//                        idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
                     }
                 }
                 else if (discoveryCustomMessage instanceof SnapshotDiscoveryMessage
-                        && ((SnapshotDiscoveryMessage)discoveryCustomMessage).needAssignPartitions()) {
+                        && ((SnapshotDiscoveryMessage)discoveryCustomMessage).needAssignPartitions())
                     assignPartitionsStates();
-
-//                    idealAffDiff = cctx.affinity().onRecalculationEnforced(this);
-                }
             }
             else {
                 if (exchCtx.events().hasServerJoin())
@@ -2437,7 +2432,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 msg.resultTopologyVersion(resTopVer);
 
-                if (idealAffDiff != null)
+                if (exchCtx.events().hasServerLeft())
                     msg.idealAffinityDiff(idealAffDiff);
             }
 
@@ -2908,14 +2903,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             }
             else if (localJoinExchange() && !exchCtx.fetchAffinityOnJoin())
                 cctx.affinity().onLocalJoin(this, msg, resTopVer);
-            else if (firstDiscoEvt instanceof DiscoveryCustomEvent ){
-                DiscoveryCustomMessage customMsg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
-
-                // TODO : make more generic
-                if (customMsg instanceof SnapshotDiscoveryMessage || customMsg instanceof ChangeGlobalStateMessage) {
-                    cctx.affinity().applyIdealAffinityDiff(this, msg);
-                }
-            }
 
             updatePartitionFullMap(resTopVer, msg);
 

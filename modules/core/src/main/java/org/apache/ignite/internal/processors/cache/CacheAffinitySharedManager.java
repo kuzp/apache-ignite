@@ -40,6 +40,7 @@ import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.events.Event;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.cluster.ClusterTopologyServerNotFoundException;
+import org.apache.ignite.internal.events.DiscoveryCustomEvent;
 import org.apache.ignite.internal.managers.discovery.DiscoCache;
 import org.apache.ignite.internal.managers.discovery.DiscoveryCustomMessage;
 import org.apache.ignite.internal.managers.eventstorage.GridLocalEventListener;
@@ -185,7 +186,8 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
             }
         }
 
-        if (!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT)) {
+        if (!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT ||
+            DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg))) {
             synchronized (mux) {
                 assert lastAffVer == null || topVer.compareTo(lastAffVer) > 0;
 
@@ -1256,10 +1258,6 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
      */
     public void mergeExchangesOnServerLeft(final GridDhtPartitionsExchangeFuture fut,
         final GridDhtPartitionsFullMessage msg) {
-        applyIdealAffinityDiff(fut, msg);
-    }
-
-    public void applyIdealAffinityDiff(final GridDhtPartitionsExchangeFuture fut, final GridDhtPartitionsFullMessage msg) {
         final Map<Long, ClusterNode> nodesByOrder = new HashMap<>();
 
         final Map<Object, List<List<ClusterNode>>> affCache = new HashMap<>();
@@ -2101,7 +2099,9 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         final IgniteClosure<ClusterNode, T> c,
         final boolean initAff)
         throws IgniteCheckedException {
-        final WaitRebalanceInfo waitRebalanceInfo = new WaitRebalanceInfo(fut.context().events().lastServerEventVersion());
+        final WaitRebalanceInfo waitRebalanceInfo = DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(fut.firstEvent()) ?
+            new WaitRebalanceInfo(fut.exchangeId().topologyVersion()) :
+            new WaitRebalanceInfo(fut.context().events().lastServerEventVersion());
 
         final Collection<ClusterNode> aliveNodes = fut.context().events().discoveryCache().serverNodes();
 

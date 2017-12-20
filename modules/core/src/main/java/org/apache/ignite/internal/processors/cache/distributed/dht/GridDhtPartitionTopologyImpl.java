@@ -543,15 +543,14 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
                     if (grp.affinityNode()) {
                         if (grpStarted ||
-                            // TODO: check
-//                            exchFut.firstEvent().type() == EVT_DISCOVERY_CUSTOM_EVT ||
+                            exchFut.firstEvent().type() == EVT_DISCOVERY_CUSTOM_EVT ||
                             exchFut.serverNodeDiscoveryEvent()) {
                             if (affReady) {
                                 assert grp.affinity().lastVersion().equals(evts.topologyVersion());
 
                                 initPartitions0(evts.topologyVersion(), exchFut, updateSeq);
                             }
-                            else {
+                            else if (exchFut.firstEvent().type() != EVT_DISCOVERY_CUSTOM_EVT){
                                 assert !exchFut.context().mergeExchanges();
 
                                 List<List<ClusterNode>> aff = grp.affinity().idealAssignment();
