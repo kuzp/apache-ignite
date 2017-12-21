@@ -158,7 +158,8 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             if (ctx.clientNode())
                 ctx.event().addLocalEventListener(clientDisconLsnr, EVT_CLIENT_NODE_DISCONNECTED);
 
-            metadataFileStore = new BinaryMetadataFileStore(metadataLocCache, ctx, log, binaryMetadataFileStoreDir);
+            if (!ctx.clientNode())
+                metadataFileStore = new BinaryMetadataFileStore(metadataLocCache, ctx, log, binaryMetadataFileStoreDir);
 
             transport = new BinaryMetadataTransport(metadataLocCache, metadataFileStore, ctx, log);
 
@@ -242,7 +243,8 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
                 }
             }
 
-            metadataFileStore.restoreMetadata();
+            if (!ctx.clientNode())
+                metadataFileStore.restoreMetadata();
         }
     }
 
