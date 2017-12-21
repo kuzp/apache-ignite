@@ -79,6 +79,8 @@ public final class IOVersions<V extends PageIO> {
      * @return IO.
      */
     public V forVersion(int ver) {
+        assert ver != 0;
+
         if (ver == 0)
             throw new IllegalStateException("Failed to get page IO instance (page content is corrupted)");
 

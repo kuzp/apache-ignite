@@ -314,7 +314,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
     /** {@inheritDoc} */
     @Override public void start0() throws IgniteCheckedException {
         if (!cctx.kernalContext().clientNode()) {
-            final PdsFolderSettings resolveFolders = cctx.kernalContext().pdsFolderResolver().resolveFolders();
+            final PdsFolderSettings resolveFolders = resolveFolders();
 
             checkWalConfiguration();
 
@@ -363,6 +363,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                 U.quietAndWarn(log, "Started write-ahead log manager in NONE mode, persisted data may be lost in " +
                     "a case of unexpected node failure. Make sure to deactivate the cluster before shutdown.");
         }
+    }
+
+    protected PdsFolderSettings resolveFolders() throws IgniteCheckedException {
+        return cctx.kernalContext().pdsFolderResolver().resolveFolders();
     }
 
     /**

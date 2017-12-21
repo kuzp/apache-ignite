@@ -149,8 +149,10 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     @GridToStringExclude
     private final CacheDataStore store;
 
-    /** Set if failed to move partition to RENTING state due to reservations, to be checked when
-     * reservation is released. */
+    /**
+     * Set if failed to move partition to RENTING state due to reservations, to be checked when reservation is
+     * released.
+     */
     private volatile boolean shouldBeRenting;
 
     /** Set if partition must be re-created and preloaded after eviction. */
@@ -161,8 +163,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      * @param grp Cache group.
      * @param id Partition ID.
      */
-    @SuppressWarnings("ExternalizableWithoutPublicNoArgConstructor")
-    GridDhtLocalPartition(GridCacheSharedContext ctx,
+    @SuppressWarnings("ExternalizableWithoutPublicNoArgConstructor") GridDhtLocalPartition(GridCacheSharedContext ctx,
         CacheGroupContext grp,
         int id) {
         super(ENTRY_FACTORY);
@@ -204,7 +205,15 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
         }
 
         // Todo log moving state
-        casState(state.get(), MOVING);
+        long state = this.state.get();
+        try {
+            casState(state, MOVING);
+        }
+        catch (Throwable e) {
+            log.error("Failed to changing part state from " + getPartState(state) + " to MOVING: " + this);
+
+            throw e;
+        }
     }
 
     /**
@@ -255,7 +264,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
         if (hld != null)
             return hld;
 
-        CacheMapHolder  old = cacheMaps.putIfAbsent(cctx.cacheIdBoxed(), hld = new CacheMapHolder(cctx, createEntriesMap()));
+        CacheMapHolder old = cacheMaps.putIfAbsent(cctx.cacheIdBoxed(), hld = new CacheMapHolder(cctx, createEntriesMap()));
 
         if (old != null)
             hld = old;
@@ -494,7 +503,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      * @param stateToRestore State to restore.
      */
     public void restoreState(GridDhtPartitionState stateToRestore) {
-        state.set(setPartState(state.get(),stateToRestore));
+        state.set(setPartState(state.get(), stateToRestore));
     }
 
     /**
@@ -507,13 +516,21 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
             synchronized (this) {
                 boolean update = this.state.compareAndSet(state, setPartState(state, toState));
 
-                if (update)
+                if (update) {
                     try {
                         ctx.wal().log(new PartitionMetaStateRecord(grp.groupId(), id, toState, updateCounter()));
+                    }
+                    catch (AssertionError | IllegalStateException e) {
+                        System.out.println("Error while writing to wal log: grpId=" + grp.groupId() + ", part=" + id+
+                        ", from="+getPartState(state)+", to="+toState);
+                        U.error(log, "Error while writing to wal log: grpId=" + grp.groupId() + ", part=" + id, e);
+
+                        throw e;
                     }
                     catch (IgniteCheckedException e) {
                         U.error(log, "Error while writing to log", e);
                     }
+                }
 
                 return update;
             }
@@ -634,7 +651,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     /**
      * @param updateSeq Update sequence.
      */
-     public void tryEvictAsync(boolean updateSeq) {
+    public void tryEvictAsync(boolean updateSeq) {
         long state = this.state.get();
 
         GridDhtPartitionState partState = getPartState(state);
@@ -1033,7 +1050,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
             "grp", grp.cacheOrGroupName(),
             "state", state(),
             "reservations", reservations(),
-            "empty", isEmpty(),
+//            "empty", isEmpty(),
             "createTime", U.format(createTime));
     }
 
@@ -1090,7 +1107,7 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
     void onCacheStopped(int cacheId) {
         assert grp.sharedGroup() : grp.cacheOrGroupName();
 
-        for (Iterator<RemovedEntryHolder> it = rmvQueue.iterator(); it.hasNext();) {
+        for (Iterator<RemovedEntryHolder> it = rmvQueue.iterator(); it.hasNext(); ) {
             RemovedEntryHolder e = it.next();
 
             if (e.cacheId() == cacheId)

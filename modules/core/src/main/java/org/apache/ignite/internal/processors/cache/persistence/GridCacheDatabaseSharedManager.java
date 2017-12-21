@@ -110,6 +110,7 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.Gri
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreManager;
+import org.apache.ignite.internal.processors.cache.persistence.filename.PdsFolderSettings;
 import org.apache.ignite.internal.processors.cache.persistence.metastorage.MetaStorage;
 import org.apache.ignite.internal.processors.cache.persistence.metastorage.MetastorageLifecycleListener;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.CheckpointMetricsTracker;
@@ -464,9 +465,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             if (!U.mkdirs(cpDir))
                 throw new IgniteCheckedException("Could not create directory for checkpoint metadata: " + cpDir);
 
-            final FileLockHolder preLocked = kernalCtx.pdsFolderResolver()
-                .resolveFolders()
-                .getLockedFileLockHolder();
+            final FileLockHolder preLocked = resolveFolders().getLockedFileLockHolder();
+
             if (preLocked == null)
                 fileLockHolder = new FileLockHolder(storeMgr.workDir().getPath(), kernalCtx, log);
 
@@ -475,6 +475,10 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             // Here we can get data from metastorage
             readMetastore();
         }
+    }
+
+    protected PdsFolderSettings resolveFolders() throws IgniteCheckedException {
+        return  cctx.kernalContext().pdsFolderResolver().resolveFolders();
     }
 
     /**
@@ -1350,9 +1354,9 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
      */
     private void restoreState() throws IgniteCheckedException {
         try {
-            CheckpointStatus status = readCheckpointStatus();
-
             checkpointReadLock();
+
+            CheckpointStatus status = readCheckpointStatus();
 
             try {
                 applyLastUpdates(status, false);
@@ -2127,8 +2131,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                     changed = updateState(part, stateId);
 
-                                if (stateId == GridDhtPartitionState.OWNING.ordinal()
-                                    || (stateId == GridDhtPartitionState.MOVING.ordinal()
+                                    if (stateId == GridDhtPartitionState.OWNING.ordinal()
+                                        || (stateId == GridDhtPartitionState.MOVING.ordinal()
 
                                     &&part.initialUpdateCounter() < restore.get2() )) {
                                         part.initialUpdateCounter(restore.get2());
@@ -2137,15 +2141,16 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                                     }
                                 }
 
-                            else
-                                changed = updateState(part, (int)io.getPartitionState(pageAddr));
+                                else
+                                    changed = updateState(part, (int)io.getPartitionState(pageAddr));
+                            }
+                            finally {
+                                pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
+                            }
                         }
                         finally {
-                            pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
+                            pageMem.releasePage(grpId, partMetaId, partMetaPage);
                         }
-                    }
-                    finally {
-                        pageMem.releasePage(grpId, partMetaId, partMetaPage);}
                     }
                     finally {
                         checkpointReadUnlock();
@@ -3082,7 +3087,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     }
                     else
                         pageMem = (PageMemoryEx)metaStorage.pageMemory();
-
 
                     Integer tag = pageMem.getForCheckpoint(
                         fullId, tmpWriteBuf, persStoreMetrics.metricsEnabled() ? tracker : null);

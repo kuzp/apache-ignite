@@ -206,24 +206,30 @@ public abstract class PagesList extends DataStructure {
 
                         long prevId = tailId;
                         int cnt = 0;
-
+long last=-1;
                         while (prevId != 0L) {
                             final long pageId = prevId;
                             final long page = acquirePage(pageId);
                             try  {
                                 long pageAddr = readLock(pageId, page);
-
-                                assert pageAddr != 0L;
-
                                 try {
-                                    PagesListNodeIO io = PagesListNodeIO.VERSIONS.forPage(pageAddr);
 
+                                assert pageAddr != 0L : U.hexLong(pageId);
+//                                assert PageIO.getType(pageAddr) == PagesListNodeIO.T_PAGE_LIST_NODE :PageIO.getType(pageAddr);
+                                assert PageIO.getVersion(pageAddr) >0  :PageIO.getType(pageAddr);
+
+                                    PagesListNodeIO io = PagesListNodeIO.VERSIONS.forPage(pageAddr);
+last = prevId;
                                     cnt += io.getCount(pageAddr);
                                     prevId = io.getPreviousId(pageAddr);
 
                                     // In reuse bucket the page itself can be used as a free page.
                                     if (isReuseBucket(bucket) && prevId != 0L)
                                         cnt++;
+                                }
+                                catch (AssertionError er){
+                                    System.out.println("Page corrupted: pageId="+pageId+", prevPageId="+last);
+                                    throw er;
                                 }
                                 finally {
                                     readUnlock(pageId, page, pageAddr);
@@ -738,9 +744,6 @@ public abstract class PagesList extends DataStructure {
 
             setupNextPage(io, pageId, pageAddr, newDataId, dataAddr);
 
-            if (needWalDeltaRecord(pageId, page, null))
-                wal.log(new PagesListSetNextRecord(grpId, pageId, newDataId));
-
             if (needWalDeltaRecord(dataId, data, null))
                 wal.log(new PagesListInitNewPageRecord(
                     grpId,
@@ -749,6 +752,8 @@ public abstract class PagesList extends DataStructure {
                     io.getVersion(),
                     newDataId,
                     pageId, 0L));
+            if (needWalDeltaRecord(pageId, page, null))
+                wal.log(new PagesListSetNextRecord(grpId, pageId, newDataId));
 
             // In reuse bucket the page itself can be used as a free page.
             incrementBucketSize(bucket);

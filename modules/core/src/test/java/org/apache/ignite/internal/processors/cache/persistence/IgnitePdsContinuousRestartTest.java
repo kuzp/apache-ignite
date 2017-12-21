@@ -24,11 +24,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.CacheAtomicityMode;
+import org.apache.ignite.cache.CacheRebalanceMode;
 import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -38,8 +40,11 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.spi.discovery.tcp.TestTcpDiscoverySpi;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
+import org.apache.ignite.util.TestTcpCommunicationSpi;
 
 import static org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreManager.DFLT_STORE_DIR;
 
@@ -51,10 +56,13 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
     private static final int GRID_CNT = 4;
 
     /** */
-    private static final int ENTRIES_COUNT = 10_000;
+    private static final int ENTRIES_COUNT = 100_000;
 
     /** */
     public static final String CACHE_NAME = "cache1";
+
+    /** */
+    public static final TcpDiscoveryVmIpFinder FINDER = new TcpDiscoveryVmIpFinder(true);
 
     /** Checkpoint delay. */
     private volatile int checkpointDelay = -1;
@@ -81,7 +89,7 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
 
         DataStorageConfiguration memCfg = new DataStorageConfiguration()
             .setDefaultDataRegionConfiguration(
-                new DataRegionConfiguration().setMaxSize(400 * 1024 * 1024).setPersistenceEnabled(true))
+                new DataRegionConfiguration().setMaxSize(40 * 1024 * 1024).setPersistenceEnabled(true))
             .setWalMode(WALMode.LOG_ONLY)
             .setCheckpointFrequency(checkpointDelay);
 
@@ -94,8 +102,12 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
         ccfg1.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
         ccfg1.setAffinity(new RendezvousAffinityFunction(false, 128));
         ccfg1.setBackups(2);
+        ccfg1.setRebalanceMode(CacheRebalanceMode.ASYNC);
 
         cfg.setCacheConfiguration(ccfg1);
+
+        cfg.setDiscoverySpi(new TestTcpDiscoverySpi().setIpFinder(FINDER));
+        cfg.setCommunicationSpi(new TestTcpCommunicationSpi());
 
         return cfg;
     }
@@ -105,13 +117,19 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
         stopAllGrids();
 
         deleteWorkFiles();
+
+        super.beforeTestsStarted();
+    }
+
+    @Override protected void beforeTest() throws Exception {
+        super.beforeTest();
+
+        deleteWorkFiles();
     }
 
     /** {@inheritDoc} */
     @Override protected void afterTest() throws Exception {
         stopAllGrids();
-
-        deleteWorkFiles();
     }
 
     /**
@@ -206,7 +224,6 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
     }
 
     /**
-     *
      * @throws Exception if failed.
      */
     public void testRebalncingDuringLoad_10_10_1_1() throws Exception {
@@ -214,11 +231,15 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
     }
 
     /**
-     *
      * @throws Exception if failed.
      */
     public void testRebalncingDuringLoad_10_500_8_16() throws Exception {
         checkRebalancingDuringLoad(10, 500, 8, 16);
+    }
+
+    /** {@inheritDoc} */
+    @Override protected long getTestTimeout() {
+        return TimeUnit.MINUTES.toMillis(30);
     }
 
     /**
@@ -247,40 +268,55 @@ public class IgnitePdsContinuousRestartTest extends GridCommonAbstractTest {
 
         final AtomicBoolean done = new AtomicBoolean(false);
 
-        IgniteInternalFuture<?> busyFut = GridTestUtils.runMultiThreadedAsync(new Callable<Object>() {
-            /** {@inheritDoc} */
-            @Override public Object call() throws Exception {
-                IgniteCache<Object, Object> cache = load.cache(CACHE_NAME);
-                Random rnd = ThreadLocalRandom.current();
+        IgniteInternalFuture<?> busyFut = GridTestUtils.runMultiThreadedAsync(
+            new Callable<Object>() {
+                /** {@inheritDoc} */
+                @Override public Object call() throws Exception {
+                    IgniteCache<Object, Object> cache = load.cache(CACHE_NAME);
+                    Random rnd = ThreadLocalRandom.current();
 
-                while (!done.get()) {
-                    Map<Integer, Integer> map = new TreeMap<>();
+                    while (!done.get()) {
+                        Map<Integer, Integer> map = new TreeMap<>();
 
-                    for (int i = 0; i < batch; i++)
-                        map.put(rnd.nextInt(ENTRIES_COUNT), rnd.nextInt());
+                        for (int i = 0; i < batch; i++)
+                            map.put(rnd.nextInt(ENTRIES_COUNT), rnd.nextInt());
 
-                    cache.putAll(map);
+                        cache.putAll(map);
+                    }
+
+                    return null;
                 }
+            }, threads, "updater");
 
-                return null;
-            }
-        }, threads, "updater");
+        final long end = System.currentTimeMillis() + 90_000;
 
-        long end = System.currentTimeMillis() + 90_000;
+        final AtomicInteger threadIdx = new AtomicInteger(1);
 
-        Random rnd = ThreadLocalRandom.current();
+        IgniteInternalFuture<?> restart = GridTestUtils.runMultiThreadedAsync(
+            new Callable<Object>() {
+                /** {@inheritDoc} */
+                @Override public Object call() throws Exception {
+                    int idx = threadIdx.getAndIncrement();
+                    int delay = restartDelay * (idx + 1);
 
-        while (System.currentTimeMillis() < end) {
-            int idx = rnd.nextInt(GRID_CNT - 1) + 1;
+                    while (System.currentTimeMillis() < end) {
+                        ((TestTcpCommunicationSpi)grid(idx).configuration().getCommunicationSpi()).stop();
+                        ((TestTcpDiscoverySpi)grid(idx).configuration().getDiscoverySpi()).simulateNodeFailure();
 
-            stopGrid(idx, cancel);
+                        stopAndCancelGrid(idx);
 
-            U.sleep(restartDelay);
+                        U.sleep(delay);
 
-            startGrid(idx);
+                        startGrid(idx);
 
-            U.sleep(restartDelay);
-        }
+                        U.sleep(delay);
+                    }
+
+                    return null;
+                }
+            }, 2, "restarter");
+
+        restart.get();
 
         done.set(true);
 

@@ -900,13 +900,17 @@ public class IgniteCacheDatabaseSharedManager extends GridCacheSharedManagerAdap
         if (path == null)
             return null;
 
-        final PdsFolderSettings folderSettings = cctx.kernalContext().pdsFolderResolver().resolveFolders();
+        final PdsFolderSettings folderSettings = resolveFolders();
 
         final String folderName = folderSettings.isCompatible() ?
             String.valueOf(folderSettings.consistentId()).replaceAll("[:,\\.]", "_") :
             folderSettings.folderName();
 
         return buildPath(path, folderName);
+    }
+
+    protected PdsFolderSettings resolveFolders() throws IgniteCheckedException {
+        return cctx.kernalContext().pdsFolderResolver().resolveFolders();
     }
 
     /**

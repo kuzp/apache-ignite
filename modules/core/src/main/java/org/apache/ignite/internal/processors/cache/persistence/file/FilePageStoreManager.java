@@ -125,11 +125,16 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
         if (ctx.clientNode())
             return;
 
-        final PdsFolderSettings folderSettings = ctx.pdsFolderResolver().resolveFolders();
+        final PdsFolderSettings folderSettings = resolveFolders();
 
         storeWorkDir = new File(folderSettings.persistentStoreRootPath(), folderSettings.folderName());
 
         U.ensureDirectory(storeWorkDir, "page store work directory", log);
+    }
+
+    protected PdsFolderSettings resolveFolders() throws IgniteCheckedException {
+        final GridKernalContext ctx = cctx.kernalContext();
+        return ctx.pdsFolderResolver().resolveFolders();
     }
 
     /** {@inheritDoc} */
