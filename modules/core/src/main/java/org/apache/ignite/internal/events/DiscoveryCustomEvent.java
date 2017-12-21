@@ -100,9 +100,8 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
         if (msg == null)
             return false;
 
-        // TODO
-//        if (msg instanceof ChangeGlobalStateMessage)
-//            return true;
+        if (msg instanceof ChangeGlobalStateMessage)
+            return true;
 
         if (msg instanceof SnapshotDiscoveryMessage) {
             SnapshotDiscoveryMessage snapMsg = (SnapshotDiscoveryMessage) msg;
