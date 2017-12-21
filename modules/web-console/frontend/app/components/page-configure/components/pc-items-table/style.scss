@@ -53,4 +53,8 @@ pc-items-table {
     .pco-clusters-table__actions-button {
         margin-left: auto;
     }
+    // Fixes header jank
+    .ui-grid-header-viewport {
+        min-height: 70px;
+    }
 }
