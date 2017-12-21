@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.ignite.internal.processors.query.h2.dml;
+package org.apache.ignite.yardstick.ml.math;
 
-import org.apache.ignite.internal.util.lang.GridPlainClosure;
+import org.apache.ignite.ml.math.Matrix;
+import org.apache.ignite.ml.math.impls.matrix.DenseLocalOffHeapMatrix;
 
 /**
- * Operand for fast UPDATE or DELETE (single item operation that does not involve any SELECT).
+ * Ignite benchmark that performs ML Grid operations.
  */
-public interface FastUpdateArgument extends GridPlainClosure<Object[], Object> {
-    // No-op.
+@SuppressWarnings("unused")
+public class IgniteDenseLocalOffHeapMatrixMulBenchmark extends IgniteAbstractMatrixMulBenchmark {
+    /** {@inheritDoc} */
+    @Override Matrix newMatrix(int rowSize, int colSize) {
+        return new DenseLocalOffHeapMatrix(rowSize, colSize);
+    }
 }
