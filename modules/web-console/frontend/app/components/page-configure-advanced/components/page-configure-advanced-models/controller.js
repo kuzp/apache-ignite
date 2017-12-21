@@ -26,16 +26,14 @@ import hasIndexTemplate from './hasIndex.template.pug';
 import keyCellTemplate from './keyCell.template.pug';
 import valueCellTemplate from './valueCell.template.pug';
 
-import {
-    removeClusterItems
-} from 'app/components/page-configure/store/actionCreators';
+import {removeClusterItems, advancedSaveModel} from 'app/components/page-configure/store/actionCreators';
 
 import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
 import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
 import {default as Models} from 'app/services/Models';
 
 export default class PageConfigureAdvancedModels {
-    static $inject = [ConfigSelectors.name, ConfigureState.name, '$uiRouter', Models.name, '$state', 'conf', 'configSelectionManager'];
+    static $inject = [ConfigSelectors.name, ConfigureState.name, '$uiRouter', Models.name, '$state', 'configSelectionManager'];
     /**
      * @param {ConfigSelectors} ConfigSelectors
      * @param {ConfigureState} ConfigureState
@@ -43,8 +41,7 @@ export default class PageConfigureAdvancedModels {
      * @param {uirouter.UIRouter} $uiRouter
      * @param {uirouter.StateService} $state
      */
-    constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, conf, configSelectionManager) {
-        Object.assign(this, {conf});
+    constructor(ConfigSelectors, ConfigureState, $uiRouter, Models, $state, configSelectionManager) {
         this.$state = $state;
         this.$uiRouter = $uiRouter;
         this.configSelectionManager = configSelectionManager;
@@ -148,7 +145,7 @@ export default class PageConfigureAdvancedModels {
         this.$state.go('base.configuration.edit.advanced.models.model', {modelID});
     }
     save(model) {
-        this.conf.saveAdvanced({model});
+        this.ConfigureState.dispatchAction(advancedSaveModel(model));
     }
     /**
      * @param {Array<string>} itemIDs

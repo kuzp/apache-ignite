@@ -18,17 +18,19 @@
 import {Subject} from 'rxjs/Subject';
 import {default as ConfigSelectors} from 'app/components/page-configure/store/selectors';
 import {default as ConfigureState} from 'app/components/page-configure/services/ConfigureState';
+import {advancedSaveCluster} from 'app/components/page-configure/store/actionCreators';
 
 // Controller for Clusters screen.
 export default class PageConfigureAdvancedCluster {
-    static $inject = ['$uiRouter', ConfigSelectors.name, ConfigureState.name, 'conf'];
+    static $inject = ['$uiRouter', ConfigSelectors.name, ConfigureState.name];
 
     /**
+     * @param {uirouter.UIRouter} $uiRouter
      * @param {ConfigSelectors} ConfigSelectors
      * @param {ConfigureState} ConfigureState
      */
-    constructor($uiRouter, ConfigSelectors, ConfigureState, conf) {
-        Object.assign(this, {$uiRouter, conf});
+    constructor($uiRouter, ConfigSelectors, ConfigureState) {
+        this.$uiRouter = $uiRouter;
         this.ConfigSelectors = ConfigSelectors;
         this.ConfigureState = ConfigureState;
     }
@@ -44,6 +46,6 @@ export default class PageConfigureAdvancedCluster {
     }
 
     save(cluster) {
-        this.conf.saveAdvanced({cluster});
+        this.ConfigureState.dispatchAction(advancedSaveCluster(cluster));
     }
 }

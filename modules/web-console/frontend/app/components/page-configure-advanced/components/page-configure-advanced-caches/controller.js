@@ -22,9 +22,7 @@ import get from 'lodash/get';
 import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
 import {combineLatest} from 'rxjs/observable/combineLatest';
-import {
-    removeClusterItems
-} from 'app/components/page-configure/store/actionCreators';
+import {removeClusterItems, advancedSaveCache} from 'app/components/page-configure/store/actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
 import ConfigSelectors from 'app/components/page-configure/store/selectors';
@@ -33,7 +31,6 @@ import Caches from 'app/services/Caches';
 // Controller for Caches screen.
 export default class Controller {
     static $inject = [
-        'conf',
         ConfigSelectors.name,
         'configSelectionManager',
         '$uiRouter',
@@ -45,7 +42,6 @@ export default class Controller {
         Caches.name
     ];
     /**
-     * @param {object} conf
      * @param {ConfigSelectors} ConfigSelectors
      * @param {object} configSelectionManager
      * @param {uirouter.UIRouter} $uiRouter
@@ -56,8 +52,8 @@ export default class Controller {
      * @param {object} Version
      * @param {Caches} Caches
      */
-    constructor(conf, ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $state, FormUtils, Version, Caches) {
-        Object.assign(this, {conf, configSelectionManager, FormUtils});
+    constructor(ConfigSelectors, configSelectionManager, $uiRouter, $transitions, ConfigureState, $state, FormUtils, Version, Caches) {
+        Object.assign(this, {configSelectionManager, FormUtils});
         this.$state = $state;
         this.$transitions = $transitions;
         this.$uiRouter = $uiRouter;
@@ -174,6 +170,6 @@ export default class Controller {
     }
 
     save(cache) {
-        this.conf.saveAdvanced({cache});
+        this.ConfigureState.dispatchAction(advancedSaveCache(cache));
     }
 }

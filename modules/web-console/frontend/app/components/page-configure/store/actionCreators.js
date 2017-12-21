@@ -21,7 +21,15 @@ import {
     ADVANCED_SAVE_COMPLETE_CONFIGURATION,
     CONFIRM_CLUSTERS_REMOVAL,
     CONFIRM_CLUSTERS_REMOVAL_OK,
-    COMPLETE_CONFIGURATION
+    COMPLETE_CONFIGURATION,
+    ADVANCED_SAVE_CLUSTER,
+    ADVANCED_SAVE_CACHE,
+    ADVANCED_SAVE_IGFS,
+    ADVANCED_SAVE_MODEL,
+    BASIC_SAVE,
+    BASIC_SAVE_AND_DOWNLOAD,
+    BASIC_SAVE_OK,
+    BASIC_SAVE_ERR
 } from './actionTypes';
 
 /**
@@ -89,7 +97,7 @@ const upsertCluster = (cluster) => ({
     cluster
 });
 
-const changeItem = (type, item) => ({
+export const changeItem = (type, item) => ({
     type: 'UPSERT_CLUSTER_ITEM',
     itemType: type,
     item
@@ -143,4 +151,20 @@ export const confirmClustersRemovalOK = () => ({
 export const completeConfiguration = (configuration) => ({
     type: COMPLETE_CONFIGURATION,
     configuration
+});
+
+export const advancedSaveCluster = (cluster) => ({type: ADVANCED_SAVE_CLUSTER, cluster});
+export const advancedSaveCache = (cache) => ({type: ADVANCED_SAVE_CACHE, cache});
+export const advancedSaveIGFS = (igfs) => ({type: ADVANCED_SAVE_IGFS, igfs});
+export const advancedSaveModel = (model) => ({type: ADVANCED_SAVE_MODEL, model});
+
+export const basicSave = (cluster) => ({type: BASIC_SAVE, cluster});
+export const basicSaveAndDownload = (cluster) => ({type: BASIC_SAVE_AND_DOWNLOAD, cluster});
+export const basicSaveOK = (changedItems) => ({type: BASIC_SAVE_OK, changedItems});
+export const basicSaveErr = (changedItems, res) => ({
+    type: BASIC_SAVE_ERR,
+    changedItems,
+    error: {
+        message: `Failed to save cluster "${changedItems.cluster.name}": ${res.data}.`
+    }
 });

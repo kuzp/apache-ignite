@@ -20,7 +20,10 @@ import 'rxjs/add/operator/map';
 import cloneDeep from 'lodash/cloneDeep';
 import naturalCompare from 'natural-compare-lite';
 import {
-    removeClusterItems
+    changeItem,
+    removeClusterItems,
+    basicSave,
+    basicSaveAndDownload
 } from 'app/components/page-configure/store/actionCreators';
 
 import {Confirm} from 'app/services/Confirm.service';
@@ -36,7 +39,7 @@ export default class PageConfigureBasicController {
     form;
 
     static $inject = [
-        Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, 'conf', Clusters.name, Caches.name, IgniteVersion.name, '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
+        Confirm.name, '$uiRouter', ConfigureState.name, ConfigSelectors.name, Clusters.name, Caches.name, IgniteVersion.name, '$element', 'ConfigChangesGuard', 'IgniteFormUtils', '$scope'
     ];
 
     /**
@@ -44,7 +47,6 @@ export default class PageConfigureBasicController {
      * @param {uirouter.UIRouter} $uiRouter
      * @param {ConfigureState} ConfigureState
      * @param {ConfigSelectors} ConfigSelectors
-     * @param {object} conf
      * @param {Clusters} Clusters
      * @param {Caches} Caches
      * @param {IgniteVersion} IgniteVersion
@@ -53,8 +55,8 @@ export default class PageConfigureBasicController {
      * @param {object} IgniteFormUtils
      * @param {ng.IScope} $scope
      */
-    constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, conf, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
-        Object.assign(this, {conf, IgniteFormUtils});
+    constructor(Confirm, $uiRouter, ConfigureState, ConfigSelectors, Clusters, Caches, IgniteVersion, $element, ConfigChangesGuard, IgniteFormUtils, $scope) {
+        Object.assign(this, {IgniteFormUtils});
         this.ConfigChangesGuard = ConfigChangesGuard;
         this.$uiRouter = $uiRouter;
         this.$scope = $scope;
@@ -165,19 +167,17 @@ export default class PageConfigureBasicController {
     }
 
     changeCache(cache) {
-        this.conf.changeItem('caches', cache);
+        return this.ConfigureState.dispatchAction(changeItem('caches', cache));
     }
 
     save(download = false) {
         if (this.form.$invalid) return this.IgniteFormUtils.triggerValidation(this.form, this.$scope);
-        this.conf.saveBasic({download, cluster: cloneDeep(this.clonedCluster)});
+        this.ConfigureState.dispatchAction((download ? basicSaveAndDownload : basicSave)(cloneDeep(this.clonedCluster)));
     }
 
     reset() {
         this.clonedCluster = cloneDeep(this.originalCluster);
-        this.ConfigureState.dispatchAction({
-            type: 'RESET_EDIT_CHANGES'
-        });
+        this.ConfigureState.dispatchAction({type: 'RESET_EDIT_CHANGES'});
     }
 
     confirmAndReset() {

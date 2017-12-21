@@ -21,14 +21,27 @@ import {combineLatest} from 'rxjs/observable/combineLatest';
 import naturalCompare from 'natural-compare-lite';
 import {merge} from 'rxjs/observable/merge';
 import get from 'lodash/get';
-import {
-    removeClusterItems
-} from 'app/components/page-configure/store/actionCreators';
+import {removeClusterItems, advancedSaveIGFS} from 'app/components/page-configure/store/actionCreators';
+import ConfigureState from 'app/components/page-configure/services/ConfigureState';
+import ConfigSelectors from 'app/components/page-configure/store/selectors';
+import IGFSs from 'app/services/IGFSs';
 
 export default class PageConfigureAdvancedIGFS {
-    static $inject = ['ConfigSelectors', 'ConfigureState', '$uiRouter', 'IGFSs', '$state', 'conf', 'configSelectionManager'];
-    constructor(ConfigSelectors, ConfigureState, $uiRouter, IGFSs, $state, conf, configSelectionManager) {
-        Object.assign(this, {ConfigSelectors, ConfigureState, $uiRouter, IGFSs, $state, conf, configSelectionManager});
+    static $inject = [ConfigSelectors.name, ConfigureState.name, '$uiRouter', IGFSs.name, '$state', 'configSelectionManager'];
+    /**
+     * @param {ConfigSelectors} ConfigSelectors        
+     * @param {ConfigureState} ConfigureState         
+     * @param {uirouter.UIRouter} $uiRouter              
+     * @param {IGFSs} IGFSs                  
+     * @param {uirouter.StateService} $state       
+     */
+    constructor(ConfigSelectors, ConfigureState, $uiRouter, IGFSs, $state, configSelectionManager) {
+        this.ConfigSelectors = ConfigSelectors;
+        this.ConfigureState = ConfigureState;
+        this.$uiRouter = $uiRouter;
+        this.IGFSs = IGFSs;
+        this.$state = $state;
+        this.configSelectionManager = configSelectionManager;
     }
     $onDestroy() {
         this.subscription.unsubscribe();
@@ -116,7 +129,7 @@ export default class PageConfigureAdvancedIGFS {
         this.$state.go('base.configuration.edit.advanced.igfs.igfs', {igfsID});
     }
     save(igfs) {
-        this.conf.saveAdvanced({igfs});
+        this.ConfigureState.dispatchAction(advancedSaveIGFS(igfs));
     }
     remove(itemIDs) {
         this.ConfigureState.dispatchAction(

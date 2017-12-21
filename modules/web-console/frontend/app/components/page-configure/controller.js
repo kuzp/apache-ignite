@@ -25,17 +25,16 @@ import {default as ConfigureState} from './services/ConfigureState';
 import {default as ConfigSelectors} from './store/selectors';
 
 export default class PageConfigureController {
-    static $inject = ['$uiRouter', 'ConfigureState', 'conf', 'ConfigSelectors'];
+    static $inject = ['$uiRouter', 'ConfigureState', 'ConfigSelectors'];
 
     /**
      * @param {uirouter.UIRouter} $uiRouter
      * @param {ConfigureState} ConfigureState
      * @param {ConfigSelectors} ConfigSelectors
      */
-    constructor($uiRouter, ConfigureState, conf, ConfigSelectors) {
+    constructor($uiRouter, ConfigureState, ConfigSelectors) {
         this.$uiRouter = $uiRouter;
         this.ConfigureState = ConfigureState;
-        this.conf = conf;
         this.ConfigSelectors = ConfigSelectors;
     }
 

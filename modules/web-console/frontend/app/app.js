@@ -138,7 +138,6 @@ import uiGridHovering from './components/ui-grid-hovering';
 import uiGridFilters from './components/ui-grid-filters';
 import listEditable from './components/list-editable';
 import clusterSelector from './components/cluster-selector';
-import pageConfiguration from './components/page-configuration';
 import connectedClusters from './components/connected-clusters';
 
 import igniteServices from './services';
@@ -226,7 +225,6 @@ angular.module('ignite-console', [
     servicesModule.name,
     connectedClusters.name,
     igniteListOfRegisteredUsers.name,
-    pageConfiguration.name,
     // Ignite modules.
     IgniteModules.name
 ])

@@ -23,6 +23,7 @@ import {of} from 'rxjs/observable/of';
 import {fromPromise} from 'rxjs/observable/fromPromise';
 import {uniqueName} from 'app/utils/uniqueName';
 import pick from 'lodash/fp/pick';
+import uniq from 'lodash/uniq';
 
 import {
     clustersActionTypes,
@@ -40,7 +41,14 @@ import {
     REMOVE_CLUSTER_ITEMS_CONFIRMED,
     CONFIRM_CLUSTERS_REMOVAL,
     CONFIRM_CLUSTERS_REMOVAL_OK,
-    COMPLETE_CONFIGURATION
+    COMPLETE_CONFIGURATION,
+    ADVANCED_SAVE_CLUSTER,
+    ADVANCED_SAVE_CACHE,
+    ADVANCED_SAVE_IGFS,
+    ADVANCED_SAVE_MODEL,
+    BASIC_SAVE,
+    BASIC_SAVE_AND_DOWNLOAD,
+    BASIC_SAVE_OK
 } from './actionTypes';
 
 import {
@@ -48,7 +56,10 @@ import {
     advancedSaveCompleteConfiguration,
     confirmClustersRemoval,
     confirmClustersRemovalOK,
-    completeConfiguration
+    completeConfiguration,
+    basicSave,
+    basicSaveOK,
+    basicSaveErr
 } from './actionCreators';
 
 import ConfigureState from 'app/components/page-configure/services/ConfigureState';
@@ -130,8 +141,7 @@ export default class ConfigEffects {
 
         this.saveCompleteConfigurationEffect$ = this.ConfigureState.actions$
             .let(ofType('ADVANCED_SAVE_COMPLETE_CONFIGURATION'))
-            .withLatestFrom(this.ConfigureState.state$)
-            .switchMap(([action, state]) => {
+            .switchMap((action) => {
                 const actions = [
                     {
                         type: modelsActionTypes.UPSERT,
@@ -165,7 +175,7 @@ export default class ConfigEffects {
                         type: shortClustersActionTypes.UPSERT,
                         items: [Clusters.toShortCluster(action.changedItems.cluster)]
                     }
-                ];
+                ].filter((a) => a.items.length);
 
                 return of(...actions)
                 .merge(
@@ -186,7 +196,7 @@ export default class ConfigEffects {
                             }
                         }, {
                             type: 'UNDO_ACTIONS',
-                            actions: action.prevActions.concat(actions)
+                            actions
                         });
                     })
                 );
@@ -406,15 +416,14 @@ export default class ConfigEffects {
             });
 
         this.basicSaveRedirectEffect$ = this.ConfigureState.actions$
-            .let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
+            .let(ofType(BASIC_SAVE_OK))
             .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace', custom: {justIDUpdate: true}}))
             .ignoreElements();
 
         this.basicDownloadAfterSaveEffect$ = this.ConfigureState.actions$
-            .let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES_OK'))
-            .withLatestFrom(this.ConfigureState.actions$.let(ofType('BASIC_SAVE_CLUSTER_AND_CACHES')))
+            .let(ofType(BASIC_SAVE_OK))
+            .withLatestFrom(this.ConfigureState.actions$.let(ofType(BASIC_SAVE_AND_DOWNLOAD)))
             .pluck('1')
-            .filter((a) => a.download)
             .do((a) => this.configurationDownload.downloadClusterConfiguration(a.changedItems.cluster))
             .ignoreElements();
 
@@ -545,6 +554,73 @@ export default class ConfigEffects {
             .let(ofType('REMOVE_CLUSTERS_OK'))
             .withLatestFrom(this.ConfigureState.actions$.let(ofType(CONFIRM_CLUSTERS_REMOVAL)))
             .do(([, {clusterIDs}]) => this.IgniteMessages.showInfo(`Cluster(s) removed: ${clusterIDs.length}`))
+            .ignoreElements();
+
+        const _applyChangedIDs = (edit, {cache, igfs, model, cluster} = {}) => ({
+            cluster: {
+                ...edit.changes.cluster,
+                ...(cluster ? cluster : {}),
+                caches: cache ? uniq([...edit.changes.caches.ids, cache._id]) : edit.changes.caches.ids,
+                igfss: igfs ? uniq([...edit.changes.igfss.ids, igfs._id]) : edit.changes.igfss.ids,
+                models: model ? uniq([...edit.changes.models.ids, model._id]) : edit.changes.models.ids
+            },
+            caches: cache ? uniq([...edit.changes.caches.changedItems, cache]) : edit.changes.caches.changedItems,
+            igfss: igfs ? uniq([...edit.changes.igfss.changedItems, igfs]) : edit.changes.igfss.changedItems,
+            models: model ? uniq([...edit.changes.models.changedItems, model]) : edit.changes.models.changedItems
+        });
+
+        this.advancedSaveCacheEffect$ = merge(
+            this.ConfigureState.actions$.let(ofType(ADVANCED_SAVE_CLUSTER)),
+            this.ConfigureState.actions$.let(ofType(ADVANCED_SAVE_CACHE)),
+            this.ConfigureState.actions$.let(ofType(ADVANCED_SAVE_IGFS)),
+            this.ConfigureState.actions$.let(ofType(ADVANCED_SAVE_MODEL)),
+        )
+            .withLatestFrom(this.ConfigureState.state$.pluck('edit'))
+            .map(([action, edit]) => ({
+                type: 'ADVANCED_SAVE_COMPLETE_CONFIGURATION',
+                changedItems: _applyChangedIDs(edit, action)
+            }));
+
+        this.basicSaveEffect$ = this.ConfigureState.actions$
+            .let(ofType(BASIC_SAVE))
+            .withLatestFrom(this.ConfigureState.state$.pluck('edit'))
+            .switchMap(([action, edit]) => {
+                const changedItems = _applyChangedIDs(edit, {cluster: action.cluster});
+                const actions = [{
+                    type: cachesActionTypes.UPSERT,
+                    items: changedItems.caches
+                },
+                {
+                    type: shortCachesActionTypes.UPSERT,
+                    items: changedItems.caches
+                },
+                {
+                    type: clustersActionTypes.UPSERT,
+                    items: [changedItems.cluster]
+                },
+                {
+                    type: shortClustersActionTypes.UPSERT,
+                    items: [this.Clusters.toShortCluster(changedItems.cluster)]
+                }
+                ].filter((a) => a.items.length);
+
+                return Observable.of(...actions)
+                .merge(
+                    Observable.fromPromise(this.Clusters.saveBasic(changedItems))
+                    .switchMap((res) => Observable.of(
+                        {type: 'EDIT_CLUSTER', cluster: changedItems.cluster},
+                        basicSaveOK(changedItems)
+                    ))
+                    .catch((res) => Observable.of(
+                        basicSaveErr(changedItems, res),
+                        {type: 'UNDO_ACTIONS', actions}
+                    ))
+                );
+            });
+
+        this.basicSaveOKMessagesEffect$ = this.ConfigureState.actions$
+            .let(ofType(BASIC_SAVE_OK))
+            .do((action) => this.IgniteMessages.showInfo(`Cluster "${action.changedItems.cluster.name}" saved.`))
             .ignoreElements();
     }
 

@@ -17,6 +17,7 @@
 
 import angular from 'angular';
 
+import 'angular1-async-filter';
 import {UIRouterRx} from '@uirouter/rx';
 import {Visualizer} from '@uirouter/visualizer';
 import uiValidate from 'angular-ui-validate';
@@ -76,6 +77,7 @@ import {reducer as reduxDevtoolsReducer, devTools} from './reduxDevtoolsIntegrat
 
 export default angular
     .module('ignite-console.page-configure', [
+        'asyncFilter',
         uiValidate,
         pcFormFieldSize.name,
         pcUiGridFilters.name,

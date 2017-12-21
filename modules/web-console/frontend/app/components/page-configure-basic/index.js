@@ -18,7 +18,6 @@
 import angular from 'angular';
 
 import component from './component';
-import service from './service';
 import {reducer} from './reducer';
 
 export default angular
@@ -26,5 +25,4 @@ export default angular
     .run(['ConfigureState', (ConfigureState) => ConfigureState.addReducer((state, action) => Object.assign(state, {
         configureBasic: reducer(state.configureBasic, action, state)
     }))])
-    .component('pageConfigureBasic', component)
-    .service('PageConfigureBasic', service);
+    .component('pageConfigureBasic', component);
