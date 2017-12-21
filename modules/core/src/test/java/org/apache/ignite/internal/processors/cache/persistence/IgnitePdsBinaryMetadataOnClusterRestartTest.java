@@ -17,7 +17,11 @@
 package org.apache.ignite.internal.processors.cache.persistence;
 
 import java.io.File;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.ignite.Ignite;
@@ -202,13 +206,98 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
         assertEquals("DynamicType0", binaryTypeName(bObj0));
         assertEquals("DynamicType1", binaryTypeName(bObj1));
 
-        assertEquals(10, bObj0.field("intField"));
-        assertEquals("str", bObj1.field("strField"));
+        assertEquals(10, (int) bObj0.field("intField"));
+        assertEquals("str", (String) bObj1.field("strField"));
     }
 
     /** */
     private String binaryTypeName(BinaryObject bObj) {
         return bObj.type().typeName();
+    }
+
+    /**
+     * If joining node has incompatible BinaryMetadata (e.g. when user manually copies binary_meta file),
+     * coordinator detects it and fails the node providing information about conflict.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
+     */
+    public void testNodeWithIncompatibleMetadataIsProhibitedToJoinTheCluster() throws Exception {
+        final String typeName = "DynamicType";
+        final String decimalFieldName = "decField";
+
+        customWorkSubDir = "nodeA_workDir";
+        Ignite igniteA = startGrid("A");
+
+        customWorkSubDir = "nodeB_workDir";
+        Ignite igniteB = startGrid("B");
+        String bConsId = igniteB.cluster().localNode().consistentId().toString();
+
+        igniteA.active(true);
+
+        IgniteCache<Object, Object> cache = igniteA.cache(CACHE_NAME);
+
+        BinaryObject bObj = igniteA.binary().builder(typeName).setField(decimalFieldName, 10).build();
+
+        cache.put(0, bObj);
+
+        stopAllGrids();
+
+        customWorkSubDir = "nodeC_workDir";
+        Ignite igniteC = startGrid("C");
+        String cConsId = igniteC.cluster().localNode().consistentId().toString();
+        igniteC.active(true);
+
+        cache = igniteC.cache(CACHE_NAME);
+        bObj = igniteC.binary().builder(typeName).setField(decimalFieldName, 10L).build();
+
+        cache.put(0, bObj);
+
+        stopAllGrids();
+
+        copyIncompatibleBinaryMetadata(
+            "nodeC_workDir",
+            cConsId,
+            "nodeB_workDir",
+            bConsId,
+            typeName.toLowerCase().hashCode() + ".bin");
+
+        customWorkSubDir = "nodeA_workDir";
+        startGrid("A");
+
+        boolean exceptedExceptionThrown = false;
+        try {
+            customWorkSubDir = "nodeB_workDir";
+            startGrid("B");
+        }
+        catch (Exception e) {
+            if (e.getCause() != null && e.getCause().getCause() != null) {
+                if (e.getCause().getCause().getMessage().contains(
+                        String.format("[typeName=%s, fieldName=%s, fieldTypeName1=int, fieldTypeName2=long]",
+                            typeName,
+                            decimalFieldName)
+                ))
+                    exceptedExceptionThrown = true;
+            }
+            else
+                throw e;
+        }
+
+        assertTrue(exceptedExceptionThrown);
+    }
+
+    /** */
+    private void copyIncompatibleBinaryMetadata(String fromWorkDir,
+        String fromConsId,
+        String toWorkDir,
+        String toConsId,
+        String fileName
+    ) throws Exception {
+        String workDir = U.defaultWorkDirectory();
+
+        Path fromFile = Paths.get(workDir, fromWorkDir, "binary_meta", "node00-" + fromConsId, fileName);
+        Path toFile = Paths.get(workDir, toWorkDir, "binary_meta", "node00-" + toConsId, fileName);
+
+        Files.copy(fromFile, toFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**

@@ -900,6 +900,9 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
 
     /** */
     private IgniteNodeValidationResult validateBinaryMetadata(UUID rmtNodeId, Map<Integer, BinaryMetadataHolder> newNodeMeta) {
+        if (newNodeMeta == null)
+            return null;
+
         for (Map.Entry<Integer, BinaryMetadataHolder> metaEntry : newNodeMeta.entrySet()) {
             if (!metadataLocCache.containsKey(metaEntry.getKey()))
                 continue;
@@ -914,10 +917,9 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
                 BinaryUtils.mergeMetadata(locMeta, rmtMeta);
             }
             catch (Exception e) {
-                String locMsg = "Failed to merge metadata received from node %s, "
-                    + " exception was thrown: %s";
+                String locMsg = "Exception was thrown when merging binary metadata from node %s: %s";
 
-                String rmtMsg = "Coordinator node failed to merge metadata from this node: %s";
+                String rmtMsg = "Exception was thrown on coordinator when merging binary metadata from this node: %s";
 
                 return new IgniteNodeValidationResult(rmtNodeId,
                     String.format(locMsg, rmtNodeId.toString(), e.getMessage()),
@@ -958,6 +960,9 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     /** {@inheritDoc} */
     @Override public void onJoiningNodeDataReceived(DiscoveryDataBag.JoiningNodeDiscoveryData data) {
         Map<Integer,BinaryMetadataHolder> newNodeMeta = (Map<Integer, BinaryMetadataHolder>) data.joiningNodeData();
+
+        if (newNodeMeta == null)
+            return;
 
         UUID joiningNode = data.joiningNodeId();
 
