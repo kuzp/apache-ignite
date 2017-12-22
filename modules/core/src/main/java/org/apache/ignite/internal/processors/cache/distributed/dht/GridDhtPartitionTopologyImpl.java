@@ -298,10 +298,12 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
-    @Override public void initPartitionsWhenAffinityReady(AffinityTopologyVersion affVer,
+    @Override public boolean initPartitionsWhenAffinityReady(AffinityTopologyVersion affVer,
         GridDhtPartitionsExchangeFuture exchFut)
         throws IgniteInterruptedCheckedException
     {
+        boolean needRefresh;
+
         ctx.database().checkpointReadLock();
 
         try {
@@ -309,11 +311,11 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
             try {
                 if (stopping)
-                    return;
+                    return false;
 
                 long updateSeq = this.updateSeq.incrementAndGet();
 
-                initPartitions0(affVer, exchFut, updateSeq);
+                needRefresh = initPartitions0(affVer, exchFut, updateSeq);
 
                 consistencyCheck();
             }
@@ -324,15 +326,21 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
         finally {
             ctx.database().checkpointReadUnlock();
         }
+
+        return needRefresh;
     }
 
     /**
      * @param affVer Affinity version to use.
      * @param exchFut Exchange future.
      * @param updateSeq Update sequence.
+     *
+     * @return {@code True} if partitions must be refreshed.
      */
-    private void initPartitions0(AffinityTopologyVersion affVer, GridDhtPartitionsExchangeFuture exchFut, long updateSeq) {
+    private boolean initPartitions0(AffinityTopologyVersion affVer, GridDhtPartitionsExchangeFuture exchFut, long updateSeq) {
         List<List<ClusterNode>> aff = grp.affinity().readyAssignments(affVer);
+
+        boolean needRefresh = false;
 
         if (grp.affinityNode()) {
             ClusterNode loc = ctx.localNode();
@@ -370,6 +378,8 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
                             assert owned : "Failed to own partition for oldest node [grp=" + grp.cacheOrGroupName() +
                                 ", part=" + locPart + ']';
+
+                            needRefresh = true;
 
                             if (log.isDebugEnabled())
                                 log.debug("Owned partition for oldest node: " + locPart);
@@ -418,6 +428,8 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
         }
 
         updateRebalanceVersion(aff);
+
+        return needRefresh;
     }
 
     /**
