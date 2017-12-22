@@ -40,7 +40,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * BaselineTopology represents a set of "database nodes" - nodes responsible for persisting data to durable storage.
  *
+ * It allows two major features:
+ * <ol>
+ *     <li>Auto activation.</li>
+ *     <li>Protection from data conflicts.</li>
+ * </ol>
  */
 public class BaselineTopology implements Serializable {
     /** */
@@ -336,6 +342,23 @@ public class BaselineTopology implements Serializable {
         }
 
         return false;
+    }
+
+    /**
+     * Resets branching history of the current BaselineTopology.
+     * Current branching point hash and list of previous branching hashes are erased
+     * and replaced with hash passed via method parameter.
+     *
+     * All nodes that were offline when reset happened (thus didn't reset history of their local BaselineTopologies)
+     * won't be allowed to join the cluster when started back.
+     *
+     * @param newBranchingPointHash Branching point hash that current hash will be replaced.
+     */
+    void resetBranchingHistory(long newBranchingPointHash) {
+        branchingHist.clear();
+
+        branchingPntHash = newBranchingPointHash;
+        branchingHist.add(newBranchingPointHash);
     }
 
     /**
