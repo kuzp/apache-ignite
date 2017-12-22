@@ -435,7 +435,7 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
                 ExchangeActions exchangeActions;
 
                 try {
-                    exchangeActions = ctx.cache().onStateChangeRequest(msg, topVer);
+                    exchangeActions = ctx.cache().onStateChangeRequest(msg, state, topVer);
                 }
                 catch (IgniteCheckedException e) {
                     GridChangeGlobalStateFuture fut = changeStateFuture(msg);

@@ -3025,7 +3025,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                             updatePartitionFullMap(resTopVer, partsMsg);
 
-                            if (exchActions.stateChangeRequest() != null && err != null)
+                            if (exchActions != null && exchActions.stateChangeRequest() != null && err != null)
                                 cctx.kernalContext().state().onStateChangeError(msg.partitionsMessage().getErrorsMap(), exchActions.stateChangeRequest());
                         }
 
