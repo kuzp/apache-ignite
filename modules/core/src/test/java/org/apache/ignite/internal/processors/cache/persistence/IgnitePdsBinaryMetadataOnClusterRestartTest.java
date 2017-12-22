@@ -156,14 +156,14 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
 
         BinaryObject bObj0 = (BinaryObject) cache0.get(0);
 
-        assertEquals(bObj0.field("intField"), 10);
+        assertEquals(10, (int) bObj0.field("intField"));
 
         cache1 = ignite1.cache(CACHE_NAME).withKeepBinary();
 
         BinaryObject bObj1 = (BinaryObject) cache1.get(1);
 
-        assertEquals(bObj1.field("intField"), 20);
-        assertEquals(bObj1.field("strField"), "str");
+        assertEquals(20, (int) bObj1.field("intField"));
+        assertEquals("str", bObj1.field("strField"));
     }
 
     /**
@@ -210,7 +210,7 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
         assertEquals("DynamicType1", binaryTypeName(bObj1));
 
         assertEquals(10, (int) bObj0.field(DYNAMIC_INT_FIELD_NAME));
-        assertEquals("str", (String) bObj1.field(DYNAMIC_STR_FIELD_NAME));
+        assertEquals("str", bObj1.field(DYNAMIC_STR_FIELD_NAME));
     }
 
     /**
@@ -269,8 +269,8 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
 
         bObj1 = (BinaryObject) igniteB.cache(CACHE_NAME).withKeepBinary().get(1);
 
-        assertEquals(bObj1.field(DYNAMIC_INT_FIELD_NAME), 20);
-        assertEquals(bObj1.field(DYNAMIC_STR_FIELD_NAME), "str");
+        assertEquals(20, (int) bObj1.field(DYNAMIC_INT_FIELD_NAME));
+        assertEquals("str", bObj1.field(DYNAMIC_STR_FIELD_NAME));
     }
 
     /** */
