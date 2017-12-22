@@ -338,6 +338,14 @@ public class BaselineTopology implements Serializable {
         return false;
     }
 
+    /** */
+    void resetHistory(long newBranchingPointHash) {
+        branchingHist.clear();
+
+        branchingPntHash = newBranchingPointHash;
+        branchingHist.add(newBranchingPointHash);
+    }
+
     /**
      * @param nodes Nodes.
      */

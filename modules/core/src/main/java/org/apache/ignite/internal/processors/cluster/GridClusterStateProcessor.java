@@ -237,6 +237,13 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
         bltHist.flushHistoryItems(metastorage);
     }
 
+    /** */
+    public void resetBranchingHistory(long newBranchingHash) throws IgniteCheckedException {
+        globalState.baselineTopology().resetHistory(newBranchingHash);
+
+        writeBaselineTopology(globalState.baselineTopology(), null);
+    }
+
     /**
      * @param blt Blt.
      */
