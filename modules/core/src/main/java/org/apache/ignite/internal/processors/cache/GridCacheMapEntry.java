@@ -612,11 +612,11 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             CacheObject ret = val;
 
             if (ret == null) {
-                if (updateMetrics && cctx.cache().configuration().isStatisticsEnabled())
+                if (updateMetrics && cctx.statisticsEnabled())
                     cctx.cache().metrics0().onRead(false);
             }
             else {
-                if (updateMetrics && cctx.cache().configuration().isStatisticsEnabled())
+                if (updateMetrics && cctx.statisticsEnabled())
                     cctx.cache().metrics0().onRead(true);
             }
 
@@ -996,13 +996,16 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             if (updateCntr != null && updateCntr != 0)
                 updateCntr0 = updateCntr;
 
+            if (tx != null && cctx.group().persistenceEnabled())
+                logTxUpdate(tx, val, expireTime, updateCntr0);
+
             update(val, expireTime, ttl, newVer, true);
 
             drReplicate(drType, val, newVer, topVer);
 
             recordNodeId(affNodeId, topVer);
 
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled())
+            if (metrics && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onWrite();
 
             if (evt && newVer != null && cctx.events().isRecordable(EVT_CACHE_OBJECT_PUT)) {
@@ -1175,9 +1178,12 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             if (updateCntr != null && updateCntr != 0)
                 updateCntr0 = updateCntr;
 
+            if (tx != null && cctx.group().persistenceEnabled())
+                logTxUpdate(tx, null, 0, updateCntr0);
+
             drReplicate(drType, null, newVer, topVer);
 
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled())
+            if (metrics && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onRemove();
 
             if (tx == null)
@@ -1374,7 +1380,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             }
 
             // Apply metrics.
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled() && needVal) {
+            if (metrics && cctx.statisticsEnabled() && needVal) {
                 // PutIfAbsent methods mustn't update hit/miss statistics
                 if (op != GridCacheOperation.UPDATE || F.isEmpty(filter) || !cctx.putIfAbsentFilter(filter))
                     cctx.cache().metrics0().onRead(old != null);
@@ -1704,7 +1710,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             // Apply metrics.
             if (metrics &&
                 updateRes.outcome().updateReadMetrics() &&
-                cctx.cache().configuration().isStatisticsEnabled() &&
+                cctx.statisticsEnabled() &&
                 needVal) {
                 // PutIfAbsent methods must not update hit/miss statistics.
                 if (op != GridCacheOperation.UPDATE || F.isEmpty(filter) || !cctx.putIfAbsentFilter(filter))
@@ -3000,7 +3006,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                 cctx.onDeferredDelete(this, ver0);
             }
 
-            if ((obsolete || deferred) && cctx.cache().configuration().isStatisticsEnabled())
+            if ((obsolete || deferred) && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onEvict();
         }
 
@@ -3210,6 +3216,37 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         catch (StorageException e) {
             throw new IgniteCheckedException("Failed to log ATOMIC cache update [key=" + key + ", op=" + op +
                 ", val=" + val + ']', e);
+        }
+    }
+
+    /**
+     * @param tx Transaction.
+     * @param val Value.
+     * @param expireTime Expire time (or 0 if not applicable).
+     * @param updCntr Update counter.
+     * @throws IgniteCheckedException In case of log failure.
+     */
+    protected void logTxUpdate(IgniteInternalTx tx, CacheObject val, long expireTime, long updCntr)
+        throws IgniteCheckedException {
+        assert cctx.transactional();
+
+        if (tx.local()) { // For remote tx we log all updates in batch: GridDistributedTxRemoteAdapter.commitIfLocked()
+            GridCacheOperation op;
+            if (val == null)
+                op = GridCacheOperation.DELETE;
+            else
+                op = this.val == null ? GridCacheOperation.CREATE : GridCacheOperation.UPDATE;
+
+            cctx.shared().wal().log(new DataRecord(new DataEntry(
+                cctx.cacheId(),
+                key,
+                val,
+                op,
+                tx.nearXidVersion(),
+                tx.writeVersion(),
+                expireTime,
+                key.partition(),
+                updCntr)));
         }
     }
 
@@ -3709,7 +3746,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
      * @param metrics Update merics flag.
      */
     private void updateMetrics(GridCacheOperation op, boolean metrics) {
-        if (metrics && cctx.cache().configuration().isStatisticsEnabled()) {
+        if (metrics && cctx.statisticsEnabled()) {
             if (op == GridCacheOperation.DELETE)
                 cctx.cache().metrics0().onRemove();
             else

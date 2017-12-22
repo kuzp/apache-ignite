@@ -371,7 +371,7 @@ public class GridNearCacheEntry extends GridDistributedCacheEntry {
             synchronized (this) {
                 checkObsolete();
 
-                if (cctx.cache().configuration().isStatisticsEnabled())
+                if (cctx.statisticsEnabled())
                     cctx.cache().metrics0().onRead(false);
 
                 boolean ret = false;
@@ -439,6 +439,12 @@ public class GridNearCacheEntry extends GridDistributedCacheEntry {
     @Override protected void logUpdate(GridCacheOperation op, CacheObject val, GridCacheVersion ver, long expireTime, long updCntr)
         throws IgniteCheckedException {
         // No-op: queries are disabled for near cache.
+    }
+
+    /** {@inheritDoc} */
+    @Override protected void logTxUpdate(IgniteInternalTx tx, CacheObject val, long expireTime, long updCntr)
+        throws IgniteCheckedException {
+        // No-op.
     }
 
     /** {@inheritDoc} */
