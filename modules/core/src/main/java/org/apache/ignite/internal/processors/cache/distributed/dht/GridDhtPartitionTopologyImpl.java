@@ -550,7 +550,7 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
 
                                 initPartitions0(evts.topologyVersion(), exchFut, updateSeq);
                             }
-                            else if (exchFut.firstEvent().type() != EVT_DISCOVERY_CUSTOM_EVT){
+                            else {
                                 assert !exchFut.context().mergeExchanges();
 
                                 List<List<ClusterNode>> aff = grp.affinity().idealAssignment();
