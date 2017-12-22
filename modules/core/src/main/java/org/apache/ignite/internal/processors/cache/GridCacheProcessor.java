@@ -2388,9 +2388,9 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      * @throws IgniteCheckedException If configuration validation failed.
      * @return Exchange actions.
      */
-    public ExchangeActions onStateChangeRequest(ChangeGlobalStateMessage msg, AffinityTopologyVersion topVer)
+    public ExchangeActions onStateChangeRequest(ChangeGlobalStateMessage msg, DiscoveryDataClusterState prevState, AffinityTopologyVersion topVer)
         throws IgniteCheckedException {
-        return cachesInfo.onStateChangeRequest(msg, topVer);
+        return cachesInfo.onStateChangeRequest(msg, prevState, topVer);
     }
 
     /**
