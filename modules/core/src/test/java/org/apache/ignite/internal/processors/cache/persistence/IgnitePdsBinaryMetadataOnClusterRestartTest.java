@@ -62,6 +62,9 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
     private static final String DYNAMIC_STR_FIELD_NAME = "strField";
 
     /** */
+    private static final String CUSTOM_WORK_DIR_NAME_PATTERN = "node%s_workDir";
+
+    /** */
     private boolean clientMode;
 
     /** */
@@ -114,11 +117,8 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
      * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
      */
     public void testUpdatedBinaryMetadataIsPreservedOnJoinToOldCoordinator() throws Exception {
-        customWorkSubDir = "nodeA_workDir";
-        IgniteEx ignite0 = startGrid(0);
-
-        customWorkSubDir = "nodeB_workDir";
-        IgniteEx ignite1 = startGrid(1);
+        Ignite ignite0 = startGridInASeparateWorkDir("A");
+        Ignite ignite1 = startGridInASeparateWorkDir("B");
 
         ignite0.active(true);
 
@@ -130,9 +130,9 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
             .setField(DYNAMIC_INT_FIELD_NAME, 10)
             .build();
 
-        cache0.put(2, bo);
+        cache0.put(0, bo);
 
-        stopGrid(0);
+        stopGrid("A");
 
         IgniteCache<Object, Object> cache1 = ignite1.cache(CACHE_NAME);
 
@@ -143,60 +143,63 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
             .setField(DYNAMIC_STR_FIELD_NAME, "str")
             .build();
 
-        cache1.put(3, bo);
+        cache1.put(1, bo);
 
         stopAllGrids();
 
-        customWorkSubDir = "nodeA_workDir";
-        startGrid(0);
-
-        customWorkSubDir = "nodeB_workDir";
-        startGrid(1);
+        ignite0 = startGridInASeparateWorkDir("A");
+        ignite1 = startGridInASeparateWorkDir("B");
 
         awaitPartitionMapExchange();
 
-        examineDynamicMetadata(2, contentExaminer0);
+        cache0 = ignite0.cache(CACHE_NAME).withKeepBinary();
 
-        examineDynamicMetadata(2, contentExaminer1);
+        BinaryObject bObj0 = (BinaryObject) cache0.get(0);
+
+        assertEquals(bObj0.field("intField"), 10);
+
+        cache1 = ignite1.cache(CACHE_NAME).withKeepBinary();
+
+        BinaryObject bObj1 = (BinaryObject) cache1.get(1);
+
+        assertEquals(bObj1.field("intField"), 20);
+        assertEquals(bObj1.field("strField"), "str");
     }
 
     /**
      * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
      */
     public void testNewBinaryMetadataIsWrittenOnOldCoordinator() throws Exception {
-        customWorkSubDir = "nodeA_workDir";
-        IgniteEx ignite0 = startGrid(0);
-
-        customWorkSubDir = "nodeB_workDir";
-        IgniteEx ignite1 = startGrid(1);
+        Ignite ignite0 = startGridInASeparateWorkDir("A");
+        Ignite ignite1 = startGridInASeparateWorkDir("B");
 
         ignite0.active(true);
 
         IgniteCache<Object, Object> cache0 = ignite0.cache(CACHE_NAME);
 
-        BinaryObject bObj0 = ignite0.binary().builder("DynamicType0").setField("intField", 10).build();
+        BinaryObject bObj0 = ignite0.binary()
+            .builder("DynamicType0").setField("intField", 10).build();
 
         cache0.put(0, bObj0);
 
-        stopGrid(0);
+        stopGrid("A");
 
         IgniteCache<Object, Object> cache1 = ignite1.cache(CACHE_NAME);
 
-        BinaryObject bObj1 = ignite1.binary().builder("DynamicType1").setField("strField", "str").build();
+        BinaryObject bObj1 = ignite1.binary()
+            .builder("DynamicType1").setField("strField", "str").build();
 
         cache1.put(1, bObj1);
 
         stopAllGrids();
 
-        customWorkSubDir = "nodeA_workDir";
-        ignite0 = startGrid(0);
+        ignite0 = startGridInASeparateWorkDir("A");
 
-        customWorkSubDir = "nodeB_workDir";
-        startGrid(1);
+        startGridInASeparateWorkDir("B");
 
         awaitPartitionMapExchange();
 
-        stopGrid(1);
+        stopGrid("B");
 
         cache0 = ignite0.cache(CACHE_NAME).withKeepBinary();
 
@@ -206,8 +209,74 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
         assertEquals("DynamicType0", binaryTypeName(bObj0));
         assertEquals("DynamicType1", binaryTypeName(bObj1));
 
-        assertEquals(10, (int) bObj0.field("intField"));
-        assertEquals("str", (String) bObj1.field("strField"));
+        assertEquals(10, (int) bObj0.field(DYNAMIC_INT_FIELD_NAME));
+        assertEquals("str", (String) bObj1.field(DYNAMIC_STR_FIELD_NAME));
+    }
+
+    /**
+     * Verifies that newer BinaryMetadata is applied not only on coordinator but on all nodes
+     * with outdated version.
+     *
+     * In the following test nodeB was offline when BinaryMetadata was updated,
+     * after full cluster restart it starts second (so it doesn't take the role of coordinator)
+     * but metadata update is propagated to it anyway.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
+     */
+    public void testNewBinaryMetadataIsPropagatedToAllOutOfDataNodes() throws Exception {
+        Ignite igniteA = startGridInASeparateWorkDir("A");
+        startGridInASeparateWorkDir("B");
+        Ignite igniteC = startGridInASeparateWorkDir("C");
+        startGridInASeparateWorkDir("D");
+
+        igniteA.active(true);
+
+        BinaryObject bObj0 = igniteA.binary()
+            .builder(DYNAMIC_TYPE_NAME).setField(DYNAMIC_INT_FIELD_NAME, 10).build();
+
+        igniteA.cache(CACHE_NAME).put(0, bObj0);
+
+        stopGrid("A");
+        stopGrid("B");
+
+        BinaryObject bObj1 = igniteC.binary()
+            .builder(DYNAMIC_TYPE_NAME)
+            .setField(DYNAMIC_INT_FIELD_NAME, 20)
+            .setField(DYNAMIC_STR_FIELD_NAME, "str").build();
+
+        igniteC.cache(CACHE_NAME).put(1, bObj1);
+
+        //full cluster restart
+        stopAllGrids();
+
+        //node A becomes a coordinator
+        igniteA = startGridInASeparateWorkDir("A");
+        //node B isn't a coordinator, but metadata update is propagated to if
+        startGridInASeparateWorkDir("B");
+        //these two nodes will provide an updated version of metadata when started
+        startGridInASeparateWorkDir("C");
+        startGridInASeparateWorkDir("D");
+
+        awaitPartitionMapExchange();
+
+        //stopping everything to make sure that nodeB will lose its in-memory BinaryMetadata cache
+        // and will have to reload it from FS when restarted later
+        stopAllGrids();
+
+        Ignite igniteB = startGridInASeparateWorkDir("B");
+
+        igniteB.active(true);
+
+        bObj1 = (BinaryObject) igniteB.cache(CACHE_NAME).withKeepBinary().get(1);
+
+        assertEquals(bObj1.field(DYNAMIC_INT_FIELD_NAME), 20);
+        assertEquals(bObj1.field(DYNAMIC_STR_FIELD_NAME), "str");
+    }
+
+    /** */
+    private Ignite startGridInASeparateWorkDir(String nodeName) throws Exception {
+        customWorkSubDir = String.format(CUSTOM_WORK_DIR_NAME_PATTERN, nodeName);
+        return startGrid(nodeName);
     }
 
     /** */
@@ -222,58 +291,54 @@ public class IgnitePdsBinaryMetadataOnClusterRestartTest extends GridCommonAbstr
      * @see <a href="https://issues.apache.org/jira/browse/IGNITE-7258">IGNITE-7258</a> refer to the following JIRA for more context about the problem verified by the test.
      */
     public void testNodeWithIncompatibleMetadataIsProhibitedToJoinTheCluster() throws Exception {
-        final String typeName = "DynamicType";
         final String decimalFieldName = "decField";
 
-        customWorkSubDir = "nodeA_workDir";
-        Ignite igniteA = startGrid("A");
+        Ignite igniteA = startGridInASeparateWorkDir("A");
+        Ignite igniteB = startGridInASeparateWorkDir("B");
 
-        customWorkSubDir = "nodeB_workDir";
-        Ignite igniteB = startGrid("B");
         String bConsId = igniteB.cluster().localNode().consistentId().toString();
 
         igniteA.active(true);
 
         IgniteCache<Object, Object> cache = igniteA.cache(CACHE_NAME);
 
-        BinaryObject bObj = igniteA.binary().builder(typeName).setField(decimalFieldName, 10).build();
+        BinaryObject bObj = igniteA.binary()
+            .builder(DYNAMIC_TYPE_NAME).setField(decimalFieldName, 10).build();
 
         cache.put(0, bObj);
 
         stopAllGrids();
 
-        customWorkSubDir = "nodeC_workDir";
-        Ignite igniteC = startGrid("C");
+        Ignite igniteC = startGridInASeparateWorkDir("C");
         String cConsId = igniteC.cluster().localNode().consistentId().toString();
         igniteC.active(true);
 
         cache = igniteC.cache(CACHE_NAME);
-        bObj = igniteC.binary().builder(typeName).setField(decimalFieldName, 10L).build();
+        bObj = igniteC.binary().builder(DYNAMIC_TYPE_NAME).setField(decimalFieldName, 10L).build();
 
         cache.put(0, bObj);
 
         stopAllGrids();
 
         copyIncompatibleBinaryMetadata(
-            "nodeC_workDir",
+            String.format(CUSTOM_WORK_DIR_NAME_PATTERN, "C"),
             cConsId,
-            "nodeB_workDir",
+            String.format(CUSTOM_WORK_DIR_NAME_PATTERN, "B"),
             bConsId,
-            typeName.toLowerCase().hashCode() + ".bin");
+            DYNAMIC_TYPE_NAME.toLowerCase().hashCode() + ".bin");
 
         customWorkSubDir = "nodeA_workDir";
         startGrid("A");
 
         boolean exceptedExceptionThrown = false;
         try {
-            customWorkSubDir = "nodeB_workDir";
-            startGrid("B");
+            startGridInASeparateWorkDir("B");
         }
         catch (Exception e) {
             if (e.getCause() != null && e.getCause().getCause() != null) {
                 if (e.getCause().getCause().getMessage().contains(
                         String.format("[typeName=%s, fieldName=%s, fieldTypeName1=int, fieldTypeName2=long]",
-                            typeName,
+                            DYNAMIC_TYPE_NAME,
                             decimalFieldName)
                 ))
                     exceptedExceptionThrown = true;
