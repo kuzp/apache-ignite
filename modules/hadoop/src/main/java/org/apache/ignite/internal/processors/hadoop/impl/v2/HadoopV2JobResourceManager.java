@@ -30,6 +30,7 @@ import org.apache.ignite.internal.processors.hadoop.HadoopCommonUtils;
 import org.apache.ignite.internal.processors.hadoop.HadoopJobId;
 import org.apache.ignite.internal.processors.hadoop.impl.fs.HadoopFileSystemsUtils;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.jetbrains.annotations.Nullable;
 
@@ -157,6 +158,12 @@ class HadoopV2JobResourceManager {
 
             processFiles(jobLocDir, ctx.getCacheFiles(), download, false, null, MRJobConfig.CACHE_LOCALFILES);
             processFiles(jobLocDir, ctx.getCacheArchives(), download, true, null, MRJobConfig.CACHE_LOCALARCHIVES);
+
+            if (log.isDebugEnabled())
+                log.debug("Processing files from: " + jobLocDir + "; File class paths: " +
+                    S.arrayToString(Path.class, ctx.getFileClassPaths()) + "; Class path Urls: " +
+                    S.arrayToString(URL.class, clsPathUrls));
+
             processFiles(jobLocDir, ctx.getFileClassPaths(), download, false, clsPathUrls, null);
             processFiles(jobLocDir, ctx.getArchiveClassPaths(), download, true, clsPathUrls, null);
 

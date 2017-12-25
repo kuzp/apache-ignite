@@ -19,6 +19,7 @@ package org.apache.ignite.internal.processors.hadoop.planner;
 
 import org.apache.ignite.hadoop.HadoopInputSplit;
 import org.apache.ignite.hadoop.HadoopMapReducePlan;
+import org.apache.ignite.internal.util.typedef.internal.S;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -106,5 +107,10 @@ public class HadoopDefaultMapReducePlan implements HadoopMapReducePlan {
     /** {@inheritDoc} */
     @Override public Collection<UUID> reducerNodeIds() {
         return reducers.keySet();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(HadoopDefaultMapReducePlan.class, this);
     }
 }
