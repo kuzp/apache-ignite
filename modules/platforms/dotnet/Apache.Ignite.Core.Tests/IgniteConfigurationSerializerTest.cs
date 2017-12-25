@@ -46,7 +46,6 @@ namespace Apache.Ignite.Core.Tests
     using Apache.Ignite.Core.Discovery.Tcp;
     using Apache.Ignite.Core.Discovery.Tcp.Multicast;
     using Apache.Ignite.Core.Events;
-    using Apache.Ignite.Core.Impl.Common;
     using Apache.Ignite.Core.Lifecycle;
     using Apache.Ignite.Core.Log;
     using Apache.Ignite.Core.PersistentStore;
@@ -98,6 +97,7 @@ namespace Apache.Ignite.Core.Tests
             Assert.AreEqual(new TimeSpan(1, 2, 3), cfg.LongQueryWarningTimeout);
             Assert.IsFalse(cfg.IsActiveOnStart);
             Assert.AreEqual("someId012", cfg.ConsistentId);
+            Assert.IsFalse(cfg.RedirectJavaConsoleOutput);
 
             Assert.AreEqual("secondCache", cfg.CacheConfiguration.Last().Name);
 
@@ -111,6 +111,18 @@ namespace Apache.Ignite.Core.Tests
             Assert.IsFalse(cacheCfg.WriteBehindCoalescing);
             Assert.AreEqual(PartitionLossPolicy.ReadWriteAll, cacheCfg.PartitionLossPolicy);
             Assert.AreEqual("fooGroup", cacheCfg.GroupName);
+            
+            Assert.AreEqual("bar", cacheCfg.KeyConfiguration.Single().AffinityKeyFieldName);
+            Assert.AreEqual("foo", cacheCfg.KeyConfiguration.Single().TypeName);
+
+            Assert.IsTrue(cacheCfg.OnheapCacheEnabled);
+            Assert.AreEqual(8, cacheCfg.StoreConcurrentLoadAllThreshold);
+            Assert.AreEqual(9, cacheCfg.RebalanceOrder);
+            Assert.AreEqual(10, cacheCfg.RebalanceBatchesPrefetchCount);
+            Assert.AreEqual(11, cacheCfg.MaxQueryIteratorsCount);
+            Assert.AreEqual(12, cacheCfg.QueryDetailMetricsSize);
+            Assert.AreEqual(13, cacheCfg.QueryParallelism);
+            Assert.AreEqual("mySchema", cacheCfg.SqlSchema);
 
             var queryEntity = cacheCfg.QueryEntities.Single();
             Assert.AreEqual(typeof(int), queryEntity.KeyType);
@@ -275,7 +287,6 @@ namespace Apache.Ignite.Core.Tests
             var ds = cfg.DataStorageConfiguration;
             Assert.IsFalse(ds.AlwaysWriteFullPages);
             Assert.AreEqual(TimeSpan.FromSeconds(1), ds.CheckpointFrequency);
-            Assert.AreEqual(2, ds.CheckpointPageBufferSize);
             Assert.AreEqual(3, ds.CheckpointThreads);
             Assert.AreEqual(4, ds.ConcurrencyLevel);
             Assert.AreEqual(TimeSpan.FromSeconds(5), ds.LockWaitTime);
@@ -296,6 +307,7 @@ namespace Apache.Ignite.Core.Tests
             Assert.AreEqual(16, ds.WalSegments);
             Assert.AreEqual(17, ds.WalSegmentSize);
             Assert.AreEqual("wal-store", ds.WalPath);
+            Assert.AreEqual(TimeSpan.FromSeconds(18), ds.WalAutoArchiveAfterInactivity);
             Assert.IsTrue(ds.WriteThrottlingEnabled);
 
             var dr = ds.DataRegionConfigurations.Single();
@@ -309,6 +321,7 @@ namespace Apache.Ignite.Core.Tests
             Assert.AreEqual(5, dr.MetricsSubIntervalCount);
             Assert.AreEqual("swap", dr.SwapPath);
             Assert.IsTrue(dr.MetricsEnabled);
+            Assert.AreEqual(7, dr.CheckpointPageBufferSize);
 
             dr = ds.DefaultDataRegionConfiguration;
             Assert.AreEqual(2, dr.EmptyPagesPoolSize);
@@ -343,14 +356,22 @@ namespace Apache.Ignite.Core.Tests
         /// Tests that all properties are present in the schema.
         /// </summary>
         [Test]
-        [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
         public void TestAllPropertiesArePresentInSchema()
         {
-            var schema = XDocument.Load("IgniteConfigurationSection.xsd")
-                    .Root.Elements()
-                    .Single(x => x.Attribute("name").Value == "igniteConfiguration");
+            CheckAllPropertiesArePresentInSchema("IgniteConfigurationSection.xsd", "igniteConfiguration", 
+                typeof(IgniteConfiguration));
+        }
 
-            var type = typeof(IgniteConfiguration);
+        /// <summary>
+        /// Checks that all properties are present in schema.
+        /// </summary>
+        [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
+        public static void CheckAllPropertiesArePresentInSchema(string xsd, string sectionName, Type type)
+        {
+            var schema = XDocument.Load(xsd)
+                .Root.Elements()
+                .Single(x => x.Attribute("name").Value == sectionName);
+
 
             CheckPropertyIsPresentInSchema(type, schema);
         }
@@ -502,15 +523,15 @@ namespace Apache.Ignite.Core.Tests
         {
             // Empty section.
             var cfg = IgniteConfiguration.FromXml("<x />");
-            TestUtils.AssertReflectionEqual(new IgniteConfiguration(), cfg);
+            AssertExtensions.ReflectionEqual(new IgniteConfiguration(), cfg);
 
             // Empty section with XML header.
             cfg = IgniteConfiguration.FromXml("<?xml version=\"1.0\" encoding=\"utf-16\"?><x />");
-            TestUtils.AssertReflectionEqual(new IgniteConfiguration(), cfg);
+            AssertExtensions.ReflectionEqual(new IgniteConfiguration(), cfg);
 
             // Simple test.
             cfg = IgniteConfiguration.FromXml(@"<igCfg igniteInstanceName=""myGrid"" clientMode=""true"" />");
-            TestUtils.AssertReflectionEqual(new IgniteConfiguration {IgniteInstanceName = "myGrid", ClientMode = true}, cfg);
+            AssertExtensions.ReflectionEqual(new IgniteConfiguration {IgniteInstanceName = "myGrid", ClientMode = true}, cfg);
 
             // Invalid xml.
             var ex = Assert.Throws<ConfigurationErrorsException>(() =>
@@ -525,7 +546,7 @@ namespace Apache.Ignite.Core.Tests
             {
                 cfg = IgniteConfiguration.FromXml(xmlReader);
             }
-            TestUtils.AssertReflectionEqual(new IgniteConfiguration { IgniteInstanceName = "myGrid", ClientMode = true }, cfg);
+            AssertExtensions.ReflectionEqual(new IgniteConfiguration { IgniteInstanceName = "myGrid", ClientMode = true }, cfg);
         }
 
         /// <summary>
@@ -543,29 +564,28 @@ namespace Apache.Ignite.Core.Tests
         /// </summary>
         private static void CheckSchemaValidation()
         {
-            var sb = new StringBuilder();
-
-            using (var xmlWriter = XmlWriter.Create(sb))
-            {
-                IgniteConfigurationXmlSerializer.Serialize(GetTestConfig(), xmlWriter, "igniteConfiguration");
-            }
-
-            CheckSchemaValidation(sb.ToString());
+            CheckSchemaValidation(GetTestConfig().ToXml());
         }
 
         /// <summary>
         /// Checks the schema validation.
         /// </summary>
-        /// <param name="xml">The XML.</param>
         private static void CheckSchemaValidation(string xml)
         {
+            var xmlns = "http://ignite.apache.org/schema/dotnet/IgniteConfigurationSection";
+            var schemaFile = "IgniteConfigurationSection.xsd";
+
+            CheckSchemaValidation(xml, xmlns, schemaFile);
+        }
+
+        /// <summary>
+        /// Checks the schema validation.
+        /// </summary>
+        public static void CheckSchemaValidation(string xml, string xmlns, string schemaFile)
+        {
             var document = new XmlDocument();
-
-            document.Schemas.Add("http://ignite.apache.org/schema/dotnet/IgniteConfigurationSection",
-                XmlReader.Create("IgniteConfigurationSection.xsd"));
-
+            document.Schemas.Add(xmlns, XmlReader.Create(schemaFile));
             document.Load(new StringReader(xml));
-
             document.Validate(null);
         }
 
@@ -577,7 +597,7 @@ namespace Apache.Ignite.Core.Tests
         {
             var resCfg = SerializeDeserialize(cfg);
 
-            TestUtils.AssertReflectionEqual(cfg, resCfg);
+            AssertExtensions.ReflectionEqual(cfg, resCfg);
         }
 
         /// <summary>
@@ -722,7 +742,23 @@ namespace Apache.Ignite.Core.Tests
                         MemoryPolicyName = "somePolicy",
                         PartitionLossPolicy = PartitionLossPolicy.ReadOnlyAll,
                         GroupName = "abc",
-                        SqlIndexMaxInlineSize = 24
+                        SqlIndexMaxInlineSize = 24,
+                        KeyConfiguration = new[]
+                        {
+                            new CacheKeyConfiguration
+                            {
+                                AffinityKeyFieldName = "abc",
+                                TypeName = "def"
+                            }, 
+                        },
+                        OnheapCacheEnabled = true,
+                        StoreConcurrentLoadAllThreshold = 7,
+                        RebalanceOrder = 3,
+                        RebalanceBatchesPrefetchCount = 4,
+                        MaxQueryIteratorsCount = 512,
+                        QueryDetailMetricsSize = 100,
+                        QueryParallelism = 16,
+                        SqlSchema = "foo"
                     }
                 },
                 ClientMode = true,
@@ -899,7 +935,6 @@ namespace Apache.Ignite.Core.Tests
                 {
                     AlwaysWriteFullPages = true,
                     CheckpointFrequency = TimeSpan.FromSeconds(25),
-                    CheckpointPageBufferSize = 28 * 1024 * 1024,
                     CheckpointThreads = 2,
                     LockWaitTime = TimeSpan.FromSeconds(5),
                     StoragePath = Path.GetTempPath(),
@@ -922,6 +957,7 @@ namespace Apache.Ignite.Core.Tests
                     SystemRegionMaxSize = 128 * 1024 * 1024,
                     ConcurrencyLevel = 1,
                     PageSize = 5 * 1024,
+                    WalAutoArchiveAfterInactivity = TimeSpan.FromSeconds(19),
                     DefaultDataRegionConfiguration = new DataRegionConfiguration
                     {
                         Name = "reg1",
@@ -934,7 +970,8 @@ namespace Apache.Ignite.Core.Tests
                         PersistenceEnabled = false,
                         MetricsRateTimeInterval = TimeSpan.FromMinutes(2),
                         MetricsSubIntervalCount = 6,
-                        SwapPath = Path.GetTempPath()
+                        SwapPath = Path.GetTempPath(),
+                        CheckpointPageBufferSize = 7
                     },
                     DataRegionConfigurations = new[]
                     {
