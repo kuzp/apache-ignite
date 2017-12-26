@@ -56,7 +56,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
     public static final int GRIDS_CNT = 3;
 
     /** */
-    public static final int CACHES_IN_GROUP = 3;
+    public static final int CACHES_IN_GROUP = 1;
 
     /** */
     public static final int DISTINCT_CLASSES = 10;
@@ -65,7 +65,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
     public static final int PARTS_CNT = 128;
 
     /** */
-    public static final int KEYS_PER_NODE = 200;
+    public static final int KEYS_PER_NODE = 1000;
 
     /** */
     private static TcpDiscoveryIpFinder ipFinder = new TcpDiscoveryVmIpFinder(true);
@@ -126,7 +126,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
         ccfg.setCacheMode(cacheMode);
         ccfg.setGroupName(grp);
-        ccfg.setRebalanceBatchSize(20);
+        //ccfg.setRebalanceBatchSize(20);
 
         ccfg.setAffinity(new RendezvousAffinityFunction(false, PARTS_CNT));
 
@@ -157,9 +157,14 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
             final CacheConfiguration[] cfgs = testCaches();
 
-            Random r = new Random();
+            for (int i = 0; i < GRIDS_CNT; i++)
+                startGrid(i);
 
-            final IgniteEx node = (IgniteEx)startGridsMultiThreaded(GRIDS_CNT);
+            final IgniteEx node = grid(0);
+
+            node.active(true);
+
+            awaitPartitionMapExchange();
 
             int keysPerNode = KEYS_PER_NODE;
 
@@ -191,32 +196,68 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
             assertEquals(keysPerNode * GRIDS_CNT, cnt0);
 
-            final int badCls = DISTINCT_CLASSES - 1;
+            //final int t0 = node.binary().typeId(clsForPart(0));
+            final int t1 = node.binary().typeId(clsForPart(15));
 
-            final int metaId = node.binary().typeId(className(badCls));
+            node.active(false);
 
-            stopAllGrids();
+            stopAllGrids(); // Remove binary meta from memory.
 
-            final File metaPath = U.resolveWorkDirectory(U.defaultWorkDirectory(), "binary_meta/" +
-                getTestIgniteInstanceName(0).replace('.', '_'), false);
+            final String baseName = "binary_meta/" + getTestIgniteInstanceName(0).replace('.', '_');
+            final File metaPath = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName, false);
+            //final File metaPath2 = new File(metaPath.getParent(), metaPath.getName() + ".1");
 
-            assertTrue(new File(metaPath, metaId + ".bin").delete());
+            //deleteRecursively(metaPath);
 
-            final IgniteEx newNode = startGrid(0);
+            //assertTrue(metaPath.renameTo(metaPath2));
 
-            startGridsMultiThreaded(1, GRIDS_CNT);
+//            final File f1 = new File(metaPath, metaId + ".bin");
+//
+//            final File f2 = new File(metaPath, metaId + ".bin.bak");
 
-            newNode.active(true);
+            //assertTrue(move(metaPath, t0, ".bin", ".000"));
+            assertTrue(move(metaPath, t1, ".bin", ".000"));
+//            assertTrue(move(metaPath, t2, ".bin", ".000"));
+//            assertTrue(move(metaPath, t3, ".bin", ".000"));
 
-            awaitPartitionMapExchange();
+            final IgniteEx crd2 = (IgniteEx)startGridsMultiThreaded(GRIDS_CNT);
 
-//            int cnt1 = countPartitions(newNode, cfgs[0].getName());
+            stopGrid(GRIDS_CNT - 1);
+//
+////            awaitPartitionMapExchange();
+////
+////            stopGrid(GRIDS_CNT - 1);
+////
+////            awaitPartitionMapExchange();
+////
+////            newNode.active(false);
+//
+//            final IgniteEx n2 = startGrid(0);
+//
+//            startGridsMultiThreaded(1, GRIDS_CNT - 1);
+//
+//            n2.active(true);
+////
+////            doSleep(5_000);
+////
+////            stopAllGrids();
+//
+//            int cnt1 = countPartitions(n2, cfgs[0].getName());
 //
 //            assertEquals(cnt0, cnt1);
+
+            System.out.println();
         }
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
         }
+    }
+
+    private boolean move(File metaPath, int metaId, String ext1, String ext2) {
+        final File file10 = new File(metaPath, metaId + ext1);
+        final File file11 = new File(metaPath, metaId + ext2);
+
+        return file10.renameTo(file11);
     }
 
     /**
