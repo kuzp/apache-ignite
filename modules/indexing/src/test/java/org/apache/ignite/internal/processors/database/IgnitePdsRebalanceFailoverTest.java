@@ -236,6 +236,8 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
             stopAllGrids();
 
+            // Restart and check again, all partitions must be in the same state.
+
             IgniteEx crd2 = startGrid(0);
 
             startGrid(1);
@@ -248,7 +250,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
             assertEquals(cnt, crd2.cache(DEFAULT_CACHE_NAME).size());
 
-
+            // TODO compare states
         }
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
