@@ -246,6 +246,9 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
         globalState.baselineTopology().resetBranchingHistory(newBranchingHash);
 
         writeBaselineTopology(globalState.baselineTopology(), null);
+
+        U.log(log,
+            String.format("Branching history of current BaselineTopology is reset to the value %d", newBranchingHash));
     }
 
     /**
@@ -911,22 +914,46 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
         BaselineTopology joiningNodeBlt = joiningNodeState.baselineTopology();
         BaselineTopology clusterBlt = globalState.baselineTopology();
 
-        String msg = "BaselineTopology of joining node ("
-            + node.consistentId()
-            + ") is not compatible with BaselineTopology in cluster. "
-            + "Joining node " + joiningNodeBlt + ','
-            + " cluster " + clusterBlt + '.';
+        String recommendation = " Consider cleaning persistent storage of the node and adding it to the cluster again.";
 
-        if (joiningNodeBlt.id() > clusterBlt.id())
+        if (joiningNodeBlt.id() > clusterBlt.id()) {
+            String msg = "BaselineTopology of joining node ("
+                + node.consistentId()
+                + ") is not compatible with BaselineTopology in the cluster."
+                + " Joining node BlT id (" + joiningNodeBlt.id()
+                + ") is greater than cluster BlT id (" + clusterBlt.id() + ")."
+                + " New BaselineTopology was set on joining node with set-baseline command."
+                + recommendation;
+
             return new IgniteNodeValidationResult(node.id(), msg, msg);
+        }
 
         if (joiningNodeBlt.id() == clusterBlt.id()) {
-            if (!clusterBlt.isCompatibleWith(joiningNodeBlt))
+            if (!clusterBlt.isCompatibleWith(joiningNodeBlt)) {
+                String msg = "BaselineTopology of joining node ("
+                    + node.consistentId()
+                    + " ) is not compatible with BaselineTopology in the cluster."
+                    + " Branching history of cluster BlT (" + clusterBlt.branchingHistory()
+                    + ") doesn't contain branching point hash of joining node BlT ("
+                    + joiningNodeBlt.branchingPointHash()
+                    + ")." + recommendation;
+
                 return new IgniteNodeValidationResult(node.id(), msg, msg);
+            }
         }
         else if (joiningNodeBlt.id() < clusterBlt.id()) {
-            if (!bltHist.isCompatibleWith(joiningNodeBlt))
+            if (!bltHist.isCompatibleWith(joiningNodeBlt)) {
+                String msg = "BaselineTopology of joining node ("
+                    + node.consistentId()
+                    + ") is not compatible with BaselineTopology in the cluster."
+                    + " BlT id of joining node (" + joiningNodeBlt.id()
+                    + ") less than BlT id of cluster (" + clusterBlt.id()
+                    + ") but cluster's BaselineHistory doesn't contain branching point hash of joining node BlT ("
+                    + joiningNodeBlt.branchingPointHash()
+                    + ")." + recommendation;
+
                 return new IgniteNodeValidationResult(node.id(), msg, msg);
+            }
         }
 
         return null;
