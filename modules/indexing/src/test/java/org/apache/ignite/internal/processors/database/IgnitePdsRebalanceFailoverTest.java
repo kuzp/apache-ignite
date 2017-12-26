@@ -219,7 +219,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
             awaitPartitionMapExchange();
 
-            stopGrid(2); // trigger rebalance to
+            stopGrid(2); // trigger rebalance to crd
 
             doSleep(1_000);
 
