@@ -973,7 +973,7 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                 map.put(i, part.state());
             }
 
-            GridDhtPartitionMap locPartMap = node2part.get(ctx.localNodeId());
+            GridDhtPartitionMap locPartMap = node2part != null ? node2part.get(ctx.localNodeId()) : null;
 
             return new GridDhtPartitionMap(ctx.localNodeId(),
                 updateSeq.get(),
