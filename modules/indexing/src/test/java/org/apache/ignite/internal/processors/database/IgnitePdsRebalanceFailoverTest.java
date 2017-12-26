@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.database;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.cache.Cache;
@@ -29,6 +30,7 @@ import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlQuery;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
+import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.MemoryConfiguration;
@@ -36,7 +38,11 @@ import org.apache.ignite.configuration.MemoryPolicyConfiguration;
 import org.apache.ignite.configuration.PersistentStoreConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
 import org.apache.ignite.internal.util.typedef.G;
+import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
@@ -53,16 +59,10 @@ import static org.apache.ignite.internal.processors.cache.persistence.GridCacheD
  */
 public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
     /** */
-    public static final int GRIDS_CNT = 3;
-
-    /** */
-    public static final int CACHES_IN_GROUP = 1;
-
-    /** */
     public static final int DISTINCT_CLASSES = 10;
 
     /** */
-    public static final int PARTS_CNT = 128;
+    public static final int PARTS_CNT = 32;
 
     /** */
     public static final int KEYS_PER_NODE = 1000;
@@ -82,7 +82,7 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
 
         ((TcpDiscoverySpi) cfg.getDiscoverySpi()).setIpFinder(ipFinder);
 
-        cfg.setCacheConfiguration(testCaches());
+        cfg.setCacheConfiguration(cacheConfiguration(DEFAULT_CACHE_NAME, TRANSACTIONAL, PARTITIONED, 1, DEFAULT_CACHE_NAME));
 
         cfg.setConsistentId(igniteInstanceName);
 
@@ -139,15 +139,6 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
         return ccfg;
     }
 
-    private CacheConfiguration[] testCaches() {
-        CacheConfiguration[] cfgs = new CacheConfiguration[CACHES_IN_GROUP];
-
-        for (int i = 0; i < cfgs.length; i++)
-            cfgs[i] = cacheConfiguration("test" + i, TRANSACTIONAL, PARTITIONED, 1, "testGrp");
-
-        return cfgs;
-    }
-
     /**
      * @throws Exception If failed.
      */
@@ -155,98 +146,236 @@ public class IgnitePdsRebalanceFailoverTest extends GridCommonAbstractTest {
         try {
             System.setProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC, "true");
 
-            final CacheConfiguration[] cfgs = testCaches();
+            IgniteEx crd = startGrid(0);
 
-            for (int i = 0; i < GRIDS_CNT; i++)
-                startGrid(i);
+            crd.active(true);
 
-            final IgniteEx node = grid(0);
-
-            node.active(true);
+            startGrid(1);
 
             awaitPartitionMapExchange();
 
-            int keysPerNode = KEYS_PER_NODE;
+            List<List<ClusterNode>> a1 = crd.context().cache().context().affinity().
+                affinity(CU.cacheId(DEFAULT_CACHE_NAME)).assignments(new AffinityTopologyVersion(2, 1));
 
-            for (Ignite ignite : G.allGrids()) {
-                for (CacheConfiguration cfg : cfgs) {
-                    final IgniteCache<Object, Object> cache = ignite.cache(cfg.getName());
+            final int cnt = 1000;
 
-                    final List<Integer> keys = primaryKeys(cache, keysPerNode);
+            for (int i = 0; i < cnt; i++) {
+                final int part = crd.affinity(DEFAULT_CACHE_NAME).partition(i);
 
-                    for (Integer key : keys) {
-                        final int part = ignite.affinity(cfg.getName()).partition(key);
+                int clsForPart = part % DISTINCT_CLASSES;
 
-                        int clsForPart = part % DISTINCT_CLASSES;
+                String clsName = className(clsForPart);
 
-                        String clsName = className(clsForPart);
+                final Base obj = U.newInstance(clsName);
 
-                        final Base obj = U.newInstance(clsName);
+                assert obj != null;
 
-                        assert obj != null;
+                obj.setVal("test" + i);
 
-                        obj.setVal("test" + key);
+                crd.cache(DEFAULT_CACHE_NAME).put(i, obj);
+            }
 
-                        cache.put(key, obj);
-                    }
+            startGrid(2);
+
+            awaitPartitionMapExchange();
+
+            List<List<ClusterNode>> a2 = crd.context().cache().context().affinity().
+                affinity(CU.cacheId(DEFAULT_CACHE_NAME)).assignments(new AffinityTopologyVersion(3, 1));
+
+            assertEquals(cnt, crd.cache(DEFAULT_CACHE_NAME).size());
+
+            List<Integer> primaryMovedFrom1To3 = new ArrayList<>(); // New primary.
+
+            for (int p = 0; p < PARTS_CNT; p++) {
+                List<ClusterNode> n1 = a1.get(p);
+                List<ClusterNode> n2 = a2.get(p);
+                if (!n1.equals(n2)) {
+                    log.info("Diff: p=" + p);
+
+                    if (n1.get(0).order() == 1 && n2.get(0).order() == 3)
+                        primaryMovedFrom1To3.add(p);
                 }
             }
 
-            int cnt0 = countPartitions(node, cfgs[0].getName());
+            Integer lastPartToMove = primaryMovedFrom1To3.get(primaryMovedFrom1To3.size() - 1);
 
-            assertEquals(keysPerNode * GRIDS_CNT, cnt0);
+            final int typeId = crd.binary().typeId(clsForPart(lastPartToMove));
 
-            //final int t0 = node.binary().typeId(clsForPart(0));
-            final int t1 = node.binary().typeId(clsForPart(15));
-
-            node.active(false);
+            // stop without rebalance.
+            crd.active(false);
 
             stopAllGrids(); // Remove binary meta from memory.
 
             final String baseName = "binary_meta/" + getTestIgniteInstanceName(0).replace('.', '_');
             final File metaPath = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName, false);
-            //final File metaPath2 = new File(metaPath.getParent(), metaPath.getName() + ".1");
 
-            //deleteRecursively(metaPath);
+            assertTrue(new File(metaPath, typeId + ".bin").delete());
 
-            //assertTrue(metaPath.renameTo(metaPath2));
+            IgniteEx crd1 = startGrid(0);
 
-//            final File f1 = new File(metaPath, metaId + ".bin");
-//
-//            final File f2 = new File(metaPath, metaId + ".bin.bak");
+            startGridsMultiThreaded(1, 2);
 
-            //assertTrue(move(metaPath, t0, ".bin", ".000"));
-            assertTrue(move(metaPath, t1, ".bin", ".000"));
-//            assertTrue(move(metaPath, t2, ".bin", ".000"));
-//            assertTrue(move(metaPath, t3, ".bin", ".000"));
+            crd1.active(true);
 
-            final IgniteEx crd2 = (IgniteEx)startGridsMultiThreaded(GRIDS_CNT);
+            awaitPartitionMapExchange();
 
-            stopGrid(GRIDS_CNT - 1);
-//
-////            awaitPartitionMapExchange();
-////
-////            stopGrid(GRIDS_CNT - 1);
-////
-////            awaitPartitionMapExchange();
-////
-////            newNode.active(false);
-//
-//            final IgniteEx n2 = startGrid(0);
-//
-//            startGridsMultiThreaded(1, GRIDS_CNT - 1);
-//
-//            n2.active(true);
-////
-////            doSleep(5_000);
-////
-////            stopAllGrids();
-//
-//            int cnt1 = countPartitions(n2, cfgs[0].getName());
-//
-//            assertEquals(cnt0, cnt1);
+            stopGrid(2); // trigger rebalance to
 
-            System.out.println();
+            doSleep(1_000);
+
+            assertEquals(cnt, crd1.cache(DEFAULT_CACHE_NAME).size());
+
+            GridDhtPartitionTopology top = crd1.context().cache().context().cache().cacheGroup(CU.cacheId(DEFAULT_CACHE_NAME)).topology();
+
+            List<GridDhtLocalPartition> parts = top.localPartitions();
+
+            for (GridDhtLocalPartition part : parts)
+                log.info("Part id=" + part.id() + ", state=" + part.state());
+
+            crd1.active(false);
+
+            stopAllGrids();
+
+            IgniteEx crd2 = startGrid(0);
+
+            startGrid(1);
+
+            crd2.active(true);
+
+            doSleep(1_000);
+
+            printTop(crd2);
+
+            assertEquals(cnt, crd2.cache(DEFAULT_CACHE_NAME).size());
+
+
+        }
+        finally {
+            System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
+        }
+    }
+
+    private void printTop(IgniteEx node) {
+        GridDhtPartitionTopology top = node.context().cache().context().cache().cacheGroup(CU.cacheId(DEFAULT_CACHE_NAME)).topology();
+
+        List<GridDhtLocalPartition> parts = top.localPartitions();
+
+        for (GridDhtLocalPartition part : parts)
+            log.info("Part id=" + part.id() + ", state=" + part.state());
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRebalanceFailover2() throws Exception {
+        try {
+            System.setProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC, "true");
+
+            IgniteEx crd = startGrid(0);
+
+            crd.active(true);
+
+            startGrid(1);
+
+            awaitPartitionMapExchange();
+
+            List<List<ClusterNode>> a1 = crd.context().cache().context().affinity().
+                affinity(CU.cacheId(DEFAULT_CACHE_NAME)).assignments(new AffinityTopologyVersion(2, 1));
+
+            final int cnt = 1000;
+
+            for (int i = 0; i < cnt; i++) {
+                final int part = crd.affinity(DEFAULT_CACHE_NAME).partition(i);
+
+                int clsForPart = part % DISTINCT_CLASSES;
+
+                String clsName = className(clsForPart);
+
+                final Base obj = U.newInstance(clsName);
+
+                assert obj != null;
+
+                obj.setVal("test" + i);
+
+                crd.cache(DEFAULT_CACHE_NAME).put(i, obj);
+            }
+
+            startGrid(2);
+
+            awaitPartitionMapExchange();
+
+            List<List<ClusterNode>> a2 = crd.context().cache().context().affinity().
+                affinity(CU.cacheId(DEFAULT_CACHE_NAME)).assignments(new AffinityTopologyVersion(3, 1));
+
+            assertEquals(cnt, crd.cache(DEFAULT_CACHE_NAME).size());
+
+            List<Integer> primaryMovedFrom1To3 = new ArrayList<>(); // New primary.
+
+            for (int p = 0; p < PARTS_CNT; p++) {
+                List<ClusterNode> n1 = a1.get(p);
+                List<ClusterNode> n2 = a2.get(p);
+                if (!n1.equals(n2)) {
+                    if (n1.get(0).order() == 1 && n2.get(0).order() == 3)
+                        primaryMovedFrom1To3.add(p);
+                }
+            }
+
+            Integer lastPartToMove = primaryMovedFrom1To3.get(primaryMovedFrom1To3.size() - 1);
+
+            final int typeId = crd.binary().typeId(clsForPart(lastPartToMove));
+
+            // stop without rebalance.
+            crd.active(false);
+
+            stopAllGrids(); // Remove binary meta from memory.
+
+            final String baseName = "binary_meta/" + getTestIgniteInstanceName(0).replace('.', '_');
+            final File metaPath = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName, false);
+
+            assertTrue(new File(metaPath, typeId + ".bin").delete());
+
+            IgniteEx crd1 = startGrid(0);
+
+            startGridsMultiThreaded(1, 2);
+
+            crd1.active(true);
+
+            awaitPartitionMapExchange();
+
+            stopGrid(2); // trigger rebalance to
+
+            doSleep(1_000);
+            //awaitPartitionMapExchange();
+
+            assertEquals(cnt, crd1.cache(DEFAULT_CACHE_NAME).size());
+
+            printTop(crd1);
+
+            // TODO compare states
+            startGrid(2); // Trigger evicts
+
+            awaitPartitionMapExchange();
+
+            printTop(crd1);
+
+            assertEquals(cnt, crd1.cache(DEFAULT_CACHE_NAME).size());
+
+            // Restart again
+            crd1.active(false);
+
+            stopAllGrids();
+
+            IgniteEx crd2 = startGrid(0);
+
+            startGrid(1);
+
+            startGrid(2);
+
+            crd2.active(true);
+
+            awaitPartitionMapExchange();
+
+            printTop(crd2);
         }
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
