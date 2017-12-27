@@ -17,10 +17,18 @@
 
 // Controller for Profile screen.
 export default ['profileController', [
-    '$rootScope', '$scope', '$http', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteCountries', 'User',
-    function($root, $scope, $http, LegacyUtils, Messages, Focus, Confirm, Countries, User) {
-        User.read()
-            .then((user) => $scope.user = angular.copy(user));
+    '$rootScope', '$scope', '$http', 'IgniteLegacyUtils', 'IgniteMessages', 'IgniteFocus', 'IgniteConfirm', 'IgniteCountries', 'User', 'igniteSocketFactory',
+    function($root, $scope, $http, LegacyUtils, Messages, Focus, Confirm, Countries, User, socketFactory) {
+
+        const loadUser = () => {
+            User.read()
+                .then((user) => $scope.user = angular.copy(user));
+        };
+        loadUser();
+
+        // Update user when it was changed from other tab (Refer to IGNITE-7273)
+        const socket = socketFactory();
+        socket.on('user:changed', loadUser);
 
         $scope.countries = Countries.getAll();
 

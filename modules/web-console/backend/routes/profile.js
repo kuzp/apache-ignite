@@ -19,6 +19,7 @@
 
 const express = require('express');
 const _ = require('lodash');
+const socketio = require('socket.io');
 
 // Fire me up!
 
@@ -66,6 +67,9 @@ module.exports.factory = function(mongo, usersService) {
                 })
                 .then((user) => usersService.get(user, req.session.viewedUser))
                 .then(res.api.ok)
+                .then(() => {
+
+                })
                 .catch(res.api.error);
         });
 
