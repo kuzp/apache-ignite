@@ -89,6 +89,7 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
         return S.toString(DiscoveryCustomEvent.class, this, super.toString());
     }
 
+    // TODO GG-13223 javadoc
     public static boolean requiresCentralizedAffinityCalculation(DiscoveryEvent evt) {
         if (!(evt instanceof DiscoveryCustomEvent))
             return false;
@@ -96,10 +97,12 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
         return requiresCentralizedAffinityCalculation(((DiscoveryCustomEvent)evt).customMessage());
     }
 
+    // TODO GG-13223 javadoc
     public static boolean requiresCentralizedAffinityCalculation(@Nullable DiscoveryCustomMessage msg) {
         if (msg == null)
             return false;
 
+        // TODO GG-13223 check is not deactivation.
         if (msg instanceof ChangeGlobalStateMessage)
             return true;
 

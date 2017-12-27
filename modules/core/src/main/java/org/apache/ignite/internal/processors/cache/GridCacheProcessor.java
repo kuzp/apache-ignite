@@ -2408,6 +2408,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
     /**
      * @param msg Message.
+     *            // TODO GG-13223 javadoc
      * @param topVer Current topology version.
      * @throws IgniteCheckedException If configuration validation failed.
      * @return Exchange actions.

@@ -1181,6 +1181,7 @@ class ClusterCachesInfo {
     /**
      * @param msg Message.
      * @param topVer Current topology version.
+     *               // TODO GG-13223 javadoc
      * @return Exchange action.
      * @throws IgniteCheckedException If configuration validation failed.
      */

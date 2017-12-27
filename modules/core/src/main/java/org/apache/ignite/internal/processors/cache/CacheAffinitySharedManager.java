@@ -168,7 +168,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         if (type == EVT_NODE_JOINED && node.isLocal())
             lastAffVer = null;
 
-        if (!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT ||
+        if ((!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT) ||
             DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg))) {
             synchronized (mux) {
                 assert lastAffVer == null || topVer.compareTo(lastAffVer) > 0;
