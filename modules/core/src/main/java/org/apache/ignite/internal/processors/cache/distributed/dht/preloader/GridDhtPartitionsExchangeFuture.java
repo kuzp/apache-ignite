@@ -70,6 +70,7 @@ import org.apache.ignite.internal.processors.cache.ExchangeDiscoveryEvents;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheMvccCandidate;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
+import org.apache.ignite.internal.processors.cache.LocalJoinCachesContext;
 import org.apache.ignite.internal.processors.cache.StateChangeRequest;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridClientPartitionTopology;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
@@ -718,8 +719,10 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
     private void initCachesOnLocalJoin() throws IgniteCheckedException {
         cctx.activate();
 
-        List<T2<DynamicCacheDescriptor, NearCacheConfiguration>> caches =
-            cctx.cache().cachesToStartOnLocalJoin();
+        LocalJoinCachesContext locJoinCtx = cctx.cache().localJoinCachesContext();
+
+        List<T2<DynamicCacheDescriptor, NearCacheConfiguration>> caches = locJoinCtx == null ? null :
+            locJoinCtx.caches();
 
         if (!cctx.kernalContext().clientNode()) {
             List<DynamicCacheDescriptor> startDescs = new ArrayList<>();
@@ -736,7 +739,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             cctx.database().readCheckpointAndRestoreMemory(startDescs);
         }
 
-        cctx.cache().startCachesOnLocalJoin(caches, initialVersion());
+        cctx.cache().startCachesOnLocalJoin(locJoinCtx, initialVersion());
     }
 
     /**

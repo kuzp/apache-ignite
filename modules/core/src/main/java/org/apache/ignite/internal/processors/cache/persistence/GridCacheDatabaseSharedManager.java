@@ -63,6 +63,7 @@ import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.cluster.ClusterNode;
+import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.CheckpointWriteOrder;
 import org.apache.ignite.configuration.DataPageEvictionMode;
 import org.apache.ignite.configuration.DataRegionConfiguration;
@@ -1167,8 +1168,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                         @Override public void apply(IgniteInternalFuture igniteInternalFut) {
                             idxRebuildFuts.remove(cacheId, rebuildFut);
 
-                            log().info("Finished indexes rebuilding for cache: [name=" + cacheCtx.config().getName()
-                                + ", grpName=" + cacheCtx.config().getGroupName());
+                            CacheConfiguration ccfg = cacheCtx.config();
+
+                            if (ccfg != null) {
+                                log().info("Finished indexes rebuilding for cache: [name=" + ccfg.getName()
+                                    + ", grpName=" + ccfg.getGroupName());
+                            }
                         }
                     });
                 }
@@ -2052,6 +2057,34 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                         break;
 
+                    case META_PAGE_UPDATE_NEXT_SNAPSHOT_ID:
+                    case META_PAGE_UPDATE_LAST_SUCCESSFUL_SNAPSHOT_ID:
+                    case META_PAGE_UPDATE_LAST_SUCCESSFUL_FULL_SNAPSHOT_ID:
+                        if (metastoreOnly)
+                            continue;
+
+                        PageDeltaRecord rec0 = (PageDeltaRecord) rec;
+
+                        PageMemoryEx pageMem = getPageMemoryForCacheGroup(rec0.groupId());
+
+                        long page = pageMem.acquirePage(rec0.groupId(), rec0.pageId(), true);
+
+                        try {
+                            long addr = pageMem.writeLock(rec0.groupId(), rec0.pageId(), page, true);
+
+                            try {
+                                rec0.applyDelta(pageMem, addr);
+                            }
+                            finally {
+                                pageMem.writeUnlock(rec0.groupId(), rec0.pageId(), page, null, true, true);
+                            }
+                        }
+                        finally {
+                            pageMem.releasePage(rec0.groupId(), rec0.pageId(), page);
+                        }
+
+                        break;
+
                     default:
                         // Skip other records.
                 }
@@ -2127,25 +2160,25 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                                     changed = updateState(part, stateId);
 
-                                if (stateId == GridDhtPartitionState.OWNING.ordinal()
-                                    || (stateId == GridDhtPartitionState.MOVING.ordinal()
+                                    if (stateId == GridDhtPartitionState.OWNING.ordinal()
+                                        || (stateId == GridDhtPartitionState.MOVING.ordinal()
 
-                                    &&part.initialUpdateCounter() < restore.get2() )) {
+                                        && part.initialUpdateCounter() < restore.get2())) {
                                         part.initialUpdateCounter(restore.get2());
 
                                         changed = true;
                                     }
                                 }
-
-                            else
-                                changed = updateState(part, (int)io.getPartitionState(pageAddr));
+                                else
+                                    updateState(part, (int)io.getPartitionState(pageAddr));
+                            }
+                            finally {
+                                pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
+                            }
                         }
                         finally {
-                            pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
+                            pageMem.releasePage(grpId, partMetaId, partMetaPage);
                         }
-                    }
-                    finally {
-                        pageMem.releasePage(grpId, partMetaId, partMetaPage);}
                     }
                     finally {
                         checkpointReadUnlock();
