@@ -17,11 +17,13 @@
 
 package org.apache.ignite.internal.processors.database;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -33,6 +35,7 @@ import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
+import org.apache.ignite.internal.util.lang.GridAbsClosure;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -127,6 +130,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         ccfg.setCacheMode(cacheMode);
         ccfg.setGroupName(grp);
         //ccfg.setRebalanceBatchSize(20);
+        ccfg.setIndexedTypes(Integer.class, Product.class);
 
         ccfg.setAffinity(new RendezvousAffinityFunction(false, PARTS_CNT));
 
@@ -161,8 +165,11 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             for (int i = 0; i < cfgs.length; i++) {
                 CacheConfiguration cfg = cfgs[i];
 
-                for (int k = 0; k < cnt; k++)
-                    crd.cache(cfg.getName()).put(k, k);
+                for (int k = 0; k < cnt; k++) {
+                    int p = crd.affinity(cfg.getName()).partition(k);
+
+                    crd.cache(cfg.getName()).put(k, p == 15 ? new Product(k, "product" + k) : k);
+                }
             }
 
             startGrid(2);
@@ -198,15 +205,85 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             final ArrayList<Integer> lostByCrd = new ArrayList<>(movedFromCrd);
             lostByCrd.removeAll(movedToCrd);
 
-            System.out.println(lostByCrd);
+            //printTop(crd);
 
+            // get type id before grid stop
+            final int typeId = crd.binary().typeId(Product.class.getName());
+
+            // Stop all to reset metadata buffer
+            crd.active(false);
+            stopAllGrids();
+
+            // delete metadata
+            final String baseName = "binary_meta/" + getTestIgniteInstanceName(0).replace('.', '_');
+            final File metaPath = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName, false);
+            final File f1 = new File(metaPath, typeId + ".bin");
+            final File f2 = new File(U.resolveWorkDirectory(U.defaultWorkDirectory(), "binary_meta", false), f1.getName());
+            assertTrue(f1.renameTo(f2));
+
+            //assertTrue(f1.delete());
+
+            // Start all no rebalance
+            IgniteEx crd1 = startGrid(0);
+            startGridsMultiThreaded(1, 2);
+            crd1.active(true);
+            awaitPartitionMapExchange();
+
+            // trigger rebalance and error
             stopGrid(2);
 
-            awaitPartitionMapExchange(true, true, null);
+            doSleep(1_000);
+
+            //printTop(crd1);
+
+            // Restart on lesser topology to repair mapping
+//            IgniteEx crd2 = restartAllNoRebalance(crd1, 1, new GridAbsClosure() {
+//                @Override public void apply() {
+//                    assertTrue(f2.renameTo(f1));
+//                }
+//            });
+//
+//            printTop(crd2);
+
+            // Add clean node
+            assertTrue(f2.renameTo(f1));
+
+            final String baseName2 = "db/" + getTestIgniteInstanceName(2).replace('.', '_');
+            final File metaPath2 = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName2, false);
+            deleteRecursively(metaPath2);
+
+            IgniteEx newN = startGrid(2);
+            awaitPartitionMapExchange();
+
+            printTop(newN);
+
+            int[] badPartsInRebalanceOrder = new int[] {0, 16, 20, 6, 9, 25, 15};
+
+//            2017-12-27 22:47:50,889][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=0
+//                [2017-12-27 22:47:50,891][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=16
+//                [2017-12-27 22:47:50,892][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=20
+//                [2017-12-27 22:47:50,893][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=6
+//                [2017-12-27 22:47:50,895][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=9
+//                [2017-12-27 22:47:50,896][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=25
+//                [2017-12-27 22:47:50,897][INFO ][sys-#90%database.IgnitePdsRebalanceFailoverSelfTest0%][GridDhtPartitionDemander] Done partition: id=15
         }
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
         }
+    }
+
+    public IgniteEx restartAllNoRebalance(IgniteEx crd, int nodesToStart, GridAbsClosure clo) throws Exception {
+        crd.active(false);
+        stopAllGrids();
+
+        clo.apply();
+
+        IgniteEx crd2 = startGrid(0);
+        startGridsMultiThreaded(1, nodesToStart);
+        crd2.active(true);
+        awaitPartitionMapExchange();
+
+        return crd2;
     }
 
     private void printTop(IgniteEx node) {
@@ -217,6 +294,35 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         List<GridDhtLocalPartition> parts = top.localPartitions();
 
         for (GridDhtLocalPartition part : parts)
-            log.info("Part id=" + part.id() + ", state=" + part.state());
+            log.info("Part id=" + part.id() + ", state=" + part.state() + ", size=" + part.dataStore().fullSize());
+    }
+
+    public static final class Product {
+        @QuerySqlField(index = true)
+        private int id;
+
+        @QuerySqlField(index = true)
+        private String name;
+
+        public Product(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }
