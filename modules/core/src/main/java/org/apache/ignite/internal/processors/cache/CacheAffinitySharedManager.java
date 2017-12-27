@@ -1389,8 +1389,8 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
     {
         final ExchangeDiscoveryEvents evts = fut.context().events();
 
-        assert fut.context().mergeExchanges();
-        assert evts.hasServerLeft();
+//        assert fut.context().mergeExchanges();
+//        assert evts.hasServerLeft();
 
         return onRecalculationEnforced(fut);
     }
@@ -1653,7 +1653,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
     public boolean onServerLeft(final GridDhtPartitionsExchangeFuture fut, boolean crd) throws IgniteCheckedException {
         ClusterNode leftNode = fut.firstEvent().eventNode();
 
-        assert !leftNode.isClient() : leftNode;
+//        assert !leftNode.isClient() : leftNode;
 
         if (crd) {
             // Need initialize CacheGroupHolders if this node become coordinator on this exchange.

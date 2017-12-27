@@ -103,7 +103,7 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
             return false;
 
         // TODO GG-13223 check is not deactivation.
-        if (msg instanceof ChangeGlobalStateMessage)
+        if (msg instanceof ChangeGlobalStateMessage && ((ChangeGlobalStateMessage)msg).activate())
             return true;
 
         if (msg instanceof SnapshotDiscoveryMessage) {
