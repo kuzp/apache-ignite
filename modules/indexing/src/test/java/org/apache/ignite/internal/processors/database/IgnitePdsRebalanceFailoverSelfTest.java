@@ -122,7 +122,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
      * @param cacheMode     Cache mode.
      * @param backups       Backups.
      * @param grp           Group.
-     * @param useIndexes
+     * @param useIndexes    Use indexes.
      * @return Cache configuration.
      */
     private CacheConfiguration cacheConfiguration(String name,
