@@ -17,17 +17,9 @@
 
 package org.apache.ignite.internal.sql;
 
-import org.apache.ignite.internal.sql.command.SqlCommand;
-import org.apache.ignite.internal.sql.param.ParamTestUtils;
-import org.apache.ignite.internal.sql.param.TestParamDef;
-import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
-import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -50,91 +42,5 @@ public abstract class SqlParserAbstractSelfTest extends GridCommonAbstractTest {
                 return null;
             }
         }, SqlParseException.class, msgRe);
-    }
-
-    /**
-     * Tests that SQL command parameter is handled correctly by creating SQL command with a parameter,
-     * parsing it and checking field value inside the {@link SqlCommand} subclass created by the parser.
-     *
-     * @param schema The schema.
-     * @param cmdPrefix Start of the SQL command to which the parameter is appended.
-     * @param paramDef Parameter definition.
-     * @param otherParamVals Default values of the other parameters (which are not specified). If
-     *      not null, values of these not specified parameters are checked as well in the fields
-     *      of {@link SqlCommand} subclass.
-     * @param <T> Parameter type.
-     * @throws AssertionError if testing fails.
-     */
-    @SuppressWarnings("unchecked")
-    protected <T> void testParameter(final String schema, final String cmdPrefix, TestParamDef<T> paramDef,
-        @Nullable List<TestParamDef.DefValPair<?>> otherParamVals) {
-
-        for (TestParamDef.Value<T> val : paramDef.testValues()) {
-
-            for (TestParamDef.Syntax syn : TestParamDef.Syntax.values()) {
-
-                if (!val.supportedSyntaxes().contains(syn))
-                    continue;
-
-                try {
-                    String sql = ParamTestUtils.makeSqlWithParams(cmdPrefix,
-                        new TestParamDef.DefValPair<>(paramDef, val, syn));
-
-                    if (val instanceof TestParamDef.InvalidValue)
-
-                        assertParseError(schema, sql, ((TestParamDef.InvalidValue)val).errorMsgFragment());
-
-                    else {
-                        X.println("Checking command: " + sql);
-
-                        SqlCommand cmd = new SqlParser(schema, sql).nextCommand();
-
-                        checkField(cmd, paramDef, val);
-
-                        if (otherParamVals != null) {
-
-                            for (TestParamDef.DefValPair<?> otherParamDefVal : otherParamVals) {
-
-                                if (!otherParamDefVal.def().cmdFieldName().equals(paramDef.cmdFieldName()))
-                                    checkField(cmd,
-                                        (TestParamDef<Object>)otherParamDefVal.def(),
-                                        (TestParamDef.Value<Object>)otherParamDefVal.val());
-                            }
-                        }
-                    }
-                }
-                catch (Exception | AssertionError e) {
-                    throw new AssertionError(
-                        "When testing " + paramDef + " with expected value " + val + "\n" + e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Checks that the field in {@link SqlCommand} is set correctly. The method expects the command class
-     * to have a getter with the same name as the field.
-     *
-     * @param cmd The command class to look up the field in.
-     * @param def The parameter definition.
-     * @param val The value to expect in the command class field.
-     * @param <T> The type of the value in the command class.
-     * @throws NoSuchMethodException If there is no getter with the same name as the parameter.
-     * @throws InvocationTargetException If the getter cannot be called.
-     * @throws IllegalAccessException If we don't have access to the getter.
-     */
-    protected <T> void checkField(SqlCommand cmd, TestParamDef<T> def, TestParamDef.Value<T> val)
-        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-
-        assert def.testValues().contains(val);
-
-        Method getter = cmd.getClass().getMethod(def.cmdFieldName());
-
-        Object cmdVal = getter.invoke(cmd);
-
-        if (cmdVal != null)
-            assertTrue(def.fieldClass().isAssignableFrom(cmdVal.getClass()));
-
-        assertEquals(val.fieldValue(), cmdVal);
     }
 }
