@@ -47,12 +47,12 @@ public final class SqlEnumParserUtils {
      * @param setter A closure/lambda that is called with the value to set and some options.
      */
     public static <T extends Enum<T>> boolean tryParseEnumParam(SqlLexer lex, String keyword, Class<T> enumCls,
-        @Nullable Set<String> parsedParams, boolean allowDflt, SqlParserUtils.Setter<T> setter) {
+        @Nullable Set<String> parsedParams, boolean allowDflt, Setter<T> setter) {
 
         if (SqlParserUtils.matchesKeyword(lex.lookAhead(), keyword)) {
 
             if (parsedParams != null && parsedParams.contains(keyword))
-                throw error(lex.currentToken(), "Duplicate parameter: " + keyword);
+                throw error(lex, "Duplicate parameter: " + keyword);
 
             lex.shift();
 
@@ -191,6 +191,19 @@ public final class SqlEnumParserUtils {
         }
     }
 
+    /** A lambda/closure to use with {@link SqlParserUtils} tryParseXxx() methods. */
+    public interface Setter<T> {
+
+        /**
+         * Records the value of the parameter.
+         *
+         * @param val The value read from SQL command.
+         * @param isDflt true, if {@link SqlKeyword#DEFAULT} was specified as the value.
+         * @param isQuoted true, if the value was quoted (if applicable).
+         */
+        void apply(T val, boolean isDflt, boolean isQuoted);
+    }
+
     /**
      * Represents result of parsing an enum parameter.
      *
@@ -319,7 +332,7 @@ public final class SqlEnumParserUtils {
      * @param setter A closure/lambda to call to record the parsed value.
      */
     public static boolean tryParseBoolean(SqlLexer lex, String trueKeyword, String falseKeyword,
-        @Nullable Set<String> parsedParams, boolean allowDflt, SqlParserUtils.Setter<Boolean> setter) {
+        @Nullable Set<String> parsedParams, boolean allowDflt, Setter<Boolean> setter) {
 
         SqlLexerToken nextTok = lex.lookAhead();
 
@@ -327,7 +340,7 @@ public final class SqlEnumParserUtils {
             lex.shift();
 
             if (parsedParams != null && parsedParams.contains(trueKeyword))
-                throw error(lex.currentToken(), "Duplicate parameter: " + trueKeyword);
+                throw error(lex, "Duplicate parameter: " + trueKeyword);
 
             if (lex.lookAhead().tokenType() == SqlLexerTokenType.EQUALS) {
                 lex.shift();
@@ -342,7 +355,7 @@ public final class SqlEnumParserUtils {
         else if (SqlParserUtils.matchesKeyword(nextTok, falseKeyword)) {
 
             if (parsedParams != null && parsedParams.contains(trueKeyword))
-                throw error(lex.currentToken(), "Duplicate parameter: " + falseKeyword);
+                throw error(lex, "Duplicate parameter: " + falseKeyword);
 
             setter.apply(false, false, false);
 

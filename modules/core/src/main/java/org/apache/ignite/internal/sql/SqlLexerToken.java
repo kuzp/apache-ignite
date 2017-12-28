@@ -24,25 +24,25 @@ public interface SqlLexerToken {
     /**
      * @return Original SQL.
      */
-    String sql();
+    public String sql();
 
     /**
      * @return Current token.
      */
-    String token();
+    public String token();
 
     /**
      * @return First character of the current token.
      */
-    char tokenFirstChar();
+    public char tokenFirstChar();
 
     /**
      * @return Current token start position.
      */
-    int tokenPosition();
+    public int tokenPosition();
 
     /**
      * @return Token type.
      */
-    SqlLexerTokenType tokenType();
+    public SqlLexerTokenType tokenType();
 }

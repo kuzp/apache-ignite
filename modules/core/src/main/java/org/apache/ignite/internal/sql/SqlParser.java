@@ -161,7 +161,7 @@ public class SqlParser {
             errorUnsupportedIfMatchesKeyword(lex, HASH, PRIMARY, UNIQUE);
         }
 
-        throw errorUnexpectedToken(lex, INDEX, TABLE, SPATIAL);
+        throw errorUnexpectedToken(lex, TABLE, INDEX, SPATIAL);
     }
 
     /**
@@ -189,6 +189,6 @@ public class SqlParser {
                 return cmd.parse(lex);
         }
 
-        throw errorUnexpectedToken(lex, INDEX, TABLE);
+        throw errorUnexpectedToken(lex, TABLE, INDEX);
     }
 }

@@ -705,7 +705,7 @@ public class SqlCreateTableCommand implements SqlCommand {
                         backups = parseInt(lex);
 
                         if (backups < 0)
-                            throw error(lex.currentToken(), "Number of backups should be positive [val=" + backups + "]");
+                            throw error(lex, "Number of backups cannot be negative: " + backups);
 
                         break;
                     }
