@@ -1582,6 +1582,13 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         GridCacheVersion serOrder = (tx.serializable() && tx.optimistic()) ? tx.nearXidVersion() : null;
 
         for (IgniteTxEntry txEntry1 : entries) {
+            try {
+                Thread.sleep(10L);
+            }
+            catch (InterruptedException e) {
+                throw new IgniteCheckedException(e);
+            }
+
             // Check if this entry was prepared before.
             if (!txEntry1.markPrepared() || txEntry1.explicitVersion() != null)
                 continue;
