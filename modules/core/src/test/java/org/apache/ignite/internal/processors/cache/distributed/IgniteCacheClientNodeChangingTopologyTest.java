@@ -51,6 +51,7 @@ import org.apache.ignite.configuration.NearCacheConfiguration;
 import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.events.EventType;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.IgniteFutureTimeoutCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.IgniteNodeAttributes;
@@ -1789,6 +1790,8 @@ public class IgniteCacheClientNodeChangingTopologyTest extends GridCommonAbstrac
 
                     int cntr = 0;
 
+                    boolean retry = false;
+
                     while (!stop.get()) {
                         try {
                             Ignite ignite = grid(clientIdx);
@@ -1818,6 +1821,8 @@ public class IgniteCacheClientNodeChangingTopologyTest extends GridCommonAbstrac
 
                                 map.put(key, rnd.nextInt());
                             }
+
+                            retry = false;
 
                             if (testType == TestType.LOCK) {
                                 Lock lock = cache.lockAll(map.keySet());
@@ -1859,9 +1864,13 @@ public class IgniteCacheClientNodeChangingTopologyTest extends GridCommonAbstrac
                             log.warning("Operation failed, ignore", e);
                         }
                         catch (IllegalStateException e) {
-                            log.warning("Node inoperable, retry after delay", e);
+                            if (!retry) {
+                                log.warning("Node inoperable, retry after delay", e);
 
-                            Thread.sleep(300);
+                                retry = true;
+                            }
+
+                            Thread.sleep(100);
                         }
                         catch (Throwable e) {
                             U.error(log, "Unexpected failure", e);
@@ -1929,7 +1938,12 @@ public class IgniteCacheClientNodeChangingTopologyTest extends GridCommonAbstrac
             stop.set(true);
         }
 
-        fut.get(30_000);
+        try {
+            fut.get(60_000);
+        }
+        catch (IgniteFutureTimeoutCheckedException e) {
+            U.dumpThreads(log);
+        }
 
         if (testType != TestType.LOCK)
             checkData(null, putKeys, grid(SRV_CNT).cache(DEFAULT_CACHE_NAME), SRV_CNT + CLIENT_CNT);
