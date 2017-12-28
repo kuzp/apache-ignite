@@ -168,7 +168,7 @@ public final class SqlEnumParserUtils {
 
         SqlLexerToken nextTok = lex.lookAhead();
 
-        if (nextTok.tokenType() != SqlLexerTokenType.KEYWORD)
+        if (nextTok.tokenType() != SqlLexerTokenType.DEFAULT)
             return ParsedEnum.MISSING;
 
         if (allowDflt && nextTok.token().equals(SqlKeyword.DEFAULT)) {

@@ -447,7 +447,7 @@ public class SqlCreateTableCommand implements SqlCommand {
     private void parseColumn(SqlLexer lex) {
         String name = parseIdentifier(lex);
 
-        if (lex.shift() && lex.tokenType() == SqlLexerTokenType.KEYWORD) {
+        if (lex.shift() && lex.tokenType() == SqlLexerTokenType.DEFAULT) {
             SqlColumn col = null;
 
             String typTok = lex.token();

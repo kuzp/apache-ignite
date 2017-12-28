@@ -110,7 +110,7 @@ public class SqlParserUtils {
             lex.shift();
         }
 
-        if (lex.shift() && lex.tokenType() == SqlLexerTokenType.KEYWORD) {
+        if (lex.shift() && lex.tokenType() == SqlLexerTokenType.DEFAULT) {
             try {
                 long val = sign * Long.parseLong(lex.token());
 
@@ -178,12 +178,12 @@ public class SqlParserUtils {
      */
     public static boolean isValidIdentifier(SqlLexerToken tok) {
         switch (tok.tokenType()) {
-            case KEYWORD:
+            case DEFAULT:
                 char c = tok.tokenFirstChar();
 
                 return ((c >= 'A' && c <= 'Z') || c == '_') && !SqlKeyword.isKeyword(tok.token());
 
-            case DBL_QUOTED:
+            case QUOTED:
                 return true;
 
             default:
@@ -199,7 +199,7 @@ public class SqlParserUtils {
      * @return {@code True} if matches.
      */
     public static boolean matchesKeyword(SqlLexerToken tok, String expKeyword) {
-        return tok.tokenType() == SqlLexerTokenType.KEYWORD && expKeyword.equals(tok.token());
+        return tok.tokenType() == SqlLexerTokenType.DEFAULT && expKeyword.equals(tok.token());
     }
 
     /**
@@ -255,7 +255,7 @@ public class SqlParserUtils {
         SqlLexerToken nextTok = lex.lookAhead();
 
         switch (nextTok.tokenType()) {
-            case DBL_QUOTED:
+            case QUOTED:
                 if (isIdentifier && !isValidIdentifier(nextTok))
                     throw errorUnexpectedToken(nextTok, "[optionally quoted identifier " + paramDesc + "]");
 
@@ -265,7 +265,7 @@ public class SqlParserUtils {
 
                 return;
 
-            case KEYWORD:
+            case DEFAULT:
                 if (isIdentifier && !isValidIdentifier(nextTok))
                     throw errorUnexpectedToken(nextTok, "[optionally quoted identifier " + paramDesc + "]");
 
