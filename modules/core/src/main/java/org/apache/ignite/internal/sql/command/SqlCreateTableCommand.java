@@ -432,7 +432,7 @@ public class SqlCreateTableCommand implements SqlCommand {
 
             String typTok = lex.token();
 
-            Boolean nullableOpt = parseNullableClause(lex);
+            Boolean nullableOpt = parseNullability(lex);
 
             boolean isNullable = (nullableOpt != null) ? nullableOpt : true;
 
@@ -440,19 +440,19 @@ public class SqlCreateTableCommand implements SqlCommand {
                 case BIT:
                 case BOOL:
                 case BOOLEAN:
-                    col = new SqlColumn(name, SqlColumnType.BOOLEAN, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.BOOLEAN, isNullable);
 
                     break;
 
                 case TINYINT:
-                    col = new SqlColumn(name, SqlColumnType.BYTE, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.BYTE, isNullable);
 
                     break;
 
                 case INT2:
                 case SMALLINT:
                 case YEAR:
-                    col = new SqlColumn(name, SqlColumnType.SHORT, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.SHORT, isNullable);
 
                     break;
 
@@ -461,20 +461,20 @@ public class SqlCreateTableCommand implements SqlCommand {
                 case INTEGER:
                 case MEDIUMINT:
                 case SIGNED:
-                    col = new SqlColumn(name, SqlColumnType.INT, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.INT, isNullable);
 
                     break;
 
                 case BIGINT:
                 case INT8:
                 case LONG:
-                    col = new SqlColumn(name, SqlColumnType.LONG, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.LONG, isNullable);
 
                     break;
 
                 case FLOAT4:
                 case REAL:
-                    col = new SqlColumn(name, SqlColumnType.FLOAT, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.FLOAT, isNullable);
 
                     break;
 
@@ -484,14 +484,14 @@ public class SqlCreateTableCommand implements SqlCommand {
                     if (matchesKeyword(next, PRECISION))
                         lex.shift();
 
-                    col = new SqlColumn(name, SqlColumnType.DOUBLE, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.DOUBLE, isNullable);
 
                     break;
                 }
 
                 case FLOAT:
                 case FLOAT8:
-                    col = new SqlColumn(name, SqlColumnType.DOUBLE, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.DOUBLE, isNullable);
 
                     break;
 
@@ -539,24 +539,24 @@ public class SqlCreateTableCommand implements SqlCommand {
                 }
 
                 case DATE:
-                    col = new SqlColumn(name, SqlColumnType.DATE, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.DATE, isNullable);
 
                     break;
 
                 case TIME:
-                    col = new SqlColumn(name, SqlColumnType.TIME, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.TIME, isNullable);
 
                     break;
 
                 case DATETIME:
                 case SMALLDATETIME:
                 case TIMESTAMP:
-                    col = new SqlColumn(name, SqlColumnType.TIMESTAMP, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.TIMESTAMP, isNullable);
 
                     break;
 
                 case UUID:
-                    col = new SqlColumn(name, SqlColumnType.UUID, 0, 0, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.UUID, isNullable);
 
                     break;
             }
@@ -590,18 +590,20 @@ public class SqlCreateTableCommand implements SqlCommand {
      * @param lex The lexer
      * @return null, if the clause is not found, true if NULL is specified, false if NOT NULL is specified.
      */
-    @Nullable private Boolean parseNullableClause(SqlLexer lex) {
+    @Nullable private Boolean parseNullability(SqlLexer lex) {
         Boolean isNullable = null;
 
-        if (matchesKeyword(lex.lookAhead(), NOT)) {
+        SqlLexerToken token = lex.lookAhead();
 
+        if (matchesKeyword(token, NOT)) {
             lex.shift();
+
             skipIfMatchesKeyword(lex, NULL);
 
             isNullable = false;
 
-        } else if (matchesKeyword(lex.lookAhead(), NULL)) {
-
+        }
+        else if (matchesKeyword(token, NULL)) {
             lex.shift();
 
             isNullable = true;

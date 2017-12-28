@@ -17,9 +17,53 @@
 
 package org.apache.ignite.internal.sql;
 
+import org.apache.ignite.internal.sql.command.SqlCreateTableCommand;
+
 /**
  * Tests for SQL parser: CREATE TABLE.
  */
 public class SqlParserCreateTableSelfTest extends SqlParserAbstractSelfTest {
-    // TODO
+    /**
+     * Test column types.
+     *
+     * @throws Exception If failed.
+     */
+    public void testColumnTypes() throws Exception {
+        // TODO: Fix nullability
+        SqlCreateTableCommand cmd = parse("CREATE TABLE t (a DECIMAL(1,1) NOT NULL)");
+
+    }
+
+    private static SqlCreateTableCommand assertColumns(SqlCreateTableCommand cmd) {
+
+
+        return cmd;
+    }
+
+    /**
+     * Parse command.
+     *
+     * @param sql SQL.
+     * @return Command.
+     */
+    private static SqlCreateTableCommand parse(String sql) {
+        return parse(null, sql);
+    }
+
+    /**
+     * Parse command.
+     *
+     * @param schema Schema.
+     * @param sql SQL.
+     * @return Command.
+     */
+    private static SqlCreateTableCommand parse(String schema, String sql) {
+        SqlParser parser = new SqlParser(schema, sql);
+
+        SqlCreateTableCommand cmd = (SqlCreateTableCommand)parser.nextCommand();
+
+        assert parser.nextCommand() == null;
+
+        return cmd;
+    }
 }
