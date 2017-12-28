@@ -36,8 +36,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
+import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.pagemem.PageIdAllocator;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
@@ -325,14 +325,53 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
      * @return Cache work directory.
      */
     private File cacheWorkDirectory(CacheConfiguration ccfg) {
-        String dirName;
+        String baseName = ccfg.getGroupName() != null
+            ? CACHE_GRP_DIR_PREFIX + ccfg.getGroupName()
+            : CACHE_DIR_PREFIX + ccfg.getName();
 
-        if (ccfg.getGroupName() != null)
-            dirName = CACHE_GRP_DIR_PREFIX + ccfg.getGroupName();
-        else
-            dirName = CACHE_DIR_PREFIX + ccfg.getName();
+        String safeName = getSafeFileName(baseName);
+        File file = new File(storeWorkDir, safeName);
 
-        return new File(storeWorkDir, dirName);
+        // This checks two things:
+        // 1) the file name is valid (or toPath() would fail)
+        // 2) the file name is simple (or getFileName() would return a smaller string)
+        assert file.toPath().getFileName().toString().equals(safeName);
+
+        return file;
+    }
+
+    /**
+     * Returns a safe file name based on a given string. The returned name will have no special characters,
+     * and will have a hash appended to it to avoid collisions on case-insensitive file systems.
+     *
+     * @param base a string to be used to create a file name
+     * @return a safe file name
+     */
+    private String getSafeFileName(String base) {
+        StringBuilder nameBuilder = new StringBuilder(base.length());
+
+        // escape characters that might be unsafe to be a part
+        // of a file name - everything except [a-zA-Z0-9_-] will be escaped
+        for (int i = 0; i < base.length(); i++) {
+            char ch = base.charAt(i);
+            // append character if it is in the [a-zA-Z0-9_-] class;
+            // otherwise, use its hex string
+            if (ch >= 'a' && ch <= 'z'
+                || ch >= 'A' && ch <= 'Z'
+                || ch >= '0' && ch <= '9'
+                || ch == '_'
+                || ch == '-')
+                nameBuilder.append(ch);
+            else
+                nameBuilder.append(Integer.toHexString(ch));
+        }
+
+        // add suffix with a name hash to avoid collisions when two names are equalsIgnoreCase
+        // and file system is case-insensitive
+        String hash = Integer.toHexString(base.hashCode());
+        nameBuilder.append("-").append(hash);
+
+        return nameBuilder.toString();
     }
 
     /**
