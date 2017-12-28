@@ -43,11 +43,10 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import static org.apache.ignite.cache.CacheAtomicityMode.TRANSACTIONAL;
 import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
-import static org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState.RENTING;
 import static org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC;
 
 /**
- * Test rebalance resilience to restarts.
+ * Test rebalance resilience to fails.
  */
 public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
     /** */
@@ -60,10 +59,13 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
     public static final String TEST_GRP_NAME = "testGrp";
 
     /** */
-    public static final int PART_ID = 15;
+    private static TcpDiscoveryIpFinder ipFinder = new TcpDiscoveryVmIpFinder(true);
 
     /** */
-    private static TcpDiscoveryIpFinder ipFinder = new TcpDiscoveryVmIpFinder(true);
+    private static final int PART_ID = 15;
+
+    /** */
+    private CacheConfiguration[] cfgs;
 
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
@@ -77,26 +79,31 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
 
         ((TcpDiscoverySpi) cfg.getDiscoverySpi()).setIpFinder(ipFinder);
 
-        cfg.setCacheConfiguration(testCaches());
+        cfg.setCacheConfiguration(cfgs);
 
         cfg.setConsistentId(igniteInstanceName);
 
         return cfg;
     }
 
-    /** */
-    private CacheConfiguration[] testCaches() {
+    /**
+     * @param useIndexes Use indexes.
+     */
+    private CacheConfiguration[] testCaches(boolean useIndexes) {
         CacheConfiguration[] cfgs = new CacheConfiguration[CACHES_IN_GROUP];
 
         for (int i = 0; i < cfgs.length; i++)
-            cfgs[i] = cacheConfiguration("test" + i, TRANSACTIONAL, PARTITIONED, 1, TEST_GRP_NAME);
+            cfgs[i] = cacheConfiguration("test" + i, TRANSACTIONAL, PARTITIONED, 1, "testGrp", useIndexes);
 
         return cfgs;
     }
 
     /** {@inheritDoc} */
     @Override protected void beforeTest() throws Exception {
+        super.beforeTest();
+
         deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "db", false));
+        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "binary_meta", false));
     }
 
     /** {@inheritDoc} */
@@ -104,6 +111,9 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         stopAllGrids();
 
         deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "db", false));
+        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), "binary_meta", false));
+
+        super.afterTest();
     }
 
     /**
@@ -112,19 +122,23 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
      * @param cacheMode     Cache mode.
      * @param backups       Backups.
      * @param grp           Group.
+     * @param useIndexes
      * @return Cache configuration.
      */
     private CacheConfiguration cacheConfiguration(String name,
         CacheAtomicityMode atomicityMode,
         CacheMode cacheMode,
         int backups,
-        String grp) {
+        String grp,
+        boolean useIndexes) {
         CacheConfiguration ccfg = new CacheConfiguration(name);
 
         ccfg.setAtomicityMode(atomicityMode);
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
         ccfg.setCacheMode(cacheMode);
         ccfg.setGroupName(grp);
+        if (useIndexes)
+            ccfg.setIndexedTypes(Integer.class, Product.class);
 
         ccfg.setAffinity(new RendezvousAffinityFunction(false, PARTS_CNT));
 
@@ -138,6 +152,8 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testRebalanceFailover() throws Exception {
+        cfgs = testCaches(false);
+
         try {
             System.setProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC, "true");
 
@@ -150,8 +166,6 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             awaitPartitionMapExchange(true, true, null);
 
             final int cnt = 1000;
-
-            final CacheConfiguration[] cfgs = testCaches();
 
             for (int i = 0; i < cfgs.length; i++) {
                 CacheConfiguration cfg = cfgs[i];
@@ -183,8 +197,6 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
 
             doSleep(1_000);
 
-            // assertEquals(RENTING, states(crd).get(PART_ID).state());
-
             validateCaches(crd, cfgs, cnt + addCnt);
         }
         finally {
@@ -192,6 +204,67 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         }
     }
 
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRebalanceFailoverWithIndexes() throws Exception {
+        cfgs = testCaches(true);
+
+        try {
+            System.setProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC, "true");
+
+            IgniteEx crd = startGrid(0);
+
+            crd.active(true);
+
+            startGrid(1);
+
+            awaitPartitionMapExchange();
+
+            final int cnt = 1000;
+
+            for (int i = 0; i < cfgs.length; i++) {
+                CacheConfiguration cfg = cfgs[i];
+
+                for (int k = 0; k < cnt; k++)
+                    crd.cache(cfg.getName()).put(k, k);
+            }
+
+            int more = 0;
+
+            // Put additional items to single partition to enforce renting state on restart.
+            for (int i = 0; i < cfgs.length; i++) {
+                CacheConfiguration cfg = cfgs[i];
+
+                for (int k = cnt; k < cnt * 1000; k++) {
+                    if (crd.affinity(cfg.getName()).partition(k) == PART_ID) {
+                        crd.cache(cfg.getName()).put(k, k);
+
+                        more++;
+                    }
+                }
+            }
+
+            validateCaches(crd, cfgs, cnt + more);
+
+            crd = restartAllNoRebalance(crd, 2, false);
+
+            crd = restartAllNoRebalance(crd, 2, false);
+
+            doSleep(1_000);
+
+            validateCaches(crd, cfgs, cnt + more);
+        }
+        finally {
+            System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
+        }
+    }
+
+    /**
+     * @param crd Coordinator.
+     * @param cfgs Cfgs.
+     * @param cnt Count.
+     */
     private void validateCaches(Ignite crd, CacheConfiguration[] cfgs, int cnt) {
         for (int i = 0; i < cfgs.length; i++) {
             CacheConfiguration cfg = cfgs[i];
@@ -202,7 +275,12 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         }
     }
 
-    public IgniteEx restartAllNoRebalance(IgniteEx crd, int nodesToStart, boolean awaitExchange) throws Exception {
+    /**
+     * @param crd Coordinator.
+     * @param nodesToStart Nodes to start.
+     * @param awaitExchange Await exchange.
+     */
+    private IgniteEx restartAllNoRebalance(IgniteEx crd, int nodesToStart, boolean awaitExchange) throws Exception {
         crd.active(false);
         stopAllGrids();
 
@@ -220,8 +298,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
      * @param node Node.
      */
     private Map<Integer, GridDhtLocalPartition> states(IgniteEx node) {
-        GridDhtPartitionTopology top = node.context().cache().context().cache().
-            cacheGroup(CU.cacheId(TEST_GRP_NAME)).topology();
+        GridDhtPartitionTopology top = node.context().cache().context().cache().cacheGroup(CU.cacheId(TEST_GRP_NAME)).topology();
 
         List<GridDhtLocalPartition> parts = top.localPartitions();
 
@@ -231,5 +308,49 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             map.put(part.id(), part);
 
         return map;
+    }
+
+    /** */
+    public static final class Product {
+        @QuerySqlField(index = true)
+        /** */
+        private int id;
+
+        @QuerySqlField(index = true)
+        /** */
+        private String name;
+
+        /**
+         * @param id Id.
+         * @param name Name.
+         */
+        public Product(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        /** */
+        public int getId() {
+            return id;
+        }
+
+        /**
+         * @param id Id.
+         */
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        /** */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * @param name Name.
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }
