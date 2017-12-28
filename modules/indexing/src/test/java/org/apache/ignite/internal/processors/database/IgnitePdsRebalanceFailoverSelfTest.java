@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.database;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
@@ -165,12 +166,40 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             for (int i = 0; i < cfgs.length; i++) {
                 CacheConfiguration cfg = cfgs[i];
 
-                for (int k = 0; k < cnt; k++) {
+                for (int k = 0; k < cnt; k++)
+                    crd.cache(cfg.getName()).put(k, k);
+            }
+
+            // Add more keys to single partition.
+
+            int badKeys = 0;
+
+            for (int i = 0; i < cfgs.length; i++) {
+                CacheConfiguration cfg = cfgs[i];
+
+                List<Integer> keys = new ArrayList<>();
+
+                for (int k = cnt; k < cnt * 4; k++) {
                     int p = crd.affinity(cfg.getName()).partition(k);
 
-                    crd.cache(cfg.getName()).put(k, p == 15 ? new Product(k, "product" + k) : k);
+                    if (p == 15) {
+                        crd.cache(cfg.getName()).put(k, k);
+
+                        keys.add(k);
+                    }
+                }
+
+                for (int j = 0; j < 10; j++) {
+                    final Integer kk = keys.get(keys.size() - 1 - j);
+                    crd.cache(cfg.getName()).put(kk, new Product(kk, "product" + kk));
+
+                    badKeys++;
                 }
             }
+
+            //assertEquals(cfgs.length * 3, badKeys * cfgs.length);
+
+            printTop(crd);
 
             startGrid(2);
 
@@ -179,8 +208,8 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             List<List<ClusterNode>> a2 = crd.context().cache().context().affinity().
                 affinity(CU.cacheId(TEST_GRP_NAME)).assignments(new AffinityTopologyVersion(3, 1));
 
-            for (CacheConfiguration cfg : cfgs)
-                assertEquals(cnt, crd.cache(cfg.getName()).size());
+//            for (CacheConfiguration cfg : cfgs)
+//                assertEquals(cnt, crd.cache(cfg.getName()).size());
 
             List<Integer> movedFromCrd = new ArrayList<>(); // New primary.
             List<Integer> movedToCrd = new ArrayList<>(); // New primary.
@@ -234,7 +263,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
 
             doSleep(1_000);
 
-            //printTop(crd1);
+            printTop(crd1);
 
             // Restart on lesser topology to repair mapping
 //            IgniteEx crd2 = restartAllNoRebalance(crd1, 1, new GridAbsClosure() {
@@ -248,10 +277,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
             // Add clean node
             assertTrue(f2.renameTo(f1));
 
-            final String baseName2 = "db/" + getTestIgniteInstanceName(2).replace('.', '_');
-            final File metaPath2 = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName2, false);
-            deleteRecursively(metaPath2);
-
+            clearData(2);
             IgniteEx newN = startGrid(2);
             awaitPartitionMapExchange();
 
@@ -270,6 +296,12 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
         }
+    }
+
+    public void clearData(int nodeId) throws IgniteCheckedException {
+        final String baseName2 = "db/" + getTestIgniteInstanceName(nodeId).replace('.', '_');
+        final File metaPath2 = U.resolveWorkDirectory(U.defaultWorkDirectory(), baseName2, false);
+        deleteRecursively(metaPath2);
     }
 
     public IgniteEx restartAllNoRebalance(IgniteEx crd, int nodesToStart, GridAbsClosure clo) throws Exception {
