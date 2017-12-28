@@ -32,15 +32,15 @@ public abstract class SqlParserAbstractSelfTest extends GridCommonAbstractTest {
      *
      * @param schema Schema.
      * @param sql SQL.
-     * @param msgRe Expected error message.
+     * @param msg Expected error message.
      */
-    protected static void assertParseError(final String schema, final String sql, String msgRe) {
+    protected static void assertParseError(final String schema, final String sql, String msg) {
         GridTestUtils.assertThrows(null, new Callable<Void>() {
             @Override public Void call() throws Exception {
                 new SqlParser(schema, sql).nextCommand();
 
                 return null;
             }
-        }, SqlParseException.class, msgRe);
+        }, SqlParseException.class, msg);
     }
 }
