@@ -19,12 +19,9 @@ package org.apache.ignite.internal.sql.command;
 
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheWriteSynchronizationMode;
-import org.apache.ignite.internal.sql.SqlKeyword;
 import org.apache.ignite.internal.sql.SqlLexer;
 import org.apache.ignite.internal.sql.SqlLexerToken;
 import org.apache.ignite.internal.sql.SqlLexerTokenType;
-import org.apache.ignite.internal.sql.SqlParseException;
-import org.apache.ignite.internal.sql.SqlParserUtils;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.ignite.internal.sql.SqlEnumParserUtils.tryParseBoolean;
 import static org.apache.ignite.internal.sql.SqlKeyword.AFFINITY_KEY;
 import static org.apache.ignite.internal.sql.SqlKeyword.ATOMICITY;
 import static org.apache.ignite.internal.sql.SqlKeyword.BACKUPS;
@@ -106,6 +102,7 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightPare
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipOptionalEquals;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipToken;
+import static org.apache.ignite.internal.sql.SqlParserUtils.tryParseBool;
 
 /**
  * CREATE INDEX command.
@@ -179,9 +176,6 @@ public class SqlCreateTableCommand implements SqlCommand {
     /** Data region. */
     @GridToStringInclude
     private String dataRegionName;
-
-    /** Set of already parsed parameters for duplicate checking.*/
-    private Set<String> parsedParams = new HashSet<>();
 
     /**
      * @return Cache name upon which new cache configuration for this table must be based.
@@ -328,13 +322,6 @@ public class SqlCreateTableCommand implements SqlCommand {
      */
     public String dataRegionName() {
         return dataRegionName;
-    }
-
-    /**
-     * @param dataRegionName Data region name.
-     */
-    public void dataRegionName(String dataRegionName) {
-        this.dataRegionName = dataRegionName;
     }
 
     /**
@@ -704,14 +691,15 @@ public class SqlCreateTableCommand implements SqlCommand {
 
             if (token.tokenType() == SqlLexerTokenType.DEFAULT) {
                 switch (token.token()) {
-                    case TEMPLATE:
+                    case TEMPLATE: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         templateName = parseString(lex);
 
                         break;
+                    }
 
-                    case BACKUPS:
+                    case BACKUPS: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         backups = parseInt(lex);
@@ -720,31 +708,33 @@ public class SqlCreateTableCommand implements SqlCommand {
                             throw error(lex.currentToken(), "Number of backups should be positive [val=" + backups + "]");
 
                         break;
+                    }
 
-                    case ATOMICITY:
+                    case ATOMICITY: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         atomicityMode = parseEnum(lex, CacheAtomicityMode.class);
 
-                        // TODO
-
                         break;
+                    }
 
-                    case WRITE_SYNCHRONIZATION_MODE:
+                    case WRITE_SYNCHRONIZATION_MODE: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         writeSyncMode = parseEnum(lex, CacheWriteSynchronizationMode.class);
 
                         break;
+                    }
 
-                    case CACHE_GROUP:
+                    case CACHE_GROUP: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         cacheGrp = parseString(lex);
 
                         break;
+                    }
 
-                    case AFFINITY_KEY:
+                    case AFFINITY_KEY: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         affinityKey = parseString(lex);
@@ -752,48 +742,55 @@ public class SqlCreateTableCommand implements SqlCommand {
                         // TODO: Ensure in column list
 
                         break;
+                    }
 
-                    case CACHE_NAME:
+                    case CACHE_NAME: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         cacheName = parseString(lex);
 
                         break;
+                    }
 
-                    case DATA_REGION:
+                    case DATA_REGION: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         dataRegionName = parseString(lex);
 
                         break;
+                    }
 
-                    case KEY_TYPE:
+                    case KEY_TYPE: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         keyTypeName = parseString(lex);
 
                         break;
+                    }
 
-                    case VAL_TYPE:
+                    case VAL_TYPE: {
                         acceptParameterName(lex, token.token(), oldParamNames);
 
                         valTypeName = parseString(lex);
 
                         break;
+                    }
 
-                    case WRAP_KEY:
-                        acceptParameterName(lex, token.token(), oldParamNames);
+                    case WRAP_KEY: {
+                        boolean hasEquals = acceptParameterName(lex, token.token(), oldParamNames);
 
-                        // TODO
-
-                        break;
-
-                    case WRAP_VALUE:
-                        acceptParameterName(lex, token.token(), oldParamNames);
-
-                        // TODO
+                        wrapKey = tryParseBool(lex, hasEquals);
 
                         break;
+                    }
+
+                    case WRAP_VALUE: {
+                        boolean hasEquals = acceptParameterName(lex, token.token(), oldParamNames);
+
+                        wrapVal = tryParseBool(lex, hasEquals);
+
+                        break;
+                    }
 
                     default:
                         return;
@@ -803,54 +800,20 @@ public class SqlCreateTableCommand implements SqlCommand {
     }
 
     /**
-     * Tries to parse {@link SqlKeyword#WRAP_KEY} option and updates the command fields.
-     *
-     * @return true if the option found and parsed successfully, false if not found.
-     * @throws SqlParseException in case of parse failure.
-     */
-    private boolean tryParseWrapKey(final SqlLexer lex) {
-        return tryParseBoolean(lex, WRAP_KEY, NO_WRAP_KEY, parsedParams,true,
-            new SqlParserUtils.Setter<Boolean>() {
-
-                @Override public void apply(Boolean val, boolean isDflt, boolean isQuoted) {
-
-                    wrapKey(val);
-                }
-            });
-    }
-
-    /**
-     * Tries to parse {@link SqlKeyword#WRAP_VALUE} option and updates the command fields.
-     *
-     * @return true if the option found and parsed successfully, false if not found.
-     * @throws SqlParseException in case of parse failure.
-     */
-    private boolean tryParseWrapValue(final SqlLexer lex) {
-
-        return tryParseBoolean(lex, WRAP_VALUE, NO_WRAP_VALUE, parsedParams, true,
-            new SqlParserUtils.Setter<Boolean>() {
-
-            @Override public void apply(Boolean val, boolean isDflt, boolean isQuoted) {
-
-                wrapValue(val);
-            }
-        });
-    }
-
-    /**
      * Skip valid parameter name.
      *
      * @param lex Lexer.
      * @param param Token.
      * @param oldParams Already found parameter names.
+     * @return {@code True} if lexer was shifted as a result of this call.
      */
-    private static void acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
+    private static boolean acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
         if (!oldParams.add(param))
             throw error(lex, "Only one " + param + " clause may be specified.");
 
         lex.shift();
 
-        skipOptionalEquals(lex);
+        return skipOptionalEquals(lex);
     }
 
     /** {@inheritDoc} */

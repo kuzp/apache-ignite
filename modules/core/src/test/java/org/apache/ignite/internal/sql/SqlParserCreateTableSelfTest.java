@@ -37,12 +37,8 @@ import static org.apache.ignite.internal.sql.SqlKeyword.CACHE_NAME;
 import static org.apache.ignite.internal.sql.SqlKeyword.DATA_REGION;
 import static org.apache.ignite.internal.sql.SqlKeyword.DEFAULT;
 import static org.apache.ignite.internal.sql.SqlKeyword.KEY_TYPE;
-import static org.apache.ignite.internal.sql.SqlKeyword.NO_WRAP_KEY;
-import static org.apache.ignite.internal.sql.SqlKeyword.NO_WRAP_VALUE;
 import static org.apache.ignite.internal.sql.SqlKeyword.TEMPLATE;
 import static org.apache.ignite.internal.sql.SqlKeyword.VAL_TYPE;
-import static org.apache.ignite.internal.sql.SqlKeyword.WRAP_KEY;
-import static org.apache.ignite.internal.sql.SqlKeyword.WRAP_VALUE;
 import static org.apache.ignite.internal.sql.SqlKeyword.WRITE_SYNCHRONIZATION_MODE;
 
 /**
@@ -132,12 +128,6 @@ public class SqlParserCreateTableSelfTest extends SqlParserAbstractSelfTest {
             ParamTestUtils.makeBasicIdTestValues(GOOD_IDS, BAD_IDS,
                 Optional.<String>fromNullable(null), Optional.<String>fromNullable(null),
                 "optionally quoted identifier value type")));
-
-        PARAM_TESTS.add(ParamTestUtils.makeBasicBoolDef(WRAP_KEY, NO_WRAP_KEY, "wrapKey",
-            Optional.<Boolean>fromNullable(null), Optional.<Boolean>fromNullable(null)));
-
-        PARAM_TESTS.add(ParamTestUtils.makeBasicBoolDef(WRAP_VALUE, NO_WRAP_VALUE, "wrapValue",
-            Optional.<Boolean>fromNullable(null), Optional.<Boolean>fromNullable(null)));
 
         DEFAULT_PARAM_VALS = createDefaultParamVals(PARAM_TESTS);
     }

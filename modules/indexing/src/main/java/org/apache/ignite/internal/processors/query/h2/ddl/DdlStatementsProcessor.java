@@ -269,9 +269,6 @@ public class DdlStatementsProcessor {
             if (cmd.primaryKeyColumnNames().size() == 1 && cmd.wrapKey())
                 cmd.affinityKey(cmd.primaryKeyColumnNames().iterator().next());
         }
-
-        if (cmd.backups() == null)
-            cmd.backups(0);
     }
 
     /**

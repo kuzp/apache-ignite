@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.sql;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.sql.command.SqlQualifiedName;
@@ -90,6 +91,36 @@ public class SqlParserUtils {
         }
 
         throw errorUnexpectedToken(lex, ",", ")");
+    }
+
+    /**
+     * Try parsing boolean expression.
+     *
+     * @param lex Lexer.
+     * @param mandatory Whether value is mandatory
+     * @return {@code Boolean} value or {@code null} if parse failed (lexer is not shifted in this case).
+     */
+    public static Boolean tryParseBool(SqlLexer lex, boolean mandatory) {
+        Boolean val = null;
+
+        SqlLexerToken token = lex.lookAhead();
+
+        if (token.tokenType() == SqlLexerTokenType.DEFAULT || token.tokenType() == SqlLexerTokenType.QUOTED) {
+            String valStr = token.token().toLowerCase();
+
+            if (F.eq(valStr, "true") || F.eq(valStr, "1"))
+                val = true;
+            else if (F.eq(valStr, "false") || F.eq(valStr, "0"))
+                val = false;
+
+            if (val != null)
+                lex.shift();
+        }
+
+        if (val == null && mandatory)
+            throw errorUnexpectedToken(lex, "[boolean]");
+
+        return val;
     }
 
     /**
@@ -262,49 +293,16 @@ public class SqlParserUtils {
      * Skips equals token if it happens to be the next.
      *
      * @param lex The lexer.
+     * @return {@code True} if lexer was shifted as a result of this call.
      */
-    public static void skipOptionalEquals(SqlLexer lex) {
-        if (lex.lookAhead().tokenType() == SqlLexerTokenType.EQUALS)
+    public static boolean skipOptionalEquals(SqlLexer lex) {
+        if (lex.lookAhead().tokenType() == SqlLexerTokenType.EQUALS) {
             lex.shift();
-    }
 
-    /**
-     * Parses the next token, which shall be be either a string or an identifier and specified as a keyword
-     * (without quotes) or as a double-quoted string. The provided setter is invoked with the parsed value
-     * and optional parameters.
-     *
-     * @param lex The lexer.
-     * @param paramDesc Parameter description for error message.
-     * @param isIdentifier Should the token obey rules for identifiers?
-     * @param setter Setter to invoke with the value.
-     */
-    public static void parseKeywordOrQuoted(SqlLexer lex, String paramDesc, boolean isIdentifier, Setter<String> setter) {
-        SqlLexerToken nextTok = lex.lookAhead();
-
-        switch (nextTok.tokenType()) {
-            case QUOTED:
-                if (isIdentifier && !isValidIdentifier(nextTok))
-                    throw errorUnexpectedToken(nextTok, "[optionally quoted identifier " + paramDesc + "]");
-
-                lex.shift();
-
-                setter.apply(lex.token(), false, true);
-
-                return;
-
-            case DEFAULT:
-                if (isIdentifier && !isValidIdentifier(nextTok))
-                    throw errorUnexpectedToken(nextTok, "[optionally quoted identifier " + paramDesc + "]");
-
-                lex.shift();
-
-                setter.apply(lex.token(), false, false);
-
-                return;
-
-            default:
-                throw errorUnexpectedToken(nextTok, "[optionally quoted " + paramDesc + "]");
+            return true;
         }
+        else
+            return false;
     }
 
     /**
