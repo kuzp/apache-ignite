@@ -540,7 +540,7 @@ public class SqlCreateTableCommand implements SqlCommand {
                 case NCHAR: {
                     int precision = parseStringPrecision(lex);
 
-                    col = new SqlColumn(name, SqlColumnType.CHAR, precision, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.CHAR, 0, precision, isNullable);
 
                     break;
                 }
@@ -553,7 +553,7 @@ public class SqlCreateTableCommand implements SqlCommand {
                 case VARCHAR_CASESENSITIVE: {
                     int precision = parseStringPrecision(lex);
 
-                    col = new SqlColumn(name, SqlColumnType.VARCHAR, precision, isNullable);
+                    col = new SqlColumn(name, SqlColumnType.VARCHAR, 0, precision, isNullable);
 
                     break;
                 }
