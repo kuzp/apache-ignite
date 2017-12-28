@@ -554,17 +554,6 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
     }
 
     /**
-     * @param ccfg Cache configuration.
-     * @return Store dir for given cache.
-     */
-    public File cacheWorkDir(CacheConfiguration ccfg) {
-        String dirName = ccfg.getGroupName() == null ?
-            CACHE_DIR_PREFIX + ccfg.getName() : CACHE_GRP_DIR_PREFIX + ccfg.getGroupName();
-
-        return new File(storeWorkDir, dirName);
-    }
-
-    /**
      * @param cleanFiles {@code True} if the stores should delete it's files upon close.
      */
     private IgniteCheckedException shutdown(boolean cleanFiles) {
