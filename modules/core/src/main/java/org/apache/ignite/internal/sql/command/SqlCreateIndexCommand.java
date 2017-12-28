@@ -47,7 +47,7 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.parseIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseIfNotExists;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
-import static org.apache.ignite.internal.sql.SqlParserUtils.skipKeyword;
+import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
 
 /**
  * CREATE INDEX command.
@@ -81,6 +81,9 @@ public class SqlCreateIndexCommand implements SqlCommand {
     /** Column names. */
     @GridToStringExclude
     private Set<String> colNames;
+
+    /** Parameters, which are already parsed (for duplicate checking). */
+    private Set<String> parsedParams = new HashSet<>();
 
     /** Inline size. Zero effectively disables inlining. */
     private int inlineSize = QueryIndex.DFLT_INLINE_SIZE;
@@ -117,13 +120,6 @@ public class SqlCreateIndexCommand implements SqlCommand {
     }
 
     /**
-     * @param val Parallelism level.
-     */
-    public void parallel(int val) {
-        parallel = val;
-    }
-
-    /**
      * @return Parallelism level.
      */
     public int parallel() {
@@ -145,13 +141,6 @@ public class SqlCreateIndexCommand implements SqlCommand {
     }
 
     /**
-     * @param val Inline size.
-     */
-    public void inlineSize(int val) {
-        inlineSize = val;
-    }
-
-    /**
      * @param spatial Spatial index flag.
      * @return This instance.
      */
@@ -168,16 +157,13 @@ public class SqlCreateIndexCommand implements SqlCommand {
         return cols != null ? cols : Collections.<SqlIndexColumn>emptySet();
     }
 
-    /** Parameters, which are already parsed (for duplicate checking). */
-    private Set<String> parsedParams = new HashSet<>();
-
     /** {@inheritDoc} */
     @Override public SqlCommand parse(SqlLexer lex) {
         ifNotExists = parseIfNotExists(lex);
 
         idxName = parseIndexName(lex);
 
-        skipKeyword(lex, ON);
+        skipIfMatchesKeyword(lex, ON);
 
         SqlQualifiedName tblQName = parseQualifiedIdentifier(lex);
 
@@ -262,9 +248,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
      */
     private void parseParameters(SqlLexer lex) {
         while (lex.lookAhead().tokenType() != SqlLexerTokenType.EOF) {
-
-            if (!tryParseParallel(lex) &&
-                !tryParseInlineSize(lex))
+            if (!tryParseParallel(lex) && !tryParseInlineSize(lex))
 
                 throw errorUnexpectedToken(lex.lookAhead());
         }
@@ -278,16 +262,14 @@ public class SqlCreateIndexCommand implements SqlCommand {
      * @throws SqlParseException in case of syntax or value error.
      */
     private boolean tryParseParallel(final SqlLexer lex) {
-
         return SqlParserUtils.tryParseIntParam(lex, PARALLEL, parsedParams, false, new SqlParserUtils.Setter<Integer>() {
-
             @Override public void apply(Integer val, boolean isDflt, boolean isQuoted) {
                 assert val != null;
 
                 if (val < 0)
                     throw error(lex, "Illegal " + PARALLEL + " value. Should be positive: " + val);
 
-                parallel(val);
+                parallel = val;
             }
         });
     }
@@ -300,16 +282,14 @@ public class SqlCreateIndexCommand implements SqlCommand {
      * @throws SqlParseException in case of syntax or value error.
      */
     private boolean tryParseInlineSize(final SqlLexer lex) {
-
         return SqlParserUtils.tryParseIntParam(lex, INLINE_SIZE, parsedParams, true, new SqlParserUtils.Setter<Integer>() {
-
             @Override public void apply(Integer val, boolean isDflt, boolean isQuoted) {
                 assert isDflt || val != null;
 
                 if (val < 0)
                     throw error(lex, "Illegal " + INLINE_SIZE + " value. Should be positive: " + val);
 
-                inlineSize(isDflt ? QueryIndex.DFLT_INLINE_SIZE : val);
+                inlineSize = isDflt ? QueryIndex.DFLT_INLINE_SIZE : val;
             }
         });
     }

@@ -104,7 +104,7 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.parseIfNotExists;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseInt;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
-import static org.apache.ignite.internal.sql.SqlParserUtils.skipKeyword;
+import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipToken;
 
 /**
@@ -595,7 +595,7 @@ public class SqlCreateTableCommand implements SqlCommand {
 
                     lex.shift();
 
-                    skipKeyword(lex, KEY);
+                    skipIfMatchesKeyword(lex, KEY);
                 }
 
                 return;
@@ -617,7 +617,7 @@ public class SqlCreateTableCommand implements SqlCommand {
         if (matchesKeyword(lex.lookAhead(), NOT)) {
 
             lex.shift();
-            skipKeyword(lex, NULL);
+            skipIfMatchesKeyword(lex, NULL);
 
             isNullable = false;
 
@@ -658,8 +658,8 @@ public class SqlCreateTableCommand implements SqlCommand {
 
         pkColNames = new HashSet<>();
 
-        skipKeyword(lex, PRIMARY);
-        skipKeyword(lex, KEY);
+        skipIfMatchesKeyword(lex, PRIMARY);
+        skipIfMatchesKeyword(lex, KEY);
 
         skipToken(lex, SqlLexerTokenType.PARENTHESIS_LEFT);
 

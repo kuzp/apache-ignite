@@ -45,7 +45,7 @@ public class SqlParserUtils {
         if (matchesKeyword(tok, IF)) {
             lex.shift();
 
-            skipKeyword(lex, EXISTS);
+            skipIfMatchesKeyword(lex, EXISTS);
 
             return true;
         }
@@ -65,8 +65,8 @@ public class SqlParserUtils {
         if (matchesKeyword(tok, IF)) {
             lex.shift();
 
-            skipKeyword(lex, NOT);
-            skipKeyword(lex, EXISTS);
+            skipIfMatchesKeyword(lex, NOT);
+            skipIfMatchesKeyword(lex, EXISTS);
 
             return true;
         }
@@ -208,7 +208,7 @@ public class SqlParserUtils {
      * @param lex Lexer.
      * @param expKeyword Expected keyword.
      */
-    public static void skipKeyword(SqlLexer lex, String expKeyword) {
+    public static void skipIfMatchesKeyword(SqlLexer lex, String expKeyword) {
         if (lex.shift() && matchesKeyword(lex, expKeyword))
             return;
 
