@@ -23,7 +23,7 @@ import org.apache.ignite.IgniteSystemProperties;
  * Temporary disables fallback to H2 SQL parser in favor of the internal one.
  * Intended for use in try-with-resources.
  *
- * <p></p>Restores {@link IgniteSystemProperties#IGNITE_SQL_PARSER_H2_FALLBACK_DISABLED}
+ * <p></p>Restores {@link IgniteSystemProperties#IGNITE_SQL_PARSER_DISABLE_H2_FALLBACK}
  * setting in {@link H2FallbackTempDisabler#close()} method.
  */
 public class H2FallbackTempDisabler extends IgniteSysPropTempChanger {
@@ -34,6 +34,6 @@ public class H2FallbackTempDisabler extends IgniteSysPropTempChanger {
      */
     public H2FallbackTempDisabler(boolean disable) {
 
-        super(IgniteSystemProperties.IGNITE_SQL_PARSER_H2_FALLBACK_DISABLED, Boolean.toString(disable).toLowerCase());
+        super(IgniteSystemProperties.IGNITE_SQL_PARSER_DISABLE_H2_FALLBACK, Boolean.toString(disable).toLowerCase());
     }
 }
