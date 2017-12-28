@@ -159,12 +159,6 @@ public class SqlKeyword {
     /** Keyword: NOT. */
     public static final String NOT = "NOT";
 
-    /** Keyword: NO_WRAP_KEY. */
-    public static final String NO_WRAP_KEY = "NO_WRAP_KEY";
-
-    /** Keyword: NO_WRAP_VALUE. */
-    public static final String NO_WRAP_VALUE = "NO_WRAP_VALUE";
-
     /** Keyword: NUMBER. */
     public static final String NUMBER = "NUMBER";
 

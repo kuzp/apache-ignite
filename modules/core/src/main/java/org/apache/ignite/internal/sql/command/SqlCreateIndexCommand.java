@@ -47,6 +47,7 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.parseInt;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
+import static org.apache.ignite.internal.sql.SqlParserUtils.skipOptionalEquals;
 
 /**
  * CREATE INDEX command.
@@ -243,7 +244,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
      * @param lex Lexer.
      */
     private void parseParameters(SqlLexer lex) {
-        Set<String> oldParams = new HashSet<>();
+        Set<String> oldParamNames = new HashSet<>();
 
         while (true) {
             SqlLexerToken token = lex.lookAhead();
@@ -254,7 +255,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
             if (token.tokenType() == SqlLexerTokenType.DEFAULT) {
                 switch (token.token()) {
                     case PARALLEL:
-                        skipParameterName(lex, token.token(), oldParams);
+                        acceptParameterName(lex, token.token(), oldParamNames);
 
                         parallel = parseInt(lex);
 
@@ -264,7 +265,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
                         break;
 
                     case INLINE_SIZE:
-                        skipParameterName(lex, token.token(), oldParams);
+                        acceptParameterName(lex, token.token(), oldParamNames);
 
                         inlineSize = parseInt(lex);
 
@@ -287,11 +288,13 @@ public class SqlCreateIndexCommand implements SqlCommand {
      * @param param Token.
      * @param oldParams Already found parameter names.
      */
-    private static void skipParameterName(SqlLexer lex, String param, Set<String> oldParams) {
+    private static void acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
         if (!oldParams.add(param))
             throw error(lex, "Only one " + param + " clause may be specified.");
 
         lex.shift();
+
+        skipOptionalEquals(lex);
     }
 
     /** {@inheritDoc} */

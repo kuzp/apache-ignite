@@ -17,14 +17,11 @@
 
 package org.apache.ignite.internal.sql;
 
+import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.sql.command.SqlQualifiedName;
 import org.apache.ignite.internal.util.typedef.F;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
-
-import static org.apache.ignite.internal.sql.SqlKeyword.DEFAULT;
 import static org.apache.ignite.internal.sql.SqlKeyword.EXISTS;
 import static org.apache.ignite.internal.sql.SqlKeyword.IF;
 import static org.apache.ignite.internal.sql.SqlKeyword.NOT;
@@ -125,6 +122,39 @@ public class SqlParserUtils {
         }
 
         throw errorUnexpectedToken(lex, "[integer]");
+    }
+
+    /**
+     * Parse string value.
+     *
+     * @param lex Lexer.
+     * @return String value.
+     */
+    public static String parseString(SqlLexer lex) {
+        if (lex.shift() &&
+            (lex.tokenType() == SqlLexerTokenType.DEFAULT || lex.tokenType() == SqlLexerTokenType.QUOTED))
+            return lex.token();
+
+        throw errorUnexpectedToken(lex, "[string]");
+    }
+
+    /**
+     * Parse enum.
+     *
+     * @param lex Lexer.
+     * @param cls Enum class.
+     * @return Enum value.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T parseEnum(SqlLexer lex, Class cls) {
+        String val = parseString(lex);
+
+        try {
+            return (T)Enum.valueOf(cls, val);
+        }
+        catch (IllegalArgumentException e) {
+            throw errorUnexpectedToken(lex, "[enum]");
+        }
     }
 
     /**
@@ -230,15 +260,12 @@ public class SqlParserUtils {
 
     /**
      * Skips equals token if it happens to be the next.
+     *
      * @param lex The lexer.
      */
-    public static boolean skipOptionalEqSign(SqlLexer lex) {
-        if (lex.lookAhead().tokenType() == SqlLexerTokenType.EQUALS) {
+    public static void skipOptionalEquals(SqlLexer lex) {
+        if (lex.lookAhead().tokenType() == SqlLexerTokenType.EQUALS)
             lex.shift();
-            return true;
-        }
-        else
-            return false;
     }
 
     /**
@@ -417,97 +444,6 @@ public class SqlParserUtils {
         throw error(tok, msg.toString());
     }
 
-    /**
-     * Tries to parse a string parameter, if exists and invokes the supplied setter to record the value.
-     *
-     * <p>The parameter can be defined in one of the following ways:
-     * <ul>
-     *     <li>{@code keyword <space> value},
-     *     <li>{@code keyword=value}.
-     * </ul>
-     *
-     * <p>If {@code allowDflt} is true, {@link SqlKeyword#DEFAULT} value is permitted.
-     *
-     * @param lex The lexer.
-     * @param keyword The keyword, which prefixes
-     * @param parsedParams The parameters, which has been already parsed for duplicate checking. If provided,
-     *      a duplicate parameter is not allowed.
-     * @param allowDflt Allow {@link SqlKeyword#DEFAULT} as the possible value.
-     * @param setter A closure/lambda that is called with the value to set and some options.
-     */
-    public static boolean tryParseStringParam(SqlLexer lex, String keyword, String desc,
-        @Nullable Set<String> parsedParams, boolean isIdentifier, boolean allowDflt, Setter<String> setter) {
-
-        if (!matchesKeyword(lex.lookAhead(), keyword))
-            return false;
-
-        if (parsedParams != null && parsedParams.contains(keyword))
-            throw error(lex.currentToken(), "Duplicate parameter: " + keyword);
-
-        lex.shift();
-
-        skipOptionalEqSign(lex);
-
-        if (allowDflt && matchesKeyword(lex.lookAhead(), DEFAULT)) {
-
-            lex.shift();
-
-            setter.apply(null, true, false);
-        }
-        else
-            parseKeywordOrQuoted(lex, desc, isIdentifier, setter);
-
-        if (parsedParams != null)
-            parsedParams.add(keyword);
-
-        return true;
-    }
-
-    /**
-     * Tries to parse an integer parameter, if exists and invokes the supplied setter to record the value.
-     *
-     * <p>The parameter can be defined in one of the following ways:
-     * <ul>
-     *     <li>{@code keyword <space> value},
-     *     <li>{@code keyword=value}.
-     * </ul>
-     *
-     * <p>If {@code allowDflt} is true, {@link SqlKeyword#DEFAULT} value is permitted.
-     *
-     * @param lex The lexer.
-     * @param keyword The keyword, which prefixes
-     * @param parsedParams The parameters, which has been already parsed for duplicate checking. If provided,
-     *      a duplicate parameter is not allowed.
-     * @param allowDflt Allow {@link SqlKeyword#DEFAULT} as the possible value.
-     * @param setter A closure/lambda that is called with the value to set and some options.
-     */
-    public static boolean tryParseIntParam(SqlLexer lex, String keyword, @Nullable Set<String> parsedParams,
-        boolean allowDflt, Setter<Integer> setter) {
-
-        if (!matchesKeyword(lex.lookAhead(), keyword))
-            return false;
-
-        if (parsedParams != null && parsedParams.contains(keyword))
-            throw error(lex.currentToken(), "Only one " + keyword + " clause may be specified.");
-
-        lex.shift();
-
-        skipOptionalEqSign(lex);
-
-        if (allowDflt && matchesKeyword(lex.lookAhead(), DEFAULT)) {
-
-            lex.shift();
-
-            setter.apply(null, true, false);
-        }
-        else
-            setter.apply(parseInt(lex), false, false);
-
-        if (parsedParams != null)
-            parsedParams.add(keyword);
-
-        return true;
-    }
 
     /** A lambda/closure to use with {@link SqlParserUtils} tryParseXxx() methods. */
     public interface Setter<T> {

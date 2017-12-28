@@ -56,7 +56,7 @@ public final class SqlEnumParserUtils {
 
             lex.shift();
 
-            SqlParserUtils.skipOptionalEqSign(lex);
+            SqlParserUtils.skipOptionalEquals(lex);
 
             ParsedEnum<T> val = parseEnumIfSpecified(lex, enumCls, allowDflt);
 
