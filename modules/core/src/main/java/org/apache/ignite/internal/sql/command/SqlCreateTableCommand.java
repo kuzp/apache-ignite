@@ -739,7 +739,8 @@ public class SqlCreateTableCommand implements SqlCommand {
 
                         affinityKey = parseString(lex);
 
-                        // TODO: Ensure in column list
+                        if (!cols.containsKey(affinityKey))
+                            throw error(lex, "Affinity column is not present in table column list: " + affinityKey);
 
                         break;
                     }
