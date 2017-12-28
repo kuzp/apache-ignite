@@ -802,11 +802,8 @@ public class DdlStatementsProcessor {
      * @return The Java type string.
      * @throws IgniteSQLException if this type has no Java representation.
      */
-    private static @NotNull String getSupportedTypeName(@NotNull SqlColumnType colTyp) {
+    private static @NotNull String getSupportedTypeName(SqlColumnType colTyp) {
         Class<?> cls = SqlColumnType.classForType(colTyp);
-
-        if (cls == null)
-            throw new IgniteSQLException("Unsupported column type: " + colTyp);
 
         return cls.getName();
     }

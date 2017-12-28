@@ -17,8 +17,7 @@
 
 package org.apache.ignite.internal.sql.command;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.apache.ignite.internal.processors.query.IgniteSQLException;
 
 /**
  * SQL column type.
@@ -72,7 +71,7 @@ public enum SqlColumnType {
      * @param typ The type.
      * @return The Java class or null if this type is not yet handled.
      */
-    public static @Nullable Class<?> classForType(@NotNull SqlColumnType typ) {
+    public static Class<?> classForType(SqlColumnType typ) {
         switch (typ) {
             case BOOLEAN:
                 return java.lang.Boolean.class;
@@ -111,13 +110,15 @@ public enum SqlColumnType {
             case VARCHAR:
                 return java.lang.String.class;
 
-            //case BYTES:
+            // TODO: Why bytes?
             case UUID:
                 // "[B", not "byte[]";
                 return byte[].class;
 
             default:
-                return null;
+                assert false;
+
+                throw new IgniteSQLException("Unsupported column type: " + typ);
         }
     }
 }
