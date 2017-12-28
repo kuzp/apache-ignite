@@ -63,7 +63,6 @@ import org.apache.ignite.internal.processors.query.h2.ddl.DdlStatementsProcessor
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Table;
 import org.apache.ignite.internal.processors.query.schema.SchemaOperationException;
 import org.apache.ignite.internal.util.GridStringBuilder;
-import org.apache.ignite.internal.util.H2FallbackTempDisabler;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.GridTestUtils;
@@ -130,15 +129,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTable() throws Exception {
-        doTestCreateTable(CACHE_NAME, null, null, null, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} actually creates new cache, H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTable() throws Exception {
-        doTestCreateTable(CACHE_NAME, null, null, null, true);
+        doTestCreateTable(CACHE_NAME, null, null, null);
     }
 
     /**
@@ -146,15 +137,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableWithCacheGroup() throws Exception {
-        doTestCreateTable(CACHE_NAME, "MyGroup", null, null, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} actually creates new cache, H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableWithCacheGroup() throws Exception {
-        doTestCreateTable(CACHE_NAME, "MyGroup", null, null, true);
+        doTestCreateTable(CACHE_NAME, "MyGroup", null, null);
     }
 
     /**
@@ -162,15 +145,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableWithCacheGroupAndLegacyParamName() throws Exception {
-        doTestCreateTable(CACHE_NAME, "MyGroup", null, null, true, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} actually creates new cache, H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableWithCacheGroupAndLegacyParamName() throws Exception {
-        doTestCreateTable(CACHE_NAME, "MyGroup", null, null, false, true);
+        doTestCreateTable(CACHE_NAME, "MyGroup", null, null, true);
     }
 
     /**
@@ -179,16 +154,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableWithWriteSyncMode() throws Exception {
-        doTestCreateTable(CACHE_NAME + "_async", null, null, CacheWriteSynchronizationMode.FULL_ASYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} actually creates new cache from template,
-     * H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableWithWriteSyncMode() throws Exception {
-        doTestCreateTable(CACHE_NAME + "_async", null, null, CacheWriteSynchronizationMode.FULL_ASYNC, true);
+        doTestCreateTable(CACHE_NAME + "_async", null, null, CacheWriteSynchronizationMode.FULL_ASYNC);
     }
 
     /**
@@ -197,16 +163,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableReplicated() throws Exception {
-        doTestCreateTable("REPLICATED", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with reserved template cache name actually creates new {@code REPLICATED} cache,
-     * H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableReplicated() throws Exception {
-        doTestCreateTable("REPLICATED", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable("REPLICATED", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -215,16 +172,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTablePartitioned() throws Exception {
-        doTestCreateTable("PARTITIONED", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with reserved template cache name actually creates new {@code PARTITIONED} cache,
-     * H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTablePartitioned() throws Exception {
-        doTestCreateTable("PARTITIONED", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable("PARTITIONED", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -233,16 +181,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableReplicatedCaseInsensitive() throws Exception {
-        doTestCreateTable("replicated", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with reserved template cache name actually creates new {@code REPLICATED} cache,
-     * H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableReplicatedCaseInsensitive() throws Exception {
-        doTestCreateTable("replicated", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable("replicated", null, CacheMode.REPLICATED, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -251,16 +190,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTablePartitionedCaseInsensitive() throws Exception {
-        doTestCreateTable("partitioned", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with reserved template cache name actually creates new {@code PARTITIONED} cache,
-     * H2 table and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTablePartitionedCaseInsensitive() throws Exception {
-        doTestCreateTable("partitioned", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable("partitioned", null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -269,16 +199,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableNoTemplate() throws Exception {
-        doTestCreateTable(null, null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with reserved template cache name actually creates new {@code PARTITIONED} cache,
-     * H2 table and type descriptor on all nodes, when no cache template name is given.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableNoTemplate() throws Exception {
-        doTestCreateTable(null, null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable(null, null, CacheMode.PARTITIONED, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -296,16 +217,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     public void testFullSyncWriteMode() throws Exception {
         doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_SYNC,
-            false, "write_synchronization_mode=full_sync");
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with given write sync mode actually creates new cache as needed.
-     * @throws Exception if failed.
-     */
-    public void testFullSyncWriteModeInternal() throws Exception {
-        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_SYNC,
-            true, "write_synchronization_mode=full_sync");
+            "write_synchronization_mode=full_sync");
     }
 
     /**
@@ -314,16 +226,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     public void testPrimarySyncWriteMode() throws Exception {
         doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.PRIMARY_SYNC,
-            false, "write_synchronization_mode=primary_sync");
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with given write sync mode actually creates new cache as needed.
-     * @throws Exception if failed.
-     */
-    public void testPrimarySyncWriteModeInternal() throws Exception {
-        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.PRIMARY_SYNC,
-            true, "write_synchronization_mode=primary_sync");
+            "write_synchronization_mode=primary_sync");
     }
 
     /**
@@ -332,114 +235,56 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     public void testFullAsyncWriteMode() throws Exception {
         doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_ASYNC,
-            false, "write_synchronization_mode=full_async");
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with given write sync mode actually creates new cache as needed.
-     * @throws Exception if failed.
-     */
-    public void testFullAsyncWriteModeInternal() throws Exception {
-        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_ASYNC,
-            true, "write_synchronization_mode=full_async");
+            "write_synchronization_mode=full_async");
     }
 
     /**
      * Test behavior only in case of cache name override.
      */
     public void testCustomCacheName() {
-        doTestCustomNames("cname", null, null, false);
-    }
-
-    /**
-     * Test behavior only in case of cache name override.
-     */
-    public void testCustomCacheNameInternal() {
-        doTestCustomNames("cname", null, null, true);
+        doTestCustomNames("cname", null, null);
     }
 
     /**
      * Test behavior only in case of key type name override.
      */
     public void testCustomKeyTypeName() {
-        doTestCustomNames(null, "keytype", null, false);
-    }
-
-    /**
-     * Test behavior only in case of key type name override.
-     */
-    public void testCustomKeyTypeNameInternal() {
-        doTestCustomNames(null, "keytype", null, true);
+        doTestCustomNames(null, "keytype", null);
     }
 
     /**
      * Test behavior only in case of value type name override.
      */
     public void testCustomValueTypeName() {
-        doTestCustomNames(null, null, "valtype", false);
-    }
-
-    /**
-     * Test behavior only in case of value type name override.
-     */
-    public void testCustomValueTypeNameInternal() {
-        doTestCustomNames(null, null, "valtype", true);
+        doTestCustomNames(null, null, "valtype");
     }
 
     /**
      * Test behavior only in case of cache and key type name override.
      */
     public void testCustomCacheAndKeyTypeName() {
-        doTestCustomNames("cname", "keytype", null, false);
-    }
-
-    /**
-     * Test behavior only in case of cache and key type name override.
-     */
-    public void testCustomCacheAndKeyTypeNameInternal() {
-        doTestCustomNames("cname", "keytype", null, true);
+        doTestCustomNames("cname", "keytype", null);
     }
 
     /**
      * Test behavior only in case of cache and value type name override.
      */
     public void testCustomCacheAndValueTypeName() {
-        doTestCustomNames("cname", null, "valtype", false);
-    }
-
-    /**
-     * Test behavior only in case of cache and value type name override.
-     */
-    public void testCustomCacheAndValueTypeNameInternal() {
-        doTestCustomNames("cname", null, "valtype", true);
+        doTestCustomNames("cname", null, "valtype");
     }
 
     /**
      * Test behavior only in case of key and value type name override.
      */
     public void testCustomKeyAndValueTypeName() {
-        doTestCustomNames(null, "keytype", "valtype", false);
-    }
-
-    /**
-     * Test behavior only in case of key and value type name override.
-     */
-    public void testCustomKeyAndValueTypeNameInternal() {
-        doTestCustomNames(null, "keytype", "valtype", true);
+        doTestCustomNames(null, "keytype", "valtype");
     }
 
     /**
      * Test behavior only in case of cache, key, and value type name override.
      */
     public void testCustomCacheAndKeyAndValueTypeName() {
-        doTestCustomNames("cname", "keytype", "valtype", false);
-    }
-
-    /**
-     * Test behavior only in case of cache, key, and value type name override.
-     */
-    public void testCustomCacheAndKeyAndValueTypeNameInternal() {
-        doTestCustomNames("cname", "keytype", "valtype", true);
+        doTestCustomNames("cname", "keytype", "valtype");
     }
 
     /**
@@ -453,27 +298,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
         try {
             GridTestUtils.assertThrows(null, new Callable<Object>() {
                 @Override public Object call() throws Exception {
-                    doTestCustomNames("new", null, null, false);return null;
-                }
-            }, IgniteSQLException.class, "Table already exists: NameTest");
-        }
-        finally {
-            client().destroyCache("new");
-        }
-    }
-
-    /**
-     * Test that attempting to create a cache with a pre-existing name yields an error.
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testDuplicateCustomCacheNameInternal() throws Exception {
-        client().getOrCreateCache("new");
-
-        try {
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    doTestCustomNames("new", null, null, true);return null;
+                    doTestCustomNames("new", null, null);return null;
                 }
             }, IgniteSQLException.class, "Table already exists: NameTest");
         }
@@ -487,15 +312,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testPlainKey() throws Exception {
-        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_SYNC, false);
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} with given write sync mode actually creates new cache as needed.
-     * @throws Exception if failed.
-     */
-    public void testPlainKeyInternal() throws Exception {
-        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_SYNC, true);
+        doTestCreateTable(null, null, null, CacheWriteSynchronizationMode.FULL_SYNC);
     }
 
     /**
@@ -504,47 +321,28 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @param cacheName Cache name, or {@code null} if the name generated by default should be used.
      * @param keyTypeName Key type name, or {@code null} if the name generated by default should be used.
      * @param valTypeName Value type name, or {@code null} if the name generated by default should be used.
-     * @param useInternalCmd Use internal CREATE TABLE command with additional syntax.
      */
-    private void doTestCustomNames(String cacheName, String keyTypeName, String valTypeName, boolean useInternalCmd) {
-        GridStringBuilder b = new GridStringBuilder("CREATE TABLE \"NameTest\" (id int primary key, x varchar) ");
-
-        if (useInternalCmd)
-            b.a("wrap_key wrap_value");
-        else
-            b.a("WITH wrap_key,wrap_value");
+    private void doTestCustomNames(String cacheName, String keyTypeName, String valTypeName) {
+        GridStringBuilder b = new GridStringBuilder("CREATE TABLE \"NameTest\" (id int primary key, x varchar) WITH " +
+            "wrap_key,wrap_value");
 
         assert !F.isEmpty(cacheName) || !F.isEmpty(keyTypeName) || !F.isEmpty(valTypeName);
 
-        if (!F.isEmpty(cacheName)) {
-            if (useInternalCmd)
-                b.a(" cache_name=\"").a(cacheName).a('"');
-            else
-                b.a(",\"cache_name=").a(cacheName).a('"');
-        }
+        if (!F.isEmpty(cacheName))
+            b.a(",\"cache_name=").a(cacheName).a('"');
 
-        if (!F.isEmpty(keyTypeName)) {
-            if (useInternalCmd)
-                b.a(" key_type=\"").a(keyTypeName).a('"');
-            else
-                b.a(",\"key_type=").a(keyTypeName).a('"');
-        }
+        if (!F.isEmpty(keyTypeName))
+            b.a(",\"key_type=").a(keyTypeName).a('"');
 
-        if (!F.isEmpty(valTypeName)) {
-            if (useInternalCmd)
-                b.a(" value_type=\"").a(valTypeName).a('"');
-            else
-                b.a(",\"value_type=").a(valTypeName).a('"');
-        }
+        if (!F.isEmpty(valTypeName))
+            b.a(",\"value_type=").a(valTypeName).a('"');
 
         String res = b.toString();
 
         if (res.endsWith(","))
             res = res.substring(0, res.length() - 1);
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
-            execute(client(), res);
-        }
+        execute(client(), res);
 
         String resCacheName = U.firstNotNull(cacheName, cacheName("NameTest"));
 
@@ -690,12 +488,11 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @param cacheGrp Cache group name, or {@code null} if no group is set.
      * @param cacheMode Expected cache mode, or {@code null} if no check is needed.
      * @param writeSyncMode Expected write sync mode, or {@code null} if no check is needed.
-     * @param useInternalCmd use internal CREATE TABLE command instead of H2 one.
      * @param additionalParams Supplemental parameters to append to {@code CREATE TABLE} SQL.
      */
     private void doTestCreateTable(String tplCacheName, String cacheGrp, CacheMode cacheMode,
-        CacheWriteSynchronizationMode writeSyncMode, boolean useInternalCmd, String... additionalParams) throws SQLException {
-        doTestCreateTable(tplCacheName, cacheGrp, cacheMode, writeSyncMode, false, useInternalCmd, additionalParams);
+        CacheWriteSynchronizationMode writeSyncMode, String... additionalParams) throws SQLException {
+        doTestCreateTable(tplCacheName, cacheGrp, cacheMode, writeSyncMode, false, additionalParams);
     }
 
     /**
@@ -706,38 +503,22 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @param cacheMode Expected cache mode, or {@code null} if no check is needed.
      * @param writeSyncMode Expected write sync mode, or {@code null} if no check is needed.
      * @param useLegacyCacheGrpParamName Whether legacy (harder-to-read) cache group param name should be used.
-     * @param useInternalCmd use internal CREATE TABLE command instead of H2 one.
      * @param additionalParams Supplemental parameters to append to {@code CREATE TABLE} SQL.
      */
     private void doTestCreateTable(String tplCacheName, String cacheGrp, CacheMode cacheMode,
-        CacheWriteSynchronizationMode writeSyncMode, boolean useLegacyCacheGrpParamName, boolean useInternalCmd,
-        String... additionalParams)
+        CacheWriteSynchronizationMode writeSyncMode, boolean useLegacyCacheGrpParamName, String... additionalParams)
         throws SQLException {
-
         String cacheGrpParamName = useLegacyCacheGrpParamName ? "cacheGroup" : "cache_group";
 
         String sql = "CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) ";
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            (F.isEmpty(tplCacheName) ? "" : "\"template=" + tplCacheName + "\",") + "\"backups=10,atomicity=atomic\"" +
+            (F.isEmpty(cacheGrp) ? "" : ",\"" + cacheGrpParamName + '=' + cacheGrp + '"');
 
-        if (useInternalCmd) {
-            sql += (F.isEmpty(tplCacheName) ? "" : "template=\"" + tplCacheName + "\" ") + "backups=10 atomicity=atomic " +
-                (F.isEmpty(cacheGrp) ? "" : " " + cacheGrpParamName + "=\"" + cacheGrp + '"');
+        for (String p : additionalParams)
+            sql += ",\"" + p + "\"";
 
-            for (String p : additionalParams)
-                sql += " " + p;
-        }
-        else {
-            sql += "WITH " +
-                (F.isEmpty(tplCacheName) ? "" : "\"template=" + tplCacheName + "\",") + "\"backups=10,atomicity=atomic\"" +
-                (F.isEmpty(cacheGrp) ? "" : ",\"" + cacheGrpParamName + '=' + cacheGrp + '"');
-
-            for (String p : additionalParams)
-                sql += ",\"" + p + "\"";
-        }
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
-            execute(sql);
-        }
+        execute(sql);
 
         String cacheName = cacheName("Person");
 
@@ -816,48 +597,21 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * Test that attempting to specify negative number of backups yields exception.
      */
     public void testNegativeBackups() {
-        assertCreateTableWithParamsThrows("bAckUPs = -5  ",
-            "\"BACKUPS\" cannot be negative: -5", false);
-    }
-
-    /**
-     * Test that attempting to specify negative number of backups yields exception.
-     */
-    public void testNegativeBackupsInternal() {
-        assertCreateTableWithParamsThrows("bAckUPs = -5  ",
-            "Number of backups should be positive [val=-5]", true);
+        assertCreateTableWithParamsThrows("bAckUPs = -5  ", "\"BACKUPS\" cannot be negative: -5");
     }
 
     /**
      * Test that attempting to omit mandatory value of BACKUPS parameter yields an error.
      */
     public void testEmptyBackups() {
-        assertCreateTableWithParamsThrows(" bAckUPs =  ",
-            "Parameter value cannot be empty: BACKUPS", false);
-    }
-
-    /**
-     * Test that attempting to omit mandatory value of BACKUPS parameter yields an error.
-     */
-    public void testEmptyBackupsInternal() {
-        assertCreateTableWithParamsThrows(" bAckUPs =  ",
-            "Unexpected end of command (expected: \"[integer]\"", true);
+        assertCreateTableWithParamsThrows(" bAckUPs =  ", "Parameter value cannot be empty: BACKUPS");
     }
 
     /**
      * Test that attempting to omit mandatory value of ATOMICITY parameter yields an error.
      */
     public void testEmptyAtomicity() {
-        assertCreateTableWithParamsThrows("AtomicitY=  ",
-            "Parameter value cannot be empty: ATOMICITY", false);
-    }
-
-    /**
-     * Test that attempting to omit mandatory value of ATOMICITY parameter yields an error.
-     */
-    public void testEmptyAtomicityInternal() {
-        assertCreateTableWithParamsThrows("AtomicitY=  ",
-            "re:Unexpected end of command.*expected:.*one of.*TRANSACTIONAL, ATOMIC", true);
+        assertCreateTableWithParamsThrows("AtomicitY=  ", "Parameter value cannot be empty: ATOMICITY");
     }
 
     /**
@@ -865,32 +619,14 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     public void testInvalidAtomicity() {
         assertCreateTableWithParamsThrows("atomicity=InvalidValue",
-            "Invalid value of \"ATOMICITY\" parameter (should be either TRANSACTIONAL or ATOMIC): InvalidValue", false);
-    }
-
-    /**
-     * Test that providing an invalid value of ATOMICITY parameter yields an error.
-     */
-    public void testInvalidAtomicityInternal() {
-        assertCreateTableWithParamsThrows("atomicity=InvalidValue",
-            "re:Unexpected token:.*INVALIDVALUE.*expected:.*one of.*TRANSACTIONAL, ATOMIC", true);
+            "Invalid value of \"ATOMICITY\" parameter (should be either TRANSACTIONAL or ATOMIC): InvalidValue");
     }
 
     /**
      * Test that attempting to omit mandatory value of CACHEGROUP parameter yields an error.
      */
     public void testEmptyCacheGroup() {
-        assertCreateTableWithParamsThrows("cache_group=",
-            "Parameter value cannot be empty: CACHE_GROUP", false);
-    }
-
-    /**
-     * Test that attempting to omit mandatory value of CACHEGROUP parameter yields an error.
-     */
-    public void testEmptyCacheGroupInternal() {
-        assertCreateTableWithParamsThrows("cache_group=",
-            "re:Unexpected end of command.*expected:.*optionally quoted cache group name",
-            true);
+        assertCreateTableWithParamsThrows("cache_group=", "Parameter value cannot be empty: CACHE_GROUP");
     }
 
     /**
@@ -898,16 +634,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     public void testEmptyWriteSyncMode() {
         assertCreateTableWithParamsThrows("write_synchronization_mode=",
-            "Parameter value cannot be empty: WRITE_SYNCHRONIZATION_MODE", false);
-    }
-
-    /**
-     * Test that attempting to omit mandatory value of WRITE_SYNCHRONIZATION_MODE parameter yields an error.
-     */
-    public void testEmptyWriteSyncModeInternal() {
-        assertCreateTableWithParamsThrows("write_synchronization_mode=",
-            "re: Unexpected end of command.*expected.*one of.*FULL_SYNC, FULL_ASYNC, PRIMARY_SYNC",
-            true);
+            "Parameter value cannot be empty: WRITE_SYNCHRONIZATION_MODE");
     }
 
     /**
@@ -916,16 +643,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
     public void testInvalidWriteSyncMode() {
         assertCreateTableWithParamsThrows("write_synchronization_mode=invalid",
             "Invalid value of \"WRITE_SYNCHRONIZATION_MODE\" parameter " +
-                "(should be FULL_SYNC, FULL_ASYNC, or PRIMARY_SYNC): invalid", false);
-    }
-
-    /**
-     * Test that attempting to provide invalid value of WRITE_SYNCHRONIZATION_MODE parameter yields an error.
-     */
-    public void testInvalidWriteSyncModeInternal() {
-        assertCreateTableWithParamsThrows("write_synchronization_mode=invalid",
-            "re:Unexpected token:.*INVALID.*expected:.*one of.*FULL_SYNC, FULL_ASYNC, PRIMARY_SYNC",
-            true);
+                "(should be FULL_SYNC, FULL_ASYNC, or PRIMARY_SYNC): invalid");
     }
 
     /**
@@ -934,36 +652,13 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testCreateTableIfNotExists() throws Exception {
+        execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
-
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
-        }
-    }
-
-    /**
-     * Test that attempting to {@code CREATE TABLE} that already exists does not yield an error if the statement
-     *     contains {@code IF NOT EXISTS} clause.
-     * @throws Exception if failed.
-     */
-    public void testInternalCreateTableIfNotExists() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-        }
+        execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
     }
 
     /**
@@ -972,48 +667,19 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void testCreateExistingTable() throws Exception {
+        execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
+                    ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+                    "\"template=cache\"");
 
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
-
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
-                        ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                        "\"template=cache\"");
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "Table already exists: Person");
-        }
-    }
-
-    /**
-     * Test that attempting to {@code CREATE TABLE} that already exists yields an error.
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testInternalCreateExistingTable() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
-                        ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                        "template=\"cache\"");
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "Table already exists: Person");
-        }
+                return null;
+            }
+        }, IgniteSQLException.class, "Table already exists: Person");
     }
 
     /**
@@ -1021,43 +687,11 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testDropTable() throws Exception {
+        execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
-        }
-        finally {
-            execute("DROP TABLE \"Person\"");
-        }
-
-        for (int i = 0; i < 4; i++) {
-            IgniteEx node = grid(i);
-
-            assertNull(node.cache("Person"));
-
-            QueryTypeDescriptorImpl desc = type(node, "Person", "Person");
-
-            assertNull(desc);
-        }
-    }
-
-    /**
-     * Test that {@code DROP TABLE} actually removes specified cache and type descriptor on all nodes.
-     * @throws Exception if failed.
-     */
-    public void testInternalDropTable() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-        }
-        finally {
-            execute("DROP TABLE \"Person\"");
-        }
+        execute("DROP TABLE \"Person\"");
 
         for (int i = 0; i < 4; i++) {
             IgniteEx node = grid(i);
@@ -1076,53 +710,21 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void testCacheSelfDrop() throws Exception {
+        execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                client().cache(QueryUtils.createTableCacheName(QueryUtils.DFLT_SCHEMA, "Person"))
+                    .query(new SqlFieldsQuery("DROP TABLE \"Person\"")).getAll();
 
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
+                return null;
+            }
+        }, IgniteSQLException.class, "DROP TABLE cannot be called from the same cache that holds the table " +
+            "being dropped");
 
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    client().cache(QueryUtils.createTableCacheName(QueryUtils.DFLT_SCHEMA, "Person"))
-                        .query(new SqlFieldsQuery("DROP TABLE \"Person\"")).getAll();
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "DROP TABLE cannot be called from the same cache that holds the table " +
-                "being dropped");
-        }
-        finally {
-            execute("DROP TABLE \"Person\"");
-        }
-    }
-
-    /**
-     * Test that attempting to execute {@code DROP TABLE} via API of cache being dropped yields an error.
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testCacheSelfDropInternal() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE IF NOT EXISTS \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    client().cache(QueryUtils.createTableCacheName(QueryUtils.DFLT_SCHEMA, "Person"))
-                        .query(new SqlFieldsQuery("DROP TABLE \"Person\"")).getAll();
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "DROP TABLE cannot be called from the same cache that holds the table " +
-                "being dropped");
-
-            execute("DROP TABLE \"Person\"");
-        }
+        execute("DROP TABLE \"Person\"");
     }
 
     /**
@@ -1172,44 +774,18 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void testDestroyDynamicSqlCache() throws Exception {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                "\"template=cache\"");
+        execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache\"");
 
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                    @Override public Object call() throws Exception {
-                        client().destroyCache(cacheName("Person"));
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                client().destroyCache(cacheName("Person"));
 
-                        return null;
-                    }
-                }, CacheException.class,
-                "Only cache created with cache API may be removed with direct call to destroyCache");
-        }
-    }
-
-    /**
-     * Test that attempting to destroy via cache API a cache created via SQL yields an error.
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testDestroyDynamicSqlCacheInternal() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar," +
-                " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                "template=\"cache\"");
-
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                    @Override public Object call() throws Exception {
-                        client().destroyCache(cacheName("Person"));
-
-                        return null;
-                    }
-                }, CacheException.class,
-                "Only cache created with cache API may be removed with direct call to destroyCache");
-        }
+                return null;
+            }
+        }, CacheException.class,
+        "Only cache created with cache API may be removed with direct call to destroyCache");
     }
 
     /**
@@ -1219,49 +795,19 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void testSqlFlagCompatibilityCheck() throws Exception {
+        execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar, \"name\" varchar, \"surname\" varchar, " +
+            "\"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH \"template=cache\"");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                String cacheName = cacheName("Person");
 
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar, \"name\" varchar, \"surname\" varchar, " +
-                "\"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH \"template=cache\"");
+                Ignition.start(clientConfiguration(5).setCacheConfiguration(new CacheConfiguration(cacheName)));
 
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    String cacheName = cacheName("Person");
-
-                    Ignition.start(clientConfiguration(5).setCacheConfiguration(new CacheConfiguration(cacheName)));
-
-                    return null;
-                }
-            }, IgniteException.class, "Cache configuration mismatch (local cache was created via Ignite API, while " +
-                "remote cache was created via CREATE TABLE): SQL_PUBLIC_Person");
-        }
-    }
-
-    /**
-     * Test that attempting to start a node that has a cache with the name already present in the grid and whose
-     * SQL flag does not match that of cache with the same name that is already started, yields an error.
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testSqlFlagCompatibilityCheckInternal() throws Exception {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar, \"name\" varchar, \"surname\" varchar, " +
-                "\"age\" int, PRIMARY KEY (\"id\", \"city\")) template=\"cache\"");
-
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    String cacheName = cacheName("Person");
-
-                    Ignition.start(clientConfiguration(5).setCacheConfiguration(new CacheConfiguration(cacheName)));
-
-                    return null;
-                }
-            }, IgniteException.class, "Cache configuration mismatch (local cache was created via Ignite API, while " +
-                "remote cache was created via CREATE TABLE): SQL_PUBLIC_Person");
-        }
+                return null;
+            }
+        }, IgniteException.class, "Cache configuration mismatch (local cache was created via Ignite API, while " +
+            "remote cache was created via CREATE TABLE): SQL_PUBLIC_Person");
     }
 
     /**
@@ -1314,107 +860,58 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception if failed.
      */
     public void testAffinityKey() throws Exception {
-        checkAffinityKey(false);
-    }
+        execute("CREATE TABLE \"City\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+            "\"affinity_key='name'\"");
 
-    /**
-     * @throws Exception if failed.
-     */
-    public void testAffinityKeyInternal() throws Exception {
-        checkAffinityKey(true);
-    }
+        assertAffinityCacheConfiguration("City", "name");
 
-    /**
-     * @throws Exception if failed.
-     */
-    public void checkAffinityKey(boolean useInternalCmd) throws Exception {
+        execute("INSERT INTO \"City\" (\"name\", \"code\") values ('A', 1), ('B', 2), ('C', 3)");
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
+        List<String> cityNames = Arrays.asList("A", "B", "C");
 
-            if (useInternalCmd)
-                execute("CREATE TABLE \"City\" (\"name\" varchar primary key, \"code\" int) wrap_key wrap_value " +
-                    "affinity_key=\"name\"");
-            else
-                execute("CREATE TABLE \"City\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                    "\"affinity_key='name'\"");
+        List<Integer> cityCodes = Arrays.asList(1, 2, 3);
 
-            assertAffinityCacheConfiguration("City", "name");
+        // We need unique name for this table to avoid conflicts with existing binary metadata.
+        execute("CREATE TABLE \"Person2\" (\"id\" int, \"city\" varchar," +
+            " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "wrap_key,wrap_value,\"template=cache,affinity_key='city'\"");
 
-            execute("INSERT INTO \"City\" (\"name\", \"code\") values ('A', 1), ('B', 2), ('C', 3)");
+        assertAffinityCacheConfiguration("Person2", "city");
 
-            List<String> cityNames = Arrays.asList("A", "B", "C");
+        Random r = new Random();
 
-            List<Integer> cityCodes = Arrays.asList(1, 2, 3);
+        Map<Integer, Integer> personId2cityCode = new HashMap<>();
 
-            // We need unique name for this table to avoid conflicts with existing binary metadata.
-            if (useInternalCmd)
-                execute("CREATE TABLE \"Person2\" (\"id\" int, \"city\" varchar," +
-                    " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                    "wrap_key wrap_value template=\"cache\" affinity_key=\"city\"");
-            else
-                execute("CREATE TABLE \"Person2\" (\"id\" int, \"city\" varchar," +
-                    " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                    "wrap_key,wrap_value,\"template=cache,affinity_key='city'\"");
+        for (int i = 0; i < 100; i++) {
+            int cityIdx = r.nextInt(3);
 
-            assertAffinityCacheConfiguration("Person2", "city");
+            String cityName = cityNames.get(cityIdx);
 
-            Random r = new Random();
+            int cityCode = cityCodes.get(cityIdx);
 
-            Map<Integer, Integer> personId2cityCode = new HashMap<>();
+            personId2cityCode.put(i, cityCode);
 
-            for (int i = 0; i < 100; i++) {
-                int cityIdx = r.nextInt(3);
-
-                String cityName = cityNames.get(cityIdx);
-
-                int cityCode = cityCodes.get(cityIdx);
-
-                personId2cityCode.put(i, cityCode);
-
-                queryProcessor(client()).querySqlFieldsNoCache(new SqlFieldsQuery("insert into \"Person2\"(\"id\", " +
-                    "\"city\") values (?, ?)").setArgs(i, cityName), true).getAll();
-            }
-
-            List<List<?>> res = queryProcessor(client()).querySqlFieldsNoCache(new SqlFieldsQuery("select \"id\", " +
-                "c.\"code\" from \"Person2\" p left join \"City\" c on p.\"city\" = c.\"name\" where c.\"name\" " +
-                "is not null"), true).getAll();
-
-            assertEquals(100, res.size());
-
-            for (int i = 0; i < 100; i++) {
-                assertNotNull(res.get(i).get(0));
-
-                assertNotNull(res.get(i).get(1));
-
-                int id = (Integer)res.get(i).get(0);
-
-                int code = (Integer)res.get(i).get(1);
-
-                assertEquals((int)personId2cityCode.get(id), code);
-            }
+            queryProcessor(client()).querySqlFieldsNoCache(new SqlFieldsQuery("insert into \"Person2\"(\"id\", " +
+                "\"city\") values (?, ?)").setArgs(i, cityName), true).getAll();
         }
-        finally {
-            execute("drop table \"City\"");
-            execute("drop table \"Person2\"");
+
+        List<List<?>> res = queryProcessor(client()).querySqlFieldsNoCache(new SqlFieldsQuery("select \"id\", " +
+            "c.\"code\" from \"Person2\" p left join \"City\" c on p.\"city\" = c.\"name\" where c.\"name\" " +
+            "is not null"), true).getAll();
+
+        assertEquals(100, res.size());
+
+        for (int i = 0; i < 100; i++) {
+            assertNotNull(res.get(i).get(0));
+
+            assertNotNull(res.get(i).get(1));
+
+            int id = (Integer)res.get(i).get(0);
+
+            int code = (Integer)res.get(i).get(1);
+
+            assertEquals((int)personId2cityCode.get(id), code);
         }
-    }
-
-    /**
-     * Tests data region.
-     *
-     * @throws Exception If failed.
-     */
-    public void testDataRegion() throws Exception {
-        checkDataRegion(false);
-    }
-
-    /**
-     * Tests data region.
-     *
-     * @throws Exception If failed.
-     */
-    public void testDataRegionInternal() throws Exception {
-        checkDataRegion(true);
     }
 
     /**
@@ -1423,177 +920,87 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception If failed.
      */
     @SuppressWarnings({"ThrowableNotThrown", "unchecked"})
-    public void checkDataRegion(final boolean useInternalCmd) throws Exception {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
-            // Empty region name.
-            if (useInternalCmd)
-                GridTestUtils.assertThrows(log, new Callable<Void>() {
-                    @Override public Void call() throws Exception {
-                        execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) data_region=");
+    public void testDataRegion() throws Exception {
+        // Empty region name.
+        GridTestUtils.assertThrows(log, new Callable<Void>() {
+            @Override public Void call() throws Exception {
+                execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) WITH \"data_region=\"");
 
-                        return null;
-                    }
-                }, IgniteSQLException.class, "re:Unexpected end of command.*expected.*optionally quoted data region");
-            else
-                GridTestUtils.assertThrows(log, new Callable<Void>() {
-                @Override public Void call() throws Exception {
-                        execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) WITH \"data_region=\"");
+                return null;
+            }
+        }, IgniteSQLException.class, "Parameter value cannot be empty: DATA_REGION");
 
-                    return null;
-                }
-            }, IgniteSQLException.class, "Parameter value cannot be empty: DATA_REGION");
+        // Valid region name.
+        execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) WITH \"data_region=" +
+            DATA_REGION_NAME + "\"");
 
-            // Valid region name.
-            if (useInternalCmd)
-                execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) data_region=\"" +
-                    DATA_REGION_NAME + "\"");
-            else
-                execute("CREATE TABLE TEST_DATA_REGION (name varchar primary key, code int) WITH \"data_region=" +
-                    DATA_REGION_NAME + "\"");
+        CacheConfiguration ccfg =
+            client().cache("SQL_PUBLIC_TEST_DATA_REGION").getConfiguration(CacheConfiguration.class);
 
-            CacheConfiguration ccfg =
-                client().cache("SQL_PUBLIC_TEST_DATA_REGION").getConfiguration(CacheConfiguration.class);
-
-            assertEquals(DATA_REGION_NAME, ccfg.getDataRegionName());
-        }
-        finally {
-            execute("DROP TABLE TEST_DATA_REGION");
-        }
+        assertEquals(DATA_REGION_NAME, ccfg.getDataRegionName());
     }
+
 
     /**
      * Test various cases of affinity key column specification.
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void testAffinityKeyCaseSensitivity() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
+        execute("CREATE TABLE \"A\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+            "\"affinity_key='name'\"");
 
-            execute("CREATE TABLE \"A\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                "\"affinity_key='name'\"");
+        assertAffinityCacheConfiguration("A", "name");
 
-            assertAffinityCacheConfiguration("A", "name");
+        execute("CREATE TABLE \"B\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+            "\"affinity_key=name\"");
 
-            execute("CREATE TABLE \"B\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                "\"affinity_key=name\"");
+        assertAffinityCacheConfiguration("B", "NAME");
 
-            assertAffinityCacheConfiguration("B", "NAME");
+        execute("CREATE TABLE \"C\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+            "\"affinity_key=NamE\"");
 
-            execute("CREATE TABLE \"C\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                "\"affinity_key=NamE\"");
+        assertAffinityCacheConfiguration("C", "NAME");
 
-            assertAffinityCacheConfiguration("C", "NAME");
+        execute("CREATE TABLE \"D\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+            "\"affinity_key=NAME\"");
 
-            execute("CREATE TABLE \"D\" (\"name\" varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                "\"affinity_key=NAME\"");
+        assertAffinityCacheConfiguration("D", "name");
 
-            assertAffinityCacheConfiguration("D", "name");
+        // Error arises because user has specified case sensitive affinity column name
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
+                    "\"affinity_key='Name'\"");
 
-            // Error arises because user has specified case sensitive affinity column name
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH wrap_key,wrap_value," +
-                        "\"affinity_key='Name'\"");
+                return null;
+            }
+        }, IgniteSQLException.class, "Affinity key column with given name not found: Name");
 
-                    return null;
-                }
-            }, IgniteSQLException.class, "Affinity key column with given name not found: Name");
+        // Error arises because user declares case insensitive affinity column name while having two 'name'
+        // columns whose names are equal in ignore case.
+        GridTestUtils.assertThrows(null, new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
+                    "\"Name\")) WITH \"affinity_key=name\"");
 
-            // Error arises because user declares case insensitive affinity column name while having two 'name'
-            // columns whose names are equal in ignore case.
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
-                        "\"Name\")) WITH \"affinity_key=name\"");
+                return null;
+            }
+        }, IgniteSQLException.class, "Ambiguous affinity column name, use single quotes for case sensitivity: name");
 
-                    return null;
-                }
-            }, IgniteSQLException.class, "Ambiguous affinity column name, use single quotes for case sensitivity: name");
+        execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
+            "\"Name\")) WITH wrap_key,wrap_value,\"affinityKey='Name'\"");
 
-            execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
-                "\"Name\")) WITH wrap_key,wrap_value,\"affinityKey='Name'\"");
+        assertAffinityCacheConfiguration("E", "Name");
 
-            assertAffinityCacheConfiguration("E", "Name");
+        execute("drop table a");
 
-        }
-        finally {
-            execute("drop table a");
+        execute("drop table b");
 
-            execute("drop table b");
+        execute("drop table c");
 
-            execute("drop table c");
+        execute("drop table d");
 
-            execute("drop table d");
-
-            execute("drop table e");
-        }
-    }
-
-    /**
-     * Test various cases of affinity key column specification.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testAffinityKeyCaseSensitivityInternal() {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            execute("CREATE TABLE \"A\" (\"name\" varchar primary key, \"code\" int) wrap_key wrap_value " +
-                "affinity_key=\"name\"");
-
-            assertAffinityCacheConfiguration("A", "name");
-
-            execute("CREATE TABLE \"B\" (name varchar primary key, \"code\" int) wrap_key wrap_value " +
-                "affinity_key=name");
-
-            assertAffinityCacheConfiguration("B", "NAME");
-
-            execute("CREATE TABLE \"C\" (name varchar primary key, \"code\" int) wrap_key wrap_value " +
-                "affinity_key=NamE");
-
-            assertAffinityCacheConfiguration("C", "NAME");
-
-            execute("CREATE TABLE \"D\" (\"name\" varchar primary key, \"code\" int) wrap_key wrap_value " +
-                "affinity_key=NAME");
-
-            assertAffinityCacheConfiguration("D", "name");
-
-            // Error arises because user has specified case sensitive affinity column name
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) wrap_key wrap_value " +
-                        "affinity_key=\"Name\"");
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "Affinity key column with given name not found: Name");
-
-            // Error arises because user declares case insensitive affinity column name while having two 'name'
-            // columns whose names are equal in ignore case.
-            GridTestUtils.assertThrows(null, new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
-                        "\"Name\")) affinity_key=name");
-
-                    return null;
-                }
-            }, IgniteSQLException.class, "Ambiguous affinity column name, use single quotes for case sensitivity: NAME");
-
-            execute("CREATE TABLE \"E\" (\"name\" varchar, \"Name\" int, val int, primary key(\"name\", " +
-                "\"Name\")) wrap_key wrap_value affinity_key=\"Name\"");
-
-            assertAffinityCacheConfiguration("E", "Name");
-
-        }
-        finally {
-            execute("drop table if exists a");
-
-            execute("drop table if exists b");
-
-            execute("drop table if exists c");
-
-            execute("drop table if exists d");
-
-            execute("drop table if exists e");
-        }
+        execute("drop table e");
     }
 
     /**
@@ -1604,26 +1011,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
         // Error arises because user has specified case sensitive affinity column name
         GridTestUtils.assertThrows(null, new Callable<Object>() {
             @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH \"affinity_key=code\"");
-                }
-
-                return null;
-            }
-        }, IgniteSQLException.class, "Affinity key column must be one of key columns: code");
-    }
-
-    /**
-     * Tests that attempting to specify an affinity key that actually is a value column yields an error.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testAffinityKeyNotKeyColumnInternal() {
-        // Error arises because user has specified case sensitive affinity column name
-        GridTestUtils.assertThrows(null, new Callable<Object>() {
-            @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) affinity_key=code");
-                }
+                execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH \"affinity_key=code\"");
 
                 return null;
             }
@@ -1638,30 +1026,11 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
         // Error arises because user has specified case sensitive affinity column name
         GridTestUtils.assertThrows(null, new Callable<Object>() {
             @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH \"affinity_key=missing\"");
-                }
+                execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) WITH \"affinity_key=missing\"");
 
                 return null;
             }
         }, IgniteSQLException.class, "Affinity key column with given name not found: missing");
-    }
-
-    /**
-     * Tests that attempting to specify an affinity key that actually is a value column yields an error.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testAffinityKeyNotFoundInternal() {
-        // Error arises because user has specified case sensitive affinity column name
-        GridTestUtils.assertThrows(null, new Callable<Object>() {
-            @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-                    execute("CREATE TABLE \"E\" (name varchar primary key, \"code\" int) affinity_key=missing");
-                }
-
-                return null;
-            }
-        }, IgniteSQLException.class, "Affinity key column with given name not found: MISSING");
     }
 
     /**
@@ -1711,51 +1080,28 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws Exception If test failed.
      */
     public void testQueryLocalWithRecreate() throws Exception {
-        checkQueryLocalWithRecreate(false);
-    }
+        execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) WITH \"cache_name=cache," +
+            "template=replicated\"");
 
-    /**
-     * @throws Exception If test failed.
-     */
-    public void testQueryLocalWithRecreateInternal() throws Exception {
-        checkQueryLocalWithRecreate(true);
-    }
+        // In order for local queries to work, let's use non client node.
+        IgniteInternalCache cache = grid(0).cachex("cache");
 
-    /**
-     * @throws Exception If test failed.
-     */
-    public void checkQueryLocalWithRecreate(final boolean useInternalCmd) throws Exception {
+        assertNotNull(cache);
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
+        executeLocal(cache.context(), "INSERT INTO A(id, name, surname) values (1, 'X', 'Y')");
 
-            if (useInternalCmd)
-                execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) cache_name=\"cache\" " +
-                    "template=replicated");
-            else
-                execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) WITH \"cache_name=cache," +
-                    "template=replicated\"");
+        assertEqualsCollections(Collections.singletonList(Arrays.asList(1, "X", "Y")),
+            executeLocal(cache.context(), "SELECT id, name, surname FROM A"));
 
-            // In order for local queries to work, let's use non client node.
-            IgniteInternalCache cache = grid(0).cachex("cache");
+        execute("DROP TABLE A");
 
-            assertNotNull(cache);
+        execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) WITH \"cache_name=cache\"");
 
-            executeLocal(cache.context(), "INSERT INTO A(id, name, surname) values (1, 'X', 'Y')");
+        cache = grid(0).cachex("cache");
 
-            assertEqualsCollections(Collections.singletonList(Arrays.asList(1, "X", "Y")),
-                executeLocal(cache.context(), "SELECT id, name, surname FROM A"));
+        assertNotNull(cache);
 
-            execute("DROP TABLE A");
-
-            if (useInternalCmd)
-                execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) cache_name=\"cache\"");
-            else
-                execute("CREATE TABLE A(id int primary key, name varchar, surname varchar) WITH \"cache_name=cache\"");
-
-            cache = grid(0).cachex("cache");
-
-            assertNotNull(cache);
-
+        try {
             executeLocal(cache.context(), "INSERT INTO A(id, name, surname) values (1, 'X', 'Y')");
         }
         finally {
@@ -1767,144 +1113,64 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * Test that it's impossible to create tables with same name regardless of key/value wrapping settings.
      */
     public void testWrappedAndUnwrappedKeyTablesInteroperability() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-
+        {
             execute("create table a (id int primary key, x varchar)");
 
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
+                "Table already exists: A");
 
-            } finally {
-                execute("drop table a");
-            }
+            execute("drop table a");
+        }
 
+        {
             execute("create table a (id int primary key, x varchar) with wrap_key");
 
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar)",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
+                "Table already exists: A");
 
-            } finally {
-                execute("drop table a");
-            }
-
-            execute("create table a (id int primary key, x varchar) with wrap_value");
-
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
-                    "Table already exists: A");
-
-            } finally {
-                execute("drop table a");
-            }
-
-            execute("create table a (id int primary key, x varchar) with wrap_value");
-
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
-                    "Table already exists: A");
-
-            } finally {
-                execute("drop table a");
-            }
+            execute("drop table a");
         }
-    }
 
-    /**
-     * Test that it's impossible to create tables with same name regardless of key/value wrapping settings.
-     */
-    public void testWrappedAndUnwrappedKeyTablesInteroperabilityInternal() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
+        {
+            execute("create table a (id int primary key, x varchar) with wrap_value");
 
-            execute("create table a (id int primary key, x varchar)");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar)",
+                "Table already exists: A");
 
-            try {
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key,wrap_value",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_value",
-                    "Table already exists: A");
+            execute("drop table a");
+        }
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key wrap_value",
-                    "Table already exists: A");
+        {
+            execute("create table a (id int primary key, x varchar) with wrap_key,wrap_value");
 
-            } finally {
-                execute("drop table a");
-            }
+            assertDdlCommandThrows("create table a (id int primary key, x varchar)",
+                "Table already exists: A");
 
-            execute("create table a (id int primary key, x varchar) wrap_key");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_value",
+                "Table already exists: A");
 
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
+            assertDdlCommandThrows("create table a (id int primary key, x varchar) with wrap_key",
+                "Table already exists: A");
 
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_value",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key wrap_value",
-                    "Table already exists: A");
-
-            } finally {
-                execute("drop table a");
-            }
-
-            execute("create table a (id int primary key, x varchar) wrap_value");
-
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key wrap_value",
-                    "Table already exists: A");
-
-            } finally {
-                execute("drop table a");
-            }
-
-            execute("create table a (id int primary key, x varchar) wrap_key wrap_value");
-
-            try {
-                assertDdlCommandThrows("create table a (id int primary key, x varchar)",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_value",
-                    "Table already exists: A");
-
-                assertDdlCommandThrows("create table a (id int primary key, x varchar) wrap_key",
-                    "Table already exists: A");
-
-            } finally {
-                execute("drop table a");
-            }
+            execute("drop table a");
         }
     }
 
@@ -1912,74 +1178,32 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * Test that it's possible to create tables with matching key and/or value primitive types.
      */
     public void testDynamicTablesInteroperability() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-            execute("create table a (id int primary key, x varchar) with \"wrap_value=false\"");
+        execute("create table a (id int primary key, x varchar) with \"wrap_value=false\"");
 
-            execute("create table b (id long primary key, y varchar) with \"wrap_value=false\"");
+        execute("create table b (id long primary key, y varchar) with \"wrap_value=false\"");
 
-            execute("create table c (id int primary key, z long) with \"wrap_value=false\"");
+        execute("create table c (id int primary key, z long) with \"wrap_value=false\"");
 
-            execute("create table d (id int primary key, w varchar) with \"wrap_value=false\"");
-        }
-        finally {
-            execute("drop table a");
+        execute("create table d (id int primary key, w varchar) with \"wrap_value=false\"");
 
-            execute("drop table b");
+        execute("drop table a");
 
-            execute("drop table c");
+        execute("drop table b");
 
-            execute("drop table d");
-        }
-    }
+        execute("drop table c");
 
-    /**
-     * Test that it's possible to create tables with matching key and/or value primitive types.
-     */
-    public void testDynamicTablesInteroperabilityInternal() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-            execute("create table a (id int primary key, x varchar) wrap_value=false");
-
-            execute("create table b (id long primary key, y varchar) wrap_value=false");
-
-            execute("create table c (id int primary key, z long) wrap_value=false");
-
-            execute("create table d (id int primary key, w varchar) wrap_value=false");
-        }
-        finally {
-            execute("drop table a");
-
-            execute("drop table b");
-
-            execute("drop table c");
-
-            execute("drop table d");
-        }
+        execute("drop table d");
     }
 
     /**
      * Test that when key or value has more than one column, wrap=false is forbidden.
      */
     public void testWrappingAlwaysOnWithComplexObjects() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-            assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id, c)) with \"wrap_key=false\"",
-                "WRAP_KEY cannot be false when composite primary key exists.");
+        assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id, c)) with \"wrap_key=false\"",
+            "WRAP_KEY cannot be false when composite primary key exists.");
 
-            assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id)) with \"wrap_value=false\"",
-                "WRAP_VALUE cannot be false when multiple non-primary key columns exist.");
-        }
-    }
-
-    /**
-     * Test that when key or value has more than one column, wrap=false is forbidden.
-     */
-    public void testWrappingAlwaysOnWithComplexObjectsInternal() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-            assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id, c)) wrap_key=false",
-                "WRAP_KEY cannot be false when composite primary key exists.");
-
-            assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id)) wrap_value=false",
-                "WRAP_VALUE cannot be false when multiple non-primary key columns exist.");
-        }
+        assertDdlCommandThrows("create table a (id int, x varchar, c long, primary key(id)) with \"wrap_value=false\"",
+            "WRAP_VALUE cannot be false when multiple non-primary key columns exist.");
     }
 
     /**
@@ -1987,7 +1211,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws SQLException if failed.
      */
     public void testNoWrap() throws SQLException {
-        doTestKeyValueWrap(false, false, false);
+        doTestKeyValueWrap(false, false);
     }
 
     /**
@@ -1995,7 +1219,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws SQLException if failed.
      */
     public void testKeyWrap() throws SQLException {
-        doTestKeyValueWrap(true, false, false);
+        doTestKeyValueWrap(true, false);
     }
 
     /**
@@ -2003,7 +1227,7 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws SQLException if failed.
      */
     public void testValueWrap() throws SQLException {
-        doTestKeyValueWrap(false, true, false);
+        doTestKeyValueWrap(false, true);
     }
 
     /**
@@ -2011,73 +1235,25 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * @throws SQLException if failed.
      */
     public void testKeyAndValueWrap() throws SQLException {
-        doTestKeyValueWrap(true, true, false);
-    }
-
-    /**
-     * Test behavior when neither key nor value should be wrapped.
-     * @throws SQLException if failed.
-     */
-    public void testNoWrapInternal() throws SQLException {
-        doTestKeyValueWrap(false, false, true);
-    }
-
-    /**
-     * Test behavior when only key is wrapped.
-     * @throws SQLException if failed.
-     */
-    public void testKeyWrapInternal() throws SQLException {
-        doTestKeyValueWrap(true, false, true);
-    }
-
-    /**
-     * Test behavior when only value is wrapped.
-     * @throws SQLException if failed.
-     */
-    public void testValueWrapInternal() throws SQLException {
-        doTestKeyValueWrap(false, true, true);
-    }
-
-    /**
-     * Test behavior when both key and value is wrapped.
-     * @throws SQLException if failed.
-     */
-    public void testKeyAndValueWrapInternal() throws SQLException {
-        doTestKeyValueWrap(true, true, true);
+        doTestKeyValueWrap(true, true);
     }
 
     /**
      * Test behavior for given combination of wrap flags.
      * @param wrapKey Whether key wrap should be enforced.
      * @param wrapVal Whether value wrap should be enforced.
-     * @param useInternalCmd Use internal CREATE TABLE command instead of H2 one.
      * @throws SQLException if failed.
      */
-    private void doTestKeyValueWrap(boolean wrapKey, boolean wrapVal, boolean useInternalCmd) throws SQLException {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
+    private void doTestKeyValueWrap(boolean wrapKey, boolean wrapVal) throws SQLException {
+        try {
+            String sql = String.format("CREATE TABLE T (\"id\" int primary key, \"x\" varchar) WITH " +
+                "\"wrap_key=%b,wrap_value=%b\"", wrapKey, wrapVal);
 
-            String sql;
+            if (wrapKey)
+                sql += ",\"key_type=tkey\"";
 
-            if (useInternalCmd) {
-                sql = String.format("CREATE TABLE T (\"id\" int primary key, \"x\" varchar) " +
-                    "wrap_key=%b wrap_value=%b", wrapKey, wrapVal);
-
-                if (wrapKey)
-                    sql += " key_type=tkey";
-
-                if (wrapVal)
-                    sql += " value_type=tval";
-            }
-            else {
-                sql = String.format("CREATE TABLE T (\"id\" int primary key, \"x\" varchar) WITH " +
-                    "\"wrap_key=%b,wrap_value=%b\"", wrapKey, wrapVal);
-
-                if (wrapKey)
-                    sql += ",\"key_type=tkey\"";
-
-                if (wrapVal)
-                    sql += ",\"value_type=tval\"";
-            }
+            if (wrapVal)
+                sql += ",\"value_type=tval\"";
 
             execute(sql);
 
@@ -2191,19 +1367,11 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
     /**
      * Execute {@code CREATE TABLE} w/given params.
      * @param params Engine parameters.
-     * @param useInternalCmd Use internal CREATE TABLE command
      */
-    private void createTableWithParams(final String params, boolean useInternalCmd) {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(useInternalCmd)) {
-            if (useInternalCmd)
-                execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
-                    ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                    "template=cache " + params);
-            else
-                execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
-                    ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                    "\"template=cache," + params + '"');
-        }
+    private void createTableWithParams(final String params) {
+        execute("CREATE TABLE \"Person\" (\"id\" int, \"city\" varchar" +
+            ", \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+            "\"template=cache," + params + '"');
     }
 
     /**
@@ -2215,31 +1383,9 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
     public void testCreateTableInNonPublicSchema() throws Exception {
         GridTestUtils.assertThrows(null, new Callable<Object>() {
             @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(false)) {
-                    execute("CREATE TABLE \"cache_idx\".\"Person\" (\"id\" int, \"city\" varchar," +
-                        " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
-                        "\"template=cache\"");
-                }
-
-                return null;
-            }
-        }, IgniteSQLException.class, "CREATE TABLE can only be executed on PUBLIC schema.");
-    }
-
-    /**
-     * Test that {@code CREATE TABLE} in non-public schema causes an exception.
-     *
-     * @throws Exception if failed.
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void testInternalCreateTableInNonPublicSchema() throws Exception {
-        GridTestUtils.assertThrows(null, new Callable<Object>() {
-            @Override public Object call() throws Exception {
-                try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-                    execute("CREATE TABLE \"cache_idx\".\"Person\" (\"id\" int, \"city\" varchar," +
-                        " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) " +
-                        "template=cache");
-                }
+                execute("CREATE TABLE \"cache_idx\".\"Person\" (\"id\" int, \"city\" varchar," +
+                    " \"name\" varchar, \"surname\" varchar, \"age\" int, PRIMARY KEY (\"id\", \"city\")) WITH " +
+                    "\"template=cache\"");
 
                 return null;
             }
@@ -2250,13 +1396,12 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
      * Execute {@code CREATE TABLE} w/given params expecting a particular error.
      * @param params Engine parameters.
      * @param expErrMsg Expected error message.
-     * @param useInternalCmd Use internal CREATE TABLE command
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    private void assertCreateTableWithParamsThrows(final String params, String expErrMsg, final boolean useInternalCmd) {
+    private void assertCreateTableWithParamsThrows(final String params, String expErrMsg) {
         GridTestUtils.assertThrows(null, new Callable<Object>() {
             @Override public Object call() throws Exception {
-                createTableWithParams(params, useInternalCmd);
+                createTableWithParams(params);
 
                 return null;
             }
@@ -2318,63 +1463,6 @@ public class H2DynamicTableSelfTest extends AbstractSchemaSelfTest {
         finally {
             execute("drop table t1 if exists");
             execute("drop table t2 if exists");
-        }
-    }
-
-    /**
-     * Tests for reserved columns definitions in the internal CREATE TABLE command.
-     *
-     * @throws AssertionError If failed.
-     */
-    public void testReservedColumnNamesInternal() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (_KEY INT)",
-                "Direct specification of _KEY and _VAL columns is forbidden");
-
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (_val INT)",
-                "Direct specification of _KEY and _VAL columns is forbidden");
-        }
-    }
-
-    /**
-     * Tests for primary key column definition errors in the internal CREATE TABLE command.
-     *
-     * @throws AssertionError If failed.
-     */
-    public void testPrimaryKeyColumnsInternal() {
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (a INT)",
-                "No PRIMARY KEY columns specified");
-
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (a INT, b VARCHAR, PRIMARY KEY (a, b))",
-                "Table must have at least one non PRIMARY KEY column.");
-        }
-    }
-
-    /**
-     * Tests for wrapping-related parameters for the internal CREATE TABLE command.
-     *
-     * @throws AssertionError If failed.
-     */
-    public void testCreateTableWrapParamsInternal() {
-
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)) {
-
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (a INT, b LONG, c VARCHAR, PRIMARY KEY (a)) NO_WRAP_KEY KEY_TYPE KeyType",
-                "WRAP_KEY cannot be false when KEY_TYPE is set.");
-
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (a INT, b LONG, c VARCHAR, d INT, PRIMARY KEY (a, b, c)) WRAP_KEY NO_WRAP_VALUE VALUE_TYPE ValueType",
-                "WRAP_VALUE cannot be false when VALUE_TYPE is set.");
-
-            assertDdlCommandThrows(
-                "CREATE TABLE tbl (a INT, b LONG, c VARCHAR, d INT, PRIMARY KEY (a, b)) KEY_TYPE KvType VALUE_TYPE KvType",
-                "Key and value type names should be different for CREATE TABLE: KVTYPE");
         }
     }
 
