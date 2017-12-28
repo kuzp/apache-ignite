@@ -83,6 +83,12 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
     /** */
     public static final String DFLT_STORE_DIR = "db";
 
+    /**
+     * Maximum length of a cache name to be used in store directory name.
+     * If a cache name is longer than this value, it will be truncated.
+     */
+    private static final int MAX_CACHE_NAME_LENGTH = 255;
+
     /** Marshaller. */
     private static final Marshaller marshaller = new JdkMarshaller();
 
@@ -370,6 +376,14 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
         // and file system is case-insensitive
         String hash = Integer.toHexString(base.hashCode());
         nameBuilder.append("-").append(hash);
+
+        // if the string is too long, remove some characters before the "-<hash>" suffix
+        if (nameBuilder.length() > MAX_CACHE_NAME_LENGTH) {
+            int charsToDelete = nameBuilder.length() - MAX_CACHE_NAME_LENGTH;
+            int end = nameBuilder.length() - hash.length() - 1;
+            int start = end - charsToDelete;
+            nameBuilder.delete(start, end);
+        }
 
         return nameBuilder.toString();
     }

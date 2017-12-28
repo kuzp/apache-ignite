@@ -11,9 +11,6 @@ package org.apache.ignite.internal.processors.cache.persistence;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.ignite.cache.CacheAtomicityMode;
-import org.apache.ignite.cache.CacheWriteSynchronizationMode;
-import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -57,7 +54,7 @@ public class IgnitePdsExoticCacheNamesTest extends GridCommonAbstractTest {
     /** {@inheritDoc} */
     @Override protected void afterTest() throws Exception {
         // clean persistent store
-        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), DFLT_STORE_DIR, false));
+//        deleteRecursively(U.resolveWorkDirectory(U.defaultWorkDirectory(), DFLT_STORE_DIR, false));
     }
 
     /** Test a persistent cache with slashes in the name */
@@ -85,6 +82,14 @@ public class IgnitePdsExoticCacheNamesTest extends GridCommonAbstractTest {
         checkPersistentCaches(CACHE_NAME_BASE + "mycache", CACHE_NAME_BASE + "MYCACHE");
     }
 
+    /** Test a persistent cache with long name */
+    public void testLongName() throws Exception {
+        String longName = "mylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" +
+            "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" +
+            "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongcache";
+        checkPersistentCaches(CACHE_NAME_BASE + longName);
+    }
+
     /**
      * Checks that persistent caches with the specified names can be created and work as expected.
      * The method takes variable arguments for the cases when multiple caches need to be checked together
@@ -100,10 +105,6 @@ public class IgnitePdsExoticCacheNamesTest extends GridCommonAbstractTest {
 
         // create caches with the specified names and put values into them
         for (String cacheName : cacheNames) {
-            CacheConfiguration<String, String> cacheCfg = new CacheConfiguration<>(cacheName);
-            cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
-            cacheCfg.setBackups(1);
-            cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
             IgniteCache<String, String> cache = ignite.getOrCreateCache(cacheName);
             cache.put(cacheName + "::foo", cacheName + "::bar");
         }
