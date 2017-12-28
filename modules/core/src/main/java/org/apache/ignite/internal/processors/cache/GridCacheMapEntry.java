@@ -46,7 +46,7 @@ import org.apache.ignite.internal.processors.cache.extras.GridCacheEntryExtras;
 import org.apache.ignite.internal.processors.cache.extras.GridCacheMvccEntryExtras;
 import org.apache.ignite.internal.processors.cache.extras.GridCacheObsoleteEntryExtras;
 import org.apache.ignite.internal.processors.cache.extras.GridCacheTtlEntryExtras;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinatorVersion;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRowAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.DataRegion;
@@ -469,7 +469,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         String taskName,
         @Nullable IgniteCacheExpiryPolicy expirePlc,
         boolean keepBinary,
-        MvccCoordinatorVersion mvccVer)
+        MvccVersion mvccVer)
         throws IgniteCheckedException, GridCacheEntryRemovedException {
         return (CacheObject)innerGet0(
             ver,
@@ -495,7 +495,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         String taskName,
         @Nullable IgniteCacheExpiryPolicy expiryPlc,
         boolean keepBinary,
-        MvccCoordinatorVersion mvccVer,
+        MvccVersion mvccVer,
         @Nullable ReaderArguments readerArgs) throws IgniteCheckedException, GridCacheEntryRemovedException {
         return (EntryGetResult)innerGet0(
             /*ver*/null,
@@ -525,7 +525,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         String taskName,
         @Nullable IgniteCacheExpiryPolicy expiryPlc,
         boolean keepBinary,
-        MvccCoordinatorVersion mvccVer,
+        MvccVersion mvccVer,
         @Nullable ReaderArguments readerArgs)
         throws IgniteCheckedException, GridCacheEntryRemovedException {
         return (EntryGetResult)innerGet0(
@@ -560,7 +560,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         boolean retVer,
         boolean keepBinary,
         boolean reserveForLoad,
-        @Nullable MvccCoordinatorVersion mvccVer,
+        @Nullable MvccVersion mvccVer,
         @Nullable ReaderArguments readerArgs
     ) throws IgniteCheckedException, GridCacheEntryRemovedException {
         assert !(retVer && readThrough);
@@ -633,11 +633,11 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             CacheObject ret = val;
 
             if (ret == null) {
-                if (updateMetrics && cctx.cache().configuration().isStatisticsEnabled())
+                if (updateMetrics && cctx.statisticsEnabled())
                     cctx.cache().metrics0().onRead(false);
             }
             else {
-                if (updateMetrics && cctx.cache().configuration().isStatisticsEnabled())
+                if (updateMetrics && cctx.statisticsEnabled())
                     cctx.cache().metrics0().onRead(true);
             }
 
@@ -916,7 +916,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         String taskName,
         @Nullable GridCacheVersion dhtVer,
         @Nullable Long updateCntr,
-        @Nullable MvccCoordinatorVersion mvccVer
+        @Nullable MvccVersion mvccVer
     ) throws IgniteCheckedException, GridCacheEntryRemovedException {
         CacheObject old;
 
@@ -1042,7 +1042,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             recordNodeId(affNodeId, topVer);
 
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled())
+            if (metrics && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onWrite();
 
             if (evt && newVer != null && cctx.events().isRecordable(EVT_CACHE_OBJECT_PUT)) {
@@ -1124,7 +1124,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         String taskName,
         @Nullable GridCacheVersion dhtVer,
         @Nullable Long updateCntr,
-        @Nullable MvccCoordinatorVersion mvccVer
+        @Nullable MvccVersion mvccVer
     ) throws IgniteCheckedException, GridCacheEntryRemovedException {
         assert cctx.transactional();
 
@@ -1226,7 +1226,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             drReplicate(drType, null, newVer, topVer);
 
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled())
+            if (metrics && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onRemove();
 
             if (tx == null)
@@ -1415,7 +1415,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             }
 
             // Apply metrics.
-            if (metrics && cctx.cache().configuration().isStatisticsEnabled() && needVal) {
+            if (metrics && cctx.statisticsEnabled() && needVal) {
                 // PutIfAbsent methods mustn't update hit/miss statistics
                 if (op != GridCacheOperation.UPDATE || F.isEmpty(filter) || !cctx.putIfAbsentFilter(filter))
                     cctx.cache().metrics0().onRead(old != null);
@@ -1745,7 +1745,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             // Apply metrics.
             if (metrics &&
                 updateRes.outcome().updateReadMetrics() &&
-                cctx.cache().configuration().isStatisticsEnabled() &&
+                cctx.statisticsEnabled() &&
                 needVal) {
                 // PutIfAbsent methods must not update hit/miss statistics.
                 if (op != GridCacheOperation.UPDATE || F.isEmpty(filter) || !cctx.putIfAbsentFilter(filter))
@@ -2580,7 +2580,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
     @Override public boolean initialValue(
         CacheObject val,
         GridCacheVersion ver,
-        MvccCoordinatorVersion mvccVer,
+        MvccVersion mvccVer,
         long ttl,
         long expireTime,
         boolean preload,
@@ -3064,7 +3064,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                 cctx.onDeferredDelete(this, ver0);
             }
 
-            if ((obsolete || deferred) && cctx.cache().configuration().isStatisticsEnabled())
+            if ((obsolete || deferred) && cctx.statisticsEnabled())
                 cctx.cache().metrics0().onEvict();
         }
 
@@ -3776,7 +3776,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
      * @param metrics Update merics flag.
      */
     private void updateMetrics(GridCacheOperation op, boolean metrics) {
-        if (metrics && cctx.cache().configuration().isStatisticsEnabled()) {
+        if (metrics && cctx.statisticsEnabled()) {
             if (op == GridCacheOperation.DELETE)
                 cctx.cache().metrics0().onRemove();
             else

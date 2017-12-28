@@ -66,10 +66,15 @@ import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.cluster.ClusterTopologyServerNotFoundException;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.distributed.GridDistributedLockCancelledException;
+import org.apache.ignite.internal.processors.cache.distributed.GridDistributedTxMapping;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtCacheAdapter;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtInvalidPartitionException;
+import org.apache.ignite.internal.processors.cache.distributed.near.GridNearCacheAdapter;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearTxLocal;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
+import org.apache.ignite.internal.processors.dr.GridDrType;
 import org.apache.ignite.internal.processors.igfs.IgfsUtils;
 import org.apache.ignite.internal.processors.query.QueryUtils;
 import org.apache.ignite.internal.processors.query.schema.SchemaOperationException;
@@ -84,6 +89,7 @@ import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.lang.IgniteBiInClosure;
 import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgnitePredicate;
@@ -98,6 +104,7 @@ import org.apache.ignite.transactions.TransactionRollbackException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
+import org.jsr166.LongAdder8;
 
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK;
 import static org.apache.ignite.cache.CacheAtomicityMode.TRANSACTIONAL;
@@ -307,6 +314,29 @@ public class GridCacheUtils {
 
         @Override public String toString() {
             return "FILTER_NEAR_CACHE_ENTRY";
+        }
+    };
+
+    /** Write filter. */
+    public static final IgnitePredicate FILTER_ENLISTED_ENTRY = new P1<IgniteTxEntry>() {
+        @Override public boolean apply(IgniteTxEntry e) {
+            return e.queryEnlisted();
+        }
+
+        @Override public String toString() {
+            return "FILTER_ENLISTED_ENTRY";
+        }
+    };
+
+    /** Query mapped filter. */
+    public static final IgnitePredicate<GridDistributedTxMapping> FILTER_QUERY_MAPPING = new P1<GridDistributedTxMapping>() {
+
+        @Override public boolean apply(GridDistributedTxMapping m) {
+            return m.queryUpdate();
+        }
+
+        @Override public String toString() {
+            return "FILTER_QUERY_MAPPING";
         }
     };
 
@@ -575,6 +605,30 @@ public class GridCacheUtils {
 
             @Override public String toString() {
                 return "Bool reducer: " + bool;
+            }
+        };
+    }
+
+    /**
+     * @return Long reducer.
+     */
+    public static IgniteReducer<Long, Long> longReducer() {
+        return new IgniteReducer<Long, Long>() {
+            private final LongAdder8 res = new LongAdder8();
+
+            @Override public boolean collect(Long l) {
+                if(l != null)
+                    res.add(l);
+
+                return true;
+            }
+
+            @Override public Long reduce() {
+                return res.sum();
+            }
+
+            @Override public String toString() {
+                return "Long reducer: " + res;
             }
         };
     }
@@ -1678,6 +1732,103 @@ public class GridCacheUtils {
     }
 
     /**
+     * Creates closure that saves initial value to backup partition.
+     * <p>
+     * Useful only when store with readThrough is used. In situation when
+     * get() on backup node returns successful result, it's expected that
+     * localPeek() will be successful as well. But it doesn't true when
+     * primary node loaded value from local store, in this case backups
+     * will remain non-initialized.
+     * <br>
+     * To meet that requirement the value requested from primary should
+     * be saved on backup during get().
+     * </p>
+     *
+     * @param topVer Topology version.
+     * @param log Logger.
+     * @param cctx Cache context.
+     * @param key Key.
+     * @param expiryPlc Expiry policy.
+     * @param readThrough Read through.
+     * @param skipVals Skip values.
+     */
+    @Nullable public static BackupPostProcessingClosure createBackupPostProcessingClosure(
+        final AffinityTopologyVersion topVer,
+        final IgniteLogger log,
+        final GridCacheContext cctx,
+        final @Nullable KeyCacheObject key,
+        final @Nullable IgniteCacheExpiryPolicy expiryPlc,
+        boolean readThrough,
+        boolean skipVals
+    ) {
+        if (!readThrough || skipVals ||
+            (key != null && !cctx.affinity().backupsByKey(key, topVer).contains(cctx.localNode())))
+            return null;
+
+        return new BackupPostProcessingClosure() {
+            private void process(KeyCacheObject key, CacheObject val, GridCacheVersion ver, GridDhtCacheAdapter colocated) {
+                while (true) {
+                    GridCacheEntryEx entry = null;
+
+                    try {
+                        entry = colocated.entryEx(key, topVer);
+
+                        // TODO IGNITE-3478 (mvcc ver)
+                        entry.initialValue(
+                            val,
+                            ver,
+                            null,
+                            expiryPlc == null ? 0 : expiryPlc.forCreate(),
+                            expiryPlc == null ? 0 : toExpireTime(expiryPlc.forCreate()),
+                            false,
+                            topVer,
+                            GridDrType.DR_BACKUP,
+                            true);
+
+                        break;
+                    }
+                    catch (GridCacheEntryRemovedException ignore) {
+                        if (log.isDebugEnabled())
+                            log.debug("Got removed entry during postprocessing (will retry): " +
+                                entry);
+                    }
+                    catch (IgniteCheckedException e) {
+                        U.error(log, "Error saving backup value: " + entry, e);
+                    }
+                    catch (GridDhtInvalidPartitionException ignored) {
+                        break;
+                    }
+                    finally {
+                        if (entry != null)
+                            cctx.evicts().touch(entry, topVer);
+                    }
+                }
+            }
+
+            @Override public void apply(CacheObject val, GridCacheVersion ver) {
+                process(key, val, ver, cctx.dht());
+            }
+
+            @Override public void apply(Collection<GridCacheEntryInfo> infos) {
+                if (!F.isEmpty(infos)) {
+                    GridCacheAffinityManager aff = cctx.affinity();
+                    ClusterNode locNode = cctx.localNode();
+
+                    GridDhtCacheAdapter colocated = cctx.cache().isNear()
+                        ? ((GridNearCacheAdapter)cctx.cache()).dht()
+                        : cctx.dht();
+
+                    for (GridCacheEntryInfo info : infos) {
+                        // Save backup value.
+                        if (aff.backupsByKey(info.key(), topVer).contains(locNode))
+                            process(info.key(), info.value(), info.version(), colocated);
+                    }
+                }
+            }
+        };
+    }
+
+    /**
      * Checks if cache configuration belongs to persistent cache.
      *
      * @param ccfg Cache configuration.
@@ -1751,5 +1902,50 @@ public class GridCacheUtils {
         }
 
         return false;
+    }
+
+    /**
+     * @param sctx Shared context.
+     * @param cacheIds Cache ids.
+     * @return First partitioned cache or {@code null} in case no partitioned cache ids are in list.
+     */
+    public static GridCacheContext<?, ?> firstPartitioned(GridCacheSharedContext<?, ?> sctx, int[] cacheIds) {
+        for (int i = 0; i < cacheIds.length; i++) {
+            GridCacheContext<?, ?> cctx = sctx.cacheContext(cacheIds[i]);
+
+            if (cctx == null)
+                throw new CacheException("Failed to find cache.");
+
+            if (!cctx.isLocal() && !cctx.isReplicated())
+                return cctx;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param sctx Shared context.
+     * @param cacheIds Cache ids.
+     * @return First partitioned cache or {@code null} in case no partitioned cache ids are in list.
+     */
+    public static GridCacheContext<?, ?> firstPartitioned(GridCacheSharedContext<?, ?> sctx, Iterable<Integer> cacheIds) {
+        for (Integer i : cacheIds) {
+            GridCacheContext<?, ?> cctx = sctx.cacheContext(i);
+
+            if (cctx == null)
+                throw new CacheException("Failed to find cache.");
+
+            if (!cctx.isLocal() && !cctx.isReplicated())
+                return cctx;
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     */
+    public interface BackupPostProcessingClosure extends IgniteInClosure<Collection<GridCacheEntryInfo>>,
+        IgniteBiInClosure<CacheObject, GridCacheVersion>{
     }
 }

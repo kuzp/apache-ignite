@@ -67,7 +67,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.StoredCacheData;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinatorVersion;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryFuture;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryType;
@@ -516,7 +516,13 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 if (cacheDesc != null && F.eq(cacheDesc.deploymentId(), proposeMsg.deploymentId())) {
                     cacheDesc.schemaChangeFinish(msg);
 
-                    saveCacheConfiguration(cacheDesc);
+                    try {
+                        ctx.cache().saveCacheConfiguration(cacheDesc);
+                    }
+                    catch (IgniteCheckedException e) {
+                        U.error(log, "Error while saving cache configuration on disk, cfg = "
+                            + cacheDesc.cacheConfiguration(), e);
+                    }
                 }
             }
 
@@ -1718,7 +1724,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @throws IgniteCheckedException In case of error.
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public void store(GridCacheContext cctx, CacheDataRow newRow, @Nullable MvccCoordinatorVersion mvccVer,
+    public void store(GridCacheContext cctx, CacheDataRow newRow, @Nullable MvccVersion mvccVer,
         @Nullable CacheDataRow prevRow, boolean prevRowAvailable, boolean idxRebuild)
         throws IgniteCheckedException {
         assert cctx != null;
@@ -1874,6 +1880,32 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         if (idx == null)
             throw new IgniteException("Failed to execute query because indexing is disabled (consider adding module " +
                 INDEXING.module() + " to classpath or moving it from 'optional' to 'libs' folder).");
+    }
+
+    /**
+     *
+     * @param cctx Cache context.
+     * @param cacheIds Involved cache ids.
+     * @param parts Partitions.
+     * @param schema Schema name.
+     * @param qry Query string.
+     * @param params Query parameters.
+     * @param flags Flags.
+     * @param pageSize Fetch page size.
+     * @param timeout Timeout.
+     * @param topVer Topology version.
+     * @param mvccVer Mvc version.
+     * @param cancel Query cancel object.
+     * @return Cursor over entries which are going to be changed.
+     * @throws IgniteCheckedException If failed.
+     */
+    public GridCloseableIterator<?> prepareDistributedUpdate(GridCacheContext<?, ?> cctx, int[] cacheIds,
+        int[] parts, String schema, String qry, Object[] params, int flags, int pageSize, int timeout,
+        AffinityTopologyVersion topVer, MvccVersion mvccVer,
+        GridQueryCancel cancel) throws IgniteCheckedException {
+        checkxEnabled();
+
+        return idx.prepareDistributedUpdate(cctx, cacheIds, parts, schema, qry, params, flags, pageSize, timeout, topVer, mvccVer, cancel);
     }
 
     /**
@@ -2348,7 +2380,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @param newVer Mvcc version for remove operation.
      * @throws IgniteCheckedException Thrown in case of any errors.
      */
-    public void remove(GridCacheContext cctx, CacheDataRow val, @Nullable MvccCoordinatorVersion newVer)
+    public void remove(GridCacheContext cctx, CacheDataRow val, @Nullable MvccVersion newVer)
         throws IgniteCheckedException {
         assert val != null;
         assert cctx.mvccEnabled() || newVer == null;
@@ -2603,32 +2635,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     ", sndNodeId=" + msg.senderNodeId() + ']');
         }
     }
-    /**
-     * @param desc cache descriptor.
-     */
-    private void saveCacheConfiguration(DynamicCacheDescriptor desc) {
-        GridCacheSharedContext cctx = ctx.cache().context();
-
-        if (cctx.pageStore() != null && !cctx.kernalContext().clientNode() &&
-            CU.isPersistentCache(desc.cacheConfiguration(), cctx.gridConfig().getDataStorageConfiguration())) {
-            CacheConfiguration cfg = desc.cacheConfiguration();
-
-            try {
-                StoredCacheData data = new StoredCacheData(cfg);
-
-                if (desc.schema() != null)
-                    data.queryEntities(desc.schema().entities());
-
-                data.sql(desc.sql());
-
-                cctx.pageStore().storeCacheData(data, true);
-            }
-            catch (IgniteCheckedException e) {
-                U.error(log, "Error while saving cache configuration on disk, cfg = " + cfg, e);
-            }
-        }
-    }
-
 
     /**
      * Unwind pending messages for particular operation.

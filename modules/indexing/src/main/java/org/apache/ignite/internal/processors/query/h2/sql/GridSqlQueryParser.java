@@ -36,6 +36,7 @@ import org.apache.ignite.cache.QueryIndexType;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.processors.query.IgniteSQLException;
 import org.apache.ignite.internal.processors.query.QueryUtils;
+import org.apache.ignite.internal.processors.query.h2.dml.DmlAstUtils;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2RowDescriptor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Table;
 import org.apache.ignite.internal.util.typedef.F;
@@ -89,6 +90,7 @@ import org.h2.schema.Schema;
 import org.h2.table.Column;
 import org.h2.table.FunctionTable;
 import org.h2.table.IndexColumn;
+import org.h2.table.MetaTable;
 import org.h2.table.RangeTable;
 import org.h2.table.Table;
 import org.h2.table.TableBase;
@@ -592,7 +594,7 @@ public class GridSqlQueryParser {
             // We can't cache simple tables because otherwise it will be the same instance for all
             // table filters. Thus we will not be able to distinguish one table filter from another.
             // Table here is semantically equivalent to a table filter.
-            if (tbl instanceof TableBase)
+            if (tbl instanceof TableBase || tbl instanceof MetaTable)
                 return new GridSqlTable(tbl);
 
             // Other stuff can be cached because we will have separate instances in

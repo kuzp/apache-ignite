@@ -38,9 +38,9 @@ import org.h2.result.SearchRow;
 import org.h2.table.IndexColumn;
 import org.h2.value.Value;
 
-import static org.apache.ignite.internal.processors.cache.mvcc.CacheCoordinatorsProcessor.MVCC_COUNTER_NA;
-import static org.apache.ignite.internal.processors.cache.mvcc.CacheCoordinatorsProcessor.assertMvccVersionValid;
-import static org.apache.ignite.internal.processors.cache.mvcc.CacheCoordinatorsProcessor.unmaskCoordinatorVersion;
+import static org.apache.ignite.internal.processors.cache.mvcc.MvccProcessor.MVCC_COUNTER_NA;
+import static org.apache.ignite.internal.processors.cache.mvcc.MvccProcessor.assertMvccVersionValid;
+import static org.apache.ignite.internal.processors.cache.mvcc.MvccProcessor.unmaskCoordinatorVersion;
 
 /**
  */
@@ -236,15 +236,14 @@ public abstract class H2Tree extends BPlusTree<GridH2SearchRow, GridH2Row> {
     }
 
     /**
-     * Compare two rows.
+     * Compares two H2 rows.
      *
      * @param r1 Row 1.
      * @param r2 Row 2.
-     * @return Compare result.
+     * @return Compare result: see {@link Comparator#compare(Object, Object)} for values.
      */
-    private int compareRows(GridH2Row r1, GridH2SearchRow r2) {
+    public int compareRows(GridH2SearchRow r1, GridH2SearchRow r2) {
         assert !mvccEnabled || r2.indexSearchRow() || assertMvccVersionValid(r2.mvccCoordinatorVersion(), r2.mvccCounter()) : r2;
-
         if (r1 == r2)
             return 0;
 
@@ -304,7 +303,7 @@ public abstract class H2Tree extends BPlusTree<GridH2SearchRow, GridH2Row> {
      * @param r2 Second row.
      * @return Comparison result.
      */
-    private int mvccCompare(GridH2Row r1, GridH2SearchRow r2) {
+    private int mvccCompare(GridH2SearchRow r1, GridH2SearchRow r2) {
         if (mvccEnabled && !r2.indexSearchRow()) {
             long crdVer1 = r1.mvccCoordinatorVersion();
             long crdVer2 = r2.mvccCoordinatorVersion();

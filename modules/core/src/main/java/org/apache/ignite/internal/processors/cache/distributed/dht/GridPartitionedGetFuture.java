@@ -43,11 +43,11 @@ import org.apache.ignite.internal.processors.cache.IgniteCacheExpiryPolicy;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearGetRequest;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearGetResponse;
+import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinator;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinatorVersion;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinatorChangeAware;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccQueryTracker;
-import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.GridLeanMap;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
@@ -62,6 +62,7 @@ import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiInClosure;
+import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgniteUuid;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,7 +81,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
     private static IgniteLogger log;
 
     /** */
-    protected final MvccCoordinatorVersion mvccVer;
+    protected final MvccVersion mvccVer;
 
     /** */
     private MvccQueryTracker mvccTracker;
@@ -114,7 +115,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
         boolean skipVals,
         boolean needVer,
         boolean keepCacheObjects,
-        @Nullable MvccCoordinatorVersion mvccVer
+        @Nullable MvccVersion mvccVer
     ) {
         super(cctx,
             keys,
@@ -139,14 +140,14 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
     /**
      * @return Mvcc version if mvcc is enabled for cache.
      */
-    @Nullable private MvccCoordinatorVersion mvccVersion() {
+    @Nullable private MvccVersion mvccVersion() {
         if (!cctx.mvccEnabled())
             return null;
 
         if (mvccVer != null)
             return mvccVer;
 
-        MvccCoordinatorVersion ver = mvccTracker.mvccVersion();
+        MvccVersion ver = mvccTracker.mvccVersion();
 
         assert ver != null : "[fut=" + this + ", mvccTracker=" + mvccTracker + "]";
 
@@ -198,7 +199,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public MvccCoordinatorVersion onMvccCoordinatorChange(MvccCoordinator newCrd) {
+    @Nullable @Override public MvccVersion onMvccCoordinatorChange(MvccCoordinator newCrd) {
         if (mvccTracker != null)
             return mvccTracker.onMvccCoordinatorChange(newCrd);
 
@@ -298,7 +299,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
     private void map(
         Collection<KeyCacheObject> keys,
         Map<ClusterNode, LinkedHashMap<KeyCacheObject, Boolean>> mapped,
-        AffinityTopologyVersion topVer
+        final AffinityTopologyVersion topVer
     ) {
         Collection<ClusterNode> cacheNodes = CU.affinityNodes(cctx, topVer);
 
@@ -406,7 +407,8 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
                 }));
             }
             else {
-                MiniFuture fut = new MiniFuture(n, mappedKeys, topVer);
+                MiniFuture fut = new MiniFuture(n, mappedKeys, topVer,
+                    CU.createBackupPostProcessingClosure(topVer, log, cctx, null, expiryPlc, readThrough, skipVals));
 
                 GridCacheMessage req = new GridNearGetRequest(
                     cctx.cacheId(),
@@ -629,7 +631,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
 
                 // Entry not found, do not continue search if topology did not change and there is no store.
                 if (!cctx.readThroughConfigured() && (topStable || partitionOwned(part))) {
-                    if (!skipVals && cctx.config().isStatisticsEnabled())
+                    if (!skipVals && cctx.statisticsEnabled())
                         cache.metrics0().onRead(false);
 
                     return true;
@@ -727,6 +729,9 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
         /** Topology version on which this future was mapped. */
         private final AffinityTopologyVersion topVer;
 
+        /** Post processing closure. */
+        private final IgniteInClosure<Collection<GridCacheEntryInfo>> postProcessingClos;
+
         /** {@code True} if remapped after node left. */
         private boolean remapped;
 
@@ -734,11 +739,14 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
          * @param node Node.
          * @param keys Keys.
          * @param topVer Topology version.
+         * @param postProcessingClos Post processing closure.
          */
-        MiniFuture(ClusterNode node, LinkedHashMap<KeyCacheObject, Boolean> keys, AffinityTopologyVersion topVer) {
+        MiniFuture(ClusterNode node, LinkedHashMap<KeyCacheObject, Boolean> keys, AffinityTopologyVersion topVer,
+            @Nullable IgniteInClosure<Collection<GridCacheEntryInfo>> postProcessingClos) {
             this.node = node;
             this.keys = keys;
             this.topVer = topVer;
+            this.postProcessingClos = postProcessingClos;
         }
 
         /**
@@ -854,6 +862,8 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
                         }
                     }), F.t(node, keys), topVer);
 
+                    postProcessResult(res);
+
                     onDone(createResultMap(res.entries()));
 
                     return;
@@ -875,18 +885,30 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
                             }
                         }), F.t(node, keys), topVer);
 
+                        postProcessResult(res);
+
                         onDone(createResultMap(res.entries()));
                     }
                 });
             }
             else {
                 try {
+                    postProcessResult(res);
+
                     onDone(createResultMap(res.entries()));
                 }
                 catch (Exception e) {
                     onDone(e);
                 }
             }
+        }
+
+        /**
+         * @param res Response.
+         */
+        private void postProcessResult(final GridNearGetResponse res) {
+            if (postProcessingClos != null)
+                postProcessingClos.apply(res.entries());
         }
 
         /** {@inheritDoc} */

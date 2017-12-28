@@ -284,9 +284,15 @@ public class GridIndexRebuildSelfTest extends DynamicIndexAbstractSelfTest {
      * Blocking indexing processor.
      */
     private static class BlockingIndexing extends IgniteH2Indexing {
+        /** Flag to ignore first rebuild performed on initial node start. */
+        private boolean firstRbld = true;
+
         /** {@inheritDoc} */
         @Override public void rebuildIndexesFromHash(String cacheName) throws IgniteCheckedException {
-            U.await(INSTANCE.rebuildLatch);
+            if (!firstRbld)
+                U.await(INSTANCE.rebuildLatch);
+            else
+                firstRbld = false;
 
             int cacheId = CU.cacheId(cacheName);
 
@@ -320,7 +326,7 @@ public class GridIndexRebuildSelfTest extends DynamicIndexAbstractSelfTest {
         }
 
         /** {@inheritDoc} */
-        @Override public void apply(CacheDataRow row) throws IgniteCheckedException {
+        @Override public synchronized void apply(CacheDataRow row) throws IgniteCheckedException {
             // For half of the keys, we want to do rebuild
             // after corresponding key had been put from a concurrent thread.
             boolean keyFirstMet = keys.add(row.key()) && keys.size() > AMOUNT / 2;

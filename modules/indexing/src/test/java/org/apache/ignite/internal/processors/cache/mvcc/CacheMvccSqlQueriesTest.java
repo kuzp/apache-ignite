@@ -49,10 +49,8 @@ import static org.apache.ignite.transactions.TransactionConcurrency.PESSIMISTIC;
 import static org.apache.ignite.transactions.TransactionIsolation.REPEATABLE_READ;
 
 /**
- * TODO IGNITE-3478: text/spatial indexes with mvcc.
- * TODO IGNITE-3478: indexingSpi with mvcc.
- * TODO IGNITE-3478: setQueryParallelism with mvcc.
- * TODO IGNITE-3478: dynamic index create.
+ * TODO IGNITE-3478: text/spatial indexes with mvcc. TODO IGNITE-3478: indexingSpi with mvcc. TODO IGNITE-3478:
+ * setQueryParallelism with mvcc. TODO IGNITE-3478: dynamic index create.
  */
 @SuppressWarnings("unchecked")
 public class CacheMvccSqlQueriesTest extends CacheMvccAbstractTest {
@@ -822,7 +820,7 @@ public class CacheMvccSqlQueriesTest extends CacheMvccAbstractTest {
      * @throws Exception If failed.
      */
     public void testCountTransactional_SingleNode() throws Exception {
-      countTransactional(true);
+        countTransactional(true);
     }
 
     /**
@@ -864,7 +862,7 @@ public class CacheMvccSqlQueriesTest extends CacheMvccAbstractTest {
 
                         try {
                             // Add or remove 10 keys.
-                            if (!keys.isEmpty() && (keys.size() == THREAD_KEY_RANGE || rnd.nextInt(3) == 0 )) {
+                            if (!keys.isEmpty() && (keys.size() == THREAD_KEY_RANGE || rnd.nextInt(3) == 0)) {
                                 Set<Integer> rmvKeys = new HashSet<>();
 
                                 for (Integer key : keys) {

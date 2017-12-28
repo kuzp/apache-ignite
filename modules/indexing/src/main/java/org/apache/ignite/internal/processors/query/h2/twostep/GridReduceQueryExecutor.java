@@ -64,6 +64,7 @@ import org.apache.ignite.internal.processors.cache.query.GridCacheQueryMarshalla
 import org.apache.ignite.internal.processors.cache.query.GridCacheQueryType;
 import org.apache.ignite.internal.processors.cache.query.GridCacheSqlQuery;
 import org.apache.ignite.internal.processors.cache.query.GridCacheTwoStepQuery;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxAdapter;
 import org.apache.ignite.internal.processors.query.GridQueryCacheObjectsIterator;
 import org.apache.ignite.internal.processors.query.GridQueryCancel;
 import org.apache.ignite.internal.processors.query.GridRunningQueryInfo;
@@ -84,13 +85,11 @@ import org.apache.ignite.internal.processors.query.h2.twostep.msg.GridH2QueryReq
 import org.apache.ignite.internal.util.GridIntIterator;
 import org.apache.ignite.internal.util.GridIntList;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
-import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.typedef.CIX2;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiClosure;
-import org.apache.ignite.lang.IgniteBiInClosure;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.plugin.extensions.communication.Message;
 import org.apache.ignite.transactions.TransactionException;
@@ -403,7 +402,7 @@ public class GridReduceQueryExecutor {
 
         // Explicit partitions mapping is not applicable to replicated cache.
         if (cctx.isReplicated()) {
-            for (ClusterNode clusterNode : cctx.affinity().assignment(topVer).primaryPartitionNodes())
+            for (ClusterNode clusterNode : cctx.affinity().assignment(topVer).nodes())
                 mapping.put(clusterNode, null);
 
             return mapping;
@@ -481,35 +480,27 @@ public class GridReduceQueryExecutor {
             if (F.isEmpty(extraNodes))
                 throw new CacheException("Failed to find data nodes for cache: " + extraCacheName);
 
-            if (isReplicatedOnly && extraCctx.isReplicated()) {
-                nodes.retainAll(extraNodes);
+            boolean disjoint;
 
-                if (map.isEmpty()) {
-                    if (isPreloadingActive(cacheIds))
-                        return null; // Retry.
-                    else
-                        throw new CacheException("Caches have distinct sets of data nodes [cache1=" + cctx.name() +
-                            ", cache2=" + extraCacheName + "]");
+            if (extraCctx.isReplicated()) {
+                if (isReplicatedOnly) {
+                    nodes.retainAll(extraNodes);
+
+                    disjoint = map.isEmpty();
                 }
-            }
-            else if (!isReplicatedOnly && extraCctx.isReplicated()) {
-                if (!extraNodes.containsAll(nodes))
-                    if (isPreloadingActive(cacheIds))
-                        return null; // Retry.
-                    else
-                        throw new CacheException("Caches have distinct sets of data nodes [cache1=" + cctx.name() +
-                            ", cache2=" + extraCacheName + "]");
-            }
-            else if (!isReplicatedOnly && !extraCctx.isReplicated()) {
-                if (!extraNodes.equals(nodes))
-                    if (isPreloadingActive(cacheIds))
-                        return null; // Retry.
-                    else
-                        throw new CacheException("Caches have distinct sets of data nodes [cache1=" + cctx.name() +
-                            ", cache2=" + extraCacheName + "]");
+                else
+                    disjoint = !extraNodes.containsAll(nodes);
             }
             else
-                throw new IllegalStateException();
+                disjoint = !extraNodes.equals(nodes);
+
+            if (disjoint) {
+                if (isPreloadingActive(cacheIds))
+                    return null; // Retry.
+                else
+                    throw new CacheException("Caches have distinct sets of data nodes [cache1=" + cctx.name() +
+                        ", cache2=" + extraCacheName + "]");
+            }
         }
 
         return map;
@@ -525,6 +516,7 @@ public class GridReduceQueryExecutor {
      * @param params Query parameters.
      * @param parts Partitions.
      * @param lazy Lazy execution flag.
+     * @param mvccTracker Query tracker.
      * @return Rows iterator.
      */
     public Iterator<List<?>> query(
@@ -536,8 +528,10 @@ public class GridReduceQueryExecutor {
         GridQueryCancel cancel,
         Object[] params,
         final int[] parts,
-        boolean lazy
-    ) {
+        boolean lazy,
+        MvccQueryTracker mvccTracker) {
+        assert !qry.mvccEnabled() || mvccTracker != null;
+
         if (F.isEmpty(params))
             params = EMPTY_PARAMS;
 
@@ -571,31 +565,6 @@ public class GridReduceQueryExecutor {
             }
 
             List<Integer> cacheIds = qry.cacheIds();
-
-            MvccQueryTracker mvccTracker = null;
-
-            // TODO IGNITE-3478.
-            if (qry.mvccEnabled()) {
-                assert !cacheIds.isEmpty();
-
-                final GridFutureAdapter<Void> fut = new GridFutureAdapter<>();
-
-                mvccTracker = new MvccQueryTracker(cacheContext(cacheIds.get(0)), true,
-                    new IgniteBiInClosure<AffinityTopologyVersion, IgniteCheckedException>() {
-                    @Override public void apply(AffinityTopologyVersion topVer, IgniteCheckedException e) {
-                        fut.onDone(null, e);
-                    }
-                });
-
-                mvccTracker.requestVersion(topVer);
-
-                try {
-                    fut.get();
-                }
-                catch (IgniteCheckedException e) {
-                    throw new CacheException(e);
-                }
-            }
 
             Collection<ClusterNode> nodes;
 
@@ -765,7 +734,11 @@ public class GridReduceQueryExecutor {
                     .timeout(timeoutMillis)
                     .schemaName(schemaName);
 
-                if (mvccTracker != null)
+                IgniteTxAdapter curTx = h2.activeTx();
+
+                if (curTx != null && curTx.mvccInfo() != null)
+                    req.mvccVersion(curTx.mvccInfo().version());
+                else if (mvccTracker != null)
                     req.mvccVersion(mvccTracker.mvccVersion());
 
                 if (send(nodes, req, parts == null ? null : new ExplicitPartitionsSpecializer(qryMap), false)) {
@@ -833,7 +806,9 @@ public class GridReduceQueryExecutor {
                                 timeoutMillis,
                                 cancel);
 
-                            resIter = new H2FieldsIterator(res);
+                            resIter = new H2FieldsIterator(res, mvccTracker);
+
+                            mvccTracker = null; // To prevent callback inside finally block;
                         }
                         finally {
                             GridH2QueryContext.clearThreadLocal();

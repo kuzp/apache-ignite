@@ -1239,12 +1239,13 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
 
                 res = entryProcessor.process(invokeEntry, t.get2());
 
-                val0 = invokeEntry.value();
+                val0 = invokeEntry.getValue(txEntry.keepBinary());
 
                 key0 = invokeEntry.key();
             }
 
-            ctx.validateKeyAndValue(txEntry.key(), ctx.toCacheObject(val0));
+            if (val0 != null) // no validation for remove case
+                ctx.validateKeyAndValue(txEntry.key(), ctx.toCacheObject(val0));
 
             if (res != null)
                 ret.addEntryProcessResult(ctx, txEntry.key(), key0, res, null, txEntry.keepBinary());
@@ -1270,7 +1271,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
      * @throws IgniteCheckedException If caches already enlisted in this transaction are not compatible with given
      *      cache (e.g. they have different stores).
      */
-    protected final void addActiveCache(GridCacheContext cacheCtx, boolean recovery) throws IgniteCheckedException {
+    public final void addActiveCache(GridCacheContext cacheCtx, boolean recovery) throws IgniteCheckedException {
         txState.addActiveCache(cacheCtx, recovery, this);
     }
 
@@ -1321,7 +1322,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
      * @param skipStore Skip store flag.
      * @return Transaction entry.
      */
-    protected final IgniteTxEntry addEntry(GridCacheOperation op,
+    public final IgniteTxEntry addEntry(GridCacheOperation op,
         @Nullable CacheObject val,
         @Nullable EntryProcessor entryProcessor,
         Object[] invokeArgs,

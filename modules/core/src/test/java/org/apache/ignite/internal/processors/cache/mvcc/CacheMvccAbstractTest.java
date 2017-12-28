@@ -112,6 +112,9 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
     /** */
     protected boolean persistence;
 
+    /** */
+    protected CacheConfiguration ccfg;
+
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
@@ -126,6 +129,9 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
         ((TcpCommunicationSpi)cfg.getCommunicationSpi()).setSharedMemoryPort(-1);
 
         cfg.setClientMode(client);
+
+        if (ccfg != null)
+            cfg.setCacheConfiguration(ccfg);
 
         if (nodeAttr != null)
             cfg.setUserAttributes(F.asMap(nodeAttr, true));
@@ -157,7 +163,7 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
     @Override protected void beforeTest() throws Exception {
         super.beforeTest();
 
-        CacheCoordinatorsProcessor.coordinatorAssignClosure(null);
+        MvccProcessor.coordinatorAssignClosure(null);
 
         GridTestUtils.deleteDbFiles();
     }
@@ -171,7 +177,7 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
             stopAllGrids();
         }
 
-        CacheCoordinatorsProcessor.coordinatorAssignClosure(null);
+        MvccProcessor.coordinatorAssignClosure(null);
 
         GridTestUtils.deleteDbFiles();
 
@@ -599,7 +605,7 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
         final GridInClosure3<Integer, List<TestCache>, AtomicBoolean> writer,
         final GridInClosure3<Integer, List<TestCache>, AtomicBoolean> reader) throws Exception {
         if (restartMode == RestartMode.RESTART_CRD)
-            CacheCoordinatorsProcessor.coordinatorAssignClosure(new CoordinatorAssignClosure());
+            MvccProcessor.coordinatorAssignClosure(new CoordinatorAssignClosure());
 
         Ignite srv0 = startGridsMultiThreaded(srvs);
 
@@ -789,7 +795,7 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
      */
     final void verifyCoordinatorInternalState() throws Exception {
         for (Ignite node : G.allGrids()) {
-            final CacheCoordinatorsProcessor crd = ((IgniteKernal)node).context().cache().context().coordinators();
+            final MvccProcessor crd = ((IgniteKernal)node).context().cache().context().coordinators();
 
             Map activeTxs = GridTestUtils.getFieldValue(crd, "activeTxs");
 
@@ -814,7 +820,7 @@ public abstract class CacheMvccAbstractTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     protected final void checkActiveQueriesCleanup(Ignite node) throws Exception {
-        final CacheCoordinatorsProcessor crd = ((IgniteKernal)node).context().cache().context().coordinators();
+        final MvccProcessor crd = ((IgniteKernal)node).context().cache().context().coordinators();
 
         assertTrue("Active queries not cleared: " + node.name(), GridTestUtils.waitForCondition(
             new GridAbsPredicate() {

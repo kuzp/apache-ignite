@@ -33,6 +33,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.processors.cache.QueryCursorImpl;
+import org.apache.ignite.internal.processors.cache.distributed.near.GridNearTxLocal;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.processors.query.GridQueryProperty;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
@@ -164,12 +165,7 @@ public class DdlStatementsProcessor {
             if (fut != null)
                 fut.get();
 
-            QueryCursorImpl<List<?>> resCur = (QueryCursorImpl<List<?>>)new QueryCursorImpl(Collections.singletonList
-                (Collections.singletonList(0L)), null, false);
-
-            resCur.fieldsMeta(UPDATE_RESULT_META);
-
-            return resCur;
+            return IgniteH2Indexing.dummyCursor();
         }
         catch (SchemaOperationException e) {
             throw convert(e);
@@ -196,6 +192,8 @@ public class DdlStatementsProcessor {
         IgniteInternalFuture fut = null;
 
         try {
+            finishActiveTxIfNecessary();
+
             GridSqlStatement stmt0 = new GridSqlQueryParser(false).parse(prepared);
 
             if (stmt0 instanceof GridSqlCreateIndex) {
@@ -386,6 +384,23 @@ public class DdlStatementsProcessor {
         }
         catch (Exception e) {
             throw new IgniteSQLException("Unexpected DDL operation failure: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Commits active transaction if exists.
+     *
+     * @throws IgniteCheckedException If failed.
+     */
+    private void finishActiveTxIfNecessary() throws IgniteCheckedException {
+        try (GridNearTxLocal tx = idx.tx()) {
+            if (tx == null)
+                return;
+
+            if (!tx.isRollbackOnly())
+                tx.commit();
+            else
+                tx.rollback();
         }
     }
 

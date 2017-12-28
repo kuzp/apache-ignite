@@ -31,7 +31,7 @@ import org.apache.ignite.cache.query.SqlQuery;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinatorVersion;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.query.schema.SchemaIndexCacheVisitor;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
@@ -60,6 +60,13 @@ public interface GridQueryIndexing {
      * @throws IgniteCheckedException If failed.
      */
     public void stop() throws IgniteCheckedException;
+
+    /**
+     * Performs necessary actions on disconnect of a stateful client (say, one associated with a transaction).
+     *
+     * @throws IgniteCheckedException If failed.
+     */
+    public void onClientDisconnect() throws IgniteCheckedException;
 
     /**
      * Parses SQL query into two step query and executes it.
@@ -202,6 +209,28 @@ public interface GridQueryIndexing {
     public void unregisterCache(String cacheName, boolean rmvIdx) throws IgniteCheckedException;
 
     /**
+     *
+     * @param cctx Cache context.
+     * @param ids Involved cache ids.
+     * @param parts Partitions.
+     * @param schema Schema name.
+     * @param qry Query string.
+     * @param params Query parameters.
+     * @param flags Flags.
+     * @param pageSize Fetch page size.
+     * @param timeout Timeout.
+     * @param topVer Topology version.
+     * @param mvccVer Mvc version.
+     * @param cancel Query cancel object.
+     * @return Cursor over entries which are going to be changed.
+     * @throws IgniteCheckedException If failed.
+     */
+    public GridCloseableIterator<?> prepareDistributedUpdate(GridCacheContext<?, ?> cctx, int[] ids, int[] parts,
+        String schema, String qry, Object[] params, int flags,
+        int pageSize, int timeout, AffinityTopologyVersion topVer,
+        MvccVersion mvccVer, GridQueryCancel cancel) throws IgniteCheckedException;
+
+    /**
      * Registers type if it was not known before or updates it otherwise.
      *
      * @param cctx Cache context.
@@ -228,7 +257,7 @@ public interface GridQueryIndexing {
         GridQueryTypeDescriptor type,
         CacheDataRow row,
         CacheDataRow prevRow,
-        @Nullable MvccCoordinatorVersion newVer,
+        @Nullable MvccVersion newVer,
         boolean prevRowAvailable,
         boolean idxRebuild) throws IgniteCheckedException;
 
