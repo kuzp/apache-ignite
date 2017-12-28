@@ -23,6 +23,8 @@ import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.sql.command.SqlQualifiedName;
 import org.apache.ignite.internal.util.typedef.F;
 
+import java.util.Set;
+
 import static org.apache.ignite.internal.sql.SqlKeyword.EXISTS;
 import static org.apache.ignite.internal.sql.SqlKeyword.IF;
 import static org.apache.ignite.internal.sql.SqlKeyword.NOT;
@@ -442,6 +444,22 @@ public class SqlParserUtils {
         throw error(tok, msg.toString());
     }
 
+    /**
+     * Skip valid parameter name.
+     *
+     * @param lex Lexer.
+     * @param param Token.
+     * @param oldParams Already found parameter names.
+     * @return {@code True} if lexer was shifted as a result of this call.
+     */
+    public static boolean acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
+        if (!oldParams.add(param))
+            throw error(lex, "Only one " + param + " clause may be specified.");
+
+        lex.shift();
+
+        return skipOptionalEquals(lex);
+    }
 
     /** A lambda/closure to use with {@link SqlParserUtils} tryParseXxx() methods. */
     public interface Setter<T> {

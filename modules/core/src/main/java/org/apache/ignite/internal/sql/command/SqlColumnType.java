@@ -110,10 +110,8 @@ public enum SqlColumnType {
             case VARCHAR:
                 return java.lang.String.class;
 
-            // TODO: Why bytes?
             case UUID:
-                // "[B", not "byte[]";
-                return byte[].class;
+                return java.util.UUID.class;
 
             default:
                 assert false;

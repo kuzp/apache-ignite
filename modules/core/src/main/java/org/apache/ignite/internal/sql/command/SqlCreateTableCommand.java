@@ -89,6 +89,7 @@ import static org.apache.ignite.internal.sql.SqlKeyword.WRAP_KEY;
 import static org.apache.ignite.internal.sql.SqlKeyword.WRAP_VALUE;
 import static org.apache.ignite.internal.sql.SqlKeyword.WRITE_SYNCHRONIZATION_MODE;
 import static org.apache.ignite.internal.sql.SqlKeyword.YEAR;
+import static org.apache.ignite.internal.sql.SqlParserUtils.acceptParameterName;
 import static org.apache.ignite.internal.sql.SqlParserUtils.error;
 import static org.apache.ignite.internal.sql.SqlParserUtils.errorUnexpectedToken;
 import static org.apache.ignite.internal.sql.SqlParserUtils.matchesKeyword;
@@ -100,7 +101,6 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdenti
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseString;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
-import static org.apache.ignite.internal.sql.SqlParserUtils.skipOptionalEquals;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipToken;
 import static org.apache.ignite.internal.sql.SqlParserUtils.tryParseBool;
 
@@ -798,23 +798,6 @@ public class SqlCreateTableCommand implements SqlCommand {
                 }
             }
         }
-    }
-
-    /**
-     * Skip valid parameter name.
-     *
-     * @param lex Lexer.
-     * @param param Token.
-     * @param oldParams Already found parameter names.
-     * @return {@code True} if lexer was shifted as a result of this call.
-     */
-    private static boolean acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
-        if (!oldParams.add(param))
-            throw error(lex, "Only one " + param + " clause may be specified.");
-
-        lex.shift();
-
-        return skipOptionalEquals(lex);
     }
 
     /** {@inheritDoc} */

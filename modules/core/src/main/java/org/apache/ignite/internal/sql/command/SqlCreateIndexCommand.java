@@ -38,6 +38,7 @@ import static org.apache.ignite.internal.sql.SqlKeyword.IF;
 import static org.apache.ignite.internal.sql.SqlKeyword.INLINE_SIZE;
 import static org.apache.ignite.internal.sql.SqlKeyword.ON;
 import static org.apache.ignite.internal.sql.SqlKeyword.PARALLEL;
+import static org.apache.ignite.internal.sql.SqlParserUtils.acceptParameterName;
 import static org.apache.ignite.internal.sql.SqlParserUtils.error;
 import static org.apache.ignite.internal.sql.SqlParserUtils.errorUnexpectedToken;
 import static org.apache.ignite.internal.sql.SqlParserUtils.matchesKeyword;
@@ -47,7 +48,6 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.parseInt;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
-import static org.apache.ignite.internal.sql.SqlParserUtils.skipOptionalEquals;
 
 /**
  * CREATE INDEX command.
@@ -175,7 +175,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
     }
 
     /**
-     * Pasrse index name.
+     * Parse index name.
      *
      * @param lex Lexer.
      * @return Index name.
@@ -279,22 +279,6 @@ public class SqlCreateIndexCommand implements SqlCommand {
                 }
             }
         }
-    }
-
-    /**
-     * Skip valid parameter name.
-     *
-     * @param lex Lexer.
-     * @param param Token.
-     * @param oldParams Already found parameter names.
-     */
-    private static void acceptParameterName(SqlLexer lex, String param, Set<String> oldParams) {
-        if (!oldParams.add(param))
-            throw error(lex, "Only one " + param + " clause may be specified.");
-
-        lex.shift();
-
-        skipOptionalEquals(lex);
     }
 
     /** {@inheritDoc} */

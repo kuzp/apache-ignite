@@ -69,7 +69,6 @@ import org.h2.command.ddl.DropIndex;
 import org.h2.command.ddl.DropTable;
 import org.h2.table.Column;
 import org.h2.value.DataType;
-import org.jetbrains.annotations.NotNull;
 
 import static org.apache.ignite.internal.processors.query.h2.IgniteH2Indexing.UPDATE_RESULT_META;
 import static org.apache.ignite.internal.processors.query.h2.sql.GridSqlQueryParser.PARAM_WRAP_VALUE;
@@ -799,7 +798,7 @@ public class DdlStatementsProcessor {
      * @return The Java type string.
      * @throws IgniteSQLException if this type has no Java representation.
      */
-    private static @NotNull String getSupportedTypeName(SqlColumnType colTyp) {
+    private static String getSupportedTypeName(SqlColumnType colTyp) {
         Class<?> cls = SqlColumnType.classForType(colTyp);
 
         return cls.getName();
