@@ -400,7 +400,7 @@ public class SqlCreateTableCommand implements SqlCommand {
 
         parseColumnAndConstraintList(lex);
 
-        parseParametersSection(lex);
+        parseParameters(lex);
 
         return this;
     }
@@ -701,7 +701,7 @@ public class SqlCreateTableCommand implements SqlCommand {
      *
      * @param lex The lexer.
      */
-    private void parseParametersSection(SqlLexer lex) {
+    private void parseParameters(SqlLexer lex) {
 
         while (lex.lookAhead().tokenType() != SqlLexerTokenType.EOF) {
 

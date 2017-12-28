@@ -21,8 +21,6 @@ import org.apache.ignite.cache.QueryIndex;
 import org.apache.ignite.internal.sql.SqlLexer;
 import org.apache.ignite.internal.sql.SqlLexerTokenType;
 import org.apache.ignite.internal.sql.SqlLexerToken;
-import org.apache.ignite.internal.sql.SqlParserUtils;
-import org.apache.ignite.internal.sql.SqlParseException;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -45,6 +43,7 @@ import static org.apache.ignite.internal.sql.SqlParserUtils.errorUnexpectedToken
 import static org.apache.ignite.internal.sql.SqlParserUtils.matchesKeyword;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseIfNotExists;
+import static org.apache.ignite.internal.sql.SqlParserUtils.parseInt;
 import static org.apache.ignite.internal.sql.SqlParserUtils.parseQualifiedIdentifier;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipCommaOrRightParenthesis;
 import static org.apache.ignite.internal.sql.SqlParserUtils.skipIfMatchesKeyword;
@@ -81,9 +80,6 @@ public class SqlCreateIndexCommand implements SqlCommand {
     /** Column names. */
     @GridToStringExclude
     private Set<String> colNames;
-
-    /** Parameters, which are already parsed (for duplicate checking). */
-    private Set<String> parsedParams = new HashSet<>();
 
     /** Inline size. Zero effectively disables inlining. */
     private int inlineSize = QueryIndex.DFLT_INLINE_SIZE;
@@ -199,7 +195,7 @@ public class SqlCreateIndexCommand implements SqlCommand {
             throw errorUnexpectedToken(lex, "(");
 
         while (true) {
-            parseIndexColumn(lex);
+            parseColumn(lex);
 
             if (skipCommaOrRightParenthesis(lex) == SqlLexerTokenType.PARENTHESIS_RIGHT)
                 break;
@@ -209,13 +205,13 @@ public class SqlCreateIndexCommand implements SqlCommand {
     /**
      * @param lex Lexer.
      */
-    private void parseIndexColumn(SqlLexer lex) {
+    private void parseColumn(SqlLexer lex) {
         String name = parseIdentifier(lex);
         boolean desc = false;
 
-        SqlLexerToken nextTok = lex.lookAhead();
+        SqlLexerToken nextToken = lex.lookAhead();
 
-        if (matchesKeyword(nextTok, ASC) || matchesKeyword(nextTok, DESC)) {
+        if (matchesKeyword(nextToken, ASC) || matchesKeyword(nextToken, DESC)) {
             lex.shift();
 
             if (matchesKeyword(lex, DESC))
@@ -247,53 +243,56 @@ public class SqlCreateIndexCommand implements SqlCommand {
      * @param lex Lexer.
      */
     private void parseParameters(SqlLexer lex) {
-        while (lex.lookAhead().tokenType() != SqlLexerTokenType.EOF) {
-            if (!tryParseParallel(lex) && !tryParseInlineSize(lex))
+        Set<String> oldParams = new HashSet<>();
 
-                throw errorUnexpectedToken(lex.lookAhead());
+        while (true) {
+            SqlLexerToken token = lex.lookAhead();
+
+            if (token.tokenType() == SqlLexerTokenType.EOF)
+                return;
+
+            if (token.tokenType() == SqlLexerTokenType.DEFAULT) {
+                switch (token.token()) {
+                    case PARALLEL:
+                        skipParameterName(lex, token.token(), oldParams);
+
+                        parallel = parseInt(lex);
+
+                        if (parallel < 0)
+                            throw error(lex, "Illegal " + PARALLEL + " value. Should be positive: " + parallel);
+
+                        break;
+
+                    case INLINE_SIZE:
+                        skipParameterName(lex, token.token(), oldParams);
+
+                        inlineSize = parseInt(lex);
+
+                        if (inlineSize < 0)
+                            throw error(lex, "Illegal " + INLINE_SIZE + " value. Should be positive: " + inlineSize);
+
+                        break;
+
+                    default:
+                        return;
+                }
+            }
         }
     }
 
     /**
-     * If PARALLEL parameter goes next, parses it.
+     * Skip valid parameter name.
      *
-     * @param lex The lexer.
-     * @return True if we realy met the PARALLEL parameter.
-     * @throws SqlParseException in case of syntax or value error.
+     * @param lex Lexer.
+     * @param param Token.
+     * @param oldParams Already found parameter names.
      */
-    private boolean tryParseParallel(final SqlLexer lex) {
-        return SqlParserUtils.tryParseIntParam(lex, PARALLEL, parsedParams, false, new SqlParserUtils.Setter<Integer>() {
-            @Override public void apply(Integer val, boolean isDflt, boolean isQuoted) {
-                assert val != null;
+    private static void skipParameterName(SqlLexer lex, String param, Set<String> oldParams) {
+        if (!oldParams.add(param))
+            throw error(lex, "Only one " + param + " clause may be specified.");
 
-                if (val < 0)
-                    throw error(lex, "Illegal " + PARALLEL + " value. Should be positive: " + val);
-
-                parallel = val;
-            }
-        });
+        lex.shift();
     }
-
-    /**
-     * If INLINE_SIZE parameter goes next, parses it.
-     *
-     * @param lex The lexer.
-     * @return True if we realy met the INLINE_SIZE parameter.
-     * @throws SqlParseException in case of syntax or value error.
-     */
-    private boolean tryParseInlineSize(final SqlLexer lex) {
-        return SqlParserUtils.tryParseIntParam(lex, INLINE_SIZE, parsedParams, true, new SqlParserUtils.Setter<Integer>() {
-            @Override public void apply(Integer val, boolean isDflt, boolean isQuoted) {
-                assert isDflt || val != null;
-
-                if (val < 0)
-                    throw error(lex, "Illegal " + INLINE_SIZE + " value. Should be positive: " + val);
-
-                inlineSize = isDflt ? QueryIndex.DFLT_INLINE_SIZE : val;
-            }
-        });
-    }
-
 
     /** {@inheritDoc} */
     @Override public String toString() {
