@@ -36,7 +36,7 @@ import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.processors.query.IgniteSQLException;
 import org.apache.ignite.internal.processors.query.schema.SchemaOperationException;
-import org.apache.ignite.internal.util.H2FallbackTempDisabler;
+import org.apache.ignite.internal.sql.SqlParserTestUtils;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.testframework.GridTestUtils;
 
@@ -681,16 +681,20 @@ public abstract class DynamicIndexAbstractBasicSelfTest extends DynamicIndexAbst
 
         initialize(mode, atomicityMode, near);
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)){
-            checkNoIndexIsCreatedForInlineSize(-2, IgniteQueryErrorCode.PARSING);
-            checkNoIndexIsCreatedForInlineSize(Integer.MIN_VALUE, IgniteQueryErrorCode.PARSING);
+        SqlParserTestUtils.withH2Fallback(new Callable() {
+            @Override public Object call() throws Exception {
+                checkNoIndexIsCreatedForInlineSize(-2, IgniteQueryErrorCode.PARSING);
+                checkNoIndexIsCreatedForInlineSize(Integer.MIN_VALUE, IgniteQueryErrorCode.PARSING);
 
-            checkIndexCreatedForInlineSize(0);
-            loadInitialData();
-            checkIndexCreatedForInlineSize(1);
-            loadInitialData();
-            checkIndexCreatedForInlineSize(Integer.MAX_VALUE);
-        }
+                checkIndexCreatedForInlineSize(0);
+                loadInitialData();
+                checkIndexCreatedForInlineSize(1);
+                loadInitialData();
+                checkIndexCreatedForInlineSize(Integer.MAX_VALUE);
+
+                return null;
+            }
+        }, true);
     }
 
     /**
@@ -801,16 +805,20 @@ public abstract class DynamicIndexAbstractBasicSelfTest extends DynamicIndexAbst
 
         initialize(mode, atomicityMode, near);
 
-        try (H2FallbackTempDisabler disabler = new H2FallbackTempDisabler(true)){
-            checkNoIndexIsCreatedForParallelism(-2, IgniteQueryErrorCode.PARSING);
-            checkNoIndexIsCreatedForParallelism(Integer.MIN_VALUE, IgniteQueryErrorCode.PARSING);
+        SqlParserTestUtils.withH2Fallback(new Callable() {
+            @Override public Object call() throws Exception {
+                checkNoIndexIsCreatedForParallelism(-2, IgniteQueryErrorCode.PARSING);
+                checkNoIndexIsCreatedForParallelism(Integer.MIN_VALUE, IgniteQueryErrorCode.PARSING);
 
-            checkIndexCreatedForParallelism(0);
-            loadInitialData();
-            checkIndexCreatedForParallelism(1);
-            loadInitialData();
-            checkIndexCreatedForParallelism(5);
-        }
+                checkIndexCreatedForParallelism(0);
+                loadInitialData();
+                checkIndexCreatedForParallelism(1);
+                loadInitialData();
+                checkIndexCreatedForParallelism(5);
+
+                return null;
+            }
+        }, true);
     }
 
     /**
