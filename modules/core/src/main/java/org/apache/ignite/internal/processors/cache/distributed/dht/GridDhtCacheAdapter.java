@@ -231,16 +231,25 @@ public abstract class GridDhtCacheAdapter<K, V> extends GridDistributedCacheAdap
 
                         entry.unswap();
 
-                        GridCacheEntryInfo info = entry.info();
+                        if (ctx.mvccEnabled()) {
+                            List<GridCacheEntryInfo> infos = entry.allVersionInfo();
 
-                        if (info == null) {
-                            assert entry.obsolete() : entry;
-
-                            continue;
+                            if (infos != null)
+                                for (int i = 0; i < infos.size(); i++)
+                                    res.addInfo(infos.get(i));
                         }
+                        else {
+                            GridCacheEntryInfo info = entry.info();
 
-                        if (!info.isNew())
-                            res.addInfo(info);
+                            if (info == null) {
+                                assert entry.obsolete() : entry;
+
+                                continue;
+                            }
+
+                            if (!info.isNew())
+                                res.addInfo(info);
+                        }
 
                         ctx.evicts().touch(entry, msg.topologyVersion());
 

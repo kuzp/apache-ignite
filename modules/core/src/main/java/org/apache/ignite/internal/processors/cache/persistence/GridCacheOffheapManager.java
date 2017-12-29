@@ -78,6 +78,7 @@ import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
+import org.apache.ignite.lang.IgniteClosure;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -1348,6 +1349,15 @@ public class GridCacheOffheapManager extends IgniteCacheOffheapManagerImpl imple
                 return delegate.find(cctx, key);
 
             return null;
+        }
+
+        /** {@inheritDoc} */
+        @Override public void mvccProcess(GridCacheContext cctx, KeyCacheObject key,
+            IgniteClosure<CacheDataRow, Boolean> clo) throws IgniteCheckedException {
+            CacheDataStore delegate = init0(true);
+
+            if (delegate != null)
+                delegate.mvccProcess(cctx, key, clo);
         }
 
         /** {@inheritDoc} */

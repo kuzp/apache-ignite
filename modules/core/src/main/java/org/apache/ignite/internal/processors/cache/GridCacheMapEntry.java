@@ -71,6 +71,7 @@ import org.apache.ignite.internal.util.lang.GridTuple;
 import org.apache.ignite.internal.util.lang.GridTuple3;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
+import org.apache.ignite.internal.util.typedef.CX1;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.internal.util.typedef.internal.CU;
@@ -88,6 +89,7 @@ import static org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_UNLOCKED;
 import static org.apache.ignite.internal.processors.cache.GridCacheOperation.DELETE;
 import static org.apache.ignite.internal.processors.cache.GridCacheOperation.TRANSFORM;
 import static org.apache.ignite.internal.processors.cache.GridCacheOperation.UPDATE;
+import static org.apache.ignite.internal.processors.cache.mvcc.MvccProcessor.versionForRemovedValue;
 import static org.apache.ignite.internal.processors.dr.GridDrType.DR_NONE;
 
 /**
@@ -337,6 +339,21 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         }
 
         return info;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public List<GridCacheEntryInfo> allVersionInfo() throws GridCacheEntryRemovedException, IgniteCheckedException {
+        assert cctx.mvccEnabled();
+
+        synchronized (this) {
+            checkObsolete();
+
+            MvccEntryInfoProcessor proc = new MvccEntryInfoProcessor();
+
+            cctx.offheap().mvccProcess(cctx, key, proc);
+
+            return proc.infos;
+        }
     }
 
     /** {@inheritDoc} */
@@ -4774,5 +4791,38 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
         @Override public String toString() {
             return S.toString(AtomicCacheUpdateClosure.class, this);
         }
+    }
+
+    /** */
+    private class MvccEntryInfoProcessor extends CX1<CacheDataRow, Boolean> {
+        /** */
+        private List<GridCacheEntryInfo> infos;
+
+        /** */
+        @Override public Boolean applyx(CacheDataRow row) throws IgniteCheckedException {
+            GridCacheEntryInfo info = new GridCacheMvccEntryInfo();
+
+            info.key(key);
+            info.cacheId(cctx.cacheId());
+
+            info.mvccCoordinatorVersion(row.mvccCoordinatorVersion());
+            info.mvccCounter(row.mvccCounter());
+
+            boolean rmvd = versionForRemovedValue(row.mvccCoordinatorVersion());
+
+            if (!rmvd) {
+                info.value(row.value());
+                info.version(row.version());
+                info.expireTime(row.expireTime());
+            }
+
+            if (infos == null)
+                infos = new ArrayList<>();
+
+            infos.add(info);
+
+            return true;
+        }
+
     }
 }

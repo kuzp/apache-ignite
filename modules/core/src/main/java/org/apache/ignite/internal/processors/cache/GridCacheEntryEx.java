@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import javax.cache.Cache;
 import javax.cache.expiry.ExpiryPolicy;
@@ -191,6 +192,11 @@ public interface GridCacheEntryEx {
      * @return Entry info.
      */
     @Nullable public GridCacheEntryInfo info();
+
+    /**
+     * @return Entry info for each MVCC version.
+     */
+    @Nullable public List<GridCacheEntryInfo> allVersionInfo() throws GridCacheEntryRemovedException, IgniteCheckedException;
 
     /**
      * Invalidates this entry.

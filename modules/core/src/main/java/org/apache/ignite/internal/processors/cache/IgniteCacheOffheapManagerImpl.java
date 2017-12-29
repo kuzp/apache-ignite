@@ -66,6 +66,7 @@ import org.apache.ignite.internal.processors.cache.tree.MvccVersionBasedSearchRo
 import org.apache.ignite.internal.processors.cache.tree.PendingEntriesTree;
 import org.apache.ignite.internal.processors.cache.tree.PendingRow;
 import org.apache.ignite.internal.processors.cache.tree.SearchRow;
+import org.apache.ignite.internal.processors.cache.tree.TreeRowToCacheDataRowClosureAdapter;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.GridAtomicLong;
 import org.apache.ignite.internal.util.GridCloseableIteratorAdapter;
@@ -490,6 +491,17 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         assert row == null || row.value() != null : row;
 
         return row;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void mvccProcess(GridCacheContext cctx, KeyCacheObject key, IgniteClosure<CacheDataRow, Boolean> clo)
+        throws IgniteCheckedException {
+        assert clo != null;
+
+        CacheDataStore dataStore = dataStore(cctx, key);
+
+        if (dataStore != null)
+            dataStore.mvccProcess(cctx, key, clo);
     }
 
     /** {@inheritDoc} */
@@ -2008,6 +2020,19 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             }
 
             return res;
+        }
+
+        /** {@inheritDoc} */
+        @Override public void mvccProcess(GridCacheContext cctx, KeyCacheObject key,
+            IgniteClosure<CacheDataRow, Boolean> clo) throws IgniteCheckedException {
+            key.valueBytes(cctx.cacheObjectContext());
+
+            int cacheId = grp.sharedGroup() ? cctx.cacheId() : CU.UNDEFINED_CACHE_ID;
+
+            dataTree.iterate(
+                new MvccKeyMaxVersionBound(cacheId, key),
+                new MvccKeyMinVersionBound(cacheId, key),
+                new TreeRowToCacheDataRowClosureAdapter(clo));
         }
 
         /** {@inheritDoc} */

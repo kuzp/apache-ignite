@@ -38,6 +38,7 @@ import org.apache.ignite.internal.util.lang.GridCursor;
 import org.apache.ignite.internal.util.lang.GridIterator;
 import org.apache.ignite.internal.util.lang.IgniteInClosure2X;
 import org.apache.ignite.internal.util.typedef.T2;
+import org.apache.ignite.lang.IgniteClosure;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -175,6 +176,16 @@ public interface IgniteCacheOffheapManager {
      * @throws IgniteCheckedException If failed.
      */
     @Nullable public CacheDataRow mvccRead(GridCacheContext cctx, KeyCacheObject key, MvccVersion ver)
+        throws IgniteCheckedException;
+
+    /**
+     * @param cctx Cache context.
+     * @param key Key.
+     * @param clo Closure which applies to each version of row with given key.
+     *          {@link Boolean#FALSE} returned by closure means stop processing.
+     * @throws IgniteCheckedException If failed.
+     */
+    public void mvccProcess(GridCacheContext cctx, KeyCacheObject key, IgniteClosure<CacheDataRow, Boolean> clo)
         throws IgniteCheckedException;
 
     /**
@@ -613,6 +624,16 @@ public interface IgniteCacheOffheapManager {
          * @throws IgniteCheckedException If failed.
          */
         public CacheDataRow find(GridCacheContext cctx, KeyCacheObject key) throws IgniteCheckedException;
+
+        /**
+         * @param cctx Cache context.
+         * @param key Key.
+         * @param clo Closure which applies to each version of row with given key.
+         *          {@link Boolean#FALSE} returned by closure means stop processing.
+         * @throws IgniteCheckedException If failed.
+         */
+        public void mvccProcess(GridCacheContext cctx, KeyCacheObject key,
+            IgniteClosure<CacheDataRow, Boolean> clo) throws IgniteCheckedException;
 
         /**
          * @param cctx Cache context.
