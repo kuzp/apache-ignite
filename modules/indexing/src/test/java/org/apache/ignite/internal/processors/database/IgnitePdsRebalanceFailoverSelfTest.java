@@ -230,7 +230,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
                     crd.cache(cfg.getName()).put(k, k);
             }
 
-            int more = 0;
+            int addCnt = 0;
 
             // Put additional items to single partition to enforce renting state on restart.
             for (int i = 0; i < cfgs.length; i++) {
@@ -240,12 +240,12 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
                     if (crd.affinity(cfg.getName()).partition(k) == PART_ID) {
                         crd.cache(cfg.getName()).put(k, k);
 
-                        more++;
+                        addCnt++;
                     }
                 }
             }
 
-            validateCaches(crd, cfgs, cnt + more);
+            validateCaches(crd, cfgs, cnt + addCnt);
 
             crd = restartAllNoRebalance(crd, 2, false);
 
@@ -253,7 +253,7 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
 
             doSleep(1_000);
 
-            validateCaches(crd, cfgs, cnt + more);
+            validateCaches(crd, cfgs, cnt + addCnt);
         }
         finally {
             System.clearProperty(IGNITE_PDS_CHECKPOINT_TEST_SKIP_SYNC);
@@ -282,16 +282,19 @@ public class IgnitePdsRebalanceFailoverSelfTest extends GridCommonAbstractTest {
      */
     private IgniteEx restartAllNoRebalance(IgniteEx crd, int nodesToStart, boolean awaitExchange) throws Exception {
         crd.active(false);
+
         stopAllGrids();
 
-        IgniteEx crd2 = startGrid(0);
+        IgniteEx newCrd = startGrid(0);
+
         startGridsMultiThreaded(1, nodesToStart);
-        crd2.active(true);
+
+        newCrd.active(true);
 
         if (awaitExchange)
             awaitPartitionMapExchange();
 
-        return crd2;
+        return newCrd;
     }
 
     /**
