@@ -356,20 +356,27 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
     private String getSafeFileName(String base) {
         StringBuilder nameBuilder = new StringBuilder(base.length());
 
-        // escape characters that might be unsafe to be a part
+        // escape (encode in hex) characters that might be unsafe to be a part
         // of a file name - everything except [a-zA-Z0-9_-] will be escaped
+        boolean prevDontNeedEscape = true;
         for (int i = 0; i < base.length(); i++) {
             char ch = base.charAt(i);
-            // append character if it is in the [a-zA-Z0-9_-] class;
-            // otherwise, use its hex string
-            if (ch >= 'a' && ch <= 'z'
+            boolean dontNeedEscape = ch >= 'a' && ch <= 'z'
                 || ch >= 'A' && ch <= 'Z'
                 || ch >= '0' && ch <= '9'
                 || ch == '_'
-                || ch == '-')
+                || ch == '-';
+
+            if (dontNeedEscape)
                 nameBuilder.append(ch);
-            else
-                nameBuilder.append(Integer.toHexString(ch));
+            else {
+                // separate escaped characters from others via underscores
+                if (prevDontNeedEscape)
+                    nameBuilder.append('_');
+                nameBuilder.append(Integer.toHexString(ch)).append('_');
+            }
+
+            prevDontNeedEscape = dontNeedEscape;
         }
 
         // add suffix with a name hash to avoid collisions when two names are equalsIgnoreCase
@@ -379,9 +386,9 @@ public class FilePageStoreManager extends GridCacheSharedManagerAdapter implemen
 
         // if the string is too long, remove some characters before the "-<hash>" suffix
         if (nameBuilder.length() > MAX_CACHE_NAME_LENGTH) {
-            int charsToDelete = nameBuilder.length() - MAX_CACHE_NAME_LENGTH;
+            int charsToDel = nameBuilder.length() - MAX_CACHE_NAME_LENGTH;
             int end = nameBuilder.length() - hash.length() - 1;
-            int start = end - charsToDelete;
+            int start = end - charsToDel;
             nameBuilder.delete(start, end);
         }
 
