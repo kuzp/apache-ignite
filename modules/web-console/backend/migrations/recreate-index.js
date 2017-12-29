@@ -17,8 +17,8 @@
 
 'use strict';
 
-module.exports = function(done, model, oldIdx, newIdx) {
-    model.indexExists(oldIdx)
+module.exports = function(done, model, oldIdxName, oldIdx, newIdx) {
+    model.indexExists(oldIdxName)
         .then((exists) => {
             if (exists) {
                 return model.dropIndex(oldIdx)
