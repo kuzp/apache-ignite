@@ -636,14 +636,19 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
                 final AffinityTopologyVersion nextTopVer;
 
+                // Current version.
+                DiscoCache discoCache = discoCache();
+
                 if (type == EVT_DISCOVERY_CUSTOM_EVT) {
                     assert customMsg != null;
 
                     boolean incMinorTopVer;
 
+                    AffinityTopologyVersion curTopVer = new AffinityTopologyVersion(topVer, minorTopVer);
+
                     if (customMsg instanceof ChangeGlobalStateMessage) {
                         incMinorTopVer = ctx.state().onStateChangeMessage(
-                            new AffinityTopologyVersion(topVer, minorTopVer),
+                            curTopVer,
                             (ChangeGlobalStateMessage)customMsg,
                             discoCache());
                     }
@@ -651,12 +656,22 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                         ctx.state().onStateFinishMessage((ChangeGlobalStateFinishMessage)customMsg);
 
                         incMinorTopVer = false;
+
+                        discoCache = createDiscoCache(
+                            curTopVer,
+                            ctx.state().clusterState(),
+                            locNode,
+                            topSnapshot
+                        );
+
+                        topSnap.set(new Snapshot(curTopVer, discoCache));
                     }
                     else {
                         incMinorTopVer = ctx.cache().onCustomEvent(
                             customMsg,
-                            new AffinityTopologyVersion(topVer, minorTopVer),
-                            node);
+                            curTopVer,
+                            node
+                        );
                     }
 
                     if (incMinorTopVer) {
@@ -689,8 +704,6 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
                     }
                 }
 
-                DiscoCache discoCache;
-
                 // Put topology snapshot into discovery history.
                 // There is no race possible between history maintenance and concurrent discovery
                 // event notifications, since SPI notifies manager about all events from this listener.
@@ -722,9 +735,6 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
 
                     topSnap.set(new Snapshot(nextTopVer, discoCache));
                 }
-                else
-                    // Current version.
-                    discoCache = discoCache();
 
                 final DiscoCache discoCache0 = discoCache;
 
@@ -2149,7 +2159,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<DiscoverySpi> {
             discoWrk.addEvent(EVT_DISCOVERY_CUSTOM_EVT,
                 AffinityTopologyVersion.NONE,
                 localNode(),
-                null,
+                ctx.discovery().discoCache(),
                 Collections.<ClusterNode>emptyList(),
                 new ClientCacheChangeDummyDiscoveryMessage(reqId, startReqs, cachesToClose));
         }

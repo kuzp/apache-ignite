@@ -81,6 +81,8 @@ import static org.apache.ignite.events.EventType.EVT_NODE_FAILED;
 import static org.apache.ignite.events.EventType.EVT_NODE_LEFT;
 import static org.apache.ignite.internal.GridComponent.DiscoveryDataExchangeType.STATE_PROC;
 import static org.apache.ignite.internal.managers.communication.GridIoPolicy.SYSTEM_POOL;
+import static org.apache.ignite.internal.processors.cluster.BaselineTopologyHistoryItem.fromBaseline;
+import static org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState.createTransitionState;
 
 /**
  *
@@ -473,12 +475,11 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
                 if (log.isInfoEnabled())
                     log.info("Started state transition: " + msg.activate());
 
-                BaselineTopologyHistoryItem bltHistItem = BaselineTopologyHistoryItem.fromBaseline(
-                    globalState.baselineTopology());
+                BaselineTopologyHistoryItem bltHistItem = fromBaseline(globalState.baselineTopology());
 
                 transitionFuts.put(msg.requestId(), new GridFutureAdapter<Void>());
 
-                globalState = DiscoveryDataClusterState.createTransitionState(
+                globalState = createTransitionState(
                     globalState,
                     msg.activate(),
                     msg.activate() ? msg.baselineTopology() : globalState.baselineTopology(),
@@ -536,8 +537,8 @@ public class GridClusterStateProcessor extends GridProcessorAdapter implements I
 
     /** {@inheritDoc} */
     @Override public DiscoveryDataClusterState pendingState(ChangeGlobalStateMessage stateMsg) {
-        return DiscoveryDataClusterState.createState(stateMsg.activate() || stateMsg.forceChangeBaselineTopology(),
-            stateMsg.baselineTopology());
+        return DiscoveryDataClusterState.createState(
+            stateMsg.activate() || stateMsg.forceChangeBaselineTopology(), stateMsg.baselineTopology());
     }
 
     /**
