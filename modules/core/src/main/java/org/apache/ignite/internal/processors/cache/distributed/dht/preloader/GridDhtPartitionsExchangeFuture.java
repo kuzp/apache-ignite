@@ -2933,8 +2933,16 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             }
             else if (localJoinExchange() && !exchCtx.fetchAffinityOnJoin())
                 cctx.affinity().onLocalJoin(this, msg, resTopVer);
-            else if (forceAffRecalculation)
+            else if (forceAffRecalculation) {
                 cctx.affinity().mergeExchangesOnServerLeft(this, msg);
+
+                for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
+                    if (grp.isLocal() || cacheGroupStopping(grp.groupId()))
+                        continue;
+
+                    grp.topology().beforeExchange(this, true, false);
+                }
+            }
 
             updatePartitionFullMap(resTopVer, msg);
 
