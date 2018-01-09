@@ -805,7 +805,7 @@ class ClusterCachesInfo {
      *
      * @return Caches to be started when this node starts.
      */
-    @NotNull public LocalJoinCachesContext localJoinCachesContext() {
+    @Nullable public LocalJoinCachesContext localJoinCachesContext() {
         if (ctx.isDaemon())
             return null;
 
@@ -888,7 +888,7 @@ class ClusterCachesInfo {
                 if (gridData == null) { // First node starts.
                     assert joinDiscoData != null;
 
-                    initStartCachesForLocalJoin(true);
+                    initStartCachesForLocalJoin(true, false);
                 }
             }
         }
@@ -1090,10 +1090,7 @@ class ClusterCachesInfo {
 
         gridData = new GridData(joinDiscoData, cachesData, conflictErr);
 
-        if (!disconnectedState())
-            initStartCachesForLocalJoin(false);
-        else
-            locJoinCachesCtx = null;
+        initStartCachesForLocalJoin(false, disconnectedState());
     }
 
     /**
@@ -1102,7 +1099,7 @@ class ClusterCachesInfo {
      *
      * @param firstNode {@code True} if first node in cluster starts.
      */
-    private void initStartCachesForLocalJoin(boolean firstNode) {
+    private void initStartCachesForLocalJoin(boolean firstNode, boolean reconnect) {
         assert locJoinCachesCtx == null : locJoinCachesCtx;
 
         if (ctx.state().clusterState().transition()) {
@@ -1122,6 +1119,9 @@ class ClusterCachesInfo {
                     continue;
 
                 CacheConfiguration<?, ?> cfg = desc.cacheConfiguration();
+
+                if (reconnect && surviveReconnect(cfg.getName()))
+                    continue;
 
                 CacheJoinNodeDiscoveryData.CacheInfo locCfg = joinDiscoData.caches().get(cfg.getName());
 
@@ -1172,7 +1172,7 @@ class ClusterCachesInfo {
      */
     public void onStateChangeFinish(ChangeGlobalStateFinishMessage msg) {
         if (joinOnTransition) {
-            initStartCachesForLocalJoin(false);
+            initStartCachesForLocalJoin(false, false);
 
             joinOnTransition = false;
         }
@@ -1185,11 +1185,14 @@ class ClusterCachesInfo {
      * @return Exchange action.
      * @throws IgniteCheckedException If configuration validation failed.
      */
-    public ExchangeActions onStateChangeRequest(ChangeGlobalStateMessage msg, DiscoveryDataClusterState prevState, AffinityTopologyVersion topVer)
+    public ExchangeActions onStateChangeRequest(ChangeGlobalStateMessage msg, DiscoveryDataClusterState prevState, AffinityTopologyVersion topVer, DiscoveryDataClusterState curState)
         throws IgniteCheckedException {
         ExchangeActions exchangeActions = new ExchangeActions();
 
-        if (msg.activate() && !prevState.active()) {
+        if (msg.activate() == curState.active())
+            return exchangeActions;
+
+        if (msg.activate()) {
             for (DynamicCacheDescriptor desc : orderedCaches(CacheComparators.DIRECT)) {
                 desc.startTopologyVersion(topVer);
 
@@ -1254,7 +1257,7 @@ class ClusterCachesInfo {
                 }
             }
         }
-        else if (!msg.activate() && prevState.active()) {
+        else {
             locCfgsForActivation = new HashMap<>();
 
             for (DynamicCacheDescriptor desc : orderedCaches(CacheComparators.REVERSE)) {
@@ -1728,7 +1731,7 @@ class ClusterCachesInfo {
             }
 
             if (!cachesOnDisconnect.clusterActive())
-                initStartCachesForLocalJoin(false);
+                initStartCachesForLocalJoin(false, true);
         }
 
         if (clientReconnectReqs != null) {

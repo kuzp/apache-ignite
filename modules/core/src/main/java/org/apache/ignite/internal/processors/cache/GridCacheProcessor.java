@@ -2408,14 +2408,17 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
     /**
      * @param msg Message.
-     *            // TODO GG-13223 javadoc
      * @param topVer Current topology version.
+     * @param curState Current cluster state.
      * @throws IgniteCheckedException If configuration validation failed.
      * @return Exchange actions.
      */
-    public ExchangeActions onStateChangeRequest(ChangeGlobalStateMessage msg, DiscoveryDataClusterState prevState, AffinityTopologyVersion topVer)
-        throws IgniteCheckedException {
-        return cachesInfo.onStateChangeRequest(msg, prevState, topVer);
+    public ExchangeActions onStateChangeRequest(
+        ChangeGlobalStateMessage msg,
+        AffinityTopologyVersion topVer,
+        DiscoveryDataClusterState curState
+    ) throws IgniteCheckedException {
+        return cachesInfo.onStateChangeRequest(msg, topVer, curState);
     }
 
     /**

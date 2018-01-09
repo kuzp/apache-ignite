@@ -374,15 +374,14 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
                             && Files.exists(((FilePageStoreManager)storeMgr).getPath(grp.sharedGroup(), grp.cacheOrGroupName(), p)))) {
                             GridDhtLocalPartition locPart = createPartition(p);
 
-                            boolean owned = locPart.own();
+                            if (!grp.persistenceEnabled()) {
+                                boolean owned = locPart.own();
 
-                            assert owned : "Failed to own partition for oldest node [grp=" + grp.cacheOrGroupName() +
-                                ", part=" + locPart + ']';
+                                assert owned : "Failed to own partition for oldest node [grp=" + grp.cacheOrGroupName() +
+                                    ", part=" + locPart + ']';
 
-                            needRefresh = true;
-
-                            if (log.isDebugEnabled())
-                                log.debug("Owned partition for oldest node: " + locPart);
+                            needRefresh = true;if (log.isDebugEnabled())
+                                log.debug("Owned partition for oldest node: " + locPart);}
 
                             updateSeq = updateLocal(p, locPart.state(), updateSeq, affVer);
                         }
