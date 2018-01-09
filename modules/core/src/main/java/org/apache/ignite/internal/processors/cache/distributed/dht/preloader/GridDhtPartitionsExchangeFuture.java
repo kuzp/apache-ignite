@@ -759,7 +759,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     if (grp.isLocal())
                         continue;
 
-                    grp.topology().beforeExchange(this, !centralizedAff, false);
+                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
                 }
             }
         }
@@ -1074,7 +1074,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 // It is possible affinity is not initialized yet if node joins to cluster.
                 if (grp.affinity().lastVersion().topologyVersion() > 0)
-                    grp.topology().beforeExchange(this, !centralizedAff, false);
+                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
             }
         }
 
@@ -2290,7 +2290,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             if (!exchCtx.mergeExchanges() && !crd.equals(events().discoveryCache().serverNodes().get(0))) {
                 for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
                     if (!grp.isLocal())
-                        grp.topology().beforeExchange(this, !centralizedAff, false);
+                        grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
                 }
             }
 
@@ -2360,8 +2360,21 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     top.beforeExchange(this, true, true);
                 }
             }
-            else if (forceAffRecalculation)
+            else if (forceAffRecalculation) {
                 idealAffDiff = cctx.affinity().onServerLeftWithExchangeMergeProtocol(this);
+
+                for (CacheGroupDescriptor desc : cctx.affinity().cacheGroups().values()) {
+                    if (desc.config().getCacheMode() == CacheMode.LOCAL)
+                        continue;
+
+                    CacheGroupContext grp = cctx.cache().cacheGroup(desc.groupId());
+
+                    GridDhtPartitionTopology top = grp != null ? grp.topology() :
+                        cctx.exchange().clientTopology(desc.groupId(), events().discoveryCache());
+
+                    top.beforeExchange(this, true, true);
+                }
+            }
 
             Map<Integer, CacheGroupAffinityMessage> joinedNodeAff = null;
 
