@@ -1072,7 +1072,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 // It is possible affinity is not initialized yet if node joins to cluster.
                 if (grp.affinity().lastVersion().topologyVersion() > 0)
-                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
+                    grp.topology().beforeExchange(this, !centralizedAff, false);
             }
         }
 
