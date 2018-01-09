@@ -24,10 +24,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteServices;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -38,7 +40,6 @@ import org.apache.ignite.console.demo.service.DemoServiceClusterSingleton;
 import org.apache.ignite.console.demo.service.DemoServiceKeyAffinity;
 import org.apache.ignite.console.demo.service.DemoServiceMultipleInstances;
 import org.apache.ignite.console.demo.service.DemoServiceNodeSingleton;
-import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.processors.cache.persistence.filename.PdsConsistentIdProcessor;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -205,12 +206,12 @@ public class AgentClusterDemo {
                     int idx = cnt.incrementAndGet();
                     int port = basePort.get();
 
-                    IgniteEx ignite = null;
+                    boolean first = idx == 0;
 
                     try {
                         IgniteConfiguration cfg = igniteConfiguration(port, idx, false);
 
-                        if (idx == 0) {
+                        if (first) {
                             U.resolveWorkDirectory(
                                 cfg.getWorkDirectory(),
                                 cfg.getDataStorageConfiguration().getStoragePath(),
@@ -218,20 +219,22 @@ public class AgentClusterDemo {
                             );
                         }
 
-                        ignite = (IgniteEx)Ignition.start(cfg);
+                        Ignite ignite = Ignition.start(cfg);
 
-                        if (idx == 0) {
-                            Collection<String> jettyAddrs = ignite.localNode().attribute(ATTR_REST_JETTY_ADDRS);
+                        if (first) {
+                            ClusterNode node = ignite.cluster().localNode();
+
+                            Collection<String> jettyAddrs = node.attribute(ATTR_REST_JETTY_ADDRS);
 
                             if (jettyAddrs == null) {
-                                ignite.cluster().stopNodes();
+                                Ignition.stopAll(true);
 
                                 throw new IgniteException("DEMO: Failed to start Jetty REST server on embedded node");
                             }
 
                             String jettyHost = jettyAddrs.iterator().next();
 
-                            Integer jettyPort = ignite.localNode().attribute(ATTR_REST_JETTY_PORT);
+                            Integer jettyPort = node.attribute(ATTR_REST_JETTY_PORT);
 
                             if (F.isEmpty(jettyHost) || jettyPort == null)
                                 throw new IgniteException("DEMO: Failed to start Jetty REST handler on embedded node");
@@ -244,7 +247,7 @@ public class AgentClusterDemo {
                         }
                     }
                     catch (Throwable e) {
-                        if (idx == 0) {
+                        if (first) {
                             basePort.getAndAdd(50);
 
                             log.warn("DEMO: Failed to start embedded node.", e);
@@ -254,6 +257,8 @@ public class AgentClusterDemo {
                     }
                     finally {
                         if (idx == NODE_CNT) {
+                            Ignite ignite = Ignition.ignite("demo-server-0");
+
                             if (ignite != null) {
                                 ignite.active(true);
 
