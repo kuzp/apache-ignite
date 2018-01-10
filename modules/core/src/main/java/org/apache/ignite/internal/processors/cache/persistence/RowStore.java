@@ -23,6 +23,7 @@ import org.apache.ignite.internal.processors.cache.CacheGroupContext;
 import org.apache.ignite.internal.processors.cache.CacheObjectContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.persistence.freelist.FreeList;
+import org.apache.ignite.internal.processors.query.GridQueryRowCacheCleaner;
 
 /**
  * Data store for H2 rows.
@@ -41,6 +42,9 @@ public class RowStore {
     protected final CacheObjectContext coctx;
 
 
+
+    /** Row cache cleaner. */
+    private GridQueryRowCacheCleaner rowCacheCleaner;
 
     /**
      * @param grp Cache group.
@@ -63,6 +67,10 @@ public class RowStore {
      */
     public void removeRow(long link) throws IgniteCheckedException {
         assert link != 0;
+
+        if (rowCacheCleaner != null)
+            rowCacheCleaner.remove(link);
+
         ctx.database().checkpointReadLock();
 
         try {
@@ -95,6 +103,8 @@ public class RowStore {
      * @return {@code True} if was able to update row.
      */
     public boolean updateRow(long link, CacheDataRow row) throws IgniteCheckedException {
+        assert ctx.database().checkpointLockIsHeldByThread();
+
         return freeList.updateDataRow(link, row);
     }
 
@@ -103,5 +113,14 @@ public class RowStore {
      */
     public FreeList freeList() {
         return freeList;
+    }
+
+    /**
+     * Inject rows cache cleaner.
+     *
+     * @param rowCacheCleaner Rows cache cleaner.
+     */
+    public void setRowCacheCleaner(GridQueryRowCacheCleaner rowCacheCleaner) {
+        this.rowCacheCleaner = rowCacheCleaner;
     }
 }

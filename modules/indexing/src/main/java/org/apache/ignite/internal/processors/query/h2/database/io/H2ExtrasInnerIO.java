@@ -109,7 +109,7 @@ public class H2ExtrasInnerIO extends BPlusInnerIO<SearchRow> {
 
         assert link != 0;
 
-        GridH2Row r0 = ((H2Tree)tree).getRowFactory().getRow(link);
+        GridH2Row r0 = ((H2Tree)tree).createRowFromLink(link);
 
         return r0;
     }

@@ -853,7 +853,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             return;
 
         try {
-            onCacheStop0(cctx.name(), destroy);
+            onCacheStop0(cctx, destroy);
         }
         finally {
             busyLock.leaveBusy();
@@ -1498,7 +1498,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 cacheNames.add(CU.mask(cacheName));
             }
             catch (IgniteCheckedException | RuntimeException e) {
-                onCacheStop0(cacheName, true);
+                onCacheStop0(cctx, true);
 
                 throw e;
             }
@@ -1509,12 +1509,14 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * Unregister cache.<p>
      * Use with {@link #busyLock} where appropriate.
      *
-     * @param cacheName Cache name.
+     * @param cctx Cache context.
      * @param destroy Destroy flag.
      */
-    public void onCacheStop0(String cacheName, boolean destroy) {
+    public void onCacheStop0(GridCacheContext cctx, boolean destroy) {
         if (idx == null)
             return;
+
+        String cacheName = cctx.name();
 
         synchronized (stateMux) {
             // Clear types.
@@ -1550,7 +1552,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
             // Notify indexing.
             try {
-                idx.unregisterCache(cacheName, destroy);
+                idx.unregisterCache(cctx, destroy);
             }
             catch (Exception e) {
                 U.error(log, "Failed to clear indexing on cache unregister (will ignore): " + cacheName, e);
