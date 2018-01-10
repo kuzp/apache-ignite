@@ -239,19 +239,35 @@ export class ModalImportModels {
         // Restores old behavior
         const {$http, Confirm, ConfirmBatch, Focus, SqlTypes, JavaTypes, Messages, $scope, $root, agentMgr, ActivitiesData, Loading, FormUtils, LegacyUtils} = this;
 
+        /**
+         * Convert some name to valid java package name.
+         *
+         * @param name to convert.
+         * @returns {string} Valid java package name.
+         */
+        const _toJavaPackage = (name) => {
+            return name ? name.replace(/[^A-Za-z_0-9/.]+/g, '_') : 'org';
+        };
+
         const importDomainModal = {
             hide: () => {
                 agentMgr.stopWatch();
                 this.onHide();
             }
         };
+
+        const _makeDefaultPackageName = (user) => user
+            ? _toJavaPackage(`${user.email.replace('@', '.').split('.').reverse().join('.')}.model`)
+            : void 0;
+
         this.$scope.ui = {
             generatePojo: true,
             builtinKeys: true,
             generateKeyFields: true,
             usePrimitives: true,
             generateTypeAliases: true,
-            generateFieldAliases: true
+            generateFieldAliases: true,
+            packageNameUserInput: _makeDefaultPackageName($root.user)
         };
         this.$scope.$hide = importDomainModal.hide;
 
@@ -383,16 +399,6 @@ export class ModalImportModels {
         }
 
         _loadPresets();
-
-        /**
-         * Convert some name to valid java package name.
-         *
-         * @param name to convert.
-         * @returns {string} Valid java package name.
-         */
-        const _toJavaPackage = (name) => {
-            return name ? name.replace(/[^A-Za-z_0-9/.]+/g, '_') : 'org';
-        };
 
         function _savePreset(preset) {
             try {
