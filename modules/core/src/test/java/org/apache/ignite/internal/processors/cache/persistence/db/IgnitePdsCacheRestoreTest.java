@@ -47,7 +47,13 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
 
-        ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+        TcpDiscoverySpi disco = (TcpDiscoverySpi)cfg.getDiscoverySpi();
+
+        disco.setIpFinder(IP_FINDER);
+
+        int idx = getTestIgniteInstanceIndex(igniteInstanceName);
+
+        disco.setLocalPort(TcpDiscoverySpi.DFLT_PORT + idx);
 
         if (ccfgs != null) {
             cfg.setCacheConfiguration(ccfgs);
