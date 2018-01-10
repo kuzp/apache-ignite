@@ -1478,7 +1478,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
         }
 
         if (err == null) {
-            if (centralizedAff) {
+            if (centralizedAff || forceAffRecalculation) {
                 assert !exchCtx.mergeExchanges();
 
                 for (CacheGroupContext grp : cctx.cache().cacheGroups()) {

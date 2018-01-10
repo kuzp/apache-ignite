@@ -162,14 +162,15 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         ClusterNode node,
         AffinityTopologyVersion topVer,
         DiscoveryDataClusterState state) {
-        if (state.transition() || !state.active())
+        if ((state.transition() || !state.active()) &&
+            !DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg))
             return;
 
         if (type == EVT_NODE_JOINED && node.isLocal())
             lastAffVer = null;
 
-        if ((!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT) ||
-            DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg))) {
+        if ((!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT)) ||
+            DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg)) {
             synchronized (mux) {
                 assert lastAffVer == null || topVer.compareTo(lastAffVer) > 0;
 
