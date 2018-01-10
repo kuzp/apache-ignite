@@ -77,16 +77,23 @@ public class AgentClusterDemo {
     private static final AtomicBoolean initGuard = new AtomicBoolean();
 
     /** */
+    private static final String SRV_NODE_NAME = "demo-server-";
+
+    /** */
+    private static final String CLN_NODE_NAME = "demo-client-";
+
+    /** */
+    private static final int NODE_CNT = 3;
+
+    /** */
     private static CountDownLatch initLatch = new CountDownLatch(1);
 
     /** */
     private static volatile String demoUrl;
 
-    /** */
-    private static final int NODE_CNT = 3;
-
     /**
      * Configure node.
+     *
      * @param basePort Base port.
      * @param gridIdx Ignite instance name index.
      * @param client If {@code true} then start client node.
@@ -96,7 +103,7 @@ public class AgentClusterDemo {
         throws IgniteCheckedException {
         IgniteConfiguration cfg = new IgniteConfiguration();
 
-        cfg.setIgniteInstanceName((client ? "demo-client-" : "demo-server-" ) + gridIdx);
+        cfg.setIgniteInstanceName((client ? CLN_NODE_NAME : SRV_NODE_NAME) + gridIdx);
         cfg.setLocalHost("127.0.0.1");
         cfg.setEventStorageSpi(new MemoryEventStorageSpi());
         cfg.setWorkDirectory(U.workDirectory(null, null));
@@ -257,7 +264,7 @@ public class AgentClusterDemo {
                     }
                     finally {
                         if (idx == NODE_CNT) {
-                            Ignite ignite = Ignition.ignite("demo-server-0");
+                            Ignite ignite = Ignition.ignite(SRV_NODE_NAME + 0);
 
                             if (ignite != null) {
                                 ignite.active(true);
