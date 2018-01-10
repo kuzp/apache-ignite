@@ -162,7 +162,7 @@ class HadoopV2JobResourceManager {
             if (log.isDebugEnabled())
                 log.debug("Processing files from: " + jobLocDir + "; File class paths: " +
                     S.arrayToString(Path.class, ctx.getFileClassPaths()) + "; Class path Urls: " +
-                    S.arrayToString(URL.class, clsPathUrls));
+                    clsPathUrls);
 
             processFiles(jobLocDir, ctx.getFileClassPaths(), download, false, clsPathUrls, null);
             processFiles(jobLocDir, ctx.getArchiveClassPaths(), download, true, clsPathUrls, null);
