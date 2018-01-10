@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -125,6 +126,11 @@ public class UnzipFileIO implements FileIO {
 
     /** {@inheritDoc} */
     @Override public void clear() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    /** {@inheritDoc} */
+    @Override public MappedByteBuffer map(int maxWalSegmentSize) throws IOException {
         throw new UnsupportedOperationException();
     }
 
