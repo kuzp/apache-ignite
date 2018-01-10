@@ -17,17 +17,12 @@
 
 package org.apache.ignite.internal.sql;
 
-/** FIXME SHQ */
 public enum SqlLexerTokenClass {
-    /** FIXME SHQ */
     DEFAULT,
 
-    /** FIXME SHQ */
     QUOTED,
 
-    /** FIXME SHQ */
     PUNCTUATION,
 
-    /** FIXME SHQ */
     END,
 }
