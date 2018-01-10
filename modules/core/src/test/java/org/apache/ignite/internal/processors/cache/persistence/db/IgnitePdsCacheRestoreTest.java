@@ -56,7 +56,9 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
         }
 
         MemoryConfiguration memCfg = new MemoryConfiguration();
+
         memCfg.setPageSize(1024);
+
         memCfg.setDefaultMemoryPolicySize(10 * 1024 * 1024);
 
         cfg.setMemoryConfiguration(memCfg);
@@ -64,6 +66,8 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
         PersistentStoreConfiguration pCfg = new PersistentStoreConfiguration();
 
         pCfg.setWalMode(WALMode.LOG_ONLY);
+
+        pCfg.setCheckpointingFrequency(30_000);
 
         cfg.setPersistentStoreConfiguration(pCfg);
 
@@ -90,22 +94,37 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testRestoreAndNewCache1() throws Exception {
-        restoreAndNewCache(false);
+        restoreAndNewCache(false, false);
     }
 
     /**
      * @throws Exception If failed.
      */
     public void testRestoreAndNewCache2() throws Exception {
-        restoreAndNewCache(true);
+        restoreAndNewCache(true, false);
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRestoreAndNewCache3() throws Exception {
+        restoreAndNewCache(false, true);
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRestoreAndNewCache4() throws Exception {
+        restoreAndNewCache(true, true);
     }
 
     /**
      * @param createNew If {@code true} need cache is added while node is stopped.
+     * @param fullRestart If {@code true} the cluster will be fully restarted from the stopped node (will bee coordinator).
      * @throws Exception If failed.
      */
-    private void restoreAndNewCache(boolean createNew) throws Exception {
-        for (int i = 0; i < 3; i++) {
+    private void restoreAndNewCache(boolean createNew, boolean fullRestart) throws Exception {
+        for (int i = 0; i <= 2; i++) {
             ccfgs = configurations1();
 
             startGrid(i);
@@ -131,7 +150,16 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
             ccfgs = configurations2();
         }
 
-        startGrid(2);
+        if (fullRestart) {
+            stopAllGrids(true);
+
+            for (int i = 2; i >= 0; --i)
+                startGrid(i);
+
+            ignite(2).active(true);
+        }
+        else
+            startGrid(2);
 
         cache1 = ignite(2).cache("c1");
 
