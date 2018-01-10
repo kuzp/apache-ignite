@@ -14,21 +14,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.apache.ignite.internal.pagemem.wal.record;
-
-import org.apache.ignite.internal.processors.cache.persistence.wal.AbstractWalRecordsIterator;
+package org.apache.ignite.internal.processors.cache.persistence.wal.reader;
 
 /**
- * Special type of WAL record. Shouldn't be stored in file.
- * Returned by deserializer if next record is not matched by filter. Automatically handled by
- * {@link AbstractWalRecordsIterator}.
+ * Defines i/o exceptions handling policy during standalone WAL iteration.
  */
-public class FilteredRecord extends WALRecord {
-    /** Instance. */
-    public static final FilteredRecord INSTANCE = new FilteredRecord();
-
-    /** {@inheritDoc} */
-    @Override public RecordType type() {
-        return null;
-    }
+public enum RecordExceptionsHandlePolicy {
+    /** Default - {@link #FAIL} for archive dir, {@link #TOLERATE} for work dir. */
+    DEFAULT,
+    /** Iteration will throw exception. */
+    FAIL,
+    /** Segment will be switched to next and iteration will continue. */
+    TOLERATE
 }

@@ -30,6 +30,7 @@ import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
+import org.apache.ignite.internal.processors.cache.persistence.file.UnzipFileIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.serializer.RecordSerializerFactory;
 import org.apache.ignite.internal.util.GridCloseableIteratorAdapter;
 import org.apache.ignite.internal.util.typedef.P2;
@@ -280,7 +281,7 @@ public abstract class AbstractWalRecordsIterator
         @Nullable final FileWALPointer start)
         throws IgniteCheckedException, FileNotFoundException {
         try {
-            FileIO fileIO = ioFactory.create(desc.file);
+            FileIO fileIO = desc.isCompressed() ? new UnzipFileIO(desc.file) : ioFactory.create(desc.file);
 
             try {
                 IgniteBiTuple<Integer, Boolean> tup = FileWriteAheadLogManager.readSerializerVersionAndCompactedFlag(fileIO);
@@ -289,12 +290,13 @@ public abstract class AbstractWalRecordsIterator
 
                 boolean isCompacted = tup.get2();
 
+                if (isCompacted)
+                    serializerFactory.skipPositionCheck(true);
+
                 FileInput in = new FileInput(fileIO, buf);
 
                 if (start != null && desc.idx == start.index()) {
                     if (isCompacted) {
-                        serializerFactory.skipPositionCheck(true);
-
                         if (start.fileOffset() != 0)
                             serializerFactory.recordDeserializeFilter(new StartSeekingFilter(start));
                     }

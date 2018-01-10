@@ -126,7 +126,7 @@ public class RecordV1Serializer implements RecordSerializer {
             final WALRecord rec = dataSerializer.readRecord(recType, in);
 
             if (recordFilter != null && !recordFilter.apply(rec.type(), ptr))
-                return new FilteredRecord();
+                return FilteredRecord.INSTANCE;
             else if (marshalledMode) {
                 ByteBuffer buf = heapTlb.get();
 
