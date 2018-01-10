@@ -19,6 +19,9 @@ package org.apache.ignite.internal.sql;
 
 import java.util.HashMap;
 
+import static org.apache.ignite.internal.sql.SqlLexerTokenClass.PUNCTUATION;
+import static org.apache.ignite.internal.sql.SqlLexerTokenClass.QUOTED;
+
 /**
  * Lexer token type.
  */
@@ -26,29 +29,32 @@ public enum SqlLexerTokenType {
     /** Standard word. */
     DEFAULT,
 
-    /** Quoted phrase. */
-    QUOTED,
+    /** Double-quoted phrase. */
+    DBL_QUOTED(QUOTED),
+
+    /** Single-quoted string literal */
+    SGL_QUOTED(QUOTED),
 
     /** Minus sign. */
-    MINUS('-'),
+    MINUS('-', PUNCTUATION),
 
     /** Dot. */
-    DOT('.'),
+    DOT('.', PUNCTUATION),
 
     /** Comma. */
-    COMMA(','),
+    COMMA(',', PUNCTUATION),
 
     /** Parenthesis: left. */
-    PARENTHESIS_LEFT('('),
+    PARENTHESIS_LEFT('(', PUNCTUATION),
 
     /** Parenthesis: right. */
-    PARENTHESIS_RIGHT(')'),
+    PARENTHESIS_RIGHT(')', PUNCTUATION),
 
     /** Semicolon. */
-    SEMICOLON(';'),
+    SEMICOLON(';', PUNCTUATION),
 
     /** End of string. */
-    EOF;
+    EOF(SqlLexerTokenClass.END);
 
     /** Mapping from character to type.. */
     private static final HashMap<Character, SqlLexerTokenType> CHAR_TO_TYP = new HashMap<>();
@@ -68,6 +74,8 @@ public enum SqlLexerTokenType {
         }
     }
 
+    private final SqlLexerTokenClass klass;
+
     /**
      * Get token type for character.
      *
@@ -82,7 +90,14 @@ public enum SqlLexerTokenType {
      * Constructor.
      */
     SqlLexerTokenType() {
-        this(null);
+        this(null, SqlLexerTokenClass.DEFAULT);
+    }
+
+    /**
+     * Constructor.
+     */
+    SqlLexerTokenType(SqlLexerTokenClass klass) {
+        this(null, klass);
     }
 
     /**
@@ -90,8 +105,9 @@ public enum SqlLexerTokenType {
      * 
      * @param c Corresponding character.
      */
-    SqlLexerTokenType(Character c) {
+    SqlLexerTokenType(Character c, SqlLexerTokenClass klass) {
         this.c = c;
+        this.klass = klass;
         
         str = c != null ? c.toString() : null;
     }
@@ -108,5 +124,14 @@ public enum SqlLexerTokenType {
      */
     public String asString() {
         return str;
+    }
+
+    /**
+     * Returns token class of the token.
+     *
+     * @return Token class.
+     */
+    public SqlLexerTokenClass klass() {
+        return klass;
     }
 }
