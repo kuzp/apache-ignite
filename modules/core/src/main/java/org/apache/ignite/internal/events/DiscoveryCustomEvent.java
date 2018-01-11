@@ -89,16 +89,22 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
         return S.toString(DiscoveryCustomEvent.class, this, super.toString());
     }
 
-    // TODO GG-13223 javadoc
-    public static boolean requiresCentralizedAffinityCalculation(DiscoveryEvent evt) {
+    /**
+     * @param evt Discovery event.
+     * @return {@code True} if event is DiscoveryCustomEvent that requires centralized affinity assignment.
+     */
+    public static boolean requiresCentralizedAffinityAssignment(DiscoveryEvent evt) {
         if (!(evt instanceof DiscoveryCustomEvent))
             return false;
 
-        return requiresCentralizedAffinityCalculation(((DiscoveryCustomEvent)evt).customMessage());
+        return requiresCentralizedAffinityAssignment(((DiscoveryCustomEvent)evt).customMessage());
     }
 
-    // TODO GG-13223 javadoc
-    public static boolean requiresCentralizedAffinityCalculation(@Nullable DiscoveryCustomMessage msg) {
+    /**
+     * @param msg Discovery custom message.
+     * @return {@code True} if message belongs to event that requires centralized affinity assignment.
+     */
+    public static boolean requiresCentralizedAffinityAssignment(@Nullable DiscoveryCustomMessage msg) {
         if (msg == null)
             return false;
 

@@ -58,7 +58,6 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.Gri
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionMap;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionsExchangeFuture;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionsFullMessage;
-import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateFinishMessage;
 import org.apache.ignite.internal.processors.cluster.DiscoveryDataClusterState;
 import org.apache.ignite.internal.util.GridLongList;
 import org.apache.ignite.internal.util.GridPartitionStateMap;
@@ -163,14 +162,14 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         AffinityTopologyVersion topVer,
         DiscoveryDataClusterState state) {
         if ((state.transition() || !state.active()) &&
-            !DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg))
+            !DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(customMsg))
             return;
 
         if (type == EVT_NODE_JOINED && node.isLocal())
             lastAffVer = null;
 
         if ((!CU.clientNode(node) && (type == EVT_NODE_FAILED || type == EVT_NODE_JOINED || type == EVT_NODE_LEFT)) ||
-            DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(customMsg)) {
+            DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(customMsg)) {
             synchronized (mux) {
                 assert lastAffVer == null || topVer.compareTo(lastAffVer) > 0;
 
@@ -2095,7 +2094,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         final IgniteClosure<ClusterNode, T> c,
         final boolean initAff)
         throws IgniteCheckedException {
-        final WaitRebalanceInfo waitRebalanceInfo = DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(fut.firstEvent()) ?
+        final WaitRebalanceInfo waitRebalanceInfo = DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(fut.firstEvent()) ?
             new WaitRebalanceInfo(fut.exchangeId().topologyVersion()) :
             new WaitRebalanceInfo(fut.context().events().lastServerEventVersion());
 

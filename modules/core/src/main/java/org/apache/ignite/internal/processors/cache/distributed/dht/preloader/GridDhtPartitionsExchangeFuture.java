@@ -590,7 +590,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage msg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
 
-                forceAffRecalculation = DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(msg);
+                forceAffRecalculation = DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(msg);
 
                 if (msg instanceof ChangeGlobalStateMessage) {
                     assert exchActions != null && !exchActions.empty();
