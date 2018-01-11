@@ -52,6 +52,7 @@ include /app/helpers/jade/mixins
                                         - form = '$parent.form'
                                         .settings-row
                                             +sane-ignite-form-field-dropdown({
+                                                required: true,
                                                 label: 'Failover SPI:',
                                                 model: '$parent.item.kind',
                                                 name: '"failoverKind"',
@@ -66,9 +67,7 @@ include /app/helpers/jade/mixins
                                                     <li>Custom - Jobs are activated immediately on arrival to mapped node</li>
                                                     <li>Default - Default FailoverSpi implementation</li>
                                                 </ul>`
-                                            })(
-                                                required
-                                            )
+                                            })
 
                                         .settings-row(ng-show='$parent.item.kind === "JobStealing"')
                                             +number('Maximum failover attempts:', '$parent.item.JobStealing.maximumFailoverAttempts', '"jsMaximumFailoverAttempts"', 'true', '5', '0',
