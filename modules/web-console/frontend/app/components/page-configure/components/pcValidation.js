@@ -17,6 +17,35 @@
 
 import angular from 'angular';
 
+export class IgniteFormField {
+    static animName = 'ignite-form-field__error-blink';
+    static eventName = 'webkitAnimationEnd oAnimationEnd msAnimationEnd animationend';
+    static $inject = ['$element', '$scope'];
+    constructor($element, $scope) {
+        Object.assign(this, {$element});
+        this.$scope = $scope;
+    }
+    $postLink() {
+        this.onAnimEnd = () => this.$element.removeClass(IgniteFormField.animName);
+        this.$element.on(IgniteFormField.eventName, this.onAnimEnd);
+    }
+    $onDestroy() {
+        this.$element.off(IgniteFormField.eventName, this.onAnimEnd);
+        this.$element = this.onAnimEnd = null;
+    }
+    notifyAboutError() {
+        if (this.$element) this.$element.addClass(IgniteFormField.animName);
+    }
+    /**
+     * Exposes control in $scope
+     * @param {ng.INgModelController} control
+     */
+    exposeControl(control, name = '$input') {
+        this.$scope[name] = control;
+        this.$scope.$on('$destroy', () => this.$scope[name] = null);
+    }
+}
+
 export default angular.module('ignite-console.page-configure.validation', [])
     .directive('pcNotInCollection', function() {
         class Controller {
@@ -140,28 +169,10 @@ export default angular.module('ignite-console.page-configure.validation', [])
         };
     }])
     .directive('igniteFormField', function() {
-        const animName = 'ignite-form-field__error-blink';
-        const eventName = 'webkitAnimationEnd oAnimationEnd msAnimationEnd animationend';
-        class Controller {
-            static $inject = ['$element'];
-            constructor($element) {
-                Object.assign(this, {$element});
-            }
-            $postLink() {
-                this.onAnimEnd = () => this.$element.removeClass(animName);
-                this.$element.on(eventName, this.onAnimEnd);
-            }
-            $onDestroy() {
-                this.$element.off(eventName, this.onAnimEnd);
-                this.$element = this.onAnimEnd = null;
-            }
-            notifyAboutError() {
-                if (this.$element) this.$element.addClass(animName);
-            }
-        }
         return {
             restrict: 'C',
-            controller: Controller
+            controller: IgniteFormField,
+            scope: true
         };
     })
     .directive('isValidJavaIdentifier', ['IgniteLegacyUtils', function(LegacyUtils) {

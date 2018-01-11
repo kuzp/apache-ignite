@@ -31,6 +31,7 @@ mixin ignite-form-field-dropdown(label, model, name, disabled, required, multipl
 
             bs-select
             bs-options=`item.value as item.label for item in ${options}`
+            expose-ignite-form-field-control='$input'
 
             data-multiple=multiple ? '1' : false
 
@@ -44,8 +45,8 @@ mixin ignite-form-field-dropdown(label, model, name, disabled, required, multipl
             .input-tip
                 +form-field-input(attributes=attributes)
         .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-show=`(${form}[${name}].$dirty || ${form}[${name}].$touched || ${form}[${name}].$submitted) && ${form}[${name}].$invalid`
+            ng-messages=`$input.$error`
+            ng-show=`($input.$dirty || $input.$touched || $input.$submitted) && $input.$invalid`
         )
             if block
                 block

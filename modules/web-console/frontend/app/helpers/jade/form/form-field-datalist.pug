@@ -33,6 +33,7 @@ mixin form-field-datalist(label, model, name, disabled, required, placeholder, o
             container='body'
             data-min-length='1'
             ignite-retain-selection
+            expose-ignite-form-field-control='$input'
         )&attributes(attributes.attributes)
 
     .ignite-form-field
@@ -42,8 +43,8 @@ mixin form-field-datalist(label, model, name, disabled, required, placeholder, o
             .input-tip
                 +form-field-input(attributes=attributes)
         .ignite-form-field__errors(
-            ng-messages=`${form}[${name}].$error`
-            ng-if=`!${form}[${name}].$pristine && ${form}[${name}].$invalid`
+            ng-messages=`$input.$error`
+            ng-if=`!$input.$pristine && $input.$invalid`
         )
             if block
                 block
