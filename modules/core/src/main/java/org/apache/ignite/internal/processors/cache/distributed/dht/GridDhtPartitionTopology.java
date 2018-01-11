@@ -117,9 +117,8 @@ public interface GridDhtPartitionTopology {
     /**
      * @param affVer Affinity version.
      * @param exchFut Exchange future.
-     * @throws IgniteInterruptedCheckedException If interrupted.
-     *
      * @return {@code True} if partitions must be refreshed.
+     * @throws IgniteInterruptedCheckedException If interrupted.
      */
     public boolean initPartitionsWhenAffinityReady(AffinityTopologyVersion affVer, GridDhtPartitionsExchangeFuture exchFut)
         throws IgniteInterruptedCheckedException;

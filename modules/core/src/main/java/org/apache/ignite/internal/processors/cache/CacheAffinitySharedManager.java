@@ -1251,7 +1251,7 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
      * @param fut Current exchange future.
      * @param msg Finish exchange message.
      */
-    public void mergeExchangesOnServerLeft(final GridDhtPartitionsExchangeFuture fut,
+    public void applyAffinityFromFullMessage(final GridDhtPartitionsExchangeFuture fut,
         final GridDhtPartitionsFullMessage msg) {
         final Map<Long, ClusterNode> nodesByOrder = new HashMap<>();
 
@@ -1389,10 +1389,10 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
     {
         final ExchangeDiscoveryEvents evts = fut.context().events();
 
-//        assert fut.context().mergeExchanges();
-//        assert evts.hasServerLeft();
+        assert fut.context().mergeExchanges();
+        assert evts.hasServerLeft();
 
-        return onRecalculationEnforced(fut);
+        return onReassignmentEnforced(fut);
     }
 
     /**
@@ -1400,7 +1400,20 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
      * @return Computed difference with ideal affinity.
      * @throws IgniteCheckedException If failed.
      */
-    public Map<Integer, CacheGroupAffinityMessage> onRecalculationEnforced(
+    public Map<Integer, CacheGroupAffinityMessage> onCustomEventWithEnforcedAffinityReassignment(
+        final GridDhtPartitionsExchangeFuture fut) throws IgniteCheckedException
+    {
+        assert DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(fut.firstEvent());
+
+        return onReassignmentEnforced(fut);
+    }
+
+    /**
+     * @param fut Current exchange future.
+     * @return Computed difference with ideal affinity.
+     * @throws IgniteCheckedException If failed.
+     */
+    public Map<Integer, CacheGroupAffinityMessage> onReassignmentEnforced(
         final GridDhtPartitionsExchangeFuture fut) throws IgniteCheckedException
     {
         final ExchangeDiscoveryEvents evts = fut.context().events();
@@ -1643,17 +1656,16 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
     }
 
     /**
-     * Called on exchange initiated by server node leave.
+     * Called on exchange initiated by server node leave or custom event with centralized affinity assignment.
      *
      * @param fut Exchange future.
      * @param crd Coordinator flag.
      * @throws IgniteCheckedException If failed.
      * @return {@code True} if affinity should be assigned by coordinator.
      */
-    public boolean onServerLeft(final GridDhtPartitionsExchangeFuture fut, boolean crd) throws IgniteCheckedException {
-        ClusterNode leftNode = fut.firstEvent().eventNode();
-
-//        assert !leftNode.isClient() : leftNode;
+    public boolean onCentralizedAffinityChange(final GridDhtPartitionsExchangeFuture fut, boolean crd) throws IgniteCheckedException {
+        assert (fut.events().hasServerLeft() && !fut.firstEvent().eventNode().isClient()) ||
+            DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(fut.firstEvent()) : fut.firstEvent();
 
         if (crd) {
             // Need initialize CacheGroupHolders if this node become coordinator on this exchange.

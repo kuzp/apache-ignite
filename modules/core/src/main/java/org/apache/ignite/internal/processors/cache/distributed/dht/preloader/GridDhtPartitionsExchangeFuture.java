@@ -226,7 +226,11 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      */
     private boolean centralizedAff;
 
-    private boolean forceAffRecalculation;
+    /**
+     * Enforce affinity reassignment based on actual partition distribution. This mode should be used when partitions
+     * might be distributed not according to affinity assignment.
+     */
+    private boolean forceAffReassignment;
 
     /** Change global state exception. */
     private Exception changeGlobalStateE;
@@ -590,7 +594,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage msg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
 
-                forceAffRecalculation = DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(msg);
+                forceAffReassignment = DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(msg);
 
                 if (msg instanceof ChangeGlobalStateMessage) {
                     assert exchActions != null && !exchActions.empty();
@@ -611,8 +615,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     exchange = onAffinityChangeRequest(crdNode);
                 }
 
-                if (forceAffRecalculation)
-                    cctx.affinity().onServerLeft(this, crdNode);
+                if (forceAffReassignment)
+                    cctx.affinity().onCentralizedAffinityChange(this, crdNode);
 
                 initCoordinatorCaches(newCrd);
             }
@@ -759,7 +763,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     if (grp.isLocal())
                         continue;
 
-                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
+                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffReassignment, false);
                 }
             }
         }
@@ -938,7 +942,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      * @return Exchange type.
      */
     private ExchangeType onCustomMessageNoAffinityChange(boolean crd) {
-        if (!forceAffRecalculation)
+        if (!forceAffReassignment)
             cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
 
         return cctx.kernalContext().clientNode() ? ExchangeType.CLIENT : ExchangeType.ALL;
@@ -994,7 +998,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
             exchCtx.events().warnNoAffinityNodes(cctx);
 
-            centralizedAff = cctx.affinity().onServerLeft(this, crd);
+            centralizedAff = cctx.affinity().onCentralizedAffinityChange(this, crd);
         }
         else
             cctx.affinity().onServerJoin(this, crd);
@@ -1074,7 +1078,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 // It is possible affinity is not initialized yet if node joins to cluster.
                 if (grp.affinity().lastVersion().topologyVersion() > 0)
-                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
+                    grp.topology().beforeExchange(this, !centralizedAff && !forceAffReassignment, false);
             }
         }
 
@@ -1478,7 +1482,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
         }
 
         if (err == null) {
-            if (centralizedAff || forceAffRecalculation) {
+            if (centralizedAff || forceAffReassignment) {
                 assert !exchCtx.mergeExchanges();
 
                 for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
@@ -2290,7 +2294,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             if (!exchCtx.mergeExchanges() && !crd.equals(events().discoveryCache().serverNodes().get(0))) {
                 for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
                     if (!grp.isLocal())
-                        grp.topology().beforeExchange(this, !centralizedAff && !forceAffRecalculation, false);
+                        grp.topology().beforeExchange(this, !centralizedAff && !forceAffReassignment, false);
                 }
             }
 
@@ -2360,8 +2364,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     top.beforeExchange(this, true, true);
                 }
             }
-            else if (forceAffRecalculation)
-                idealAffDiff = cctx.affinity().onServerLeftWithExchangeMergeProtocol(this);
+            else if (forceAffReassignment)
+                idealAffDiff = cctx.affinity().onCustomEventWithEnforcedAffinityReassignment(this);
 
             Map<Integer, CacheGroupAffinityMessage> joinedNodeAff = null;
 
@@ -2446,7 +2450,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                 if (exchCtx.events().hasServerLeft())
                     msg.idealAffinityDiff(idealAffDiff);
             }
-            else if (forceAffRecalculation)
+            else if (forceAffReassignment)
                 msg.idealAffinityDiff(idealAffDiff);
 
             msg.prepareMarshal(cctx);
@@ -2906,7 +2910,7 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     cctx.affinity().onLocalJoin(this, msg, resTopVer);
                 else {
                     if (exchCtx.events().hasServerLeft())
-                        cctx.affinity().mergeExchangesOnServerLeft(this, msg);
+                        cctx.affinity().applyAffinityFromFullMessage(this, msg);
                     else
                         cctx.affinity().onServerJoinWithExchangeMergeProtocol(this, false);
 
@@ -2920,8 +2924,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             }
             else if (localJoinExchange() && !exchCtx.fetchAffinityOnJoin())
                 cctx.affinity().onLocalJoin(this, msg, resTopVer);
-            else if (forceAffRecalculation)
-                cctx.affinity().mergeExchangesOnServerLeft(this, msg);
+            else if (forceAffReassignment)
+                cctx.affinity().applyAffinityFromFullMessage(this, msg);
 
             updatePartitionFullMap(resTopVer, msg);
 
