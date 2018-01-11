@@ -561,9 +561,9 @@ public class DataStreamerImpl<K, V> implements IgniteDataStreamer<K, V>, Delayed
 
         enterBusy();
 
-        try {
-            GridFutureAdapter<Object> resFut = new GridFutureAdapter<>();
+        GridFutureAdapter<Object> resFut = new GridFutureAdapter<>();
 
+        try {
             resFut.listen(rmvActiveFut);
 
             activeFuts.add(resFut);
@@ -591,6 +591,11 @@ public class DataStreamerImpl<K, V> implements IgniteDataStreamer<K, V>, Delayed
         }
         catch (IgniteException e) {
             return new IgniteFinishedCacheFutureImpl<>(e);
+        }
+        catch (Throwable th) {
+            resFut.onDone(th);
+
+            throw  th;
         }
         finally {
             leaveBusy();
@@ -739,8 +744,6 @@ public class DataStreamerImpl<K, V> implements IgniteDataStreamer<K, V>, Delayed
         @Nullable final Collection<KeyCacheObjectWrapper> activeKeys,
         final int remaps
     ) {
-        System.err.println("LOAD0 for " + resFut);
-
         try {
             assert entries != null;
 
@@ -863,8 +866,6 @@ public class DataStreamerImpl<K, V> implements IgniteDataStreamer<K, V>, Delayed
 
                                     if (activeKeys.isEmpty())
                                         resFut.onDone();
-                                    else
-                                        System.err.println("" + activeKeys);
                                 }
                                 else {
                                     assert entriesForNode.size() == 1;
