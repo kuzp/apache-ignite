@@ -37,6 +37,7 @@ import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
  *
  */
 public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
+
     /** */
     private static final TcpDiscoveryIpFinder IP_FINDER = new TcpDiscoveryVmIpFinder(true);
 
@@ -50,7 +51,15 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
 
-        ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+        TcpDiscoverySpi disco = (TcpDiscoverySpi)cfg.getDiscoverySpi();
+
+        disco.setIpFinder(IP_FINDER);
+
+        int idx = getTestIgniteInstanceIndex(igniteInstanceName);
+
+        disco.setLocalPort(TcpDiscoverySpi.DFLT_PORT + idx);
+
+        cfg.setConsistentId(idx);
 
         if (ccfgs != null) {
             cfg.setCacheConfiguration(ccfgs);
@@ -62,7 +71,8 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
             .setDefaultDataRegionConfiguration(
                 new DataRegionConfiguration().setMaxSize(10 * 1024 * 1024).setPersistenceEnabled(true))
             .setPageSize(1024)
-            .setWalMode(WALMode.LOG_ONLY);
+            .setWalMode(WALMode.LOG_ONLY)
+            .setCheckpointFrequency(30_000);
 
         memCfg.setDataRegionConfigurations(new DataRegionConfiguration()
             .setMaxSize(10 * 1024 * 1024)
@@ -94,22 +104,37 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testRestoreAndNewCache1() throws Exception {
-        restoreAndNewCache(false);
+        restoreAndNewCache(false, false);
     }
 
     /**
      * @throws Exception If failed.
      */
     public void testRestoreAndNewCache2() throws Exception {
-        restoreAndNewCache(true);
+        restoreAndNewCache(true, false);
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRestoreAndNewCache3() throws Exception {
+        restoreAndNewCache(false, true);
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
+    public void testRestoreAndNewCache4() throws Exception {
+        restoreAndNewCache(true, true);
     }
 
     /**
      * @param createNew If {@code true} need cache is added while node is stopped.
+     * @param fullRestart If {@code true} the cluster will be fully restarted from the stopped node (will bee coordinator).
      * @throws Exception If failed.
      */
-    private void restoreAndNewCache(boolean createNew) throws Exception {
-        for (int i = 0; i < 3; i++) {
+    private void restoreAndNewCache(boolean createNew, boolean fullRestart) throws Exception {
+        for (int i = 0; i <= 2; i++) {
             ccfgs = configurations1();
 
             startGrid(i);
@@ -119,23 +144,40 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
 
         IgniteCache<Object, Object> cache1 = ignite(2).cache("c1");
 
-        List<Integer> keys = primaryKeys(cache1, 10);
+        List<Integer> priKeys = primaryKeys(cache1, 10);
 
-        for (Integer key : keys)
+        for (Integer key : priKeys)
             cache1.put(key, key);
 
         stopGrid(2);
 
         if (createNew) {
-            // New cache is added when node is stopped.
+            // New caches are added when node is stopped.
             ignite(0).getOrCreateCaches(Arrays.asList(configurations2()));
         }
-        else {
-            // New cache is added on node restart.
-            ccfgs = configurations2();
-        }
 
-        startGrid(2);
+        if (fullRestart) {
+            stopAllGrids(true);
+
+            startGrid(0);
+
+            startGrid(1);
+
+            // New caches are added on node start.
+            if (!createNew)
+                ccfgs = configurations2();
+
+            startGrid(2);
+
+            ignite(2).active(true);
+        }
+        else {
+            // New caches are added on node start.
+            if (!createNew)
+                ccfgs = configurations2();
+
+            startGrid(2);
+        }
 
         cache1 = ignite(2).cache("c1");
 
@@ -143,7 +185,15 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
 
         IgniteCache<Object, Object> cache3 = ignite(2).cache("c3");
 
-        for (Integer key : keys) {
+        if (createNew && fullRestart) {
+            assertNull(cache3);
+
+            cache3 = ignite(2).getOrCreateCache(cacheConfiguration("c3"));
+        }
+        else
+            assertNotNull(cache3);
+
+        for (Integer key : priKeys) {
             assertEquals(key, cache1.get(key));
 
             assertNull(cache2.get(key));
@@ -219,7 +269,7 @@ public class IgnitePdsCacheRestoreTest extends GridCommonAbstractTest {
      * @param name Cache name.
      * @return Cache configuration.
      */
-    private CacheConfiguration cacheConfiguration(String name) {
+    private CacheConfiguration<Object, Object> cacheConfiguration(String name) {
         CacheConfiguration ccfg = new CacheConfiguration(name);
 
         ccfg.setWriteSynchronizationMode(FULL_SYNC);
