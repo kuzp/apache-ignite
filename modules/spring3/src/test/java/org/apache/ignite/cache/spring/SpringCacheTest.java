@@ -59,7 +59,7 @@ public class SpringCacheTest extends GridCommonAbstractTest {
 
         cacheName = String.valueOf(System.currentTimeMillis());
         nativeCache = ignite.getOrCreateCache(cacheName);
-        springCache = new SpringCache(nativeCache, null);
+        springCache = new SpringCache(nativeCache);
     }
 
     /** {@inheritDoc} */

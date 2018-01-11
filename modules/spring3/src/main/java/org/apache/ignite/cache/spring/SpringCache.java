@@ -18,9 +18,7 @@
 package org.apache.ignite.cache.spring;
 
 import java.io.Serializable;
-import java.util.concurrent.Callable;
 import org.apache.ignite.IgniteCache;
-import org.apache.ignite.IgniteLock;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
@@ -34,18 +32,13 @@ class SpringCache implements Cache {
     /** */
     private final IgniteCache<Object, Object> cache;
 
-    /** */
-    private final SpringCacheManager mgr;
-
     /**
      * @param cache Cache.
-     * @param mgr Manager
      */
-    SpringCache(IgniteCache<Object, Object> cache, SpringCacheManager mgr) {
+    SpringCache(IgniteCache<Object, Object> cache) {
         assert cache != null;
 
         this.cache = cache;
-        this.mgr = mgr;
     }
 
     /** {@inheritDoc} */
@@ -90,15 +83,7 @@ class SpringCache implements Cache {
     private static ValueWrapper fromValue(Object val) {
         assert val != null;
 
-        return new SimpleValueWrapper(unwrapNull(val));
-    }
-
-    private static Object unwrapNull(Object val) {
-        return NULL.equals(val) ? null : val;
-    }
-
-    private <T> Object wrapNull(T val) {
-        return val == null ? NULL : val;
+        return new SimpleValueWrapper(NULL.equals(val) ? null : val);
     }
 
     /** */
