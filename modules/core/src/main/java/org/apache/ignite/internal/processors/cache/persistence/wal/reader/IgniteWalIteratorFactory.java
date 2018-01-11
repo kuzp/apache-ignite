@@ -61,11 +61,6 @@ public class IgniteWalIteratorFactory {
     private int bufSize = StandaloneWalRecordsIterator.DFLT_BUF_SIZE;
 
     /**
-     * Allows to override i/o exceptions handling policy.
-     */
-    private RecordExceptionsHandlePolicy exceptionsHandlePlc = RecordExceptionsHandlePolicy.DEFAULT;
-
-    /**
      * Creates WAL files iterator factory.
      * WAL iterator supports automatic converting from CacheObjects and KeyCacheObject into BinaryObjects
      *
@@ -158,7 +153,7 @@ public class IgniteWalIteratorFactory {
     public WALIterator iteratorArchiveDirectory(
         @NotNull final File walDirWithConsistentId) throws IgniteCheckedException {
         return new StandaloneWalRecordsIterator(
-            walDirWithConsistentId, log, prepareSharedCtx(), ioFactory, keepBinary, bufSize, exceptionsHandlePlc);
+            walDirWithConsistentId, log, prepareSharedCtx(), ioFactory, keepBinary, bufSize);
     }
 
     /**
@@ -166,14 +161,16 @@ public class IgniteWalIteratorFactory {
      * This method may be used only for archive folder (not for work).
      * In this mode only provided WAL segments will be scanned. New WAL files created during iteration will be ignored
      *
-     * @param files files to scan. Order is not important, but it is significant to provide all segments without
-     * omissions. Parameter should contain direct file links to '.wal' files from archive directory. 'Consistent
-     * ID'-based subfolder name (if any) should not contain special symbols. Special symbols should be already masked.
+     * @param files files to scan. Order is not important, but it is significant to provide all segments without omissions.
+     * Parameter should contain direct file links to '.wal' files from archive directory.
+     * 'Consistent ID'-based subfolder name (if any) should not contain special symbols.
+     * Special symbols should be already masked.
+     *
      * @return closable WAL records iterator, should be closed when non needed
      * @throws IgniteCheckedException if failed to read files
      */
     public WALIterator iteratorArchiveFiles(@NotNull final File... files) throws IgniteCheckedException {
-        return new StandaloneWalRecordsIterator(log, prepareSharedCtx(), ioFactory, false, keepBinary, bufSize, exceptionsHandlePlc, files);
+        return new StandaloneWalRecordsIterator(log, prepareSharedCtx(), ioFactory, false, keepBinary, bufSize, files);
     }
 
     /**
@@ -181,14 +178,16 @@ public class IgniteWalIteratorFactory {
      * This method may be used for work folder, file indexes are scanned from the file context.
      * In this mode only provided WAL segments will be scanned. New WAL files created during iteration will be ignored.
      *
-     * @param files files to scan. Order is not important, but it is significant to provide all segments without
-     * omissions. Parameter should contain direct file links to '.wal' files from work directory. 'Consistent ID'-based
-     * subfolder name (if any) should not contain special symbols. Special symbols should be already masked.
+     * @param files files to scan. Order is not important, but it is significant to provide all segments without omissions.
+     * Parameter should contain direct file links to '.wal' files from work directory.
+     * 'Consistent ID'-based subfolder name (if any) should not contain special symbols.
+     * Special symbols should be already masked.
+     *
      * @return closable WAL records iterator, should be closed when non needed
      * @throws IgniteCheckedException if failed to read files
      */
     public WALIterator iteratorWorkFiles(@NotNull final File... files) throws IgniteCheckedException {
-        return new StandaloneWalRecordsIterator(log, prepareSharedCtx(), ioFactory, true, keepBinary, bufSize, exceptionsHandlePlc, files);
+        return new StandaloneWalRecordsIterator(log, prepareSharedCtx(), ioFactory, true, keepBinary, bufSize, files);
     }
 
     /**
@@ -220,12 +219,5 @@ public class IgniteWalIteratorFactory {
      */
     public void bufferSize(int bufSize) {
         this.bufSize = bufSize;
-    }
-
-    /**
-     * @param exceptionsHandlePlc Allows to override i/o exceptions handling policy.
-     */
-    public void exceptionsHandlePolicy(RecordExceptionsHandlePolicy exceptionsHandlePlc) {
-        this.exceptionsHandlePlc = exceptionsHandlePlc;
     }
 }

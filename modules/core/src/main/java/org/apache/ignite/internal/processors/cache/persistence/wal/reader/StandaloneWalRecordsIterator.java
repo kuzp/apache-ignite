@@ -80,20 +80,8 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
     @Nullable
     private List<FileWriteAheadLogManager.FileDescriptor> walFileDescriptors;
 
-    /**
-     * True if this iterator used for work dir, false for archive.
-     * In work dir mode exceptions come from record reading are ignored (file may be not completed).
-     * Index of file is taken from file itself, not from file name
-     */
-    private boolean workDir;
-
     /** Keep binary. This flag disables converting of non primitive types (BinaryObjects) */
     private boolean keepBinary;
-
-    /**
-     * Allows to override i/o exceptions handling policy.
-     */
-    private RecordExceptionsHandlePolicy exceptionsHandlePlc;
 
     /**
      * Creates iterator in directory scan mode
@@ -103,7 +91,6 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
      * @param ioFactory File I/O factory.
      * @param keepBinary  Keep binary. This flag disables converting of non primitive types
      * @param bufSize Buffer size.
-     * @param excPlc Exceptions handling policy.
      */
     StandaloneWalRecordsIterator(
         @NotNull File walFilesDir,
@@ -111,8 +98,7 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
         @NotNull GridCacheSharedContext sharedCtx,
         @NotNull FileIOFactory ioFactory,
         boolean keepBinary,
-        int bufSize,
-        RecordExceptionsHandlePolicy excPlc
+        int bufSize
     ) throws IgniteCheckedException {
         super(log,
             sharedCtx,
@@ -120,7 +106,6 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
             ioFactory,
             bufSize);
         this.keepBinary = keepBinary;
-        this.exceptionsHandlePlc = excPlc;
         init(walFilesDir, false, null);
         advance();
     }
@@ -134,27 +119,22 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
      * @param workDir Work directory is scanned, false - archive
      * @param keepBinary Keep binary. This flag disables converting of non primitive types
      * (BinaryObjects will be used instead)
-     * @param excPlc Exceptions handling policy.
      * @param walFiles Wal files.
      */
     StandaloneWalRecordsIterator(
-        @NotNull IgniteLogger log,
-        @NotNull GridCacheSharedContext sharedCtx,
-        @NotNull FileIOFactory ioFactory,
-        boolean workDir,
-        boolean keepBinary,
-        int bufSize,
-        RecordExceptionsHandlePolicy excPlc,
-        @NotNull File... walFiles
-    ) throws IgniteCheckedException {
+            @NotNull IgniteLogger log,
+            @NotNull GridCacheSharedContext sharedCtx,
+            @NotNull FileIOFactory ioFactory,
+            boolean workDir,
+            boolean keepBinary,
+            int bufSize,
+            @NotNull File... walFiles) throws IgniteCheckedException {
         super(log,
             sharedCtx,
             new RecordSerializerFactoryImpl(sharedCtx),
             ioFactory,
             bufSize);
 
-        this.exceptionsHandlePlc = excPlc;
-        this.workDir = workDir;
         this.keepBinary = keepBinary;
         init(null, workDir, walFiles);
         advance();
@@ -176,10 +156,8 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
             FileWriteAheadLogManager.FileDescriptor[] descs = loadFileDescriptors(walFilesDir);
             curWalSegmIdx = !F.isEmpty(descs) ? descs[0].getIdx() : 0;
             this.walFilesDir = walFilesDir;
-            this.workDir = false;
         }
         else {
-            this.workDir = workDir;
 
             if (workDir)
                 walFileDescriptors = scanIndexesFromFileHeaders(walFiles);
@@ -383,22 +361,6 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
             dataEntry.partitionCounter(),
             fakeCacheObjCtx,
             keepBinary || marshallerMappingFileStoreDir == null);
-    }
-
-    /** {@inheritDoc} */
-    @Override protected void handleRecordException(
-        @NotNull final Exception e,
-        @Nullable final FileWALPointer ptr) {
-        super.handleRecordException(e, ptr);
-
-        if (exceptionsHandlePlc == RecordExceptionsHandlePolicy.FAIL ||
-            exceptionsHandlePlc == RecordExceptionsHandlePolicy.DEFAULT && !workDir) {
-            final RuntimeException ex = new RuntimeException("Record reading problem occurred at file pointer [" + ptr + "]:" + e.getMessage(), e);
-
-            ex.printStackTrace();
-
-            throw ex;
-        }
     }
 
     /** {@inheritDoc} */
