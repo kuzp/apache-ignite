@@ -163,7 +163,6 @@ export default angular.module('ignite-console.page-configure.validation', [])
                         if (!attr.bsSelect) $timeout(() => el[0].focus());
                         igniteFormField && igniteFormField.notifyAboutError();
                     });
-                    console.debug(target, el, bsCollapseTarget);
                 });
             }
         };

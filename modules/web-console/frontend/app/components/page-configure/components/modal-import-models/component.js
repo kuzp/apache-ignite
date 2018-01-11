@@ -273,7 +273,7 @@ export class ModalImportModels {
 
         this.$scope.importCommon = {};
 
-        this.subscription = this.loadData().debug('import data').do((data) => {
+        this.subscription = this.loadData().do((data) => {
             this.$scope.caches = _mapCaches(data.caches);
             this.$scope.domains = data.models;
             this.caches = data.caches;
