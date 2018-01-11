@@ -18,20 +18,22 @@
 import {Observable} from 'rxjs/Observable';
 import {merge} from 'rxjs/observable/merge';
 import {combineLatest} from 'rxjs/observable/combineLatest';
-import 'rxjs/add/operator/sample';
-import clone from 'lodash/clone';
 import {RejectType} from '@uirouter/angularjs';
 
 /**
  * @param {uirouter.TransitionService} $transitions
  */
 export default function configSelectionManager($transitions) {
+    /**
+     * Determines what items should be marked as selected and if something is being edited at the moment.
+     */
     return ({itemID$, selectedItemRows$, visibleRows$, loadedItems$}) => {
+        // Aborted transitions happen when form has unsaved changes, user attempts to leave
+        // but decides to stay after screen asks for leave confirmation.
         const abortedTransitions$ = Observable.create((observer) => {
             return $transitions.onError({}, (t) => observer.next(t));
         })
-        .filter((t) => t.error().type === RejectType.ABORTED)
-        .debug('abortedTransitions');
+        .filter((t) => t.error().type === RejectType.ABORTED);
 
         const firstItemID$ = visibleRows$.withLatestFrom(itemID$, loadedItems$)
             .filter(([rows, id, items]) => !id && rows && rows.length === items.length)
@@ -40,17 +42,20 @@ export default function configSelectionManager($transitions) {
         const singleSelectionEdit$ = selectedItemRows$.filter((r) => r && r.length === 1).pluck('0', '_id');
         const selectedMultipleOrNone$ = selectedItemRows$.filter((r) => r.length > 1 || r.length === 0);
 
-        const editGoes$ = merge(firstItemID$, singleSelectionEdit$).filter((v) => v).debug('go');
-        const editLeaves$ = merge(selectedMultipleOrNone$).debug('leave');
+        // Edit first loaded item or when there's only one item selected
+        const editGoes$ = merge(firstItemID$, singleSelectionEdit$).filter((v) => v);
+        // Stop edit when multiple items are selected
+        const editLeaves$ = merge(selectedMultipleOrNone$);
 
-        const selectedItemIDs$ = combineLatest(
-            merge(
-                itemID$.filter((id) => id).map((id) => id === 'new' ? [] : [id]),
-                selectedItemRows$.map((rows) => rows.map((r) => r._id)).sample(itemID$.filter((id) => !id))
-            ),
-            merge(abortedTransitions$).startWith(null),
-            clone
-        ).publishReplay(1).refCount();
+        const selectedItemIDs$ = merge(
+            // Select nothing when creating an item or select current item
+            itemID$.filter((id) => id).map((id) => id === 'new' ? [] : [id]),
+            // Restore previous item selection when transition gets aborted
+            abortedTransitions$.withLatestFrom(itemID$, (_, id) => [id]),
+            // Select all incoming selected rows
+            selectedItemRows$.map((rows) => rows.map((r) => r._id))
+        )
+        .publishReplay(1).refCount();
 
         return {selectedItemIDs$, editGoes$, editLeaves$};
     };
