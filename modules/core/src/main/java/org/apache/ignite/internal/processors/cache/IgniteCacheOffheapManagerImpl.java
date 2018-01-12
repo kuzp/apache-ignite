@@ -1960,7 +1960,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
                 row = searchRow.row();
             }
             else
-                row = dataTree.findOne(new SearchRow(cacheId, key), CacheDataRowAdapter.RowData.NO_KEY);
+                row = dataTree.findOne(new SearchRow(cacheId, key), null, CacheDataRowAdapter.RowData.NO_KEY);
 
             afterRowFound(row, key);
 

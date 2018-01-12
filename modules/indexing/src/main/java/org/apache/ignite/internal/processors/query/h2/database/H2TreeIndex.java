@@ -24,12 +24,15 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.IgniteCacheDatabaseSharedManager;
 import org.apache.ignite.internal.processors.cache.persistence.RootPage;
 import org.apache.ignite.internal.processors.cache.persistence.tree.BPlusTree;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.processors.query.h2.H2Cursor;
+import org.apache.ignite.internal.processors.query.h2.H2RowCache;
+import org.apache.ignite.internal.processors.query.h2.opt.GridH2Cursor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2IndexBase;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2QueryContext;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2Row;
@@ -40,8 +43,6 @@ import org.apache.ignite.internal.util.lang.GridCursor;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.spi.indexing.IndexingQueryCacheFilter;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
-import org.apache.ignite.internal.processors.query.h2.H2RowCache;
 import org.h2.engine.Session;
 import org.h2.index.Cursor;
 import org.h2.index.IndexType;
@@ -191,24 +192,19 @@ public class H2TreeIndex extends GridH2IndexBase {
             assert lower == null || lower instanceof GridH2SearchRow : lower;
             assert upper == null || upper instanceof GridH2SearchRow : upper;
 
-            int seg = threadLocalSegment();
+            GridH2SearchRow lower0 = (GridH2SearchRow)lower;
+            GridH2SearchRow upper0 = (GridH2SearchRow)upper;
 
-            H2Tree tree = treeForRead(seg);
+            H2Tree tree = treeForRead(threadLocalSegment());
 
-            // TODO: IGNITE-7266: Apply single-row search optimization correctly.
-//            if (indexType.isPrimaryKey() && lower != null && upper != null &&
-//                tree.compareRows((GridH2SearchRow)lower, (GridH2SearchRow)upper) == 0) {
-//                GridH2Row row = tree.findOne((GridH2SearchRow)lower, filter(GridH2QueryContext.get()));
-//
-//                return (row == null) ? GridH2Cursor.EMPTY : new SingleRowCursor(row);
-//            }
-//            else {
-//                return new H2Cursor(tree.find((GridH2SearchRow)lower,
-//                    (GridH2SearchRow)upper, filter(GridH2QueryContext.get()), null));
-//            }
+            if (!cctx.mvccEnabled() && lower != null && upper != null
+                && indexType.isPrimaryKey() && tree.compareRows(lower0, upper0) == 0) {
+                GridH2Row row = tree.findOne(lower0, filter(GridH2QueryContext.get()));
 
-            return new H2Cursor(tree.find((GridH2SearchRow)lower,
-                (GridH2SearchRow)upper, filter(GridH2QueryContext.get()), null));
+                return (row == null) ? GridH2Cursor.EMPTY : new SingleRowCursor(row);
+            }
+            else
+                return new H2Cursor(tree.find(lower0, upper0, filter(GridH2QueryContext.get()), null));
         }
         catch (IgniteCheckedException e) {
             throw DbException.convert(e);
