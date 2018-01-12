@@ -194,7 +194,9 @@ import org.apache.ignite.internal.managers.communication.GridIoManager;
 import org.apache.ignite.internal.managers.deployment.GridDeploymentInfo;
 import org.apache.ignite.internal.mxbean.IgniteStandardMXBean;
 import org.apache.ignite.internal.processors.cache.GridCacheAttributes;
+import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
+import org.apache.ignite.internal.processors.cluster.BaselineTopology;
 import org.apache.ignite.internal.transactions.IgniteTxHeuristicCheckedException;
 import org.apache.ignite.internal.transactions.IgniteTxOptimisticCheckedException;
 import org.apache.ignite.internal.transactions.IgniteTxRollbackCheckedException;
@@ -1444,6 +1446,28 @@ public abstract class IgniteUtils {
      */
     @Nullable public static Class<?> classForName(@Nullable String cls, @Nullable Class<?> dflt) {
         return classForName(cls, dflt, false);
+    }
+
+    /**
+     * @param ctx Context.
+     */
+    public static BaselineTopology getBaselineTopology(GridKernalContext ctx) {
+        return ctx.state().clusterState().baselineTopology();
+    }
+
+
+    /**
+     * @param cctx Context.
+     */
+    public static BaselineTopology getBaselineTopology(GridCacheSharedContext cctx) {
+        return getBaselineTopology(cctx.kernalContext());
+    }
+
+    /**
+     * @param cctx Context.
+     */
+    public static BaselineTopology getBaselineTopology(GridCacheContext cctx) {
+        return getBaselineTopology(cctx.kernalContext());
     }
 
     /**
