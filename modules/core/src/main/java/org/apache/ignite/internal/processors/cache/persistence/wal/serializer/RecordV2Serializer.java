@@ -144,8 +144,13 @@ public class RecordV2Serializer implements RecordSerializer {
 
                 return new MarshalledRecord(recType, ptr, buf);
             }
-            else
-                return dataSerializer.readRecord(recType, in);
+            else {
+                WALRecord rec = dataSerializer.readRecord(recType, in);
+
+                rec.position(ptr);
+
+                return rec;
+            }
 
         }
 

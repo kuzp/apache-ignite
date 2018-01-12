@@ -220,24 +220,22 @@ public abstract class AbstractWalRecordsIterator
         if (hnd == null)
             return null;
 
-        FileWALPointer ptr = new FileWALPointer(hnd.idx, (int)hnd.in.position(),0);
+        FileWALPointer actualFilePtr = new FileWALPointer(hnd.idx, (int)hnd.in.position(), 0);
 
         try {
-            WALRecord rec = hnd.ser.readRecord(hnd.in, ptr);
+            WALRecord rec = hnd.ser.readRecord(hnd.in, actualFilePtr);
 
-            ptr.length(rec.size());
-
-            rec.position(ptr);
+            actualFilePtr.length(rec.size());
 
             // cast using diamond operator here can break compile for 7
-            return new IgniteBiTuple<>((WALPointer)ptr, postProcessRecord(rec));
+            return new IgniteBiTuple<>((WALPointer)actualFilePtr, postProcessRecord(rec));
         }
         catch (IOException | IgniteCheckedException e) {
             if (e instanceof WalSegmentTailReachedException)
                 throw (WalSegmentTailReachedException)e;
 
             if (!(e instanceof SegmentEofException))
-                handleRecordException(e, ptr);
+                handleRecordException(e, actualFilePtr);
 
             return null;
         }

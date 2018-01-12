@@ -281,6 +281,7 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
                 log.error("Failed to perform post processing for data record ", e);
             }
         }
+
         return super.postProcessRecord(rec);
     }
 
@@ -308,7 +309,12 @@ class StandaloneWalRecordsIterator extends AbstractWalRecordsIterator {
 
             postProcessedEntries.add(postProcessedEntry);
         }
-        return new DataRecord(postProcessedEntries, dataRec.timestamp());
+
+        DataRecord res = new DataRecord(postProcessedEntries, dataRec.timestamp());
+
+        res.position(dataRec.position());
+
+        return res;
     }
 
     /**

@@ -125,6 +125,8 @@ public class RecordV1Serializer implements RecordSerializer {
 
             final WALRecord rec = dataSerializer.readRecord(recType, in);
 
+            rec.position(ptr);
+
             if (recordFilter != null && !recordFilter.apply(rec.type(), ptr))
                 return FilteredRecord.INSTANCE;
             else if (marshalledMode) {
@@ -136,8 +138,6 @@ public class RecordV1Serializer implements RecordSerializer {
                     heapTlb.set(buf = ByteBuffer.allocate(recordSize * 3 / 2).order(ByteOrder.nativeOrder()));
                 else
                     buf.clear();
-
-                rec.position(ptr);
 
                 writeRecord(rec, buf);
 
