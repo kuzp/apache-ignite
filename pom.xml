@@ -59,7 +59,6 @@
         <module>modules/clients</module>
         <module>modules/spring</module>
         <module>modules/spring-data</module>
-        <module>modules/spring3</module>
         <module>modules/web</module>
         <module>modules/aop</module>
         <module>modules/urideploy</module>
@@ -110,6 +109,7 @@
                 <module>modules/hibernate-4.2</module>
                 <module>modules/hibernate-5.1</module>
                 <module>modules/schedule</module>
+                <module>modules/spring3</module>
                 <module>modules/web-console/web-agent</module>
                 <module>modules/yardstick</module>
             </modules>
@@ -133,13 +133,6 @@
             <modules> <!-- sorted alphabetically -->
                 <module>modules/ml</module> <!-- it uses Java8 and can't be compiled by Java7 used to compile Ignite -->
                 <module>modules/web-console</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>spring3</id> <!-- used to update project versions and check all modules compilation -->
-            <modules> <!-- sorted alphabetically -->
-                <module>modules/spring3</module> <!-- it uses Java8 and can't be compiled by Java7 used to compile Ignite -->
             </modules>
         </profile>
 
