@@ -1,11 +1,11 @@
-Apache Ignite Spring3 Module
+Apache Ignite Spring 3 Module
 ---------------------------
 
-Apache Ignite Spring3 module provides resources injection capabilities and parser for Spring3-based
+Apache Ignite Spring 3 module provides resources injection capabilities and parser for Spring3-based
 configuration XML files. Its purpose is to support compatibility with spring 3.
 
 To enable Spring3 module when starting a standalone node, remove 'libs/ignite-spring/' folder and
- move 'libs/optional/ignite-spring3' folder to 'libs' folder before running 'ignite.{sh|bat}' script.
+ move 'libs/optional/ignite-spring_3' folder to 'libs' folder before running 'ignite.{sh|bat}' script.
 The content of the module folder will be added to classpath in this case.
 
 Importing Spring Module In Maven Project
@@ -24,7 +24,7 @@ interested in):
         ...
         <dependency>
             <groupId>org.apache.ignite</groupId>
-            <artifactId>ignite-spring3</artifactId>
+            <artifactId>ignite-spring_3</artifactId>
             <version>${ignite.version}</version>
         </dependency>
         ...
