@@ -20,6 +20,7 @@ package org.apache.ignite.testsuites;
 import java.util.Set;
 import junit.framework.TestSuite;
 import org.apache.ignite.cache.IgniteWarmupClosureSelfTest;
+import org.apache.ignite.cache.affinity.fair.FairAffinityFunctionBackupFilterRecheckTest;
 import org.apache.ignite.cache.store.GridCacheBalancingStoreSelfTest;
 import org.apache.ignite.cache.store.GridCacheLoadOnlyStoreAdapterSelfTest;
 import org.apache.ignite.cache.store.StoreResourceInjectionSelfTest;
@@ -216,6 +217,7 @@ public class IgniteCacheTestSuite extends TestSuite {
         suite.addTestSuite(GridCacheConcurrentMapSelfTest.class);
         suite.addTestSuite(GridCacheAffinityMapperSelfTest.class);
         suite.addTestSuite(CacheAffinityCallSelfTest.class);
+        suite.addTestSuite(FairAffinityFunctionBackupFilterRecheckTest.class);
         GridTestUtils.addTestIfNeeded(suite, GridCacheAffinityRoutingSelfTest.class, ignoredTests);
         GridTestUtils.addTestIfNeeded(suite, GridCacheMvccSelfTest.class, ignoredTests);
         suite.addTestSuite(GridCacheMvccPartitionedSelfTest.class);
