@@ -1090,7 +1090,8 @@ class ClusterCachesInfo {
 
         gridData = new GridData(joinDiscoData, cachesData, conflictErr);
 
-        initStartCachesForLocalJoin(false, disconnectedState());
+        if (cachesOnDisconnect == null || cachesOnDisconnect.clusterActive())
+            initStartCachesForLocalJoin(false, disconnectedState());
     }
 
     /**
@@ -1120,7 +1121,7 @@ class ClusterCachesInfo {
 
                 CacheConfiguration<?, ?> cfg = desc.cacheConfiguration();
 
-                if (reconnect && surviveReconnect(cfg.getName()))
+                if (reconnect && surviveReconnect(cfg.getName()) && cachesOnDisconnect.state.active() && active)
                     continue;
 
                 CacheJoinNodeDiscoveryData.CacheInfo locCfg = joinDiscoData.caches().get(cfg.getName());
@@ -1666,6 +1667,9 @@ class ClusterCachesInfo {
         Set<String> stoppedCaches = new HashSet<>();
         Set<Integer> stoppedCacheGrps = new HashSet<>();
 
+        Set<String> survivedCaches = new HashSet<>();
+        Set<Integer> survivedCacheGrps = new HashSet<>();
+
         if (!active) {
             joinOnTransition = transition;
 
@@ -1707,8 +1711,11 @@ class ClusterCachesInfo {
 
                 if (stopped)
                     stoppedCacheGrps.add(locDesc.groupId());
-                else
+                else {
                     assert locDesc.groupId() == desc.groupId();
+
+                    survivedCacheGrps.add(locDesc.groupId());
+                }
             }
 
             for (Map.Entry<String, DynamicCacheDescriptor> e : cachesOnDisconnect.caches.entrySet()) {
@@ -1728,6 +1735,16 @@ class ClusterCachesInfo {
 
                 if (stopped)
                     stoppedCaches.add(cacheName);
+                else
+                    survivedCaches.add(cacheName);
+            }
+
+            if (locJoinCachesCtx != null) {
+                locJoinCachesCtx.removeSurvivedCacheGroups(survivedCacheGrps);
+                locJoinCachesCtx.removeSurvivedCaches(survivedCaches);
+
+                if (locJoinCachesCtx.isEmpty())
+                    locJoinCachesCtx = null;
             }
 
             if (!cachesOnDisconnect.clusterActive())
