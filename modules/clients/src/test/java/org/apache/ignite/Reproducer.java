@@ -1,9 +1,13 @@
 package org.apache.ignite;
 
+import org.apache.ignite.binary.BinaryObjectBuilder;
 import org.apache.ignite.cache.affinity.*;
 import org.apache.ignite.configuration.*;
+import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.util.tostring.*;
 import org.apache.ignite.internal.util.typedef.internal.*;
+import org.apache.ignite.jdbc.thin.JdbcThinNullCacheIdTest;
 import org.apache.ignite.spi.discovery.tcp.*;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.*;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.*;
@@ -44,13 +48,52 @@ public class Reproducer {
 
             AffinityKey<byte[]> key = new AffinityKey<>(new byte[] {1, 2}, new byte[] {3, 4});
 
-            cache.put(key, new Person(key.key(), key.affinityKey(), new byte[] {5, 6}));
+            cache.put(key, new Person(key.key(), (byte[])key.affinityKey(), new byte[] {5, 6}));
 
             List<Person> entries = convert(conn.prepareStatement("SELECT * from " + CACHE_NAME).executeQuery());
 
             assertEquals("1 person must be in the cache", 1, entries.size());
 
             assertArrayEquals("Person SSN must be same as affinity key's key", key.key(), entries.get(0).getSsn());
+        }
+    }
+
+    /**
+     * 1. Create a cache with BINARY affinity key using JDBC thin client.
+     * 2. Add an entry using Java API.
+     * 3. Select the entry using JDBC thin client.
+     */
+    @Test
+    public void javaPutIntoSqlCacheWithBinaryAffinityKey_Worked() throws SQLException {
+        try (Ignite srv = Ignition.start(getServerConfig());
+             IgniteEx cln = (IgniteEx)Ignition.start(getClientConfig());
+             Connection conn = DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1/")
+        ) {
+            conn.prepareStatement(
+                "CREATE TABLE " + CACHE_NAME + "(" +
+                    "ssn BINARY(16), orgId BINARY(16), name BINARY(16), PRIMARY KEY(ssn, orgId)" +
+                    ") WITH \"affinitykey=orgId,value_type=" + PersonValue.class.getName() + "\""
+            ).execute();
+
+            IgniteCache cache = cln.cache("SQL_PUBLIC_" + CACHE_NAME);
+
+            Collection<GridQueryTypeDescriptor> types = cln.context().query().types("SQL_PUBLIC_" + CACHE_NAME);
+
+            GridQueryTypeDescriptor type = types.iterator().next();
+
+            BinaryObjectBuilder keyBuilder = cln.binary().builder(type.keyTypeName());
+
+            keyBuilder.setField("SSN", new byte[] {1, 2});
+            keyBuilder.setField("ORGID", new byte[] {3, 4});
+
+            cache.put(keyBuilder.build(), new PersonValue(new byte[] {5, 6}));
+
+            List<Person> entries = convert(conn.prepareStatement("SELECT * from " + CACHE_NAME).executeQuery());
+
+            assertEquals("1 person must be in the cache", 1, entries.size());
+
+            assertArrayEquals("Person SSN must be same as affinity key's key",
+                (byte[])keyBuilder.getField("SSN"), entries.get(0).getSsn());
         }
     }
 
@@ -128,6 +171,23 @@ public class Reproducer {
         /** */
         public byte[] getSsn() {
             return ssn;
+        }
+    }
+
+    /** */
+    public static class PersonValue {
+        /** Name. */
+        @GridToStringInclude
+        private final byte[] name;
+
+        /** Constructor. */
+        public PersonValue(byte[] name) {
+            this.name = name;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(PersonValue.class, this);
         }
     }
 }
