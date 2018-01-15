@@ -15,10 +15,18 @@
  * limitations under the License.
  */
 
+import {ListEditableTransclude} from 'app/components/list-editable/components/list-editable-transclude/directive';
 import isNumber from 'lodash/fp/isNumber';
 import get from 'lodash/fp/get';
 
 class Controller {
+    /** @type {ng.INgModelController} */
+    ngModel;
+    /** @type {ListEditableTransclude} */
+    listEditableTransclude;
+    /** @type {Array} */
+    items;
+
     static $inject = ['$scope'];
 
     constructor($scope) {
@@ -42,7 +50,9 @@ class Controller {
                 if (isNew) return idx < 0;
 
                 // Case for new component list editable.
-                const $index = isNumber(this.$scope.$index) ? this.$scope.$index : this.$scope.$parent.$index;
+                const $index = this.listEditableTransclude
+                    ? this.listEditableTransclude.$index
+                    : isNumber(this.$scope.$index) ? this.$scope.$index : void 0;
 
                 // Check for $index in case of editing in-place.
                 return (isNumber($index) && (idx < 0 || $index === idx));
@@ -61,7 +71,8 @@ export default ['igniteUnique', () => {
     return {
         controller: Controller,
         require: {
-            ngModel: 'ngModel'
+            ngModel: 'ngModel',
+            listEditableTransclude: '?^listEditableTransclude'
         },
         bindToController: {
             items: '<igniteUnique',
