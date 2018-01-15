@@ -17,6 +17,7 @@
 
 package org.apache.ignite.console.demo;
 
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -219,6 +220,8 @@ public class AgentClusterDemo {
                         IgniteConfiguration cfg = igniteConfiguration(port, idx, false);
 
                         if (first) {
+                            U.delete(Paths.get(cfg.getWorkDirectory()));
+
                             U.resolveWorkDirectory(
                                 cfg.getWorkDirectory(),
                                 cfg.getDataStorageConfiguration().getStoragePath(),
