@@ -26,12 +26,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.cache.CacheWriteSynchronizationMode;
-import org.apache.ignite.cache.PartitionLossPolicy;
+import org.apache.ignite.cache.CacheRebalanceMode;
+import org.apache.ignite.cache.affinity.AffinityFunction;
+import org.apache.ignite.cache.affinity.AffinityFunctionContext;
+import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.cluster.BaselineNode;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -40,11 +44,15 @@ import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
+import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionFullMap;
 import org.apache.ignite.internal.util.lang.GridAbsPredicate;
 import org.apache.ignite.internal.util.typedef.PA;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
+import org.apache.ignite.transactions.TransactionException;
 
 import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
@@ -646,6 +654,89 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         }
     }
 
+    /**
+     * @throws Exception if failed.
+     */
+    public void testAffinityAssignmentChangedAfterRestart() throws Exception {
+        int parts = 32;
+
+        final List<Integer> partMapping = new ArrayList<>();
+
+        for (int p = 0; p < parts; p++)
+            partMapping.add(p);
+
+        final AffinityFunction affFunc = new TestAffinityFunction(new RendezvousAffinityFunction(false, parts));
+
+        TestAffinityFunction.partsAffMapping = partMapping;
+
+        String cacheName = CACHE_NAME + 2;
+
+        startGrids(4);
+
+        IgniteEx ig = grid(0);
+
+        ig.cluster().active(true);
+
+        IgniteCache<Integer, Integer> cache = ig.createCache(
+            new CacheConfiguration<Integer, Integer>()
+                .setName(cacheName)
+                .setCacheMode(PARTITIONED)
+                .setBackups(1)
+                .setPartitionLossPolicy(READ_ONLY_SAFE)
+                .setReadFromBackup(true)
+                .setWriteSynchronizationMode(FULL_SYNC)
+                .setRebalanceDelay(-1)
+                .setAffinity(affFunc)
+                .setRebalanceMode(CacheRebalanceMode.NONE));
+
+        Map<Integer, String> keyToConsId = new HashMap<>();
+
+        for (int k = 0; k < 1000; k++) {
+            cache.put(k, k);
+
+            keyToConsId.put(k, ig.affinity(cacheName).mapKeyToNode(k).consistentId().toString());
+        }
+
+        stopAllGrids();
+
+        DebugUtils.setFlag("test", true);
+
+        Collections.shuffle(TestAffinityFunction.partsAffMapping);
+
+        startGrids(4);
+
+        ig = grid(0);
+
+//        ig.active(true);
+
+        U.sleep(5000);
+
+        cache = ig.cache(cacheName);
+
+        GridDhtPartitionFullMap partMap = ig.cachex(cacheName).context().topology().partitionMap(false);
+
+        for (Map.Entry<Integer, String> e : keyToConsId.entrySet()) {
+//            assertEquals("k=" + e.getKey(), e.getValue(), ig.affinity(cacheName).mapKeyToNode(e.getKey()).consistentId().toString());
+
+            int p = ig.affinity(cacheName).partition(e.getKey());
+
+            try {
+                assertEquals("p=" + p, GridDhtPartitionState.OWNING, partMap.get(ig.affinity(cacheName).mapKeyToNode(e.getKey()).id()).get(p));
+            }
+            catch (Throwable ex) {
+                throw ex;
+            }
+        }
+
+        for (int k = 0; k < 1000; k++)
+            try {
+                assertEquals("k=" + k, Integer.valueOf(k), cache.get(k));
+            }
+            catch (Throwable ex) {
+                throw ex;
+            }
+    }
+
     /** */
     private Collection<BaselineNode> baselineNodes(Collection<ClusterNode> clNodes) {
         Collection<BaselineNode> res = new ArrayList<>(clNodes.size());
@@ -706,6 +797,46 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
             result = 31 * result + f4;
 
             return result;
+        }
+    }
+
+    private static class TestAffinityFunction implements AffinityFunction {
+        private final AffinityFunction delegate;
+
+        private static List<Integer> partsAffMapping;
+
+        public TestAffinityFunction(AffinityFunction delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override public void reset() {
+            delegate.reset();;
+        }
+
+        @Override public int partitions() {
+            return delegate.partitions();
+        }
+
+        @Override public int partition(Object key) {
+            return partsAffMapping.get(delegate.partition(key));
+        }
+
+        @Override public List<List<ClusterNode>> assignPartitions(AffinityFunctionContext affCtx) {
+            List<List<ClusterNode>> res0 = delegate.assignPartitions(affCtx);
+
+            List<List<ClusterNode>> res = new ArrayList<>(res0.size());
+
+            for (int p = 0; p < res0.size(); p++)
+                res.add(p, null);
+
+            for (int p = 0; p < res0.size(); p++)
+                res.set(partsAffMapping.get(p), res0.get(p));
+
+            return res;
+        }
+
+        @Override public void removeNode(UUID nodeId) {
+            delegate.removeNode(nodeId);
         }
     }
 }
