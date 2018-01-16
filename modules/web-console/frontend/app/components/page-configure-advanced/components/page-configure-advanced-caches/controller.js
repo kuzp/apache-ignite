@@ -129,7 +129,7 @@ export default class Controller {
         this.subscription = merge(
             this.originalCache$,
             this.selectionManager.editGoes$.do((id) => this.edit(id)),
-            this.selectionManager.editLeaves$.do(() => this.$state.go('base.configuration.edit.advanced.caches'))
+            this.selectionManager.editLeaves$.do((options) => this.$state.go('base.configuration.edit.advanced.caches', null, options))
         ).subscribe();
 
         this.isBlocked$ = cacheID$;

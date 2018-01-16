@@ -122,7 +122,7 @@ export default class PageConfigureAdvancedIGFS {
         this.subscription = merge(
             this.originalItem$,
             this.selectionManager.editGoes$.do((id) => this.edit(id)),
-            this.selectionManager.editLeaves$.do(() => this.$state.go('base.configuration.edit.advanced.igfs'))
+            this.selectionManager.editLeaves$.do((options) => this.$state.go('base.configuration.edit.advanced.igfs', null, options))
         ).subscribe();
     }
     edit(igfsID) {

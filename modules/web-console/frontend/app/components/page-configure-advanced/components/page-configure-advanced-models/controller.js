@@ -138,7 +138,7 @@ export default class PageConfigureAdvancedModels {
         this.subscription = merge(
             this.originalItem$,
             this.selectionManager.editGoes$.do((id) => this.edit(id)),
-            this.selectionManager.editLeaves$.do(() => this.$state.go('base.configuration.edit.advanced.models'))
+            this.selectionManager.editLeaves$.do((options) => this.$state.go('base.configuration.edit.advanced.models', null, options))
         ).subscribe();
     }
     edit(modelID) {
