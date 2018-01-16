@@ -81,10 +81,7 @@ export default class ItemsTableController {
     });
 
     makeActionsMenu(incomingActionsMenu = []) {
-        const resetSelection = () => this.gridAPI.selection.clearSelectedRows();
-        return incomingActionsMenu.map((action) => ({...action,
-            click: flow(action.click, resetSelection)
-        }));
+        return incomingActionsMenu;
     }
 
     $onChanges(changes) {
