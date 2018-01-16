@@ -43,10 +43,7 @@ export default {
     },
     // Entry points.
     entry: {
-        polyfill: 'babel-polyfill',
-        vendor: path.join(app, 'vendor.js'),
-        app: path.join(app, 'app.js'),
-        browserUpdate: path.join(app, 'browserUpdate', 'index.js')
+        app: path.join(app, 'app.js')
     },
 
     // Output system.
@@ -177,6 +174,7 @@ export default {
             io: 'socket.io-client'
         }),
         new HtmlWebpackPlugin({
+            inject: true,
             template: './views/index.pug'
         }),
         new AutoDllPlugin({
@@ -207,6 +205,7 @@ export default {
                 })
             ],
             entry: {
+                browserUpdate: [path.join(app, 'browserUpdate', 'index.js')],
                 polyfill: ['babel-polyfill'],
                 vendor: [
                     '@uirouter/angularjs',
