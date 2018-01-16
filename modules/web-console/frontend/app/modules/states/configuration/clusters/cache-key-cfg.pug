@@ -37,7 +37,11 @@ include /app/helpers/jade/mixins
                                 list-editable-item-edit.pc-form-grid-row
                                     - form = '$parent.form'
                                     .pc-form-grid-col-60
-                                        +java-class-autofocus('Type name:', '$item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')
+                                        +java-class-autofocus('Type name:', '$item.typeName', '"cacheKeyTypeName"', 'true', 'true', 'true', 'Type name')(
+                                            ignite-unique=items
+                                            ignite-unique-property='typeName'
+                                        )
+                                            +unique-feedback(`cacheKeyTypeName`, 'Type name should be unique.')
                                     .pc-form-grid-col-60
                                         +sane-ignite-form-field-text({
                                             label: 'Affinity key field name:',
@@ -46,11 +50,7 @@ include /app/helpers/jade/mixins
                                             disabled: 'false',
                                             placeholder: 'Enter field name',
                                             tip: 'Affinity key field name'
-                                        })(
-                                            ignite-unique=items
-                                            ignite-unique-property='affinityKeyFieldName'
-                                        )
-                                            +unique-feedback(`affinityKeyFieldName`, 'Affinity key field name should be unique.')
+                                        })
 
                                 list-editable-no-items
                                     list-editable-add-item-button(
