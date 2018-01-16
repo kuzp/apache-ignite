@@ -103,8 +103,8 @@ include /app/helpers/jade/mixins
 
                                 list-editable(ng-model=items name='executorConfigurations')
                                     list-editable-item-view
-                                        | {{ $parent.item.name }} / 
-                                        | {{ $parent.item.size || 'max(8, availableProcessors)'}}
+                                        | {{ $item.name }} / 
+                                        | {{ $item.size || 'max(8, availableProcessors)'}}
 
                                     list-editable-item-edit
                                         - form = '$parent.form'
@@ -112,14 +112,14 @@ include /app/helpers/jade/mixins
                                             .pc-form-grid-col-30
                                                 +sane-ignite-form-field-text({
                                                     label: 'Name:',
-                                                    model: '$parent.item.name',
+                                                    model: '$item.name',
                                                     name: '"ExecutorName"',
                                                     required: true,
                                                     placeholder: 'Input executor name',
                                                     tip: 'Thread pool name'
                                                 })(
                                                     ui-validate=`{
-                                                        uniqueName: '$ctrl.Clusters.executorConfiguration.name.customValidators.uniqueName($parent.item, ${items})'
+                                                        uniqueName: '$ctrl.Clusters.executorConfiguration.name.customValidators.uniqueName($item, ${items})'
                                                     }`
                                                     ui-validate-watch=`"${items}"`
                                                     ui-validate-watch-object-equality='true'
@@ -128,7 +128,7 @@ include /app/helpers/jade/mixins
                                                 )
                                                     +form-field-feedback(null, 'uniqueName', 'Service with that name is already configured')
                                             .pc-form-grid-col-30
-                                                +number('Pool size:', '$parent.item.size', '"ExecutorPoolSize"', 'true', 'max(8, availableProcessors)', '1', 'Thread pool size')
+                                                +number('Pool size:', '$item.size', '"ExecutorPoolSize"', 'true', 'max(8, availableProcessors)', '1', 'Thread pool size')
 
                                     list-editable-no-items
                                         list-editable-add-item-button(

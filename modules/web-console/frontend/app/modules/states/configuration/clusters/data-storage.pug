@@ -195,7 +195,7 @@ mixin data-region-form({modelAt, namePlaceholder, dataRegionsAt})
                                 list-editable-item-edit.pc-form-grid-row
                                     - form = '$parent.form'
                                     +data-region-form({
-                                        modelAt: '$parent.item',
+                                        modelAt: '$item',
                                         namePlaceholder: 'Data region name',
                                         dataRegionsAt: dataRegionConfigurations
                                     })

@@ -554,4 +554,11 @@ export default class Clusters {
         if (!cluster.peerClassLoadingLocalClassPathExclude) cluster.peerClassLoadingLocalClassPathExclude = [];
         cluster.peerClassLoadingLocalClassPathExclude.push('');
     }
+
+    addBinaryTypeConfiguration(cluster) {
+        if (!cluster.binaryConfiguration.typeConfigurations) cluster.binaryConfiguration.typeConfigurations = [];
+        const item = {_id: ObjectID.generate()};
+        cluster.binaryConfiguration.typeConfigurations.push(item);
+        return item;
+    }
 }

@@ -71,10 +71,10 @@ include /app/helpers/jade/mixins
                                     tip: 'Collections of classes with user-defined functions for SQL queries'
                                 }]`
                             )
-                                list-editable-item-view {{ $parent.item }}
+                                list-editable-item-view {{ $item }}
 
                                 list-editable-item-edit
-                                    +list-java-class-field('SQL function', '$parent.item', '"sqlFunction"', items)
+                                    +list-java-class-field('SQL function', '$item', '"sqlFunction"', items)
                                         +unique-feedback('"sqlFunction"', uniqueTip)
 
                                 list-editable-no-items

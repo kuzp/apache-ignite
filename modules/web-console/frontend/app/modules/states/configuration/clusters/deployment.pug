@@ -76,10 +76,10 @@ include /app/helpers/jade/mixins
                                     '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause"
                                 }]`
                             )
-                                list-editable-item-view {{ $parent.item }}
+                                list-editable-item-view {{ $item }}
 
                                 list-editable-item-edit
-                                    +list-java-package-field('Package name', '$parent.item', '"packageName"', items)(
+                                    +list-java-package-field('Package name', '$item', '"packageName"', items)(
                                         ignite-auto-focus
                                     )
                                         +unique-feedback('"packageName"', uniqueTip)
@@ -130,10 +130,10 @@ include /app/helpers/jade/mixins
                                         tip: "List of URI which point to GAR file and which should be scanned by SPI for the new tasks"
                                     }]`
                                 )
-                                    list-editable-item-view {{ $parent.item }}
+                                    list-editable-item-view {{ $item }}
 
                                     list-editable-item-edit
-                                        +list-url-field('URL', '$parent.item', '"url"', items)
+                                        +list-url-field('URL', '$item', '"url"', items)
                                             +unique-feedback('"url"', uniqueTip)
 
                                     list-editable-no-items
@@ -161,10 +161,10 @@ include /app/helpers/jade/mixins
                                     name='scannerModel'
                                     list-editable-cols=`::[{name: "URI deployment scanners:"}]`
                                 )
-                                    list-editable-item-view {{ $parent.item }}
+                                    list-editable-item-view {{ $item }}
 
                                     list-editable-item-edit
-                                        +list-java-class-field('Scanner', '$parent.item', '"scanner"', items)
+                                        +list-java-class-field('Scanner', '$item', '"scanner"', items)
                                             +unique-feedback('"scanner"', uniqueTip)
 
                                     list-editable-no-items

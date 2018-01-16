@@ -60,10 +60,10 @@ include /app/helpers/jade/mixins
                                     list-editable-cols=`::[{name: "Pre-configured trust managers:"}]`
                                     ng-disabled=enabledToDisabled(enabled)
                                 )
-                                    list-editable-item-view {{ $parent.item }}
+                                    list-editable-item-view {{ $item }}
 
                                     list-editable-item-edit
-                                        +list-java-class-field('Trust manager', '$parent.item', '"trustManager"', items)
+                                        +list-java-class-field('Trust manager', '$item', '"trustManager"', items)
                                             +unique-feedback('"trustManager"', uniqueTip)
 
                                     list-editable-no-items

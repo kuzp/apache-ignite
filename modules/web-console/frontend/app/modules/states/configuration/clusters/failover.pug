@@ -19,7 +19,7 @@ include /app/helpers/jade/mixins
 -var model = '$ctrl.clonedCluster'
 -var form = 'failoverSpi'
 -var failoverSpi = model + '.failoverSpi'
--var failoverCustom = '$parent.item.kind === "Custom"'
+-var failoverCustom = '$item.kind === "Custom"'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
@@ -54,7 +54,7 @@ include /app/helpers/jade/mixins
                                             +sane-ignite-form-field-dropdown({
                                                 required: true,
                                                 label: 'Failover SPI:',
-                                                model: '$parent.item.kind',
+                                                model: '$item.kind',
                                                 name: '"failoverKind"',
                                                 placeholder: 'Choose Failover SPI',
                                                 options: '::$ctrl.Clusters.failoverSpis',
@@ -69,14 +69,14 @@ include /app/helpers/jade/mixins
                                                 </ul>`
                                             })
 
-                                        .settings-row(ng-show='$parent.item.kind === "JobStealing"')
-                                            +number('Maximum failover attempts:', '$parent.item.JobStealing.maximumFailoverAttempts', '"jsMaximumFailoverAttempts"', 'true', '5', '0',
+                                        .settings-row(ng-show='$item.kind === "JobStealing"')
+                                            +number('Maximum failover attempts:', '$item.JobStealing.maximumFailoverAttempts', '"jsMaximumFailoverAttempts"', 'true', '5', '0',
                                                 'Maximum number of attempts to execute a failed job on another node')
-                                        .settings-row(ng-show='$parent.item.kind === "Always"')
-                                            +number('Maximum failover attempts:', '$parent.item.Always.maximumFailoverAttempts', '"alwaysMaximumFailoverAttempts"', 'true', '5', '0',
+                                        .settings-row(ng-show='$item.kind === "Always"')
+                                            +number('Maximum failover attempts:', '$item.Always.maximumFailoverAttempts', '"alwaysMaximumFailoverAttempts"', 'true', '5', '0',
                                                 'Maximum number of attempts to execute a failed job on another node')
                                         .settings-row(ng-show=failoverCustom)
-                                            +java-class('SPI implementation', '$parent.item.Custom.class', '"failoverSpiClass"', 'true', failoverCustom,
+                                            +java-class('SPI implementation', '$item.Custom.class', '"failoverSpiClass"', 'true', failoverCustom,
                                                 'Custom FailoverSpi implementation class name.', failoverCustom)
 
                                     list-editable-no-items

@@ -307,12 +307,10 @@ mixin dropdown-multiple(lbl, model, name, enabled, placeholder, placeholderEmpty
 mixin list-text-field({ items, lbl, name, itemName, itemsName })
     list-editable(ng-model=items)&attributes(attributes)
         list-editable-item-view
-            | {{ $parent.item }}
+            | {{ $item }}
 
         list-editable-item-edit
-            - form = '$parent.form'
-
-            +ignite-form-field-text(lbl, '$parent.item', `"${name}"`, false, true, `Enter ${lbl.toLowerCase()}`)(
+            +ignite-form-field-text(lbl, '$item', `"${name}"`, false, true, `Enter ${lbl.toLowerCase()}`)(
                 data-ignite-unique=items
                 data-ignite-form-field-input-autofocus='true'
             )
@@ -378,10 +376,9 @@ mixin list-addresses({ items, name, tip, withPortRange = true })
             list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
         )&attributes(attributes)
             list-editable-item-view
-                | {{ $parent.item }}
-            list-editable-item-edit
-                - form = '$parent.form'
-                +ignite-form-field-text('Address', '$parent.item', '"address"', false, true, 'IP address:port')(
+                | {{ $item }}
+            list-editable-item-edit(item-name='address')
+                +ignite-form-field-text('Address', 'address', '"address"', false, true, 'IP address:port')(
                     data-ipaddress='true'
                     data-ipaddress-with-port='true'
                     data-ipaddress-with-port-range=withPortRange
@@ -526,20 +523,20 @@ mixin btn-remove-cond(cond, click, tip)
 mixin list-pair-edit({ items, keyLbl, valLbl, itemName, itemsName })
     list-editable(ng-model=items)
         list-editable-item-view
-            | {{ $parent.item.name }} = {{ $parent.item.value }}
+            | {{ $item.name }} = {{ $item.value }}
 
         list-editable-item-edit
             - form = '$parent.form'
             .pc-form-grid-row
                 .pc-form-grid-col-30(divider='=')
-                    +ignite-form-field-text(keyLbl, '$parent.item.name', '"name"', false, true, keyLbl)(
+                    +ignite-form-field-text(keyLbl, '$item.name', '"name"', false, true, keyLbl)(
                         data-ignite-unique=items
                         data-ignite-unique-property='name'
                         ignite-auto-focus
                     )
                         +unique-feedback('"name"', 'Property with such name already exists!')
                 .pc-form-grid-col-30
-                    +ignite-form-field-text(valLbl, '$parent.item.value', '"value"', false, true, valLbl)
+                    +ignite-form-field-text(valLbl, '$item.value', '"value"', false, true, valLbl)
 
         list-editable-no-items
             list-editable-add-item-button(

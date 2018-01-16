@@ -80,18 +80,18 @@ include /app/helpers/jade/mixins
 
                                 list-editable(ng-model=items)
                                     list-editable-item-view
-                                        | {{ $parent.item.path + " [" + $parent.item.mode + "]"}}
+                                        | {{ $item.path + " [" + $item.mode + "]"}}
 
                                     list-editable-item-edit
                                         - form = '$parent.form'
 
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30
-                                                +ignite-form-field-text('Path:', '$parent.item.path', '"path"', false, true, 'Enter path')(ignite-auto-focus)
+                                                +ignite-form-field-text('Path:', '$item.path', '"path"', false, true, 'Enter path')(ignite-auto-focus)
                                             .pc-form-grid-col-30
                                                 +sane-ignite-form-field-dropdown({
                                                     label: 'Mode:',
-                                                    model: `$parent.item.mode`,
+                                                    model: `$item.mode`,
                                                     name: '"mode"',
                                                     required: true,
                                                     placeholder: 'Choose igfs mode',

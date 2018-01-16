@@ -61,20 +61,20 @@ include /app/helpers/jade/mixins
                                     ng-change=`$ctrl.onQueryFieldsChange(${items})`
                                 )
                                     list-editable-item-view
-                                        | {{ $parent.item.name}} / {{ $parent.item.className}}
+                                        | {{ $item.name}} / {{ $item.className}}
 
                                     list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
-                                                +ignite-form-field-text('Field name', '$parent.item.name', '"name"', false, true, 'Enter field name')(
+                                                +ignite-form-field-text('Field name', '$item.name', '"name"', false, true, 'Enter field name')(
                                                     data-ignite-unique=items
                                                     data-ignite-unique-property='name'
                                                     ignite-auto-focus
                                                 )
                                                     +unique-feedback('"name"', 'Property with such name already exists!')
                                             .pc-form-grid-col-30
-                                                +java-class-typeahead('Field full class name', `$parent.item.className`, '"className"', 'javaBuiltInClasses', true, true, 'Enter field full class name')
+                                                +java-class-typeahead('Field full class name', `$item.className`, '"className"', 'javaBuiltInClasses', true, true, 'Enter field full class name')
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
@@ -108,20 +108,20 @@ include /app/helpers/jade/mixins
 
                                 list-editable(ng-model=items name='queryAliases')
                                     list-editable-item-view
-                                        | {{ $parent.item.field }} &rarr; {{ $parent.item.alias }}
+                                        | {{ $item.field }} &rarr; {{ $item.alias }}
 
                                     list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
-                                                +ignite-form-field-text('Field name', '$parent.item.field', '"field"', false, true, 'Enter field name')(
+                                                +ignite-form-field-text('Field name', '$item.field', '"field"', false, true, 'Enter field name')(
                                                     data-ignite-unique=items
                                                     data-ignite-unique-property='field'
                                                     ignite-auto-focus
                                                 )
                                                     +unique-feedback('"field"', 'Such field already exists!')
                                             .pc-form-grid-col-30
-                                                +ignite-form-field-text('Field alias', '$parent.item.alias', '"alias"', false, true, 'Enter field alias')
+                                                +ignite-form-field-text('Field alias', '$item.alias', '"alias"', false, true, 'Enter field alias')
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
@@ -141,17 +141,17 @@ include /app/helpers/jade/mixins
 
                                 list-editable(ng-model=items name='queryIndexes')
                                     list-editable-item-view
-                                        div {{ $parent.item.name }} [{{ $parent.item.indexType }}]
-                                        div(ng-repeat='field in $parent.item.fields track by field._id')
+                                        div {{ $item.name }} [{{ $item.indexType }}]
+                                        div(ng-repeat='field in $item.fields track by field._id')
                                             span {{ field.name }}
-                                            span(ng-if='$parent.$parent.item.indexType == "SORTED"')
+                                            span(ng-if='$item.indexType == "SORTED"')
                                                 |  / {{ field.direction ? "ASC" : "DESC"}}
 
                                     list-editable-item-edit
                                         - form = '$parent.form'
                                         .pc-form-grid-row
                                             .pc-form-grid-col-30(divider='/')
-                                                +ignite-form-field-text('Index name:', '$parent.item.name', '"name"', false, true, 'Enter index name')(
+                                                +ignite-form-field-text('Index name:', '$item.name', '"name"', false, true, 'Enter index name')(
                                                     data-ignite-unique=items
                                                     data-ignite-unique-property='name'
 
@@ -159,19 +159,19 @@ include /app/helpers/jade/mixins
                                                 )
                                                     +unique-feedback('"name"', 'Such field already exists!')
                                             .pc-form-grid-col-30
-                                                +dropdown-required('Index type: ', `$parent.item.indexType`, '"indexType"', true, true, 'Select index type', '::$ctrl.Models.indexType.values')
+                                                +dropdown-required('Index type: ', `$item.indexType`, '"indexType"', true, true, 'Select index type', '::$ctrl.Models.indexType.values')
                                             .pc-form-grid-col-60
                                                 mixin domains-query-indexes-fields
                                                     .ignite-form-field
                                                         +ignite-form-field__label('Index fields:', '"indexFields"')
                                                             +tooltip(`Fields in index`)
-                                                        .ignite-form-field__control(ng-if='item = $parent.item')
+                                                        .ignite-form-field__control(ng-if='item = $item')
                                                             -let items = 'item.fields'
                                                             list-editable(ng-model=items name='indexFields')
                                                                 list-editable-item-view
-                                                                    | {{ $parent.item.name }} 
+                                                                    | {{ $item.name }} 
                                                                     span(ng-if='item.indexType == "SORTED"')
-                                                                        |  / {{ $parent.$parent.item.direction ? "ASC" : "DESC" }}
+                                                                        |  / {{ $parent.$item.direction ? "ASC" : "DESC" }}
 
                                                                 list-editable-item-edit
                                                                     - form = '$parent.form'
@@ -179,7 +179,7 @@ include /app/helpers/jade/mixins
                                                                         .pc-form-grid-col-60
                                                                             +sane-ignite-form-field-dropdown({
                                                                                 label: 'Index field:',
-                                                                                model: '$parent.item.name',
+                                                                                model: '$item.name',
                                                                                 name: '"indexName"',
                                                                                 placeholder: `{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}`,
                                                                                 options: queryFields
@@ -195,7 +195,7 @@ include /app/helpers/jade/mixins
                                                                         .pc-form-grid-col-60(ng-if='item.indexType == "SORTED"')
                                                                             +sane-ignite-form-field-dropdown({
                                                                                 label: 'Sort direction:',
-                                                                                model: '$parent.$parent.item.direction',
+                                                                                model: '$parent.$item.direction',
                                                                                 name: '"indexDirection"',
                                                                                 required: true,
                                                                                 options: '::$ctrl.Models.indexSortDirection.values'

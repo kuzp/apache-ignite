@@ -24,20 +24,20 @@ include /app/helpers/jade/mixins
 mixin list-db-field-edit({ items, itemName, itemsName })
     list-editable(ng-model=items)&attributes(attributes)
         list-editable-item-view
-            | {{ $parent.item.databaseFieldName }} / {{ $parent.item.databaseFieldType }} / {{ $parent.item.javaFieldName }} / {{ $parent.item.javaFieldType }}
+            | {{ $item.databaseFieldName }} / {{ $item.databaseFieldType }} / {{ $item.javaFieldName }} / {{ $item.javaFieldType }}
 
         list-editable-item-edit
             - form = '$parent.form'
 
             .pc-form-grid-row
                 .pc-form-grid-col-30(divider='/')
-                    +ignite-form-field-text('DB name:', '$parent.item.databaseFieldName', '"databaseFieldName"', false, true, 'Enter DB name')(ignite-auto-focus)
+                    +ignite-form-field-text('DB name:', '$item.databaseFieldName', '"databaseFieldName"', false, true, 'Enter DB name')(ignite-auto-focus)
                 .pc-form-grid-col-30
-                    +dropdown-required('DB type:', '$parent.item.databaseFieldType', '"databaseFieldType"', true, true, 'Choose DB type', 'supportedJdbcTypes')
+                    +dropdown-required('DB type:', '$item.databaseFieldType', '"databaseFieldType"', true, true, 'Choose DB type', 'supportedJdbcTypes')
                 .pc-form-grid-col-30(divider='/')
-                    +ignite-form-field-text('Java name:', '$parent.item.javaFieldName', '"javaFieldName"', false, true, 'Enter Java name')
+                    +ignite-form-field-text('Java name:', '$item.javaFieldName', '"javaFieldName"', false, true, 'Enter Java name')
                 .pc-form-grid-col-30
-                    +dropdown-required('Java type:', '$parent.item.javaFieldType', '"javaFieldType"', true, true, 'Choose Java type', 'supportedJavaTypes')
+                    +dropdown-required('Java type:', '$item.javaFieldType', '"javaFieldType"', true, true, 'Choose Java type', 'supportedJavaTypes')
 
         list-editable-no-items
             list-editable-add-item-button(

@@ -138,30 +138,30 @@ form(novalidate name=form)
                     list-editable-cols-row-class='pc-form-grid-row pcb-row-no-margin'
                 )
                     list-editable-item-view
-                        div {{ $parent.item.name }}
-                        div {{ $parent.item.cacheMode }}
-                        div {{ $parent.item.atomicityMode }}
-                        div {{ $parent.item.backups || '0' }}
+                        div {{ $item.name }}
+                        div {{ $item.cacheMode }}
+                        div {{ $item.atomicityMode }}
+                        div {{ $item.backups || '0' }}
                     list-editable-item-edit
                         div
-                            +ignite-form-field-text('Name', '$parent.item.name', '"name"', false, true)(
+                            +ignite-form-field-text('Name', '$item.name', '"name"', false, true)(
                                 ignite-unique='$ctrl.shortCaches'
                                 ignite-unique-property='name'
                                 ignite-form-field-input-autofocus='true'
                             )
                                 +unique-feedback('"name"', 'Cache name should be unqiue')
                         div
-                            +cacheMode('Mode:', '$parent.item.cacheMode', '"cacheMode"', 'PARTITIONED')
+                            +cacheMode('Mode:', '$item.cacheMode', '"cacheMode"', 'PARTITIONED')
                         div
                             +sane-ignite-form-field-dropdown({
                                 label: 'Atomicity:',
-                                model: '$parent.item.atomicityMode',
+                                model: '$item.atomicityMode',
                                 name: '"atomicityMode"',
                                 placeholder: 'ATOMIC',
                                 options: '::$ctrl.Caches.atomicityModes'
                             })
-                        div(ng-show='$parent.item.cacheMode === "PARTITIONED"')
-                            +number('Backups:', '$parent.item.backups', '"backups"', 'true', '0', '0')
+                        div(ng-show='$item.cacheMode === "PARTITIONED"')
+                            +number('Backups:', '$item.backups', '"backups"', 'true', '0', '0')
                     list-editable-no-items
                         list-editable-add-item-button(
                             add-item='$ctrl.addCache()'
