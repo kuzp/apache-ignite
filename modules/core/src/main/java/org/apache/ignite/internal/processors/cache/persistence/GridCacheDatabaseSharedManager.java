@@ -1381,6 +1381,8 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                             grpCnts.put(partId, partCnt);
                         }
+                        else
+                            cctx.wal().release(cpEntry.cpMark);
                     }
                 }
             }
