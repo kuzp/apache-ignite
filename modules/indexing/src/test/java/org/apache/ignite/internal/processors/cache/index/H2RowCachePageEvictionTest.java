@@ -52,7 +52,7 @@ public class H2RowCachePageEvictionTest extends GridCommonAbstractTest {
     private static final int TEST_TIME = 3 * 60_000;
 
     /** Default policy name. */
-    private static final String DATA_REGION_NAME = "default";
+    private static final String MEMORY_POLICY_NAME = "default";
 
     /** Default policy name. */
     private static final String CACHE_NAME = "cache";
@@ -92,7 +92,7 @@ public class H2RowCachePageEvictionTest extends GridCommonAbstractTest {
         return new CacheConfiguration()
             .setName(name)
             .setSqlOnheapCacheEnabled(sqlOnheapCacheEnabled)
-            .setDataRegionName(DATA_REGION_NAME)
+            .setMemoryPolicyName(MEMORY_POLICY_NAME)
             .setAffinity(new RendezvousAffinityFunction(false, 2))
             .setQueryEntities(Collections.singleton(
                 new QueryEntity(Integer.class, Value.class)));
@@ -108,7 +108,7 @@ public class H2RowCachePageEvictionTest extends GridCommonAbstractTest {
                     .setInitialSize(SIZE)
                     .setPageEvictionMode(persistenceEnabled ? DataPageEvictionMode.DISABLED
                         : DataPageEvictionMode.RANDOM_LRU)
-                    .setName(DATA_REGION_NAME)));
+                    .setName(MEMORY_POLICY_NAME)));
 
         return cfg;
     }
