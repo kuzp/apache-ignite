@@ -113,6 +113,8 @@ import org.apache.ignite.internal.processors.cache.index.H2DynamicIndexingComple
 import org.apache.ignite.internal.processors.cache.index.H2DynamicIndexingComplexServerTransactionalPartitionedTest;
 import org.apache.ignite.internal.processors.cache.index.H2DynamicIndexingComplexServerTransactionalReplicatedTest;
 import org.apache.ignite.internal.processors.cache.index.H2DynamicTableSelfTest;
+import org.apache.ignite.internal.processors.cache.index.H2RowCachePageEvictionTest;
+import org.apache.ignite.internal.processors.cache.index.H2RowCacheSelfTest;
 import org.apache.ignite.internal.processors.cache.index.LongIndexNameTest;
 import org.apache.ignite.internal.processors.cache.index.SchemaExchangeSelfTest;
 import org.apache.ignite.internal.processors.cache.local.IgniteCacheLocalAtomicQuerySelfTest;
@@ -338,6 +340,10 @@ public class IgniteCacheQuerySelfTestSuite extends TestSuite {
         suite.addTestSuite(GridCacheQuerySqlFieldInlineSizeSelfTest.class);
 
         suite.addTestSuite(IgniteCheckClusterStateBeforeExecuteQueryTest.class);
+
+        // SQL on-heap cahe
+        suite.addTestSuite(H2RowCacheSelfTest.class);
+        suite.addTestSuite(H2RowCachePageEvictionTest.class);
 
         return suite;
     }
