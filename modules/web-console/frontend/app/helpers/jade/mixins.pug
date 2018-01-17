@@ -369,34 +369,32 @@ mixin list-url-field(lbl, model, name, items)
             block
 
 mixin list-addresses({ items, name, tip, withPortRange = true })
-    .ignite-form-field
-        list-editable(
-            ng-model=items
-            name=name
-            list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
-        )&attributes(attributes)
-            list-editable-item-view
-                | {{ $item }}
-            list-editable-item-edit(item-name='address')
-                +ignite-form-field-text('Address', 'address', '"address"', false, true, 'IP address:port')(
-                    data-ipaddress='true'
-                    data-ipaddress-with-port='true'
-                    data-ipaddress-with-port-range=withPortRange
-                    data-ignite-unique=items
-                    data-ignite-form-field-input-autofocus='true'
-                )
-                    +unique-feedback('"address"', 'Such IP address already exists!')
-                    +ipaddress-feedback('"address"')
-                    +ipaddress-port-feedback('"address"')
-                    +ipaddress-port-range-feedback('"address"')
-                    +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
+    list-editable(
+        ng-model=items
+        name=name
+        list-editable-cols=`::[{name: "Addresses:", tip: "${tip}"}]`
+    )&attributes(attributes)
+        list-editable-item-view {{ $item }}
+        list-editable-item-edit(item-name='address')
+            +ignite-form-field-text('Address', 'address', '"address"', false, true, 'IP address:port')(
+                data-ipaddress='true'
+                data-ipaddress-with-port='true'
+                data-ipaddress-with-port-range=withPortRange
+                data-ignite-unique=items
+                data-ignite-form-field-input-autofocus='true'
+            )
+                +unique-feedback('"address"', 'Such IP address already exists!')
+                +ipaddress-feedback('"address"')
+                +ipaddress-port-feedback('"address"')
+                +ipaddress-port-range-feedback('"address"')
+                +form-field-feedback('"address"', 'required', 'IP address:port could not be empty!')
 
-            list-editable-no-items
-                list-editable-add-item-button(
-                    add-item=`(${items} = ${items} || []).push("")`
-                    label-multiple='addresses'
-                    label-single='address'
-                )
+        list-editable-no-items
+            list-editable-add-item-button(
+                add-item=`(${items} = ${items} || []).push("")`
+                label-multiple='addresses'
+                label-single='address'
+            )
 
 //- Mixin for cache mode.
 mixin cacheMode(lbl, model, name, placeholder)
