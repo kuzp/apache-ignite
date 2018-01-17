@@ -42,6 +42,7 @@ export default class ModelEditFormController {
         this.$scope = $scope;
         this.Models = Models;
         this.IgniteVersion = IgniteVersion;
+        this.javaBuiltInClassesBase = LegacyUtils.javaBuiltInClasses;
     }
     $onInit() {
         this.available = this.IgniteVersion.available.bind(this.IgniteVersion);
