@@ -415,7 +415,7 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
         loadPrevVal = cc.isLoadPreviousValue();
         longQryWarnTimeout = cc.getLongQueryWarningTimeout();
         maxConcurrentAsyncOps = cc.getMaxConcurrentAsyncOperations();
-        memPlcName = cc.getDataRegionName();
+        memPlcName = cc.getMemoryPolicyName();
         name = cc.getName();
         nearCfg = cc.getNearConfiguration();
         nodeFilter = cc.getNodeFilter();
@@ -464,7 +464,7 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
      * Since underlying cache is shared, the following configuration properties should be the same within group:
      * {@link #setAffinity(AffinityFunction)}, {@link #setNodeFilter(IgnitePredicate)}, {@link #cacheMode},
      * {@link #setTopologyValidator(TopologyValidator)}, {@link #setPartitionLossPolicy(PartitionLossPolicy)},
-     * {@link #setDataRegionName(String)}.
+     * {@link #setMemoryPolicyName(String)}.
      *
      * Grouping caches reduces overall overhead, since internal data structures are shared.
      *
@@ -483,7 +483,7 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
      * Since underlying cache is shared, the following configuration properties should be the same within group:
      * {@link #setAffinity(AffinityFunction)}, {@link #setNodeFilter(IgnitePredicate)}, {@link #cacheMode},
      * {@link #setTopologyValidator(TopologyValidator)}, {@link #setPartitionLossPolicy(PartitionLossPolicy)},
-     * {@link #setDataRegionName(String)}.
+     * {@link #setMemoryPolicyName(String)}.
      *
      * Grouping caches reduces overall overhead, since internal data structures are shared.
      *
@@ -520,41 +520,25 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
     }
 
     /**
-     * @return {@link DataRegionConfiguration} name.
+     * @return {@link MemoryPolicyConfiguration} name.
      */
-    @Nullable public String getDataRegionName() {
-        return memPlcName;
-    }
-
-    /**
-     * @deprecated Use {@link #getDataRegionName()} (String)} instead.
-     */
-    @Deprecated
     public String getMemoryPolicyName() {
         return memPlcName;
     }
 
     /**
-     * Sets a name of {@link DataRegionConfiguration} for this cache.
+     * Sets a name of {@link MemoryPolicyConfiguration} for this cache.
      *
-     * @param dataRegionName DataRegionConfiguration name. Can be null (default DataRegionConfiguration will be used)
+     * @param memPlcName MemoryPolicyConfiguration name. Can be null (default MemoryPolicyConfiguration will be used)
      *                   but should not be empty.
      * @return {@code this} for chaining.
      */
-    public CacheConfiguration<K, V> setDataRegionName(@Nullable String dataRegionName) {
-        A.ensure(dataRegionName == null || !dataRegionName.isEmpty(), "Name cannot be empty.");
+    public CacheConfiguration<K, V> setMemoryPolicyName(String memPlcName) {
+        A.ensure(memPlcName == null || !memPlcName.isEmpty(), "Name cannot be empty.");
 
-        this.memPlcName = dataRegionName;
+        this.memPlcName = memPlcName;
 
         return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setDataRegionName(String)} instead.
-     */
-    @Deprecated
-    public CacheConfiguration<K, V> setMemoryPolicyName(String memPlcName) {
-        return setDataRegionName(memPlcName);
     }
 
     /**
