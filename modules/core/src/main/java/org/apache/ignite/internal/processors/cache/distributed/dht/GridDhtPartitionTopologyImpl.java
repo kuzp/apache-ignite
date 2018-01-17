@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.locks.Lock;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
@@ -615,6 +616,28 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
      */
     private boolean partitionLocalNode(int p, AffinityTopologyVersion topVer) {
         return grp.affinity().nodes(p, topVer).contains(ctx.localNode());
+    }
+
+    public void afterStateRestored(AffinityTopologyVersion topVer) {
+        Lock lock = this.lock.writeLock();
+
+        lock.lock();
+
+        try {
+            long updateSeq = this.updateSeq.incrementAndGet();
+
+            for (int p = 0; p < grp.affinity().partitions(); p++) {
+                GridDhtLocalPartition locPart = locParts.get(p);
+
+                if (locPart == null)
+                    updateLocal(p, EVICTED, updateSeq, topVer);
+                else
+                    updateLocal(p, locPart.state(), updateSeq, topVer);
+            }
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     /** {@inheritDoc} */

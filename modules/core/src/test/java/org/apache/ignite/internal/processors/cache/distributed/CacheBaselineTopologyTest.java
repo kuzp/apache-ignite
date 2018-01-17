@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.DebugUtils;
@@ -44,12 +45,17 @@ import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.WALMode;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.TestDelayingCommunicationSpi;
+import org.apache.ignite.internal.managers.communication.GridIoMessage;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionTopology;
+import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionDemandMessage;
 import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionFullMap;
+import org.apache.ignite.internal.processors.cache.distributed.dht.preloader.GridDhtPartitionSupplyMessage;
 import org.apache.ignite.internal.util.lang.GridAbsPredicate;
 import org.apache.ignite.internal.util.typedef.PA;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.plugin.extensions.communication.Message;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.apache.ignite.transactions.TransactionException;
@@ -70,6 +76,9 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
     /** */
     private static final int NODE_COUNT = 4;
+
+    /** */
+    private static boolean delayRebalance = false;
 
     /** {@inheritDoc} */
     @Override protected void beforeTest() throws Exception {
@@ -105,6 +114,9 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         if (client)
             cfg.setClientMode(true);
+
+        if (delayRebalance)
+            cfg.setCommunicationSpi(new DelayRebalanceCommunicationSpi());
 
         return cfg;
     }
@@ -658,6 +670,8 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
      * @throws Exception if failed.
      */
     public void testAffinityAssignmentChangedAfterRestart() throws Exception {
+        delayRebalance = false;
+
         int parts = 32;
 
         final List<Integer> partMapping = new ArrayList<>();
@@ -686,8 +700,11 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
                 .setReadFromBackup(true)
                 .setWriteSynchronizationMode(FULL_SYNC)
                 .setRebalanceDelay(-1)
-                .setAffinity(affFunc)
-                .setRebalanceMode(CacheRebalanceMode.NONE));
+                .setAffinity(affFunc));
+
+        awaitPartitionMapExchange();
+//
+        printPartitionState(cache);
 
         Map<Integer, String> keyToConsId = new HashMap<>();
 
@@ -701,7 +718,9 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         DebugUtils.setFlag("test", true);
 
-        Collections.shuffle(TestAffinityFunction.partsAffMapping);
+        Collections.shuffle(TestAffinityFunction.partsAffMapping, new Random(1));
+
+        delayRebalance = true;
 
         startGrids(4);
 
@@ -709,11 +728,18 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
 //        ig.active(true);
 
-        U.sleep(5000);
+        U.sleep(5_000);
 
         cache = ig.cache(cacheName);
 
         GridDhtPartitionFullMap partMap = ig.cachex(cacheName).context().topology().partitionMap(false);
+
+        for (int i = 1; i < 4; i++) {
+            IgniteEx ig0 = grid(i);
+
+            for (int p = 0; p < 32; p++)
+                assertEqualsCollections(ig.affinity(cacheName).mapPartitionToPrimaryAndBackups(p), ig0.affinity(cacheName).mapPartitionToPrimaryAndBackups(p));
+        }
 
         for (Map.Entry<Integer, String> e : keyToConsId.entrySet()) {
 //            assertEquals("k=" + e.getKey(), e.getValue(), ig.affinity(cacheName).mapKeyToNode(e.getKey()).consistentId().toString());
@@ -733,6 +759,10 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
                 assertEquals("k=" + k, Integer.valueOf(k), cache.get(k));
             }
             catch (Throwable ex) {
+                DebugUtils.setFlag("error", true);
+
+                cache.get(k);
+
                 throw ex;
             }
     }
@@ -818,7 +848,7 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         }
 
         @Override public int partition(Object key) {
-            return partsAffMapping.get(delegate.partition(key));
+            return delegate.partition(key);
         }
 
         @Override public List<List<ClusterNode>> assignPartitions(AffinityFunctionContext affCtx) {
@@ -837,6 +867,19 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         @Override public void removeNode(UUID nodeId) {
             delegate.removeNode(nodeId);
+        }
+    }
+
+    private static class DelayRebalanceCommunicationSpi extends TestDelayingCommunicationSpi {
+        @Override protected boolean delayMessage(Message msg, GridIoMessage ioMsg) {
+            if (msg != null && (msg instanceof GridDhtPartitionDemandMessage || msg instanceof GridDhtPartitionSupplyMessage))
+                return true;
+
+            return false;
+        }
+
+        @Override protected int delayMillis() {
+            return 1_000_000;
         }
     }
 }

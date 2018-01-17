@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
@@ -51,6 +52,7 @@ import org.apache.ignite.internal.processors.query.GridQueryRowCacheCleaner;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.GridIterator;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
+import org.apache.ignite.internal.util.typedef.T4;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteUuid;
@@ -506,6 +508,8 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      */
     public void restoreState(GridDhtPartitionState stateToRestore) {
         state.set(setPartState(state.get(),stateToRestore));
+
+        DebugUtils.addToHistory(new T4<>(ctx.localNode().consistentId().toString(), "partState", grp.cacheOrGroupName(), id), new T4<>(ctx.discovery().topologyVersionEx(), null, stateToRestore, DebugUtils.stacktraceToString(Thread.currentThread().getStackTrace(), 20)));
     }
 
     /**
@@ -520,6 +524,8 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
 
                 if (update)
                     try {
+                        DebugUtils.addToHistory(new T4<>(ctx.localNode().consistentId().toString(), "partState", grp.cacheOrGroupName(), id), new T4<>(ctx.discovery().topologyVersionEx(), getPartState(state), toState, DebugUtils.stacktraceToString(Thread.currentThread().getStackTrace(), 20)));
+
                         ctx.wal().log(new PartitionMetaStateRecord(grp.groupId(), id, toState, updateCounter()));
                     }
                     catch (IgniteCheckedException e) {
