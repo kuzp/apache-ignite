@@ -16,6 +16,7 @@
  */
 
 import cloneDeep from 'lodash/cloneDeep';
+import _ from 'lodash';
 import get from 'lodash/get';
 
 import {default as Models} from 'app/services/Models';
@@ -55,22 +56,27 @@ export default class ModelEditFormController {
         this.$scope.javaBuiltInClasses = this.LegacyUtils.javaBuiltInClasses;
         this.$scope.supportedJdbcTypes = this.LegacyUtils.mkOptions(this.LegacyUtils.SUPPORTED_JDBC_TYPES);
         this.$scope.supportedJavaTypes = this.LegacyUtils.mkOptions(this.LegacyUtils.javaBuiltInTypes);
-        // Create list of fields to show in index fields dropdown.
-        this.$scope.fields = (prefix, cur) => {
-            const fields = this.$scope.backupItem
-                ? _.map(this.$scope.backupItem.fields, (field) => ({value: field.name, label: field.name}))
-                : [];
+    }
 
-            if (prefix === 'new')
-                return fields;
+    /**
+     * Create list of fields to show in index fields dropdown.
+     * @param {string} prefix
+     * @param {Array<string>} cur Current queryKeyFields
+     */
+    fields(prefix, cur) {
+        const fields = this.$scope.backupItem
+            ? _.map(this.$scope.backupItem.fields, (field) => ({value: field.name, label: field.name}))
+            : [];
 
-            _.forEach(_.isArray(cur) ? cur : [cur], (value) => {
-                if (!_.find(fields, {value}))
-                    fields.push({value, label: value + ' (Unknown field)'});
-            });
-
+        if (prefix === 'new')
             return fields;
-        };
+
+        _.forEach(_.isArray(cur) ? cur : [cur], (value) => {
+            if (!_.find(fields, {value}))
+                fields.push({value, label: value + ' (Unknown field)'});
+        });
+
+        return fields;
     }
 
     importModels() {

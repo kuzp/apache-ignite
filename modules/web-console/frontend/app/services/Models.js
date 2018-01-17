@@ -44,6 +44,7 @@ export default class Models {
             _id: ObjectID.generate(),
             generatePojo: true,
             caches: [],
+            queryKeyFields: [],
             queryMetadata: 'Configuration'
         };
     }

@@ -89,17 +89,17 @@ include /app/helpers/jade/mixins
                     +domains-query-fields
 
                 .pc-form-grid-col-60
-                    +ignite-form-field-dropdown('Key fields:', queryKeyFields, '"queryKeyFields"', false, false, true,
-                        'Select key fields', 'Configure available fields', 'fields(\'cur\', ' + queryKeyFields + ')',
-                        'Query fields that belongs to the key.<br/>\
+                    +sane-ignite-form-field-dropdown({
+                        label: 'Key fields:',
+                        model: queryKeyFields,
+                        name: '"queryKeyFields"',
+                        multiple: true,
+                        placeholder: 'Select key fields',
+                        placeholderEmpty: 'Configure available fields',
+                        options: `$ctrl.fields('cur', ${queryKeyFields})`,
+                        tip: 'Query fields that belongs to the key.<br/>\
                          Used to build / modify keys and values during SQL DML operations when no key - value classes are present on cluster nodes.'
-                    )
-                .pc-form-grid-col-60
-                    +ignite-form-field-dropdown('Key fields:', queryKeyFields, '"queryKeyFields"', false, false, true,
-                        'Select key fields', 'Configure available fields', 'fields(\'cur\', ' + queryKeyFields + ')',
-                        'Query fields that belongs to the key.<br/>\
-                         Used to build / modify keys and values during SQL DML operations when no key - value classes are present on cluster nodes.'
-                    )
+                    })
                 .pc-form-grid-col-60
                     mixin domains-query-aliases
                         .ignite-form-field
