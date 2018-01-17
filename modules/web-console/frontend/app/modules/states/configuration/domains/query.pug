@@ -33,7 +33,10 @@ include /app/helpers/jade/mixins
     .pca-panel-collapse(role='tabpanel' bs-collapse-target id='query')
         .pca-panel-body.pca-form-row
             .pca-form-column-6.pc-form-grid-row
-                .content-not-available(ng-if=`${model}.queryMetadata === 'Annotations'`)
+                .content-not-available(
+                    ng-if=`${model}.queryMetadata === 'Annotations'`
+                    style='margin-top: 10px'
+                )
                     label Not available for annotated types
 
                 .pc-form-grid-col-60(ng-if-start=`${model}.queryMetadata === 'Configuration'`)
