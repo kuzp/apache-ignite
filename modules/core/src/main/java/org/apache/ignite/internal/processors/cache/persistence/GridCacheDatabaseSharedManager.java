@@ -1376,9 +1376,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
                         Long partCnt = cpEntry.partitionCounter(cctx, grpId, partId);
 
-                        grpChpState.put(partId, new T2<>(partCnt, cpEntry.cpMark));
+                        if (partCnt != null) {
+                            grpChpState.put(partId, new T2<>(partCnt, cpEntry.cpMark));
 
-                        grpCnts.put(partId, partCnt);
+                            grpCnts.put(partId, partCnt);
+                        }
                     }
                 }
             }
@@ -1533,51 +1535,47 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     ) {
         final Map<Integer, Map<Integer, CheckpointEntry>> res = new HashMap<>();
 
-        CheckpointEntry.GroupStateVisitor groupStateVisitor = new CheckpointEntry.GroupStateVisitor() {
-            private CheckpointEntry chpEntry;
+        for (Long cpTs : checkpointHist.checkpoints()) {
+            try {
+                final CheckpointEntry chpEntry = checkpointHist.entry(cpTs);
 
-            @Override public void visit(int grpId, CheckpointEntry.GroupState groupState) {
-                assert chpEntry != null;
+                Map<Integer, CheckpointEntry.GroupState> grpsState = chpEntry.groupState(cctx);
 
-                Map<Integer, CheckpointEntry> partToCheckPointEntry = res.get(grpId);
+                if (grpsState.isEmpty()){
+                    res.clear();
 
-                Set<Integer> parts = part4reserve.get(grpId);
+                    continue;
+                }
 
-                if (parts != null) {
+                for (Map.Entry<Integer, Set<Integer>> grps : part4reserve.entrySet()) {
+                    Integer grpId = grps.getKey();
+
+                    Map<Integer, CheckpointEntry> partToCheckPointEntry = res.get(grpId);
+
+                    CheckpointEntry.GroupState groupState = grpsState.get(grpId);
+
+                    if (groupState == null) {
+                        res.remove(grpId);
+
+                        continue;
+                    }
+
                     if (partToCheckPointEntry == null)
                         res.put(grpId, partToCheckPointEntry = new HashMap<>());
 
-                    for (Integer part : parts) {
-                        int idx = groupState.indexByPartition(part);
+                    for (Integer partId : grps.getValue()) {
+                        int idx = groupState.indexByPartition(partId);
 
                         if (idx < 0)
-                            partToCheckPointEntry.remove(part);
+                            partToCheckPointEntry.remove(partId);
                         else {
-                            if (partToCheckPointEntry.containsKey(part))
+                            if (partToCheckPointEntry.containsKey(partId))
                                 continue;
 
-                            partToCheckPointEntry.put(part, chpEntry);
+                            partToCheckPointEntry.put(partId, chpEntry);
                         }
                     }
                 }
-            }
-
-            @Override public void onEmpty() {
-                res.clear();
-            }
-
-            @Override public void setCheckPoint(CheckpointEntry chpEntry) {
-                this.chpEntry = chpEntry;
-            }
-        };
-
-        for (Long cpTs : checkpointHist.checkpoints()) {
-            try {
-                final CheckpointEntry entry = checkpointHist.entry(cpTs);
-
-                groupStateVisitor.setCheckPoint(entry);
-
-                entry.visit(cctx, groupStateVisitor);
             }
             catch (IgniteCheckedException ignore) {
                 // Treat exception the same way as a gap.
@@ -3334,8 +3332,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             @NotNull GridMultiCollectionWrapper<FullPageId> cpPages,
             CheckpointProgress progress
         ) {
-            assert cpEntry == null;
-
             this.cpEntry = cpEntry;
             this.cpPages = cpPages;
             this.progress = progress;
@@ -3714,19 +3710,13 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
         /**
          * @param cctx Cache shred context.
-         * @param grpVisitor Group state visitor.
          */
-        public void visit(
-            GridCacheSharedContext cctx,
-            GroupStateVisitor grpVisitor
+        public Map<Integer, GroupState> groupState(
+            GridCacheSharedContext cctx
         ) throws IgniteCheckedException {
             GroupStateLazyStore store = initIfNeeded(cctx);
 
-            if (store.grpStates.isEmpty())
-                grpVisitor.onEmpty();
-            else
-                for (Map.Entry<Integer, GroupState> e : store.grpStates.entrySet())
-                    grpVisitor.visit(e.getKey(), e.getValue());
+            return store.grpStates;
         }
 
         /**
@@ -3764,20 +3754,6 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             }
 
             return store.partitionCounter(grpId, part);
-        }
-
-        /**
-         *
-         */
-        private interface GroupStateVisitor {
-            /** */
-            public void visit(int grpId, CheckpointEntry.GroupState groupState);
-
-            /** */
-            public void onEmpty();
-
-            /** */
-            public void setCheckPoint(CheckpointEntry chpEntry);
         }
 
         /**

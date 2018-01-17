@@ -57,9 +57,13 @@ public class IgniteWalHistoryReservationsTest extends GridCommonAbstractTest {
 
         cfg.setClientMode(client);
 
+        cfg.setConsistentId("NODE$" + gridName.charAt(gridName.length() - 1));
+
         DataStorageConfiguration memCfg = new DataStorageConfiguration()
             .setDefaultDataRegionConfiguration(
-                new DataRegionConfiguration().setMaxSize(200 * 1024 * 1024).setPersistenceEnabled(true))
+                new DataRegionConfiguration()
+                    .setMaxSize(200 * 1024 * 1024)
+                    .setPersistenceEnabled(true))
             .setWalMode(WALMode.LOG_ONLY);
 
         cfg.setDataStorageConfiguration(memCfg);
@@ -195,7 +199,7 @@ public class IgniteWalHistoryReservationsTest extends GridCommonAbstractTest {
 
                     return true;
                 }
-            }, 10_000);
+            }, 30_000);
 
             assert reserved;
         }
@@ -222,7 +226,7 @@ public class IgniteWalHistoryReservationsTest extends GridCommonAbstractTest {
 
                 return true;
             }
-        }, 10_000);
+        }, 30_000);
 
         assert released;
     }
