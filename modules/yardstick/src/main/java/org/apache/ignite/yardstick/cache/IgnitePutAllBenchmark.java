@@ -67,8 +67,9 @@ public class IgnitePutAllBenchmark extends IgniteCacheAbstractBenchmark<Integer,
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings("unchecked")
     @Override public boolean test(Map<Object, Object> ctx) throws Exception {
-        List<Map<Integer, Integer>> putMaps = (List<Map<Integer, Integer>>)ctx.get(PUT_MAPS_KEY);
+        List<Map<Integer, Object>> putMaps = (List<Map<Integer, Object>>)ctx.get(PUT_MAPS_KEY);
 
         if (putMaps == null) {
             putMaps = new ArrayList<>(PUT_MAPS_CNT);
@@ -76,7 +77,7 @@ public class IgnitePutAllBenchmark extends IgniteCacheAbstractBenchmark<Integer,
             ctx.put(PUT_MAPS_KEY, putMaps);
         }
 
-        Map<Integer, Integer> vals;
+        Map<Integer, Object> vals;
 
         if (putMaps.size() == PUT_MAPS_CNT)
             vals = putMaps.get(nextRandom(PUT_MAPS_CNT));
@@ -118,7 +119,7 @@ public class IgnitePutAllBenchmark extends IgniteCacheAbstractBenchmark<Integer,
 
                 vals.put(
                     key,
-                    key);
+                    createValue(key));
             }
 
             putMaps.add(vals);
@@ -141,5 +142,13 @@ public class IgnitePutAllBenchmark extends IgniteCacheAbstractBenchmark<Integer,
     /** {@inheritDoc} */
     @Override protected IgniteCache<Integer, Object> cache() {
         return ignite().cache("atomic");
+    }
+
+    /**
+     * @param key Key.
+     * @return Value.
+     */
+    protected Object createValue(Integer key) {
+        return key;
     }
 }

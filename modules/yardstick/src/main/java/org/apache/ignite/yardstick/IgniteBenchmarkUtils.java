@@ -35,6 +35,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
+import org.apache.ignite.yardstick.cache.IgnitePutAllBenchmark2k;
 import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
@@ -110,7 +111,7 @@ public class IgniteBenchmarkUtils {
     public static void main(String[] args) throws Exception {
         final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
 
-        final Class<? extends BenchmarkDriver> benchmark = IgnitePutBenchmark.class;
+        final Class<? extends BenchmarkDriver> benchmark = IgnitePutAllBenchmark2k.class;
 
         final int threads = 1;
 
@@ -118,10 +119,11 @@ public class IgniteBenchmarkUtils {
 
         final int extraNodes = 1;
 
-        final int warmUp = 60;
-        final int duration = 120;
+        final int warmUp = 10;
+        final int duration = 30;
 
-        final int range = 100_000;
+        final int range = 15000;
+        final int batchSize = 100;
 
         final boolean throughputLatencyProbe = false;
 
@@ -140,6 +142,7 @@ public class IgniteBenchmarkUtils {
         addArg(args0, "-w", warmUp);
         addArg(args0, "-d", duration);
         addArg(args0, "-r", range);
+        addArg(args0, "-bs", batchSize);
         addArg(args0, "-dn", benchmark.getSimpleName());
         addArg(args0, "-sn", "IgniteNode");
         addArg(args0, "-cfg", cfg);
