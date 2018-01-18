@@ -1427,15 +1427,18 @@ export default class IgniteConfigurationGenerator {
 
         storageBean.stringProperty('storagePath')
             .intProperty('checkpointFrequency')
-            .longProperty('checkpointPageBufferSize')
             .intProperty('checkpointThreads')
             .enumProperty('walMode')
             .stringProperty('walPath')
             .stringProperty('walArchivePath')
             .intProperty('walSegments')
             .intProperty('walSegmentSize')
-            .intProperty('walHistorySize')
-            .longProperty('walFlushFrequency')
+            .intProperty('walHistorySize');
+
+        if (available('2.4.0'))
+            storageBean.intProperty('walBufferSize');
+
+        storageBean.longProperty('walFlushFrequency')
             .longProperty('walFsyncDelayNanos')
             .intProperty('walRecordIteratorBufferSize')
             .longProperty('lockWaitTime')
@@ -1446,6 +1449,9 @@ export default class IgniteConfigurationGenerator {
             .boolProperty('metricsEnabled')
             .boolProperty('alwaysWriteFullPages')
             .boolProperty('writeThrottlingEnabled');
+
+        if (available('2.4.0'))
+            storageBean.boolProperty('walCompactionEnabled');
 
         const fileIOFactory = _.get(dataStorageCfg, 'fileIOFactory');
 
