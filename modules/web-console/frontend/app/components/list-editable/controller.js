@@ -63,7 +63,7 @@ export default class {
     }
 
     save(data, idx) {
-        this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? data : v));
+        this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? _.clone(data) : v));
     }
 
     revert(idx) {
