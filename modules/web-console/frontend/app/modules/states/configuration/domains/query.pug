@@ -136,89 +136,115 @@ include /app/helpers/jade/mixins
                     +domains-query-aliases
 
                 .pc-form-grid-col-60(ng-if-end)
-                    mixin domains-query-indexes
-                        .ignite-form-field
-                            +ignite-form-field__label('Indexes:', '"indexes"')
-                            .ignite-form-field__control
-                                -let items = queryIndexes
+                    .ignite-form-field
+                        +ignite-form-field__label('Indexes:', '"indexes"')
+                        .ignite-form-field__control
+                            list-editable(
+                                ng-model=queryIndexes
+                                ng-model-options='{allowInvalid: true}'
+                                name='queryIndexes'
+                                ui-validate=`{
+                                    complete: '$ctrl.Models.queryIndexes.complete($value)'
+                                }`
+                                ui-validate-watch=`"${queryIndexes}"`
+                                ui-validate-watch-object-equality='true'
+                            )
+                                list-editable-item-view(item-name='queryIndex')
+                                    div {{ queryIndex.name }} [{{ queryIndex.indexType }}]
+                                    div(ng-repeat='field in queryIndex.fields track by field._id')
+                                        span {{ field.name }}
+                                        span(ng-if='queryIndex.indexType == "SORTED"')
+                                            |  / {{ field.direction ? 'ASC' : 'DESC'}}
 
-                                list-editable(ng-model=items name='queryIndexes')
-                                    list-editable-item-view
-                                        div {{ $item.name }} [{{ $item.indexType }}]
-                                        div(ng-repeat='field in $item.fields track by field._id')
-                                            span {{ field.name }}
-                                            span(ng-if='$item.indexType == "SORTED"')
-                                                |  / {{ field.direction ? "ASC" : "DESC"}}
+                                list-editable-item-edit(item-name='queryIndex')
+                                    .pc-form-grid-row
+                                        .pc-form-grid-col-30(divider='/')
+                                            +sane-ignite-form-field-text({
+                                                label: 'Index name:',
+                                                model: 'queryIndex.name',
+                                                name: '"name"',
+                                                required: true,
+                                                placeholder: 'Enter index name'
+                                            })(
+                                                ignite-unique=queryIndexes
+                                                ignite-unique-property='name'
+                                                ignite-form-field-input-autofocus='true'
+                                            )
+                                                +unique-feedback(_, 'Such field already exists!')
+                                        .pc-form-grid-col-30
+                                            +sane-ignite-form-field-dropdown({
+                                                label: 'Index type:',
+                                                model: `queryIndex.indexType`,
+                                                name: '"indexType"',
+                                                required: true,
+                                                placeholder: 'Select index type',
+                                                options: '::$ctrl.Models.indexType.values'
+                                            })
+                                        .pc-form-grid-col-60
+                                            .ignite-form-field
+                                                +ignite-form-field__label('Index fields:', '"indexFields"', true)
+                                                .ignite-form-field__control
+                                                    list-editable(
+                                                        ng-model='queryIndex.fields'
+                                                        name='indexFields'
+                                                        ng-required='true'
+                                                    )
+                                                        list-editable-item-view(item-name='indexField')
+                                                            | {{ indexField.name }} 
+                                                            span(ng-if='indexField.indexType === "SORTED"')
+                                                                |  / {{ indexField.direction ? "ASC" : "DESC" }}
 
-                                    list-editable-item-edit
-                                        - form = '$parent.form'
-                                        .pc-form-grid-row
-                                            .pc-form-grid-col-30(divider='/')
-                                                +ignite-form-field-text('Index name:', '$item.name', '"name"', false, true, 'Enter index name')(
-                                                    data-ignite-unique=items
-                                                    data-ignite-unique-property='name'
-
-                                                    data-ignite-form-field-input-autofocus='true'
-                                                )
-                                                    +unique-feedback('"name"', 'Such field already exists!')
-                                            .pc-form-grid-col-30
-                                                +dropdown-required('Index type: ', `$item.indexType`, '"indexType"', true, true, 'Select index type', '::$ctrl.Models.indexType.values')
-                                            .pc-form-grid-col-60
-                                                mixin domains-query-indexes-fields
-                                                    .ignite-form-field
-                                                        +ignite-form-field__label('Index fields:', '"indexFields"')
-                                                            +tooltip(`Fields in index`)
-                                                        .ignite-form-field__control(ng-if='item = $item')
-                                                            -let items = 'item.fields'
-                                                            list-editable(ng-model=items name='indexFields')
-                                                                list-editable-item-view
-                                                                    | {{ $item.name }} 
-                                                                    span(ng-if='item.indexType == "SORTED"')
-                                                                        |  / {{ $parent.$item.direction ? "ASC" : "DESC" }}
-
-                                                                list-editable-item-edit
-                                                                    - form = '$parent.form'
-                                                                    .pc-form-grid-row
-                                                                        .pc-form-grid-col-60
-                                                                            +sane-ignite-form-field-dropdown({
-                                                                                label: 'Index field:',
-                                                                                model: '$item.name',
-                                                                                name: '"indexName"',
-                                                                                placeholder: `{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}`,
-                                                                                options: queryFields
-                                                                            })(
-                                                                                bs-options=`item.name as item.name for item in ${queryFields}`
-                                                                                ng-disabled=`${queryFields}.length === 0`
-                                                                                ng-model-options='{allowInvalid: true}'
-                                                                                data-ignite-unique=items
-                                                                                data-ignite-unique-property='name'
-                                                                                ignite-auto-focus
-                                                                            )
-                                                                                +unique-feedback('"name"', 'Such field already exists!')
-                                                                        .pc-form-grid-col-60(ng-if='item.indexType == "SORTED"')
-                                                                            +sane-ignite-form-field-dropdown({
-                                                                                label: 'Sort direction:',
-                                                                                model: '$parent.$item.direction',
-                                                                                name: '"indexDirection"',
-                                                                                required: true,
-                                                                                options: '::$ctrl.Models.indexSortDirection.values'
-                                                                            })
-                                                                list-editable-no-items
-                                                                    list-editable-add-item-button(
-                                                                        add-item=`$edit($ctrl.Models.addIndexField(${items}))`
-                                                                        label-single='field to index'
-                                                                        label-multiple='fields in index'
+                                                        list-editable-item-edit(item-name='indexField')
+                                                            .pc-form-grid-row
+                                                                .pc-form-grid-col-60
+                                                                    +sane-ignite-form-field-dropdown({
+                                                                        label: 'Index field:',
+                                                                        model: 'indexField.name',
+                                                                        name: '"indexName"',
+                                                                        placeholder: `{{ ${queryFields}.length > 0 ? 'Choose index field' : 'No fields configured' }}`,
+                                                                        options: queryFields
+                                                                    })(
+                                                                        bs-options=`queryField.name as queryField.name for queryField in ${queryFields}`
+                                                                        ng-disabled=`${queryFields}.length === 0`
+                                                                        ng-model-options='{allowInvalid: true}'
+                                                                        ignite-unique='queryIndex.fields'
+                                                                        ignite-unique-property='name'
+                                                                        ignite-auto-focus
                                                                     )
+                                                                        +unique-feedback(_, 'Such field already exists!')
+                                                                .pc-form-grid-col-60(
+                                                                    ng-if='indexField.indexType === "SORTED"'
+                                                                )
+                                                                    +sane-ignite-form-field-dropdown({
+                                                                        label: 'Sort direction:',
+                                                                        model: 'indexField.direction',
+                                                                        name: '"indexDirection"',
+                                                                        required: true,
+                                                                        options: '::$ctrl.Models.indexSortDirection.values'
+                                                                    })
+                                                        list-editable-no-items
+                                                            list-editable-add-item-button(
+                                                                add-item=`$edit($ctrl.Models.addIndexField(queryIndex.fields))`
+                                                                label-single='field to index'
+                                                                label-multiple='fields in index'
+                                                            )
+                                                .ignite-form-field__errors(
+                                                    ng-messages=`$form.indexFields.$error`
+                                                    ng-show=`$form.indexFields.$invalid`
+                                                )
+                                                    +form-field-feedback(_, 'required', 'Index fields should be configured')
 
-                                                +domains-query-indexes-fields
+                                list-editable-no-items
+                                    list-editable-add-item-button(
+                                        add-item=`$edit($ctrl.Models.addIndex(${model}))`
+                                        label-single='index'
+                                        label-multiple='fields'
+                                    )
+                        .ignite-form-field__errors(
+                            ng-messages=`query.queryIndexes.$error`
+                            ng-show=`query.queryIndexes.$invalid`
+                        )
+                            +form-field-feedback(_, 'complete', 'Some query indexes are incomplete')
 
-                                    list-editable-no-items
-                                        list-editable-add-item-button(
-                                            add-item=`$edit($ctrl.Models.addIndex(${model}))`
-                                            label-single='index'
-                                            label-multiple='fields'
-                                        )
-
-                    +domains-query-indexes
             .pca-form-column-6
                 +preview-xml-java(model, 'domainModelQuery')

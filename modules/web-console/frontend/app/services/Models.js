@@ -117,4 +117,15 @@ export default class Models {
             hasIndex: this.hasIndex(model)
         };
     }
+
+    queryIndexes = {
+        /**
+         * Validates query indexes for completeness
+         * @param {Array<ig.config.model.Index>} $value
+         */
+        complete: ($value = []) => $value.every((index) => (
+            index.name && index.indexType &&
+            index.fields && index.fields.length && index.fields.every((field) => !!field.name))
+        )
+    };
 }

@@ -98,7 +98,7 @@ declare namespace ig {
                 name?: string,
                 direction?: boolean
             }
-            interface Index {
+            export interface Index {
                 _id: string,
                 name: string,
                 indexType: IndexTypes,
