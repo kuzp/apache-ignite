@@ -619,11 +619,11 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
     }
 
     public void afterStateRestored(AffinityTopologyVersion topVer) {
-        Lock lock = this.lock.writeLock();
-
-        lock.lock();
+        lock.writeLock().lock();
 
         try {
+            assert node2part != null;
+
             long updateSeq = this.updateSeq.incrementAndGet();
 
             for (int p = 0; p < grp.affinity().partitions(); p++) {
@@ -636,7 +636,7 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
             }
         }
         finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 

@@ -1069,8 +1069,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
             }
         }
 
-        cctx.database().beforeExchange(this);
-
         if (!exchCtx.mergeExchanges()) {
             for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
                 if (grp.isLocal() || cacheGroupStopping(grp.groupId()))
@@ -1081,6 +1079,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     grp.topology().beforeExchange(this, !centralizedAff && !forceAffReassignment, false);
             }
         }
+
+        cctx.database().beforeExchange(this);
 
         if (crd.isLocal()) {
             if (remaining.isEmpty())
@@ -2364,8 +2364,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     top.beforeExchange(this, true, true);
                 }
             }
-            else if (forceAffReassignment)
-                idealAffDiff = cctx.affinity().onCustomEventWithEnforcedAffinityReassignment(this);
 
             Map<Integer, CacheGroupAffinityMessage> joinedNodeAff = null;
 

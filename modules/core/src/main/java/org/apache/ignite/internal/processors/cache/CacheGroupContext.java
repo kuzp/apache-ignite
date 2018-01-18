@@ -966,8 +966,7 @@ public class CacheGroupContext {
      * @return {@code True} if rebalance is enabled.
      */
     public boolean rebalanceEnabled() {
-//        return ccfg.getRebalanceMode() != NONE;
-        return true;
+        return ccfg.getRebalanceMode() != NONE;
     }
 
     /**

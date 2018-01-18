@@ -215,9 +215,6 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
             // TODO ignite-db
             throw new IgniteException(e);
         }
-
-        // Todo log moving state
-        casState(state.get(), MOVING);
     }
 
     /**
@@ -508,8 +505,6 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
      */
     public void restoreState(GridDhtPartitionState stateToRestore) {
         state.set(setPartState(state.get(),stateToRestore));
-
-        DebugUtils.addToHistory(new T4<>(ctx.localNode().consistentId().toString(), "partState", grp.cacheOrGroupName(), id), new T4<>(ctx.discovery().topologyVersionEx(), null, stateToRestore, DebugUtils.stacktraceToString(Thread.currentThread().getStackTrace(), 20)));
     }
 
     /**
@@ -524,8 +519,6 @@ public class GridDhtLocalPartition extends GridCacheConcurrentMapImpl implements
 
                 if (update)
                     try {
-                        DebugUtils.addToHistory(new T4<>(ctx.localNode().consistentId().toString(), "partState", grp.cacheOrGroupName(), id), new T4<>(ctx.discovery().topologyVersionEx(), getPartState(state), toState, DebugUtils.stacktraceToString(Thread.currentThread().getStackTrace(), 20)));
-
                         ctx.wal().log(new PartitionMetaStateRecord(grp.groupId(), id, toState, updateCounter()));
                     }
                     catch (IgniteCheckedException e) {

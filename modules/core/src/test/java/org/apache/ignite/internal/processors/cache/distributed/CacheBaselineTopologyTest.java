@@ -702,10 +702,6 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
                 .setRebalanceDelay(-1)
                 .setAffinity(affFunc));
 
-        awaitPartitionMapExchange();
-//
-        printPartitionState(cache);
-
         Map<Integer, String> keyToConsId = new HashMap<>();
 
         for (int k = 0; k < 1000; k++) {
@@ -716,8 +712,6 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         stopAllGrids();
 
-        DebugUtils.setFlag("test", true);
-
         Collections.shuffle(TestAffinityFunction.partsAffMapping, new Random(1));
 
         delayRebalance = true;
@@ -725,8 +719,6 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         startGrids(4);
 
         ig = grid(0);
-
-//        ig.active(true);
 
         U.sleep(5_000);
 
@@ -742,29 +734,13 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
         }
 
         for (Map.Entry<Integer, String> e : keyToConsId.entrySet()) {
-//            assertEquals("k=" + e.getKey(), e.getValue(), ig.affinity(cacheName).mapKeyToNode(e.getKey()).consistentId().toString());
-
             int p = ig.affinity(cacheName).partition(e.getKey());
 
-            try {
-                assertEquals("p=" + p, GridDhtPartitionState.OWNING, partMap.get(ig.affinity(cacheName).mapKeyToNode(e.getKey()).id()).get(p));
-            }
-            catch (Throwable ex) {
-                throw ex;
-            }
+            assertEquals("p=" + p, GridDhtPartitionState.OWNING, partMap.get(ig.affinity(cacheName).mapKeyToNode(e.getKey()).id()).get(p));
         }
 
         for (int k = 0; k < 1000; k++)
-            try {
-                assertEquals("k=" + k, Integer.valueOf(k), cache.get(k));
-            }
-            catch (Throwable ex) {
-                DebugUtils.setFlag("error", true);
-
-                cache.get(k);
-
-                throw ex;
-            }
+            assertEquals("k=" + k, Integer.valueOf(k), cache.get(k));
     }
 
     /** */

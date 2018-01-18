@@ -30,7 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.cache.CacheException;
-import org.apache.ignite.DebugUtils;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.cache.affinity.AffinityFunction;
@@ -1299,19 +1298,6 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
                             nodesByOrder,
                             evts.discoveryCache()));
                     }
-
-                    for (int p = 0; p < newAssignment.size(); p++) {
-                        if (!(F.isEmpty(newAssignment.get(p))) && newAssignment.get(p).get(0).isLocal()) {
-                            if (!(cctx.cache().cacheGroup(aff.groupId()).topology().localPartition(p).state() == GridDhtPartitionState.OWNING)) {
-                                if (diff.containsKey(p))
-                                    System.out.println("???1");
-                                else
-                                    System.out.println("???2");
-                            }
-
-    //                        assert cctx.cache().cacheGroup(aff.groupId()).topology().localPartition(p).state() == GridDhtPartitionState.OWNING;
-                        }
-                    }
                 }
                 else
                     newAssignment = idealAssignment;
@@ -2134,7 +2120,10 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
         final IgniteClosure<ClusterNode, T> c,
         final boolean initAff)
         throws IgniteCheckedException {
-        final WaitRebalanceInfo waitRebalanceInfo = DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(fut.firstEvent()) ?
+        final boolean enforcedCentralizedAssignment =
+            DiscoveryCustomEvent.requiresCentralizedAffinityAssignment(fut.firstEvent());
+
+        final WaitRebalanceInfo waitRebalanceInfo = enforcedCentralizedAssignment ?
             new WaitRebalanceInfo(fut.exchangeId().topologyVersion()) :
             new WaitRebalanceInfo(fut.context().events().lastServerEventVersion());
 
@@ -2146,13 +2135,14 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
             @Override public void applyx(CacheGroupDescriptor desc) throws IgniteCheckedException {
                 CacheGroupHolder grpHolder = groupHolder(topVer, desc);
 
-//                if (!grpHolder.rebalanceEnabled || fut.cacheGroupAddedOnExchange(desc.groupId(), desc.receivedFrom()))
-//                    return;
+                if (!grpHolder.rebalanceEnabled ||
+                    (fut.cacheGroupAddedOnExchange(desc.groupId(), desc.receivedFrom()) && !enforcedCentralizedAssignment))
+                    return;
 
                 AffinityTopologyVersion affTopVer = grpHolder.affinity().lastVersion();
 
-//                assert affTopVer.topologyVersion() > 0 && !affTopVer.equals(topVer) : "Invalid affinity version " +
-//                    "[last=" + affTopVer + ", futVer=" + topVer + ", grp=" + desc.cacheOrGroupName() + ']';
+                assert (affTopVer.topologyVersion() > 0 && !affTopVer.equals(topVer)) || enforcedCentralizedAssignment :
+                    "Invalid affinity version [last=" + affTopVer + ", futVer=" + topVer + ", grp=" + desc.cacheOrGroupName() + ']';
 
                 List<List<ClusterNode>> curAssignment = grpHolder.affinity().assignments(affTopVer);
                 List<List<ClusterNode>> newAssignment = grpHolder.affinity().idealAssignment();
@@ -2186,15 +2176,8 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
                     List<ClusterNode> owners = top.owners(p);
 
-                    boolean curPrimarySet = false;
-
-                    if (!owners.isEmpty() && !owners.contains(curPrimary)) {
+                    if (!owners.isEmpty() && !owners.contains(curPrimary))
                         curPrimary = owners.get(0);
-
-                        curPrimarySet = true;
-                    }
-                    else if (topVer.topologyVersion() == 4 && topVer.minorTopologyVersion() == 1 && DebugUtils.checkFlag("test") && owners.isEmpty() && desc.cacheOrGroupName().equals("cache2"))
-                        System.out.println("???3");
 
                     if (curPrimary != null && newPrimary != null && !curPrimary.equals(newPrimary)) {
                         if (aliveNodes.contains(curPrimary)) {
@@ -2263,9 +2246,6 @@ public class CacheAffinitySharedManager<K, V> extends GridCacheSharedManagerAdap
 
                         cacheAssignment.put(p, n);
                     }
-
-                    if (curPrimarySet && newAssignment0 != null && !newAssignment0.get(p).get(0).equals(owners.get(0)) && topVer.topologyVersion() <= 4)
-                        System.out.println("???");
                 }
 
                 if (cacheAssignment != null)
