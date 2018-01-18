@@ -622,7 +622,8 @@ public class GridDhtPartitionTopologyImpl implements GridDhtPartitionTopology {
         lock.writeLock().lock();
 
         try {
-            assert node2part != null;
+            if (node2part == null)
+                return;
 
             long updateSeq = this.updateSeq.incrementAndGet();
 
