@@ -126,6 +126,15 @@ export default class Models {
         complete: ($value = []) => $value.every((index) => (
             index.name && index.indexType &&
             index.fields && index.fields.length && index.fields.every((field) => !!field.name))
-        )
+        ),
+        /**
+         * Checks if field names used in indexes exist
+         * @param {Array<ig.config.model.Index>} $value
+         * @param {Array<ig.config.model.Field>} fields
+         */
+        fieldsExist: ($value = [], fields = []) => {
+            const names = new Set(fields.map((field) => field.name));
+            return $value.every((index) => index.fields && index.fields.every((field) => names.has(field.name)));
+        }
     };
 }

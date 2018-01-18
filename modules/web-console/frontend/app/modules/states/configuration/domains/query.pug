@@ -144,9 +144,10 @@ include /app/helpers/jade/mixins
                                 ng-model-options='{allowInvalid: true}'
                                 name='queryIndexes'
                                 ui-validate=`{
-                                    complete: '$ctrl.Models.queryIndexes.complete($value)'
+                                    complete: '$ctrl.Models.queryIndexes.complete($value)',
+                                    fieldsExist: '$ctrl.Models.queryIndexes.fieldsExist($value, ${queryFields})'
                                 }`
-                                ui-validate-watch=`"${queryIndexes}"`
+                                ui-validate-watch=`"[${queryIndexes}, ${queryFields}]"`
                                 ui-validate-watch-object-equality='true'
                             )
                                 list-editable-item-view(item-name='queryIndex')
@@ -244,7 +245,8 @@ include /app/helpers/jade/mixins
                             ng-messages=`query.queryIndexes.$error`
                             ng-show=`query.queryIndexes.$invalid`
                         )
-                            +form-field-feedback(_, 'complete', 'Some query indexes are incomplete')
+                            +form-field-feedback(_, 'complete', 'Some indexes are incomplete')
+                            +form-field-feedback(_, 'fieldsExist', 'Some indexes use unknown fields')
 
             .pca-form-column-6
                 +preview-xml-java(model, 'domainModelQuery')
