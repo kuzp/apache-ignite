@@ -1938,7 +1938,7 @@ export default class IgniteConfigurationGenerator {
             propName = (near ? 'nearEviction' : 'eviction') + 'Policy';
         }
 
-        const bean = new Bean(beanProps.cls, 'evictionPlc', beanProps.src, dflt);
+        const bean = new Bean(beanProps.cls, propName, beanProps.src, dflt);
 
         bean.intProperty('batchSize')
             .intProperty('maxMemorySize')
