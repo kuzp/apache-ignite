@@ -325,10 +325,10 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     private final int maxCpHistMemSize;
 
     /** */
-    private Map<Integer, Map<Integer, T2<Long, WALPointer>>> reservedForExchange;
+    private Map</*grpId*/Integer, Map</*partId*/Integer, T2</*updCntr*/Long, WALPointer>>> reservedForExchange;
 
     /** */
-    private final ConcurrentMap<T2<Integer, Integer>, T2<Long, WALPointer>> reservedForPreloading = new ConcurrentHashMap<>();
+    private final ConcurrentMap<T2</*grpId*/Integer, /*partId*/Integer>, T2</*updCntr*/Long, WALPointer>> reservedForPreloading = new ConcurrentHashMap<>();
 
     /** Snapshot manager. */
     private IgniteCacheSnapshotManager snapshotMgr;
@@ -1347,15 +1347,15 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
 
         reservedForExchange = new HashMap<>();
 
-        Map<Integer, Set<Integer>> part4CheckpointHistorySearch = partsForCheckpointHistorySearch();
+        Map</*grpId*/Integer, Set</*partId*/Integer>> parts4CheckpointHistSearch = partsForCheckpointHistorySearch();
 
-        Map<Integer, Map<Integer, CheckpointEntry>> lastCheckpointEntry4Group =
-            searchLastCheckpointEntryPerPartition(part4CheckpointHistorySearch);
+        Map</*grpId*/Integer, Map</*partId*/Integer, CheckpointEntry>> lastCheckpointEntry4Grp =
+            searchLastCheckpointEntryPerPartition(parts4CheckpointHistSearch);
 
-        Map<Integer, Map<Integer, Long>> grpPartsWithCnts = new HashMap<>();
+        Map</*grpId*/Integer, Map</*partId*/Integer, /*updCntr*/Long>> grpPartsWithCnts = new HashMap<>();
 
         try {
-            for (Map.Entry<Integer, Map<Integer, CheckpointEntry>> e : lastCheckpointEntry4Group.entrySet()) {
+            for (Map.Entry<Integer, Map<Integer, CheckpointEntry>> e : lastCheckpointEntry4Grp.entrySet()) {
                 Integer grpId = e.getKey();
 
                 for (Map.Entry<Integer, CheckpointEntry> e0 : e.getValue().entrySet()) {
@@ -1364,7 +1364,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     Integer partId = e0.getKey();
 
                     if (cctx.wal().reserve(cpEntry.cpMark)) {
-                        Map<Integer, T2<Long, WALPointer>> grpChpState = reservedForExchange.get(grpId);
+                        Map</*partId*/Integer, T2</*updCntr*/Long, WALPointer>> grpChpState = reservedForExchange.get(grpId);
 
                         Map<Integer, Long> grpCnts = grpPartsWithCnts.get(grpId);
 
@@ -1399,7 +1399,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
      * @return Map of group id -> Set parts.
      */
     private Map<Integer, Set<Integer>> partsForCheckpointHistorySearch() {
-        Map<Integer, Set<Integer>> part4CheckpointHistorySearch= new HashMap<>();
+        Map<Integer, Set<Integer>> part4CheckpointHistSearch = new HashMap<>();
 
         for (CacheGroupContext grp : cctx.cache().cacheGroups()) {
             if (grp.isLocal())
@@ -1409,16 +1409,16 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 if (part.state() != GridDhtPartitionState.OWNING || part.dataStore().fullSize() <= walRebalanceThreshold)
                     continue;
 
-                Set<Integer> parts = part4CheckpointHistorySearch.get(grp.groupId());
+                Set<Integer> parts = part4CheckpointHistSearch.get(grp.groupId());
 
                 if (parts == null)
-                    part4CheckpointHistorySearch.put(grp.groupId(), parts = new HashSet<>());
+                    part4CheckpointHistSearch.put(grp.groupId(), parts = new HashSet<>());
 
                 parts.add(part.id());
             }
         }
 
-        return part4CheckpointHistorySearch;
+        return part4CheckpointHistSearch;
     }
 
     /** {@inheritDoc} */
@@ -1532,7 +1532,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
      *
      * @return Checkpoint entry or {@code null} if failed to search.
      */
-    @Nullable private Map<Integer, Map<Integer, CheckpointEntry>> searchLastCheckpointEntryPerPartition(
+    private Map<Integer, Map<Integer, CheckpointEntry>> searchLastCheckpointEntryPerPartition(
         final Map<Integer, Set<Integer>> part4reserve
     ) {
         final Map<Integer, Map<Integer, CheckpointEntry>> res = new HashMap<>();
@@ -1552,29 +1552,29 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 for (Map.Entry<Integer, Set<Integer>> grps : part4reserve.entrySet()) {
                     Integer grpId = grps.getKey();
 
-                    Map<Integer, CheckpointEntry> partToCheckPointEntry = res.get(grpId);
+                    Map<Integer, CheckpointEntry> partToCheckPntEntry = res.get(grpId);
 
-                    CheckpointEntry.GroupState groupState = grpsState.get(grpId);
+                    CheckpointEntry.GroupState grpState = grpsState.get(grpId);
 
-                    if (groupState == null) {
+                    if (grpState == null) {
                         res.remove(grpId);
 
                         continue;
                     }
 
-                    if (partToCheckPointEntry == null)
-                        res.put(grpId, partToCheckPointEntry = new HashMap<>());
+                    if (partToCheckPntEntry == null)
+                        res.put(grpId, partToCheckPntEntry = new HashMap<>());
 
                     for (Integer partId : grps.getValue()) {
-                        int idx = groupState.indexByPartition(partId);
+                        int idx = grpState.indexByPartition(partId);
 
                         if (idx < 0)
-                            partToCheckPointEntry.remove(partId);
+                            partToCheckPntEntry.remove(partId);
                         else {
-                            if (partToCheckPointEntry.containsKey(partId))
+                            if (partToCheckPntEntry.containsKey(partId))
                                 continue;
 
-                            partToCheckPointEntry.put(partId, chpEntry);
+                            partToCheckPntEntry.put(partId, chpEntry);
                         }
                     }
                 }
