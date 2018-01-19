@@ -23,7 +23,7 @@ import {uniqueName} from 'app/utils/uniqueName';
 import omit from 'lodash/fp/omit';
 
 const uniqueNameValidator = (defaultName = '') => (a, items = []) => {
-    return !items.some((b) => b._id !== a._id && (a.name || defaultName) === (b.name || defaultName));
+    return a && !items.some((b) => b._id !== a._id && (a.name || defaultName) === (b.name || defaultName));
 };
 
 export default class Clusters {
@@ -514,6 +514,12 @@ export default class Clusters {
         cluster.executorConfiguration.push(item);
         return item;
     }
+
+    executorConfigurations = {
+        allNamesExist: (executorConfigurations = []) => {
+            return executorConfigurations.every((ec) => ec && ec.name);
+        }
+    };
 
     executorConfiguration = {
         name: {
