@@ -368,7 +368,9 @@ export default class Clusters {
     }
 
     addCheckpointSPI(cluster) {
-        return cluster.checkpointSpi.push(this.makeBlankCheckpointSPI());
+        const item = this.makeBlankCheckpointSPI();
+        cluster.checkpointSpi.push(item);
+        return item;
     }
 
     makeBlankLoadBalancingSpi() {

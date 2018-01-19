@@ -80,7 +80,7 @@ include /app/helpers/jade/mixins
 
                             list-editable-no-items
                                 list-editable-add-item-button(
-                                    add-item=`$ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster)`
+                                    add-item=`$edit($ctrl.Clusters.addCheckpointSPI($ctrl.clonedCluster))`
                                     label-single='checkpoint SPI configuration'
                                     label-multiple='checkpoint SPI configurations'
                                 )
