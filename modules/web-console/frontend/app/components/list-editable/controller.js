@@ -66,7 +66,7 @@ export default class {
     }
 
     save(data, idx) {
-        this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? _.clone(data) : v));
+        this.ngModel.$setViewValue(this.ngModel.$viewValue.map((v, i) => i === idx ? _.cloneDeep(data) : v));
     }
 
     revert(idx) {
@@ -86,7 +86,7 @@ export default class {
     }
 
     startEditView(idx) {
-        this._cache[idx] = _.clone(this.ngModel.$viewValue[idx]);
+        this._cache[idx] = _.cloneDeep(this.ngModel.$viewValue[idx]);
     }
 
     stopEditView(data, idx, form) {
