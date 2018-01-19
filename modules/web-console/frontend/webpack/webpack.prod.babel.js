@@ -17,6 +17,7 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
+import HardSourceWebpackPlugin from 'hard-source-webpack-plugin';
 
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
 
@@ -44,6 +45,7 @@ export default merge(commonCfg, {
         ]
     },
     plugins: [
+        new HardSourceWebpackPlugin(),
         new webpack.optimize.UglifyJsPlugin({
             beautify: false,
             mangle: {

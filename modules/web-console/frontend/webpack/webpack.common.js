@@ -27,6 +27,7 @@ import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ProgressBarPlugin from 'progress-bar-webpack-plugin';
 import AutoDllPlugin from 'autodll-webpack-plugin';
+import HardSourceWebpackPlugin from 'hard-source-webpack-plugin';
 
 import eslintFormatter from 'eslint-friendly-formatter';
 
@@ -192,7 +193,9 @@ export default {
                     nv: 'nvd3',
                     io: 'socket.io-client'
                 }),
+                new HardSourceWebpackPlugin(),
                 new webpack.optimize.UglifyJsPlugin({
+                    parallel: true,
                     beautify: false,
                     mangle: {
                         screw_ie8: true,
@@ -246,6 +249,7 @@ export default {
                 ]
             }
         }),
+        new HardSourceWebpackPlugin(),
         new ExtractTextPlugin({filename: 'assets/css/[name].[hash].css', allChunks: true}),
         new CopyWebpackPlugin([
             { context: 'public', from: '**/*.png' },
