@@ -719,7 +719,7 @@ public class CacheBaselineTopologyTest extends GridCommonAbstractTest {
 
         ig = grid(0);
 
-        U.sleep(5_000);
+        ig.active(true);
 
         cache = ig.cache(cacheName);
 
