@@ -58,6 +58,9 @@ export default class {
         this.ngModel.editListItem = (item) => {
             this.$timeout(() => {
                 this.startEditView(this.ngModel.$viewValue.indexOf(item));
+                // For some reason required validator does not re-run after adding an item,
+                // the $validate call fixes the issue.
+                this.ngModel.$validate();
             });
         };
     }
