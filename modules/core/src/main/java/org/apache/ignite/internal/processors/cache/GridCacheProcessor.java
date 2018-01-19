@@ -369,6 +369,11 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
             task0.onDone();
         }
+        else if (task instanceof CacheStatisticsModeChangeTask) {
+            CacheStatisticsModeChangeTask task0 = (CacheStatisticsModeChangeTask)task;
+
+            processStatisticsModeChange(task0.message());
+        }
         else
             U.warn(log, "Unsupported custom exchange task: " + task);
     }
