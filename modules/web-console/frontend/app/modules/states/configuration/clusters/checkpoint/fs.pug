@@ -16,12 +16,10 @@
 
 include /app/helpers/jade/mixins
 
--var form = '$parent.form'
-
 div
-    .ignite-form-field(ng-init='item = $item')
+    .ignite-form-field
         +list-text-field({
-            items: `item.FS.directoryPaths`,
+            items: `$checkpointSPI.FS.directoryPaths`,
             lbl: 'Directory path',
             name: 'directoryPath',
             itemName: 'path',
@@ -35,4 +33,4 @@ div
             +unique-feedback(_, 'Such path already exists!')
 
 .settings-row
-    +java-class('Listener:', '$item.FS.checkpointListener', '"checkpointFsListener" + $index', 'true', 'false', 'Checkpoint listener implementation class name', '$item.kind === "FS"')
+    +java-class('Listener:', '$checkpointSPI.FS.checkpointListener', '"checkpointFsListener"', 'true', 'false', 'Checkpoint listener implementation class name', '$checkpointSPI.kind === "FS"')

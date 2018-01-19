@@ -18,8 +18,8 @@ include /app/helpers/jade/mixins
 
 -var form = 'checkpoint'
 -var model = '$ctrl.clonedCluster.checkpointSpi'
--var CustomCheckpoint = '$item.kind === "Custom"'
--var CacheCheckpoint = '$item.kind === "Cache"'
+-var CustomCheckpoint = '$checkpointSPI.kind === "Custom"'
+-var CacheCheckpoint = '$checkpointSPI.kind === "Cache"'
 
 .pca-panel.pca-panel-default(ng-form=form novalidate)
     .pca-panel-heading(bs-collapse-toggle ng-click=`ui.loadPanel('${form}')`)
@@ -35,10 +35,9 @@ include /app/helpers/jade/mixins
                     +ignite-form-field__label('Checkpoint SPI configurations:', '"checkpointSPIConfigurations"')
                     .ignite-form-field__control
                         list-editable(ng-model=model name='checkpointSPIConfigurations')
-                            list-editable-item-edit
-                                - form = '$parent.form'
+                            list-editable-item-edit(item-name='$checkpointSPI')
                                 .settings-row
-                                    +dropdown-required('Checkpoint SPI:', '$item.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
+                                    +dropdown-required('Checkpoint SPI:', '$checkpointSPI.kind', '"checkpointKind"', 'true', 'true', 'Choose checkpoint configuration variant', '[\
                                             {value: "FS", label: "File System"},\
                                             {value: "Cache", label: "Cache"},\
                                             {value: "S3", label: "Amazon S3"},\
@@ -54,28 +53,28 @@ include /app/helpers/jade/mixins
                                             <li>Custom - Custom checkpoint SPI implementation</li>\
                                         </ul>')
 
-                                div(ng-show='$item.kind === "FS"')
+                                div(ng-show='$checkpointSPI.kind === "FS"')
                                     include ./checkpoint/fs
 
                                 div(ng-show=CacheCheckpoint)
                                     .settings-row
-                                        +dropdown-required-empty('Cache:', '$item.Cache.cache', '"checkpointCacheCache"', 'true', CacheCheckpoint,
+                                        +dropdown-required-empty('Cache:', '$checkpointSPI.Cache.cache', '"checkpointCacheCache"', 'true', CacheCheckpoint,
                                             'Choose cache', 'No caches configured for current cluster', '$ctrl.cachesMenu', 'Cache to use for storing checkpoints')(
                                             pc-is-in-collection='$ctrl.clonedCluster.caches'
                                         )
                                             +form-field-feedback(form, 'isInCollection', `Cluster doesn't have such a cache`)
                                     .settings-row
-                                        +java-class('Listener:', '$item.Cache.checkpointListener', '"checkpointCacheListener"', 'true', 'false',
+                                        +java-class('Listener:', '$checkpointSPI.Cache.checkpointListener', '"checkpointCacheListener"', 'true', 'false',
                                             'Checkpoint listener implementation class name', CacheCheckpoint)
 
-                                div(ng-show='$item.kind === "S3"')
+                                div(ng-show='$checkpointSPI.kind === "S3"')
                                     include ./checkpoint/s3
 
-                                div(ng-show='$item.kind === "JDBC"')
+                                div(ng-show='$checkpointSPI.kind === "JDBC"')
                                     include ./checkpoint/jdbc
 
                                 .settings-row(ng-show=CustomCheckpoint)
-                                    +java-class('Class name:', '$item.Custom.className', '"checkpointCustomClassName"', 'true', CustomCheckpoint,
+                                    +java-class('Class name:', '$checkpointSPI.Custom.className', '"checkpointCustomClassName"', 'true', CustomCheckpoint,
                                     'Custom CheckpointSpi implementation class', CustomCheckpoint)
 
                             list-editable-no-items
