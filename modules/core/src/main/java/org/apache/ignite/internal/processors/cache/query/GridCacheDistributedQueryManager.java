@@ -519,7 +519,8 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
-    @Override public CacheQueryFuture<?> queryDistributed(GridCacheQueryBean qry, final Collection<ClusterNode> nodes) {
+    @Override public CacheQueryFuture<?> queryDistributed(GridCacheQueryBean qry, final Collection<ClusterNode> nodes,
+        final MvccCoordinator mvccCrd) {
         assert cctx.config().getCacheMode() != LOCAL;
 
         if (log.isDebugEnabled())
@@ -535,21 +536,8 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
 
             String clsName = qry.query().queryClassName();
 
-            // TODO IGNITE-6353
-            final MvccCoordinator mvccCrd;
-            final MvccVersion mvccVer;
 
-            if (cctx.mvccEnabled()) {
-                mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
-
-                IgniteInternalFuture<MvccVersion> fut0 = cctx.shared().coordinators().requestQueryCounter(mvccCrd);
-
-                mvccVer = fut0.get();
-            }
-            else {
-                mvccCrd = null;
-                mvccVer = null;
-            }
+            final MvccVersion mvccVer = qry.query().mvccVersion();
 
             final GridCacheQueryRequest req = new GridCacheQueryRequest(
                 cctx.cacheId(),
@@ -602,7 +590,7 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked", "serial"})
     @Override public GridCloseableIterator scanQueryDistributed(final GridCacheQueryAdapter qry,
-        Collection<ClusterNode> nodes) throws IgniteCheckedException {
+        Collection<ClusterNode> nodes, MvccCoordinator mvccCrd) throws IgniteCheckedException {
         assert !cctx.isLocal() : cctx.name();
         assert qry.type() == GridCacheQueryType.SCAN: qry;
 
@@ -610,7 +598,7 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
 
         for (ClusterNode node : nodes) {
             if (node.isLocal()) {
-                locIter0 = scanQueryLocal(qry, false);
+                locIter0 = scanQueryLocal(qry, false, mvccCrd);
 
                 Collection<ClusterNode> rmtNodes = new ArrayList<>(nodes.size() - 1);
 
@@ -630,7 +618,7 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
 
         final GridCacheQueryBean bean = new GridCacheQueryBean(qry, null, qry.<K, V>transform(), null);
 
-        final CacheQueryFuture fut = (CacheQueryFuture)queryDistributed(bean, nodes);
+        final CacheQueryFuture fut = queryDistributed(bean, nodes, mvccCrd);
 
         return new GridCloseableIteratorAdapter() {
             /** */

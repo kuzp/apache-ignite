@@ -480,9 +480,11 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
      *
      * @param qry Query.
      * @param nodes Nodes.
+     * @param mvccCrd Mvcc coordinator.
      * @return Query future.
      */
-    public abstract CacheQueryFuture<?> queryDistributed(GridCacheQueryBean qry, Collection<ClusterNode> nodes);
+    public abstract CacheQueryFuture<?> queryDistributed(GridCacheQueryBean qry, Collection<ClusterNode> nodes,
+        MvccCoordinator mvccCrd);
 
     /**
      * Executes distributed SCAN query.
@@ -490,10 +492,11 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
      * @param qry Query.
      * @param nodes Nodes.
      * @return Iterator.
+     * @param mvccCrd Mvcc coordinator.
      * @throws IgniteCheckedException If failed.
      */
     public abstract GridCloseableIterator scanQueryDistributed(GridCacheQueryAdapter qry,
-        Collection<ClusterNode> nodes) throws IgniteCheckedException;
+        Collection<ClusterNode> nodes, MvccCoordinator mvccCrd) throws IgniteCheckedException;
 
     /**
      * Loads page.
@@ -1404,7 +1407,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
      */
     @SuppressWarnings({"unchecked", "serial"})
     protected GridCloseableIterator scanQueryLocal(final GridCacheQueryAdapter qry,
-        boolean updateStatistics) throws IgniteCheckedException {
+        boolean updateStatistics, MvccCoordinator mvccCrd) throws IgniteCheckedException {
         if (!enterBusy())
             throw new IllegalStateException("Failed to process query request (grid is stopping).");
 
@@ -1443,19 +1446,6 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
                     subjId,
                     taskName));
             }
-
-            final MvccCoordinator mvccCrd;
-
-            // TODO IGNITE-6353
-            if (cctx.mvccEnabled()) {
-                mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
-
-                IgniteInternalFuture<MvccVersion> fut0 = cctx.shared().coordinators().requestQueryCounter(mvccCrd);
-
-                qry.mvccVersion(fut0.get());
-            }
-            else
-                mvccCrd = null;
 
             GridCloseableIterator it = scanIterator(qry, true, mvccCrd);
 

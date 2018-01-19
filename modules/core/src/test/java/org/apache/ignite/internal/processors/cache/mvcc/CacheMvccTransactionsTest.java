@@ -1904,13 +1904,11 @@ public class CacheMvccTransactionsTest extends CacheMvccAbstractTest {
     }
 
     /**
-     * TODO IGNITE-6353: enable when scan is fully implemented.
-     *
      * @throws Exception If failed
      */
-//    public void testOperationsSequenceConsistency_ClientServer_Backups0() throws Exception {
-//        operationsSequenceConsistency(4, 2, 0, 64);
-//    }
+    public void testOperationsSequenceConsistency_ClientServer_Backups0() throws Exception {
+        operationsSequenceConsistency(4, 2, 0, 64);
+    }
 
     /**
      * @param srvs Number of server nodes.

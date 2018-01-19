@@ -43,6 +43,7 @@ import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtUnreservedPartitionException;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinator;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.query.QueryUtils;
 import org.apache.ignite.internal.util.GridCloseableIteratorAdapter;
@@ -133,6 +134,9 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
     /** */
     private MvccVersion mvccVer;
+
+    /** */
+    private MvccCoordinator mvccCrd;
 
     /**
      * @param cctx Context.
@@ -273,6 +277,20 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
     @Nullable
     MvccVersion mvccVersion() {
         return mvccVer;
+    }
+
+    /**
+     * @return Mvcc coordinator.
+     */
+    MvccCoordinator mvccCoordinator() {
+        return mvccCrd;
+    }
+
+    /**
+     * @param mvccCrd Mvcc coordinator.
+     */
+    void mvccCoordinator(MvccCoordinator mvccCrd) {
+        this.mvccCrd = mvccCrd;
     }
 
     /**
@@ -531,7 +549,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
             return (CacheQueryFuture<R>)(loc ? qryMgr.queryFieldsLocal(bean) :
                 qryMgr.queryFieldsDistributed(bean, nodes));
         else
-            return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean, nodes));
+            return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean, nodes, null));
     }
 
     /** {@inheritDoc} */
@@ -560,15 +578,23 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
         final GridCacheQueryManager qryMgr = cctx.queries();
 
+        if (cctx.mvccEnabled() && mvccVer == null) {
+            mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
+
+            IgniteInternalFuture<MvccVersion> fut0 = cctx.shared().coordinators().requestQueryCounter(mvccCrd);
+
+            mvccVer = fut0.get();
+        }
+
         boolean loc = nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());
 
         if (loc)
-            return qryMgr.scanQueryLocal(this, true);
+            return qryMgr.scanQueryLocal(this, true, mvccCrd);
 
         if (part != null)
-            return new ScanQueryFallbackClosableIterator(part, this, qryMgr, cctx);
+            return new ScanQueryFallbackClosableIterator(part, this, qryMgr, cctx, mvccCrd);
         else
-            return qryMgr.scanQueryDistributed(this, nodes);
+            return qryMgr.scanQueryDistributed(this, nodes, mvccCrd);
     }
 
     /**
@@ -680,6 +706,12 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
         /** */
         private Object cur;
 
+        /** */
+        private MvccVersion mvccVer;
+
+        /** */
+        private MvccCoordinator mvccCrd;
+
         /**
          * @param part Partition.
          * @param qry Query.
@@ -687,11 +719,13 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
          * @param cctx Cache context.
          */
         private ScanQueryFallbackClosableIterator(int part, GridCacheQueryAdapter qry,
-            GridCacheQueryManager qryMgr, GridCacheContext cctx) {
+            GridCacheQueryManager qryMgr, GridCacheContext cctx, MvccCoordinator mvccCrd) {
             this.qry = qry;
             this.qryMgr = qryMgr;
             this.cctx = cctx;
             this.part = part;
+            this.mvccVer = qry.mvccVer;
+            this.mvccCrd = mvccCrd;
 
             nodes = fallbacks(cctx.shared().exchange().readyAffinityVersion());
 
@@ -739,7 +773,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
             if (node.isLocal()) {
                 try {
-                    GridCloseableIterator it = qryMgr.scanQueryLocal(qry, true);
+                    GridCloseableIterator it = qryMgr.scanQueryLocal(qry, true, mvccCrd);
 
                     tuple = new T2(it, null);
                 }
@@ -754,7 +788,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
                 final GridCacheQueryBean bean = new GridCacheQueryBean(qry, null, qry.transform, null);
 
                 GridCacheQueryFutureAdapter fut =
-                    (GridCacheQueryFutureAdapter)qryMgr.queryDistributed(bean, Collections.singleton(node));
+                    (GridCacheQueryFutureAdapter)qryMgr.queryDistributed(bean, Collections.singleton(node), mvccCrd);
 
                 tuple = new T2(null, fut);
             }
