@@ -165,8 +165,11 @@ export default class ModelEditFormController {
         if ('caches' in changes)
             this.cachesMenu = (changes.caches.currentValue || []).map((c) => ({label: c.name, value: c._id}));
     }
-    onQueryFieldsChange(queryFields) {
-        // this.keyFieldsOptions = this.fields('cur', this.keyFieldsOptions);
+    /**
+     * @param {ig.config.model.DomainModel} model
+     */
+    onQueryFieldsChange(model) {
+        this.$scope.backupItem = this.Models.removeInvalidFields(model);
     }
     getValuesToCompare() {
         return [this.model, this.$scope.backupItem].map(this.Models.normalize);

@@ -148,4 +148,23 @@ export default class Models {
             });
         }
     };
+
+    /**
+     * Removes instances of removed fields from queryKeyFields and index fields
+     * 
+     * @param {ig.config.model.DomainModel} model
+     * @returns {ig.config.model.DomainModel}
+     */
+    removeInvalidFields(model) {
+        if (!model) return model;
+        const fieldNames = new Set((model.fields || []).map((f) => f.name));
+        return {
+            ...model,
+            queryKeyFields: (model.queryKeyFields || []).filter((queryKeyField) => fieldNames.has(queryKeyField)),
+            indexes: (model.indexes || []).map((index) => ({
+                ...index,
+                fields: (index.fields || []).filter((indexField) => fieldNames.has(indexField.name))
+            }))
+        };
+    }
 }

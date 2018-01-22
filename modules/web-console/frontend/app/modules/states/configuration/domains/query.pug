@@ -61,7 +61,7 @@ include /app/helpers/jade/mixins
                                 list-editable(
                                     ng-model=items
                                     name='queryFields'
-                                    ng-change=`$ctrl.onQueryFieldsChange(${items})`
+                                    ng-change=`$ctrl.onQueryFieldsChange(${model})`
                                 )
                                     list-editable-item-view
                                         | {{ $item.name}} / {{ $item.className}}
