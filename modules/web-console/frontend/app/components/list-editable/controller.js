@@ -95,7 +95,10 @@ export default class {
         if (form.$pristine)
             return;
 
-        if (form.$valid)
+        // By default list-editable saves only valid values, but if you specify {allowInvalid: true}
+        // ng-model-option, then it will always save. Be careful and pay extra attention to validation
+        // when doing so, it's an easy way to miss invalid values this way.
+        if (this.ngModel.$options.getOption('allowInvalid') || form.$valid)
             this.save(data, idx);
         else
             this.revert(idx);
