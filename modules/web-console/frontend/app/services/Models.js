@@ -135,6 +135,17 @@ export default class Models {
         fieldsExist: ($value = [], fields = []) => {
             const names = new Set(fields.map((field) => field.name));
             return $value.every((index) => index.fields && index.fields.every((field) => names.has(field.name)));
+        },
+        /**
+         * Check if fields of query indexes have unique names
+         * @param {Array<ig.config.model.Index>} $value
+         */
+        indexFieldsHaveUniqueNames: ($value = []) => {
+            return $value.every((index) => {
+                if (!index.fields) return true;
+                const uniqueNames = new Set(index.fields.map((ec) => ec.name));
+                return uniqueNames.size === index.fields.length;
+            });
         }
     };
 }

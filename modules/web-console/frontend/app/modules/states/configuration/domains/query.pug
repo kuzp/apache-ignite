@@ -145,7 +145,8 @@ include /app/helpers/jade/mixins
                                 name='queryIndexes'
                                 ui-validate=`{
                                     complete: '$ctrl.Models.queryIndexes.complete($value)',
-                                    fieldsExist: '$ctrl.Models.queryIndexes.fieldsExist($value, ${queryFields})'
+                                    fieldsExist: '$ctrl.Models.queryIndexes.fieldsExist($value, ${queryFields})',
+                                    indexFieldsHaveUniqueNames: '$ctrl.Models.queryIndexes.indexFieldsHaveUniqueNames($value)'
                                 }`
                                 ui-validate-watch=`"[${queryIndexes}, ${queryFields}]"`
                                 ui-validate-watch-object-equality='true'
@@ -187,6 +188,7 @@ include /app/helpers/jade/mixins
                                                 .ignite-form-field__control
                                                     list-editable(
                                                         ng-model='queryIndex.fields'
+                                                        ng-model-options='{allowInvalid: true}'
                                                         name='indexFields'
                                                         ng-required='true'
                                                     )
@@ -247,6 +249,7 @@ include /app/helpers/jade/mixins
                         )
                             +form-field-feedback(_, 'complete', 'Some indexes are incomplete')
                             +form-field-feedback(_, 'fieldsExist', 'Some indexes use unknown fields')
+                            +form-field-feedback(_, 'indexFieldsHaveUniqueNames', 'Each query index field name should be unique')
 
             .pca-form-column-6
                 +preview-xml-java(model, 'domainModelQuery')

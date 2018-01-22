@@ -100,7 +100,8 @@ include /app/helpers/jade/mixins
                                 ng-model-options='{allowInvalid: true}'
                                 name='executorConfigurations'
                                 ui-validate=`{
-                                    allNamesExist: '$ctrl.Clusters.executorConfigurations.allNamesExist($value)'
+                                    allNamesExist: '$ctrl.Clusters.executorConfigurations.allNamesExist($value)',
+                                    allNamesUnique: '$ctrl.Clusters.executorConfigurations.allNamesUnique($value)'
                                 }`
                             )
                                 list-editable-item-view
@@ -141,6 +142,7 @@ include /app/helpers/jade/mixins
                             ng-show=`pools.executorConfigurations.$invalid`
                         )
                             +form-field-feedback(_, 'allNamesExist', 'All executor configurations should have a name')
+                            +form-field-feedback(_, 'allNamesUnique', 'All executor configurations should have a unique name')
 
             .pca-form-column-6
                 +preview-xml-java(model, 'clusterPools')

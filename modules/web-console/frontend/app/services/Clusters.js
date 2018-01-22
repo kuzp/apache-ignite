@@ -518,6 +518,10 @@ export default class Clusters {
     executorConfigurations = {
         allNamesExist: (executorConfigurations = []) => {
             return executorConfigurations.every((ec) => ec && ec.name);
+        },
+        allNamesUnique: (executorConfigurations = []) => {
+            const uniqueNames = new Set(executorConfigurations.map((ec) => ec.name));
+            return uniqueNames.size === executorConfigurations.length;
         }
     };
 
