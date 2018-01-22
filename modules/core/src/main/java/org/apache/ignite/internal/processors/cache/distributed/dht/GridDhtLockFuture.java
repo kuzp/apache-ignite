@@ -511,7 +511,7 @@ public final class GridDhtLockFuture extends GridCacheCompoundIdentityFuture<Boo
                 return;
             }
 
-            U.warn(msgLog, "DHT lock fut, failed to find mini future [txId=" + nearLockVer +
+            U.warn(msgLog, "DHT lock fut, failed to find mini future [threadId=" + nearLockVer +
                 ", dhtTxId=" + lockVer +
                 ", inTx=" + inTx() +
                 ", node=" + nodeId +
@@ -936,7 +936,7 @@ public final class GridDhtLockFuture extends GridCacheCompoundIdentityFuture<Boo
                             cctx.io().send(n, req, cctx.ioPolicy());
 
                             if (msgLog.isDebugEnabled()) {
-                                msgLog.debug("DHT lock fut, sent request [txId=" + nearLockVer +
+                                msgLog.debug("DHT lock fut, sent request [threadId=" + nearLockVer +
                                     ", dhtTxId=" + lockVer +
                                     ", inTx=" + inTx() +
                                     ", nodeId=" + n.id() + ']');
@@ -949,7 +949,7 @@ public final class GridDhtLockFuture extends GridCacheCompoundIdentityFuture<Boo
                             fut.onResult();
                         else {
                             if (msgLog.isDebugEnabled()) {
-                                msgLog.debug("DHT lock fut, failed to send request [txId=" + nearLockVer +
+                                msgLog.debug("DHT lock fut, failed to send request [threadId=" + nearLockVer +
                                     ", dhtTxId=" + lockVer +
                                     ", inTx=" + inTx() +
                                     ", node=" + n.id() +
@@ -1195,7 +1195,7 @@ public final class GridDhtLockFuture extends GridCacheCompoundIdentityFuture<Boo
          */
         void onResult() {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT lock fut, mini future node left [txId=" + nearLockVer +
+                msgLog.debug("DHT lock fut, mini future node left [threadId=" + nearLockVer +
                     ", dhtTxId=" + lockVer +
                     ", inTx=" + inTx() +
                     ", node=" + node.id() + ']');

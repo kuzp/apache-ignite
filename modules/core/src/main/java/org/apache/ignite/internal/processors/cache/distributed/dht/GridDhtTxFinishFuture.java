@@ -199,7 +199,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
 
             if (!found) {
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT finish fut, failed to find mini future [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT finish fut, failed to find mini future [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + nodeId +
                         ", res=" + res +
@@ -209,7 +209,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
         }
         else {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT finish fut, failed to find mini future [txId=" + tx.nearXidVersion() +
+                msgLog.debug("DHT finish fut, failed to find mini future [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + nodeId +
                     ", res=" + res +
@@ -353,7 +353,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                 cctx.io().send(n, req, tx.ioPolicy());
 
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT finish fut, sent request lock tx [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT finish fut, sent request lock tx [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + n.id() + ']');
                 }
@@ -369,7 +369,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                     fut.onNodeLeft((ClusterTopologyCheckedException)e);
                 else {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT finish fut, failed to send request lock tx [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT finish fut, failed to send request lock tx [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + n.id() +
                             ", err=" + e + ']');
@@ -458,7 +458,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                 cctx.io().send(n, req, tx.ioPolicy());
 
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT finish fut, sent request dht [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT finish fut, sent request dht [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + n.id() + ']');
                 }
@@ -474,7 +474,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                     fut.onNodeLeft((ClusterTopologyCheckedException)e);
                 else {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT finish fut, failed to send request dht [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT finish fut, failed to send request dht [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + n.id() +
                             ", err=" + e + ']');
@@ -527,7 +527,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                     cctx.io().send(nearMapping.primary(), req, tx.ioPolicy());
 
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT finish fut, sent request near [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT finish fut, sent request near [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nearMapping.primary().id() + ']');
                     }
@@ -543,7 +543,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
                         fut.onNodeLeft((ClusterTopologyCheckedException)e);
                     else {
                         if (msgLog.isDebugEnabled()) {
-                            msgLog.debug("DHT finish fut, failed to send request near [txId=" + tx.nearXidVersion() +
+                            msgLog.debug("DHT finish fut, failed to send request near [threadId=" + tx.nearXidVersion() +
                                 ", dhtTxId=" + tx.xidVersion() +
                                 ", node=" + nearMapping.primary().id() +
                                 ", err=" + e + ']');
@@ -681,7 +681,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCacheCompoundIdentity
          */
         void onNodeLeft() {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT finish fut, mini future node left [txId=" + tx.nearXidVersion() +
+                msgLog.debug("DHT finish fut, mini future node left [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + node().id() + ']');
             }

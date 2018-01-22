@@ -67,6 +67,7 @@ import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.marshaller.Marshaller;
 import org.apache.ignite.plugin.PluginProvider;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 
@@ -929,7 +930,7 @@ public class GridCacheSharedContext<K, V> {
      * @return Not null topology version if current thread holds lock preventing topology change.
      */
     @Nullable public AffinityTopologyVersion lockedTopologyVersion(IgniteInternalTx ignore) {
-        long threadId = Thread.currentThread().getId();
+        long threadId = TransactionPlugin.threadId();
 
         AffinityTopologyVersion topVer = txMgr.lockedTopologyVersion(threadId, ignore);
 

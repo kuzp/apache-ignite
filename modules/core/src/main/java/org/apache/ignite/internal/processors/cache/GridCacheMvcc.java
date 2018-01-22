@@ -37,6 +37,7 @@ import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -1188,7 +1189,7 @@ public final class GridCacheMvcc {
      * @return Removed candidate.
      */
     @Nullable public GridCacheMvccCandidate releaseLocal() {
-        return releaseLocal(Thread.currentThread().getId());
+        return releaseLocal(TransactionPlugin.threadId());
     }
 
     /**

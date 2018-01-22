@@ -72,6 +72,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionDeadlockException;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.jetbrains.annotations.Nullable;
@@ -227,7 +228,7 @@ public final class GridNearLockFuture extends GridCacheCompoundIdentityFuture<Bo
 
         ignoreInterrupts();
 
-        threadId = tx == null ? Thread.currentThread().getId() : tx.threadId();
+        threadId = tx == null ? TransactionPlugin.threadId() : tx.threadId();
 
         lockVer = tx != null ? tx.xidVersion() : cctx.versions().next();
 
@@ -814,7 +815,7 @@ public final class GridNearLockFuture extends GridCacheCompoundIdentityFuture<Bo
         assert added : this;
 
         // Obtain the topology version to use.
-        long threadId = Thread.currentThread().getId();
+        long threadId = TransactionPlugin.threadId();
 
         AffinityTopologyVersion topVer = cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
 

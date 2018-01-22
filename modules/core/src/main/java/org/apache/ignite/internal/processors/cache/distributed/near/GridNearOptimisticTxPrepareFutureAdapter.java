@@ -30,6 +30,7 @@ import org.apache.ignite.internal.util.lang.GridPlainRunnable;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -49,7 +50,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
     /** {@inheritDoc} */
     @Override public final void prepare() {
         // Obtain the topology version to use.
-        long threadId = Thread.currentThread().getId();
+        long threadId = TransactionPlugin.threadId();
 
         AffinityTopologyVersion topVer = cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
 

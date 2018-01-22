@@ -406,7 +406,7 @@ public class TxOptimisticDeadlockDetectionTest extends AbstractDeadlockDetection
 
         for (IgniteInternalTx tx : involvedTxs)
             assertTrue(msg.contains(
-                "[txId=" + tx.xidVersion() + ", nodeId=" + tx.nodeId() + ", threadId=" + tx.threadId() + ']'));
+                "[threadId=" + tx.xidVersion() + ", nodeId=" + tx.nodeId() + ", threadId=" + tx.threadId() + ']'));
 
         for (Object key : involvedKeys) {
             if (involvedLockedKeys.contains(key))

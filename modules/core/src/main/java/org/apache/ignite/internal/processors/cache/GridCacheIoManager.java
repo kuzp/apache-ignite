@@ -618,7 +618,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
      */
     private StringBuilder appendMessageInfo(GridCacheMessage cacheMsg, UUID nodeId, StringBuilder builder) {
         if (txId(cacheMsg) != null) {
-            builder.append("txId=").append(txId(cacheMsg)).
+            builder.append("threadId=").append(txId(cacheMsg)).
                 append(", dhtTxId=").append(dhtTxId(cacheMsg)).
                 append(", msg=").append(cacheMsg);
         }

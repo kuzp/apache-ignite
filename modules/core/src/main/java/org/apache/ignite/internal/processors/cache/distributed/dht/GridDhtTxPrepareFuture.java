@@ -531,7 +531,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
     public void onResult(UUID nodeId, GridDhtTxPrepareResponse res) {
         if (isDone()) {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT prepare fut, response for finished future [txId=" + tx.nearXidVersion() +
+                msgLog.debug("DHT prepare fut, response for finished future [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + nodeId +
                     ", res=" + res +
@@ -550,7 +550,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
         }
         else {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT prepare fut, failed to find mini future [txId=" + tx.nearXidVersion() +
+                msgLog.debug("DHT prepare fut, failed to find mini future [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + nodeId +
                     ", res=" + res +
@@ -816,7 +816,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
 
             if (err != null && err instanceof IgniteFutureCancelledException) {
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT prepare fut, skip send response [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT prepare fut, skip send response [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + tx.nearNodeId() +
                         ", err=" + err +
@@ -830,7 +830,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 cctx.io().send(tx.nearNodeId(), res, tx.ioPolicy());
 
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT prepare fut, sent response [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT prepare fut, sent response [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + tx.nearNodeId() +
                         ", res=" + res + ']');
@@ -838,14 +838,14 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
             }
             catch (ClusterTopologyCheckedException e) {
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("Failed to send prepare response, node left [txId=" + tx.nearXidVersion() + "," +
+                    msgLog.debug("Failed to send prepare response, node left [threadId=" + tx.nearXidVersion() + "," +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + tx.nearNodeId() +
                         ", res=" + res + ']');
                 }
             }
             catch (IgniteCheckedException e) {
-                U.error(msgLog, "Failed to send prepare response [txId=" + tx.nearXidVersion() + "," +
+                U.error(msgLog, "Failed to send prepare response [threadId=" + tx.nearXidVersion() + "," +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + tx.nearNodeId() +
                     ", res=" + res,
@@ -1376,7 +1376,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 cctx.io().send(n, req, tx.ioPolicy());
 
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("DHT prepare fut, sent request dht [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("DHT prepare fut, sent request dht [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + n.id() + ']');
                 }
@@ -1387,7 +1387,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
             catch (IgniteCheckedException e) {
                 if (!cctx.kernalContext().isStopping()) {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT prepare fut, failed to send request dht [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT prepare fut, failed to send request dht [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + n.id() + ']');
                     }
@@ -1396,7 +1396,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 }
                 else {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT prepare fut, failed to send request dht, ignore [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT prepare fut, failed to send request dht, ignore [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + n.id() +
                             ", err=" + e + ']');
@@ -1460,7 +1460,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                     cctx.io().send(nearMapping.primary(), req, tx.ioPolicy());
 
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("DHT prepare fut, sent request near [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("DHT prepare fut, sent request near [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nearMapping.primary().id() + ']');
                     }
@@ -1471,7 +1471,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 catch (IgniteCheckedException e) {
                     if (!cctx.kernalContext().isStopping()) {
                         if (msgLog.isDebugEnabled()) {
-                            msgLog.debug("DHT prepare fut, failed to send request near [txId=" + tx.nearXidVersion() +
+                            msgLog.debug("DHT prepare fut, failed to send request near [threadId=" + tx.nearXidVersion() +
                                 ", dhtTxId=" + tx.xidVersion() +
                                 ", node=" + nearMapping.primary().id() + ']');
                         }
@@ -1480,7 +1480,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                     }
                     else {
                         if (msgLog.isDebugEnabled()) {
-                            msgLog.debug("DHT prepare fut, failed to send request near, ignore [txId=" + tx.nearXidVersion() +
+                            msgLog.debug("DHT prepare fut, failed to send request near, ignore [threadId=" + tx.nearXidVersion() +
                                 ", dhtTxId=" + tx.xidVersion() +
                                 ", node=" + nearMapping.primary().id() +
                                 ", err=" + e + ']');
@@ -1736,7 +1736,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
          */
         void onNodeLeft() {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("DHT prepare fut, mini future node left [txId=" + tx.nearXidVersion() +
+                msgLog.debug("DHT prepare fut, mini future node left [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + node().id() + ']');
             }

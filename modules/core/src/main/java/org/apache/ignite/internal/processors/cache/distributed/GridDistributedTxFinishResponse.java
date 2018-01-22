@@ -164,7 +164,7 @@ public class GridDistributedTxFinishResponse extends GridCacheMessage {
                 writer.incrementState();
 
             case 5:
-                if (!writer.writeMessage("txId", txId))
+                if (!writer.writeMessage("threadId", txId))
                     return false;
 
                 writer.incrementState();
@@ -210,7 +210,7 @@ public class GridDistributedTxFinishResponse extends GridCacheMessage {
                 reader.incrementState();
 
             case 5:
-                txId = reader.readMessage("txId");
+                txId = reader.readMessage("threadId");
 
                 if (!reader.isLastRead())
                     return false;

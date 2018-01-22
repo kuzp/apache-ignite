@@ -575,20 +575,20 @@ public class GridDhtTxLocal extends GridDhtTxLocalAdapter implements GridCacheMa
                 cctx.io().send(nearNodeId, res, ioPolicy());
 
                 if (cctx.txFinishMessageLogger().isDebugEnabled()) {
-                    cctx.txFinishMessageLogger().debug("Sent near finish response [txId=" + nearXidVersion() +
+                    cctx.txFinishMessageLogger().debug("Sent near finish response [threadId=" + nearXidVersion() +
                         ", dhtTxId=" + xidVersion() +
                         ", node=" + nearNodeId + ']');
                 }
             }
             catch (ClusterTopologyCheckedException ignored) {
                 if (cctx.txFinishMessageLogger().isDebugEnabled()) {
-                    cctx.txFinishMessageLogger().debug("Failed to send near finish response, node left [txId=" + nearXidVersion() +
+                    cctx.txFinishMessageLogger().debug("Failed to send near finish response, node left [threadId=" + nearXidVersion() +
                         ", dhtTxId=" + xidVersion() +
                         ", node=" + nearNodeId() + ']');
                 }
             }
             catch (Throwable ex) {
-                U.error(log, "Failed to send finish response to node [txId=" + nearXidVersion() +
+                U.error(log, "Failed to send finish response to node [threadId=" + nearXidVersion() +
                     ", txState=" + state() +
                     ", dhtTxId=" + xidVersion() +
                     ", node=" + nearNodeId +
@@ -601,7 +601,7 @@ public class GridDhtTxLocal extends GridDhtTxLocalAdapter implements GridCacheMa
         else {
             if (cctx.txFinishMessageLogger().isDebugEnabled()) {
                 cctx.txFinishMessageLogger().debug("Will not send finish reply because sender node has not sent finish " +
-                    "request yet [txId=" + nearXidVersion() +
+                    "request yet [threadId=" + nearXidVersion() +
                     ", dhtTxId=" + xidVersion() +
                     ", node=" + nearNodeId() + ']');
             }

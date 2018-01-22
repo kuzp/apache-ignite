@@ -81,6 +81,7 @@ import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionState;
@@ -313,7 +314,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
 
         nodeId = cctx.discovery().localNode().id();
 
-        threadId = Thread.currentThread().getId();
+        threadId = TransactionPlugin.threadId();
 
         if (log == null)
             log = U.logger(cctx.kernalContext(), logRef, this);
@@ -492,7 +493,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
 
         if (res.equals(AffinityTopologyVersion.NONE)) {
             if (system()) {
-                AffinityTopologyVersion topVer = cctx.tm().lockedTopologyVersion(Thread.currentThread().getId(), this);
+                AffinityTopologyVersion topVer = cctx.tm().lockedTopologyVersion(TransactionPlugin.threadId(), this);
 
                 if (topVer != null)
                     return topVer;

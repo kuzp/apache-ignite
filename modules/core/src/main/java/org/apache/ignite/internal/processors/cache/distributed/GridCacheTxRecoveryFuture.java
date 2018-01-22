@@ -180,7 +180,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                     cctx.io().send(nearNodeId, req, tx.ioPolicy());
 
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("Recovery fut, sent request near tx [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("Recovery fut, sent request near tx [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nearNodeId + ']');
                     }
@@ -190,7 +190,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                 }
                 catch (IgniteCheckedException e) {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("Recovery fut, failed to send request near tx [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("Recovery fut, failed to send request near tx [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nearNodeId +
                             ", err=" + e + ']');
@@ -299,7 +299,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                         cctx.io().send(id, req, tx.ioPolicy());
 
                         if (msgLog.isDebugEnabled()) {
-                            msgLog.debug("Recovery fut, sent request to backup [txId=" + tx.nearXidVersion() +
+                            msgLog.debug("Recovery fut, sent request to backup [threadId=" + tx.nearXidVersion() +
                                 ", dhtTxId=" + tx.xidVersion() +
                                 ", node=" + id + ']');
                         }
@@ -309,7 +309,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                     }
                     catch (IgniteCheckedException e) {
                         if (msgLog.isDebugEnabled()) {
-                            msgLog.debug("Recovery fut, failed to send request to backup [txId=" + tx.nearXidVersion() +
+                            msgLog.debug("Recovery fut, failed to send request to backup [threadId=" + tx.nearXidVersion() +
                                 ", dhtTxId=" + tx.xidVersion() +
                                 ", node=" + id +
                                 ", err=" + e + ']');
@@ -338,7 +338,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                     cctx.io().send(nodeId, req, tx.ioPolicy());
 
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("Recovery fut, sent request to primary [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("Recovery fut, sent request to primary [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nodeId + ']');
                     }
@@ -348,7 +348,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
                 }
                 catch (IgniteCheckedException e) {
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("Recovery fut, failed to send request to primary [txId=" + tx.nearXidVersion() +
+                        msgLog.debug("Recovery fut, failed to send request to primary [threadId=" + tx.nearXidVersion() +
                             ", dhtTxId=" + tx.xidVersion() +
                             ", node=" + nodeId +
                             ", err=" + e + ']');
@@ -399,7 +399,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
             }
             else {
                 if (msgLog.isDebugEnabled()) {
-                    msgLog.debug("Tx recovery fut, failed to find mini future [txId=" + tx.nearXidVersion() +
+                    msgLog.debug("Tx recovery fut, failed to find mini future [threadId=" + tx.nearXidVersion() +
                         ", dhtTxId=" + tx.xidVersion() +
                         ", node=" + nodeId +
                         ", res=" + res +
@@ -408,7 +408,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
             }
         }
         else {
-            msgLog.debug("Tx recovery fut, response for finished future [txId=" + tx.nearXidVersion() +
+            msgLog.debug("Tx recovery fut, response for finished future [threadId=" + tx.nearXidVersion() +
                 ", dhtTxId=" + tx.xidVersion() +
                 ", node=" + nodeId +
                 ", res=" + res +
@@ -588,7 +588,7 @@ public class GridCacheTxRecoveryFuture extends GridCacheCompoundIdentityFuture<B
          */
         private void onNodeLeft(UUID nodeId) {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("Tx recovery fut, mini future node left [txId=" + tx.nearXidVersion() +
+                msgLog.debug("Tx recovery fut, mini future node left [threadId=" + tx.nearXidVersion() +
                     ", dhtTxId=" + tx.xidVersion() +
                     ", node=" + nodeId +
                     ", nearTxCheck=" + nearTxCheck + ']');

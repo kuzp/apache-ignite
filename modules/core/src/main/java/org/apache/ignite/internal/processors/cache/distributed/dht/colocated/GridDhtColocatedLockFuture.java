@@ -76,6 +76,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionDeadlockException;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.jetbrains.annotations.Nullable;
@@ -225,7 +226,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
 
         ignoreInterrupts();
 
-        threadId = tx == null ? Thread.currentThread().getId() : tx.threadId();
+        threadId = tx == null ? TransactionPlugin.threadId(): tx.threadId();
 
         lockVer = tx != null ? tx.xidVersion() : cctx.versions().next();
 
@@ -450,7 +451,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
                 return;
             }
 
-            U.warn(msgLog, "Collocated lock fut, failed to find mini future [txId=" + lockVer +
+            U.warn(msgLog, "Collocated lock fut, failed to find mini future [threadId=" + lockVer +
                 ", inTx=" + inTx() +
                 ", node=" + nodeId +
                 ", res=" + res +
@@ -458,7 +459,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
         }
         else {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("Collocated lock fut, response for finished future [txId=" + lockVer +
+                msgLog.debug("Collocated lock fut, response for finished future [threadId=" + lockVer +
                     ", inTx=" + inTx() +
                     ", node=" + nodeId + ']');
             }
@@ -723,7 +724,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
 
         // If there is another system transaction in progress, use it's topology version to prevent deadlock.
         if (topVer == null && tx != null && tx.system())
-            topVer = cctx.tm().lockedTopologyVersion(Thread.currentThread().getId(), tx);
+            topVer = cctx.tm().lockedTopologyVersion(TransactionPlugin.threadId(), tx);
 
         if (topVer != null && tx != null)
             tx.topologyVersion(topVer);
@@ -1155,7 +1156,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
                     cctx.io().send(node, req, cctx.ioPolicy());
 
                     if (msgLog.isDebugEnabled()) {
-                        msgLog.debug("Collocated lock fut, sent request [txId=" + lockVer +
+                        msgLog.debug("Collocated lock fut, sent request [threadId=" + lockVer +
                             ", inTx=" + inTx() +
                             ", node=" + node.id() + ']');
                     }
@@ -1173,7 +1174,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
                             cctx.io().send(node, req, cctx.ioPolicy());
 
                             if (msgLog.isDebugEnabled()) {
-                                msgLog.debug("Collocated lock fut, sent request [txId=" + lockVer +
+                                msgLog.debug("Collocated lock fut, sent request [threadId=" + lockVer +
                                     ", inTx=" + inTx() +
                                     ", node=" + node.id() + ']');
                             }
@@ -1185,7 +1186,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
                         }
                         catch (IgniteCheckedException e) {
                             if (msgLog.isDebugEnabled()) {
-                                msgLog.debug("Collocated lock fut, failed to send request [txId=" + lockVer +
+                                msgLog.debug("Collocated lock fut, failed to send request [threadId=" + lockVer +
                                     ", inTx=" + inTx() +
                                     ", node=" + node.id() +
                                     ", err=" + e + ']');
@@ -1539,7 +1540,7 @@ public final class GridDhtColocatedLockFuture extends GridCacheCompoundIdentityF
          */
         void onResult(ClusterTopologyCheckedException e) {
             if (msgLog.isDebugEnabled()) {
-                msgLog.debug("Collocated lock fut, mini future node left [txId=" + lockVer +
+                msgLog.debug("Collocated lock fut, mini future node left [threadId=" + lockVer +
                     ", inTx=" + inTx() +
                     ", nodeId=" + node.id() + ']');
             }

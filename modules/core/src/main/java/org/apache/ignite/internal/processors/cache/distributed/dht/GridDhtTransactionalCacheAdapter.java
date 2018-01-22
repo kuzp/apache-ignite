@@ -388,7 +388,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
      */
     private void processDhtLockRequest(final UUID nodeId, final GridDhtLockRequest req) {
         if (txLockMsgLog.isDebugEnabled()) {
-            txLockMsgLog.debug("Received dht lock request [txId=" + req.nearXidVersion() +
+            txLockMsgLog.debug("Received dht lock request [threadId=" + req.nearXidVersion() +
                 ", dhtTxId=" + req.version() +
                 ", inTx=" + req.inTx() +
                 ", node=" + nodeId + ']');
@@ -544,7 +544,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
                 ctx.io().send(nodeId, res, ctx.ioPolicy());
 
                 if (txLockMsgLog.isDebugEnabled()) {
-                    txLockMsgLog.debug("Sent dht lock response [txId=" + req.nearXidVersion() +
+                    txLockMsgLog.debug("Sent dht lock response [threadId=" + req.nearXidVersion() +
                         ", dhtTxId=" + req.version() +
                         ", inTx=" + req.inTx() +
                         ", node=" + nodeId + ']');
@@ -552,7 +552,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
             }
             catch (ClusterTopologyCheckedException ignored) {
                 U.warn(txLockMsgLog, "Failed to send dht lock response, node failed [" +
-                    "txId=" + req.nearXidVersion() +
+                    "threadId=" + req.nearXidVersion() +
                     ", dhtTxId=" + req.version() +
                     ", inTx=" + req.inTx() +
                     ", node=" + nodeId + ']');
@@ -562,7 +562,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
             }
             catch (IgniteCheckedException e) {
                 U.error(txLockMsgLog, "Failed to send dht lock response (lock will not be acquired) " +
-                    "txId=" + req.nearXidVersion() +
+                    "threadId=" + req.nearXidVersion() +
                     ", dhtTxId=" + req.version() +
                     ", inTx=" + req.inTx() +
                     ", node=" + nodeId + ']', e);
@@ -631,7 +631,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
         assert req != null;
 
         if (txLockMsgLog.isDebugEnabled()) {
-            txLockMsgLog.debug("Received near lock request [txId=" + req.version() +
+            txLockMsgLog.debug("Received near lock request [threadId=" + req.version() +
                 ", inTx=" + req.inTx() +
                 ", node=" + nodeId + ']');
         }
@@ -639,7 +639,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
         ClusterNode nearNode = ctx.discovery().node(nodeId);
 
         if (nearNode == null) {
-            U.warn(txLockMsgLog, "Received near lock request from unknown node (will ignore) [txId=" + req.version() +
+            U.warn(txLockMsgLog, "Received near lock request from unknown node (will ignore) [threadId=" + req.version() +
                 ", inTx=" + req.inTx() +
                 ", node=" + nodeId + ']');
 
@@ -729,14 +729,14 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
 
         if (fut == null) {
             if (txLockMsgLog.isDebugEnabled())
-                txLockMsgLog.debug("Received dht lock response for unknown future [txId=null" +
+                txLockMsgLog.debug("Received dht lock response for unknown future [threadId=null" +
                     ", dhtTxId=" + res.version() +
                     ", node=" + nodeId + ']');
 
             return;
         }
         else if (txLockMsgLog.isDebugEnabled()) {
-            txLockMsgLog.debug("Received dht lock response [txId=" + fut.nearLockVersion() +
+            txLockMsgLog.debug("Received dht lock response [threadId=" + fut.nearLockVersion() +
                 ", dhtTxId=" + res.version() +
                 ", node=" + nodeId + ']');
         }
@@ -1393,14 +1393,14 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
                 ctx.io().send(nearNode, res, ctx.ioPolicy());
 
                 if (txLockMsgLog.isDebugEnabled()) {
-                    txLockMsgLog.debug("Sent near lock response [txId=" + req.version() +
+                    txLockMsgLog.debug("Sent near lock response [threadId=" + req.version() +
                         ", inTx=" + req.inTx() +
                         ", node=" + nearNode.id() + ']');
                 }
             }
             else {
                 if (txLockMsgLog.isDebugEnabled() && !nearNode.id().equals(ctx.nodeId())) {
-                    txLockMsgLog.debug("Skip send near lock response [txId=" + req.version() +
+                    txLockMsgLog.debug("Skip send near lock response [threadId=" + req.version() +
                         ", inTx=" + req.inTx() +
                         ", node=" + nearNode.id() +
                         ", err=" + err + ']');
@@ -1409,7 +1409,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
         }
         catch (IgniteCheckedException e) {
             U.error(txLockMsgLog, "Failed to send near lock response (will rollback transaction) [" +
-                "txId=" + req.version() +
+                "threadId=" + req.version() +
                 ", inTx=" + req.inTx() +
                 ", node=" + nearNode.id() +
                 ", res=" + res + ']', e);

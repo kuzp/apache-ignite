@@ -123,7 +123,7 @@ public class TxDeadlock {
         for (Map.Entry<GridCacheVersion, String> e : txLabels.entrySet()) {
             T2<UUID, Long> tx = txs.get(e.getKey());
 
-            sb.append(e.getValue()).append(" [txId=").append(e.getKey())
+            sb.append(e.getValue()).append(" [threadId=").append(e.getKey())
                 .append(", nodeId=").append(tx.get1()).append(", threadId=").append(tx.get2())
                 .append("]\n");
         }

@@ -155,7 +155,7 @@ public class TxLock implements Message {
                 writer.incrementState();
 
             case 3:
-                if (!writer.writeMessage("txId", txId))
+                if (!writer.writeMessage("threadId", txId))
                     return false;
 
                 writer.incrementState();
@@ -198,7 +198,7 @@ public class TxLock implements Message {
                 reader.incrementState();
 
             case 3:
-                txId = reader.readMessage("txId");
+                txId = reader.readMessage("threadId");
 
                 if (!reader.isLastRead())
                     return false;

@@ -39,6 +39,7 @@ import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.lang.IgniteBiTuple;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_READ;
@@ -655,7 +656,7 @@ public class GridNearCacheEntry extends GridDistributedCacheEntry {
 
                 boolean emptyBefore = mvcc.isEmpty();
 
-                cand = mvcc.localCandidate(locId, Thread.currentThread().getId());
+                cand = mvcc.localCandidate(locId, TransactionPlugin.threadId());
 
                 assert cand == null || cand.nearLocal();
 

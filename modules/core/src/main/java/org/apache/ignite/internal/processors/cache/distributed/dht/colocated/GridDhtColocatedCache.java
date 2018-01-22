@@ -73,6 +73,7 @@ import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.plugin.security.SecurityPermission;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.jetbrains.annotations.Nullable;
@@ -168,7 +169,7 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
     @Override public boolean isLockedByThread(K key) {
         KeyCacheObject cacheKey = ctx.toCacheKeyObject(key);
 
-        return ctx.mvcc().isLockedByThread(ctx.txKey(cacheKey), Thread.currentThread().getId());
+        return ctx.mvcc().isLockedByThread(ctx.txKey(cacheKey), TransactionPlugin.threadId());
     }
 
     /** {@inheritDoc} */
@@ -676,7 +677,7 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
                 GridDistributedCacheEntry entry = peekExx(cacheKey);
 
                 GridCacheMvccCandidate lock =
-                    ctx.mvcc().removeExplicitLock(Thread.currentThread().getId(), txKey, null);
+                    ctx.mvcc().removeExplicitLock(TransactionPlugin.threadId(), txKey, null);
 
                 if (lock != null) {
                     final AffinityTopologyVersion topVer = lock.topologyVersion();
@@ -1098,7 +1099,7 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
      */
     private void processLockResponse(UUID nodeId, GridNearLockResponse res) {
         if (txLockMsgLog.isDebugEnabled())
-            txLockMsgLog.debug("Received near lock response [txId=" + res.version() + ", node=" + nodeId + ']');
+            txLockMsgLog.debug("Received near lock response [threadId=" + res.version() + ", node=" + nodeId + ']');
 
         assert nodeId != null;
         assert res != null;
@@ -1110,7 +1111,7 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
             fut.onResult(nodeId, res);
         else {
             if (txLockMsgLog.isDebugEnabled()) {
-                txLockMsgLog.debug("Received near lock response for unknown future [txId=" + res.version() +
+                txLockMsgLog.debug("Received near lock response for unknown future [threadId=" + res.version() +
                     ", node=" + nodeId +
                     ", res=" + res + ']');
             }

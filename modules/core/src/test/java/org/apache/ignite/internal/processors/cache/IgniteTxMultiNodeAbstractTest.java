@@ -306,7 +306,7 @@ public abstract class IgniteTxMultiNodeAbstractTest extends GridCommonAbstractTe
 
                 if (DEBUG)
                     ignite.log().info("Before executing query [retry=" + retry + ", locId=" + locId +
-                        ", txId=" + tx.xid() + ']');
+                        ", threadId=" + tx.xid() + ']');
 
                 Cache.Entry<String, Integer> entry = F.first(cache.query(qry).getAll());
 

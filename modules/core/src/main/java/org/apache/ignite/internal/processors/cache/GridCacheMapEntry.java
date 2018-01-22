@@ -77,6 +77,7 @@ import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_EXPIRED;
@@ -3008,7 +3009,7 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
     /** {@inheritDoc} */
     @Override public boolean lockedByThread() throws GridCacheEntryRemovedException {
-        return lockedByThread(Thread.currentThread().getId());
+        return lockedByThread(TransactionPlugin.threadId());
     }
 
     /** {@inheritDoc} */

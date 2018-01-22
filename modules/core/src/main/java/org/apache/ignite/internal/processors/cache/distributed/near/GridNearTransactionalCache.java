@@ -53,6 +53,7 @@ import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.plugin.security.SecurityPermission;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.jetbrains.annotations.Nullable;
@@ -524,7 +525,7 @@ public class GridNearTransactionalCache<K, V> extends GridNearCacheAdapter<K, V>
                         break; // While.
 
                     try {
-                        GridCacheMvccCandidate cand = entry.candidate(ctx.nodeId(), Thread.currentThread().getId());
+                        GridCacheMvccCandidate cand = entry.candidate(ctx.nodeId(), TransactionPlugin.threadId());
 
                         AffinityTopologyVersion topVer = AffinityTopologyVersion.NONE;
 

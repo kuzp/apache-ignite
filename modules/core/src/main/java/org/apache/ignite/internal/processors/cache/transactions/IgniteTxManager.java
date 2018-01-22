@@ -85,6 +85,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.lang.IgniteReducer;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionState;
@@ -462,7 +463,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
             taskNameHash);
 
         if (tx.system()) {
-            AffinityTopologyVersion topVer = cctx.tm().lockedTopologyVersion(Thread.currentThread().getId(), tx);
+            AffinityTopologyVersion topVer = cctx.tm().lockedTopologyVersion(TransactionPlugin.threadId(), tx);
 
             // If there is another system transaction in progress, use it's topology version to prevent deadlock.
             if (topVer != null)
@@ -648,7 +649,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
      * @return Transaction for current thread.
      */
     public GridNearTxLocal threadLocalTx(GridCacheContext cctx) {
-        IgniteInternalTx tx = tx(cctx, Thread.currentThread().getId());
+        IgniteInternalTx tx = tx(cctx, TransactionPlugin.threadId());
 
         if (tx != null && tx.local() && (!tx.dht() || tx.colocated()) && !tx.implicit()) {
             assert tx instanceof GridNearTxLocal : tx;
@@ -666,7 +667,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     public <T> T tx() {
         IgniteInternalTx tx = txContext();
 
-        return tx != null ? (T)tx : (T)tx(null, Thread.currentThread().getId());
+        return tx != null ? (T)tx : (T)tx(null, TransactionPlugin.threadId());
     }
 
     /**
@@ -730,7 +731,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         if (activeUserTx(tx))
             return (GridNearTxLocal)tx;
 
-        tx = tx(null, Thread.currentThread().getId());
+        tx = tx(null, TransactionPlugin.threadId());
 
         if (activeUserTx(tx))
             return (GridNearTxLocal)tx;
@@ -743,7 +744,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
      * @return User transaction for current thread.
      */
     @Nullable GridNearTxLocal userTx(GridCacheContext cctx) {
-        IgniteInternalTx tx = tx(cctx, Thread.currentThread().getId());
+        IgniteInternalTx tx = tx(cctx, TransactionPlugin.threadId());
 
         if (activeUserTx(tx))
             return (GridNearTxLocal)tx;
@@ -2317,14 +2318,14 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         assert tx != null && !tx.system() : tx;
         assert !threadMap.containsValue(tx) : tx;
         assert !transactionMap(tx).containsValue(tx) : tx;
-        assert !haveSystemTxForThread(Thread.currentThread().getId());
+        assert !haveSystemTxForThread(TransactionPlugin.threadId());
 
         if (!tx.state(ACTIVE)) {
             throw new IgniteCheckedException("Trying to resume transaction with incorrect state "
                 + "[expected=" + SUSPENDED + ", actual=" + tx.state() + ']');
         }
 
-        long threadId = Thread.currentThread().getId();
+        long threadId = TransactionPlugin.threadId();
 
         if (threadMap.putIfAbsent(threadId, tx) != null)
             throw new IgniteCheckedException("Thread already has started a transaction.");

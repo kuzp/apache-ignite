@@ -45,10 +45,7 @@ import org.apache.ignite.IgniteCondition;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteInterruptedException;
 import org.apache.ignite.IgniteLock;
-import org.apache.ignite.IgniteLogger;
-import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.IgnitionEx;
-import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.IgniteInternalCache;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearTxLocal;
 import org.apache.ignite.internal.util.typedef.X;
@@ -56,6 +53,7 @@ import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.internal.processors.cluster.IgniteChangeGlobalStateSupport;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionRollbackException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -222,7 +220,7 @@ public final class GridCacheLockImpl extends AtomicDataStructureProxy<GridCacheL
 
                 setCurrentOwnerNode(thisNode);
 
-                currentOwnerThreadId = Thread.currentThread().getId();
+                currentOwnerThreadId = TransactionPlugin.threadId();
 
                 for (Condition c : conditionMap.values())
                     c.signalAll();
@@ -471,7 +469,7 @@ public final class GridCacheLockImpl extends AtomicDataStructureProxy<GridCacheL
             // While we must in general read state before owner,
             // we don't need to do so to check if current thread is owner
 
-            return currentOwnerThreadId == Thread.currentThread().getId() && thisNode.equals(currentOwnerNode);
+            return currentOwnerThreadId == TransactionPlugin.threadId() && thisNode.equals(currentOwnerNode);
         }
 
         /**
@@ -832,7 +830,7 @@ public final class GridCacheLockImpl extends AtomicDataStructureProxy<GridCacheL
 
             setExclusiveOwnerThread(Thread.currentThread());
 
-            currentOwnerThreadId = Thread.currentThread().getId();
+            currentOwnerThreadId = TransactionPlugin.threadId();
 
             for (String signal: signals)
                 conditionMap.get(signal).signal();

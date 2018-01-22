@@ -28,6 +28,7 @@ import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -270,7 +271,7 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
      * Releases local lock.
      */
     void releaseLocal() {
-        releaseLocal(Thread.currentThread().getId());
+        releaseLocal(TransactionPlugin.threadId());
     }
 
     /**

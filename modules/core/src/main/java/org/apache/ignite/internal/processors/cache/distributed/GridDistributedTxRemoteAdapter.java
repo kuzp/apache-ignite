@@ -67,6 +67,7 @@ import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
+import org.apache.ignite.plugin.TransactionPlugin;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionState;
@@ -159,7 +160,7 @@ public abstract class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
             nodeId,
             xidVer,
             ctx.versions().last(),
-            Thread.currentThread().getId(),
+            TransactionPlugin.threadId(),
             sys,
             plc,
             concurrency,
