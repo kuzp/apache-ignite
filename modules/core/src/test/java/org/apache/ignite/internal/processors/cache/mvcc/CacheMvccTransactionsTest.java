@@ -1602,6 +1602,13 @@ public class CacheMvccTransactionsTest extends CacheMvccAbstractTest {
     /**
      * @throws Exception If failed.
      */
+    public void testAccountsTxScan_ClientServer_Backups0() throws Exception {
+        accountsTxReadAll(4, 2, 0, 64, null, false, ReadMode.SCAN);
+    }
+
+    /**
+     * @throws Exception If failed.
+     */
     public void testPessimisticTxReadsSnapshot_SingleNode_SinglePartition() throws Exception {
         txReadsSnapshot(1, 0, 0, 1, true);
     }

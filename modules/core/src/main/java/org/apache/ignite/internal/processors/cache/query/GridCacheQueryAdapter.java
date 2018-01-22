@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -29,6 +30,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.query.Query;
@@ -62,6 +64,7 @@ import org.apache.ignite.lang.IgniteBiPredicate;
 import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteReducer;
 import org.apache.ignite.plugin.security.SecurityPermission;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static org.apache.ignite.cache.CacheMode.LOCAL;
@@ -134,9 +137,6 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
     /** */
     private MvccVersion mvccVer;
-
-    /** */
-    private MvccCoordinator mvccCrd;
 
     /**
      * @param cctx Context.
@@ -277,20 +277,6 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
     @Nullable
     MvccVersion mvccVersion() {
         return mvccVer;
-    }
-
-    /**
-     * @return Mvcc coordinator.
-     */
-    MvccCoordinator mvccCoordinator() {
-        return mvccCrd;
-    }
-
-    /**
-     * @param mvccCrd Mvcc coordinator.
-     */
-    void mvccCoordinator(MvccCoordinator mvccCrd) {
-        this.mvccCrd = mvccCrd;
     }
 
     /**
@@ -549,7 +535,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
             return (CacheQueryFuture<R>)(loc ? qryMgr.queryFieldsLocal(bean) :
                 qryMgr.queryFieldsDistributed(bean, nodes));
         else
-            return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean, nodes, null));
+            return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean, nodes));
     }
 
     /** {@inheritDoc} */
@@ -579,7 +565,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
         final GridCacheQueryManager qryMgr = cctx.queries();
 
         if (cctx.mvccEnabled() && mvccVer == null) {
-            mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
+            MvccCoordinator mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
 
             IgniteInternalFuture<MvccVersion> fut0 = cctx.shared().coordinators().requestQueryCounter(mvccCrd);
 
@@ -588,13 +574,19 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
         boolean loc = nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());
 
-        if (loc)
-            return qryMgr.scanQueryLocal(this, true, mvccCrd);
+        GridCloseableIterator it;
 
-        if (part != null)
-            return new ScanQueryFallbackClosableIterator(part, this, qryMgr, cctx, mvccCrd);
+        if (loc)
+            it = qryMgr.scanQueryLocal(this, true);
+        else if  (part != null)
+            it = new ScanQueryFallbackClosableIterator(part, this, qryMgr, cctx);
         else
-            return qryMgr.scanQueryDistributed(this, nodes, mvccCrd);
+            it = qryMgr.scanQueryDistributed(this, nodes);
+
+        if (cctx.mvccEnabled())
+            return new MvccNotifyingIterator(cctx, it, mvccVer);
+        else
+            return it;
     }
 
     /**
@@ -706,11 +698,6 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
         /** */
         private Object cur;
 
-        /** */
-        private MvccVersion mvccVer;
-
-        /** */
-        private MvccCoordinator mvccCrd;
 
         /**
          * @param part Partition.
@@ -719,13 +706,11 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
          * @param cctx Cache context.
          */
         private ScanQueryFallbackClosableIterator(int part, GridCacheQueryAdapter qry,
-            GridCacheQueryManager qryMgr, GridCacheContext cctx, MvccCoordinator mvccCrd) {
+            GridCacheQueryManager qryMgr, GridCacheContext cctx) {
             this.qry = qry;
             this.qryMgr = qryMgr;
             this.cctx = cctx;
             this.part = part;
-            this.mvccVer = qry.mvccVer;
-            this.mvccCrd = mvccCrd;
 
             nodes = fallbacks(cctx.shared().exchange().readyAffinityVersion());
 
@@ -773,7 +758,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
             if (node.isLocal()) {
                 try {
-                    GridCloseableIterator it = qryMgr.scanQueryLocal(qry, true, mvccCrd);
+                    GridCloseableIterator it = qryMgr.scanQueryLocal(qry, true);
 
                     tuple = new T2(it, null);
                 }
@@ -788,7 +773,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
                 final GridCacheQueryBean bean = new GridCacheQueryBean(qry, null, qry.transform, null);
 
                 GridCacheQueryFutureAdapter fut =
-                    (GridCacheQueryFutureAdapter)qryMgr.queryDistributed(bean, Collections.singleton(node), mvccCrd);
+                    (GridCacheQueryFutureAdapter)qryMgr.queryDistributed(bean, Collections.singleton(node));
 
                 tuple = new T2(null, fut);
             }
@@ -926,6 +911,117 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
             if (t != null && t.get2() != null)
                 t.get2().cancel();
+        }
+    }
+
+    /**
+     * Wrapper for an MVCC-related iterators.
+     */
+    private static class MvccNotifyingIterator implements GridCloseableIterator {
+
+        /** Underlying iterator. */
+        private final GridCloseableIterator it;
+
+        /** Query MVCC version. */
+        private final MvccVersion mvccVer;
+
+        /** Context. */
+        private final GridCacheContext<?, ?> cctx;
+
+        /** Closed flag. */
+        private boolean closed;
+
+        /**
+         * Constructor.
+         *
+         * @param cctx Context.
+         * @param it Underlying iterator.
+         * @param mvccVer Query MVCC version.
+         */
+        MvccNotifyingIterator(GridCacheContext<?, ?> cctx, GridCloseableIterator it, MvccVersion mvccVer) {
+            assert it != null && mvccVer != null && cctx != null;
+
+            this.cctx = cctx;
+            this.it = it;
+            this.mvccVer = mvccVer;
+        }
+
+        /** {@inheritDoc} */
+        @Override public void close() throws IgniteCheckedException {
+            try {
+                it.close();
+            }
+            finally {
+                closed = true;
+
+                MvccCoordinator mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
+
+                cctx.shared().coordinators().ackQueryDone(mvccCrd, mvccVer);
+            }
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean isClosed() {
+            return it.isClosed();
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean hasNext() {
+            boolean hasNext = it.hasNext();
+
+            // We have to close iterator here because it is not usually closed in a client code.
+            if (!hasNext) {
+                if (!closed)
+                    try {
+                        close();
+                    }
+                    catch (Exception e) {
+                        throw new IgniteException(e);
+                    }
+            }
+
+            return hasNext;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean hasNextX() throws IgniteCheckedException {
+            try {
+                boolean hasNext = it.hasNextX();
+
+                // We have to close iterator here because it is not usually closed in a client code.
+                if (!hasNext) {
+                    if (!closed)
+                        close();
+                }
+
+                return hasNext;
+            }
+            catch (Exception e){
+                if (!closed)
+                    close();
+
+                throw new IgniteCheckedException(e);
+            }
+        }
+
+        /** {@inheritDoc} */
+        @Override public Object nextX() throws IgniteCheckedException {
+            return it.nextX();
+        }
+
+        /** {@inheritDoc} */
+        @Override public void removeX() throws IgniteCheckedException {
+            it.removeX();
+        }
+
+        /** {@inheritDoc} */
+        @NotNull @Override public Iterator iterator() {
+            return it.iterator();
+        }
+
+        /** {@inheritDoc} */
+        @Override public Object next() {
+            return it.next();
         }
     }
 }
