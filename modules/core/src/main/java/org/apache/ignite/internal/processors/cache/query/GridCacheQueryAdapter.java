@@ -928,9 +928,6 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
         /** Context. */
         private final GridCacheContext<?, ?> cctx;
 
-        /** Closed flag. */
-        private boolean closed;
-
         /**
          * Constructor.
          *
@@ -952,8 +949,6 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
                 it.close();
             }
             finally {
-                closed = true;
-
                 MvccCoordinator mvccCrd = cctx.affinity().mvccCoordinator(cctx.shared().exchange().readyAffinityVersion());
 
                 cctx.shared().coordinators().ackQueryDone(mvccCrd, mvccVer);
@@ -967,41 +962,12 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
         /** {@inheritDoc} */
         @Override public boolean hasNext() {
-            boolean hasNext = it.hasNext();
-
-            // We have to close iterator here because it is not usually closed in a client code.
-            if (!hasNext) {
-                if (!closed)
-                    try {
-                        close();
-                    }
-                    catch (Exception e) {
-                        throw new IgniteException(e);
-                    }
-            }
-
-            return hasNext;
+            return it.hasNext();
         }
 
         /** {@inheritDoc} */
         @Override public boolean hasNextX() throws IgniteCheckedException {
-            try {
-                boolean hasNext = it.hasNextX();
-
-                // We have to close iterator here because it is not usually closed in a client code.
-                if (!hasNext) {
-                    if (!closed)
-                        close();
-                }
-
-                return hasNext;
-            }
-            catch (Exception e){
-                if (!closed)
-                    close();
-
-                throw new IgniteCheckedException(e);
-            }
+            return it.hasNextX();
         }
 
         /** {@inheritDoc} */

@@ -75,7 +75,6 @@ import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtCacheAdapter;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtLocalPartition;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtUnreservedPartitionException;
-import org.apache.ignite.internal.processors.cache.mvcc.MvccCoordinator;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.datastructures.DataStructuresProcessor;
@@ -545,7 +544,6 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
     private QueryResult<K, V> executeQuery(GridCacheQueryAdapter<?> qry,
         @Nullable Object[] args, boolean loc, @Nullable UUID subjId, @Nullable String taskName, Object rcpt)
         throws IgniteCheckedException {
-        assert qry.mvccVersion() != null || !cctx.mvccEnabled();
 
         if (qry.type() == null) {
             assert !loc;
@@ -1409,7 +1407,6 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
     @SuppressWarnings({"unchecked", "serial"})
     protected GridCloseableIterator scanQueryLocal(final GridCacheQueryAdapter qry,
         boolean updateStatistics) throws IgniteCheckedException {
-        assert qry.mvccVersion() != null || !cctx.mvccEnabled();
         if (!enterBusy())
             throw new IllegalStateException("Failed to process query request (grid is stopping).");
 
@@ -2957,7 +2954,6 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManagerAdapte
             boolean locNode,
             GridCacheContext cctx,
             IgniteLogger log) {
-            assert !cctx.mvccEnabled() || qry.mvccVersion() != null;
 
             this.it = it;
             this.topVer = topVer;

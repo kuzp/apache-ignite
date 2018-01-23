@@ -196,7 +196,8 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
      */
     @SuppressWarnings("unchecked")
     @Override void processQueryRequest(UUID sndId, GridCacheQueryRequest req) {
-        assert req.mvccVersion() != null || !cctx.mvccEnabled() : req;
+        assert req.mvccVersion() != null || !cctx.mvccEnabled() || req.cancel() ||
+            (req.type() == null && !req.fields()) : req; // Last assertion means next page request.
 
         if (req.cancel()) {
             cancelIds.add(new CancelMessageId(req.id(), sndId));
@@ -691,8 +692,7 @@ public class GridCacheDistributedQueryManager<K, V> extends GridCacheQueryManage
                 qry.taskHash(),
                 queryTopologyVersion(),
                 // Force deployment anyway if scan query is used.
-                cctx.deploymentEnabled() || (qry.scanFilter() != null && cctx.gridDeploy().enabled()),
-                qry.mvccVersion());
+                cctx.deploymentEnabled() || (qry.scanFilter() != null && cctx.gridDeploy().enabled()));
 
             sendRequest(fut, req, nodes);
         }

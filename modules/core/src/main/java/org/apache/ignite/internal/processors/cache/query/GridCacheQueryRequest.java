@@ -177,7 +177,6 @@ public class GridCacheQueryRequest extends GridCacheIdMessage implements GridCac
      * @param taskHash Task name hash code.
      * @param topVer Topology version.
      * @param addDepInfo Deployment info flag.
-     * @param mvccVer Mvcc version.
      */
     public GridCacheQueryRequest(
         int cacheId,
@@ -191,8 +190,7 @@ public class GridCacheQueryRequest extends GridCacheIdMessage implements GridCac
         UUID subjId,
         int taskHash,
         AffinityTopologyVersion topVer,
-        boolean addDepInfo,
-        MvccVersion mvccVer
+        boolean addDepInfo
     ) {
         this.cacheId = cacheId;
         this.id = id;
@@ -206,7 +204,6 @@ public class GridCacheQueryRequest extends GridCacheIdMessage implements GridCac
         this.taskHash = taskHash;
         this.topVer = topVer;
         this.addDepInfo = addDepInfo;
-        this.mvccVer = mvccVer;
     }
 
     /**
@@ -229,6 +226,7 @@ public class GridCacheQueryRequest extends GridCacheIdMessage implements GridCac
      * @param subjId Subject ID.
      * @param taskHash Task name hash code.
      * @param topVer Topology version.
+     * @param mvccVer Mvcc version.
      * @param addDepInfo Deployment info flag.
      */
     public GridCacheQueryRequest(
