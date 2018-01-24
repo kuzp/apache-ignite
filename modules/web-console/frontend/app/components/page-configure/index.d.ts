@@ -72,13 +72,13 @@ declare namespace ig {
         namespace model {
             type QueryMetadataTypes = 'Annotations' | 'Configuration'
             type DomainModelKinds = 'query' | 'store' | 'both'
-            interface KeyField {
+            export interface KeyField {
                 databaseFieldName: string,
                 databaseFieldType: string,
                 javaFieldName: string,
                 javaFieldType: string
             }
-            interface ValueField {
+            export interface ValueField {
                 databaseFieldName: string,
                 databaseFieldType: string,
                 javaFieldName: string,

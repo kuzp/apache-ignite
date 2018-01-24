@@ -167,4 +167,15 @@ export default class Models {
             }))
         };
     }
+
+    /**
+     * Checks that collection of DB fields has unique DB and Java field names
+     * @param {Array<ig.config.model.KeyField|ig.config.model.ValueField>} DBFields
+     */
+    storeKeyDBFieldsUnique(DBFields = []) {
+        return ['databaseFieldName', 'javaFieldName'].every((key) => {
+            const items = new Set(DBFields.map((field) => field[key]));
+            return items.size === DBFields.length;
+        });
+    }
 }
