@@ -123,9 +123,9 @@
                 <module>modules/scalar</module>
                 <module>modules/spark-2.10</module>
                 <module>modules/spark</module>
-                <module>modules/visor-console-2.10</module>
-                <module>modules/visor-console</module>
-                <module>modules/visor-plugins</module>
+                <!--<module>modules/visor-console-2.10</module>-->
+                <!--<module>modules/visor-console</module>-->
+                <!--<module>modules/visor-plugins</module>-->
             </modules>
         </profile>
 
