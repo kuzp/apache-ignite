@@ -36,6 +36,7 @@ import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 import org.apache.ignite.transactions.TransactionRollbackException;
 import org.apache.ignite.yardstick.cache.IgnitePutAllBenchmark2k;
+import org.apache.ignite.yardstick.cache.IgnitePutAllBenchmark2kTransactional;
 import org.apache.ignite.yardstick.cache.IgnitePutBenchmark;
 import org.yardstickframework.BenchmarkConfiguration;
 import org.yardstickframework.BenchmarkDriver;
@@ -109,7 +110,7 @@ public class IgniteBenchmarkUtils {
      * @throws Exception If failed.
      */
     public static void main(String[] args) throws Exception {
-        final String cfg = "modules/yardstick/config/ignite-localhost-config.xml";
+        final String cfg = "modules/yardstick/config/ignite-base-putall-config.xml";
 
         final Class<? extends BenchmarkDriver> benchmark = IgnitePutAllBenchmark2k.class;
 
@@ -128,7 +129,7 @@ public class IgniteBenchmarkUtils {
         final boolean throughputLatencyProbe = false;
 
         for (int i = 0; i < extraNodes; i++) {
-            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "grid.cfg");
+            IgniteConfiguration nodeCfg = Ignition.loadSpringBean(cfg, "ignite.cfg");
 
             nodeCfg.setIgniteInstanceName("node-" + i);
             nodeCfg.setMetricsLogFrequency(0);
