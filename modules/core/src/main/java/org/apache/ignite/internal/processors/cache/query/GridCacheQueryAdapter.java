@@ -982,7 +982,7 @@ public class GridCacheQueryAdapter<T> implements CacheQuery<T> {
 
         /** {@inheritDoc} */
         @NotNull @Override public Iterator iterator() {
-            return it.iterator();
+            return this;
         }
 
         /** {@inheritDoc} */
