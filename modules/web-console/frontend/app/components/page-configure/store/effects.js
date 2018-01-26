@@ -17,6 +17,7 @@
 
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/ignoreElements';
+import 'rxjs/add/operator/zip';
 import {merge} from 'rxjs/observable/merge';
 import {empty} from 'rxjs/observable/empty';
 import {of} from 'rxjs/observable/of';
@@ -420,9 +421,8 @@ export default class ConfigEffects {
             .do((a) => this.$state.go('base.configuration.edit.basic', {clusterID: a.changedItems.cluster._id}, {location: 'replace', custom: {justIDUpdate: true}}))
             .ignoreElements();
 
-        this.basicDownloadAfterSaveEffect$ = this.ConfigureState.actions$
-            .let(ofType(BASIC_SAVE_OK))
-            .withLatestFrom(this.ConfigureState.actions$.let(ofType(BASIC_SAVE_AND_DOWNLOAD)))
+        this.basicDownloadAfterSaveEffect$ = this.ConfigureState.actions$.let(ofType(BASIC_SAVE_AND_DOWNLOAD))
+            .zip(this.ConfigureState.actions$.let(ofType(BASIC_SAVE_OK)))
             .pluck('1')
             .do((a) => this.configurationDownload.downloadClusterConfiguration(a.changedItems.cluster))
             .ignoreElements();
@@ -583,6 +583,7 @@ export default class ConfigEffects {
 
         this.basicSaveEffect$ = this.ConfigureState.actions$
             .let(ofType(BASIC_SAVE))
+            .merge(this.ConfigureState.actions$.let(ofType(BASIC_SAVE_AND_DOWNLOAD)))
             .withLatestFrom(this.ConfigureState.state$.pluck('edit'))
             .switchMap(([action, edit]) => {
                 const changedItems = _applyChangedIDs(edit, {cluster: action.cluster});
