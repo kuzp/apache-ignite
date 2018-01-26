@@ -18,6 +18,7 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import cloneDeep from 'lodash/cloneDeep';
+import get from 'lodash/get';
 import naturalCompare from 'natural-compare-lite';
 import {
     changeItem,
@@ -122,7 +123,13 @@ export default class PageConfigureBasicController {
             this.shortClusters$.do((v) => this.shortClusters = v),
             this.originalCluster$.do((v) => {
                 this.originalCluster = v;
-                this.clonedCluster = cloneDeep(v);
+                // clonedCluster should be set only when particular cluster edit starts.
+                // 
+                // Stored cluster changes should not propagate to clonedCluster because it's assumed
+                // that last saved copy has same shape to what's already loaded. If stored cluster would overwrite
+                // clonedCluster every time, then data rollback on server errors would undo all changes
+                // made by user and we don't want that. Advanced configuration forms do the same too.
+                if (get(v, '_id') !== get(this.clonedCluster, '_id')) this.clonedCluster = cloneDeep(v);
                 this.defaultMemoryPolicy = this.Clusters.getDefaultClusterMemoryPolicy(this.clonedCluster);
             })
         ).subscribe();
