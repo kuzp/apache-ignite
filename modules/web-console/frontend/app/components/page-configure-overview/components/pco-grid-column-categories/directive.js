@@ -27,7 +27,13 @@ const visibilityChanged = (a, b) => {
 /** @type {(cd: uiGrid.IGridColumn) => boolean} */
 const notSelectionColumn = (cc) => cc.colDef.name !== 'selectionRowHeaderCol';
 
-export default function() {
+/**
+ * Generates categories for uiGrid columns
+ * 
+ * @type {ng.IDirectiveFactory}
+ * @param {uiGrid.IUiGridConstants} uiGridConstants
+ */
+export default function directive(uiGridConstants) {
     return {
         require: '^uiGrid',
         link: {
@@ -44,8 +50,11 @@ export default function() {
                         };
                     }), 'name');
 
-                    if (visibilityChanged(oldCategories, newCategories))
+                    if (visibilityChanged(oldCategories, newCategories)) {
                         grid.grid.options.categories = newCategories;
+                        // If you don't call this, grid-column-selector won't apply calculated categories
+                        grid.grid.callDataChangeCallbacks(uiGridConstants.dataChange.COLUMN);
+                    }
 
                     return cp;
                 });
@@ -54,3 +63,5 @@ export default function() {
         }
     };
 }
+
+directive.$inject = ['uiGridConstants'];
