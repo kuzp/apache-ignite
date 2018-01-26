@@ -181,11 +181,11 @@ form(novalidate name=form)
             | Cancel
         .btn-ignite-group
             button.btn-ignite.btn-ignite--success(
-                ng-click='::$ctrl.formActionsMenu[1].click()'
+                ng-click='::$ctrl.formActionsMenu[0].click()'
                 type='button'
             )
-                svg(ignite-icon='{{ ::$ctrl.formActionsMenu[1].icon }}').icon-left
-                | {{ ::$ctrl.formActionsMenu[1].text }}
+                svg(ignite-icon='{{ ::$ctrl.formActionsMenu[0].icon }}').icon-left
+                | {{ ::$ctrl.formActionsMenu[0].text }}
             button.btn-ignite.btn-ignite--success(
                 bs-dropdown='$ctrl.formActionsMenu'
                 data-placement='top-right'
