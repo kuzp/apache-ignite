@@ -38,12 +38,12 @@ export class Confirm {
             this.$modal({
                 templateUrl,
                 backdrop: true,
-                onBeforeHide: () => reject(),
+                onBeforeHide: () => reject(new CancellationError()),
                 controller: ['$scope', ($scope) => {
                     $scope.yesNo = yesNo;
                     $scope.content = content;
                     $scope.confirmCancel = $scope.confirmNo = () => {
-                        reject();
+                        reject(new CancellationError());
                         $scope.$hide();
                     };
                     $scope.confirmYes = () => {
