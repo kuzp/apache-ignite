@@ -137,8 +137,6 @@ import connectedClusters from './components/connected-clusters';
 
 import igniteServices from './services';
 
-// Inject external modules.
-import IgniteModules from 'IgniteModules/index';
 
 import baseTemplate from 'views/base.pug';
 import * as icons from '../public/images/icons';
@@ -217,8 +215,7 @@ angular.module('ignite-console', [
     clusterSelector.name,
     connectedClusters.name,
     igniteListOfRegisteredUsers.name,
-    // Ignite modules.
-    IgniteModules.name
+    'ignite-console.modules'
 ])
 // Directives.
 .directive(...igniteAutoFocus)

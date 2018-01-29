@@ -38,7 +38,12 @@ export default merge(commonCfg, {
                 test: /\.scss$/,
                 use: ExtractTextPlugin.extract({
                     fallback: 'style-loader',
-                    use: ['css', 'sass']
+                    use: ['css', {
+                        loader: 'sass',
+                        options: {
+                            includePaths: ['C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend']
+                        }
+                    }]
                 })
             }
         ]

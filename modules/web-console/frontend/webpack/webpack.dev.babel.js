@@ -52,7 +52,8 @@ export default merge(commonCfg, {
                         {
                             loader: 'sass',
                             options: {
-                                sourceMap: true
+                                sourceMap: true,
+                                includePaths: ['C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend']
                             }
                         }
                     ]
