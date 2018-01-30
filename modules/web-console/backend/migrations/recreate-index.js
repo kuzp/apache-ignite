@@ -17,14 +17,29 @@
 
 'use strict';
 
-module.exports = function(done, model, oldIdxName, oldIdx, newIdx) {
-    model.indexExists(oldIdxName)
+function recreate0(done, model, oldIdxName, oldIdx, newIdx) {
+    return model.indexExists(oldIdxName)
         .then((exists) => {
             if (exists) {
                 return model.dropIndex(oldIdx)
-                    .then(() => model.createIndex(newIdx, {unique: true}));
+                    .then(() => model.createIndex(newIdx, {unique: true, background: false}));
             }
         })
         .then(() => done())
-        .catch(done);
+        .catch((err) => {
+            if (err.code === 12587) {
+                console.log(`Background operation in progress for: ${oldIdxName}, will retry in 3 seconds.`);
+
+                setTimeout(() => recreate0(done, model, oldIdxName, oldIdx, newIdx), 3000);
+            }
+            else {
+                console.log(err);
+
+                done();
+            }
+        });
+}
+
+module.exports = function(done, model, oldIdxName, oldIdx, newIdx) {
+    setTimeout(() => recreate0(done, model, oldIdxName, oldIdx, newIdx), 1000);
 };

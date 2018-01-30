@@ -19,12 +19,16 @@ const _ = require('lodash');
 
 const LOST_FOUND = 'LOST+FOUND';
 
-function getClusterForMigration(clusterModel, spaceIds) {
-    return clusterModel.findOne({space: spaceIds, name: 'LOST+FOUND'}).lean().exec()
+function _log(msg) {
+    console.log(`[${new Date().toISOString()}] ${msg}`);
+}
+
+function getClusterForMigration(clusterModel, space) {
+    return clusterModel.findOne({name: LOST_FOUND}).lean().exec()
         .then((cluster) => {
             if (!cluster) {
                 return clusterModel.create({
-                    space: spaceIds,
+                    space,
                     name: LOST_FOUND,
                     connector: {noDelay: true},
                     communication: {tcpNoDelay: true},
@@ -36,10 +40,16 @@ function getClusterForMigration(clusterModel, spaceIds) {
                     },
                     discovery: {
                         kind: 'Multicast',
-                        Multicast: { addresses: ['127.0.0.1:47500..47510'] },
-                        Vm: { addresses: ['127.0.0.1:47500..47510'] }
+                        Multicast: {addresses: ['127.0.0.1:47500..47510']},
+                        Vm: {addresses: ['127.0.0.1:47500..47510']}
                     }
-                });
+                })
+                    .catch((err) => {
+                        if (err.code === 11000)
+                            return clusterModel.findOne({name: LOST_FOUND}).lean().exec();
+
+                        throw err;
+                    });
             }
 
             return cluster;
@@ -51,68 +61,62 @@ function linkCacheToCluster(clusterModel, clusterId, cachesModel, cacheId) {
         .then(() => cachesModel.update({_id: cacheId}, {clusters: [clusterId]}).exec());
 }
 
-async function cloneCache(clusterModel, cachesModel, cache) {
+function cloneCache(clusterModel, cachesModel, cache) {
     const cacheId = cache._id;
     const clusters = cache.clusters;
 
     delete cache._id;
     cache.clusters = [];
 
-    _.forEach(clusters, async(cluster, idx) => {
+    return Promise.all(_.map(clusters, (cluster, idx) => {
         cache.clusters = [cluster];
 
         if (idx > 0) {
-            const clone = await cachesModel.create(cache);
-
-            await clusterModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec();
-            await clusterModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec();
+            return cachesModel.create(cache)
+                .then((clone) => clusterModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec())
+                .then(() => clusterModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec())
+                .catch((err) => {
+                    _log(`Failed to clone cache: id=${cacheId}, name=${cache.name}, err=${err}`);
+                });
         }
-        else
-            await cachesModel.update({_id: cacheId}, {clusters: [cluster]}).exec();
 
-    });
+        return cachesModel.update({_id: cacheId}, {clusters: [cluster]}).exec();
 
-    // TODO await domainsModel.update({caches: {$in: ids}}, {$pull: {caches: {$in: ids}}}, {multi: true}).exec())
+        // TODO IGNITE-5737 domainsModel.update({caches: {$in: ids}}, {$pull: {caches: {$in: ids}}}, {multi: true}).exec())
+    }));
 }
 
-async function migrateCaches(clusterModel, cachesModel) {
-    console.log('Caches migration started...');
+function migrateCache(clusterModel, cachesModel, cache) {
+    const len = _.size(cache.clusters);
 
-    try {
-        const caches = await cachesModel.find({}).lean().exec();
+    if (len < 1) {
+        _log(`${LOST_FOUND}: cache=${cache.name}`);
 
-        let clusterLostFound = null;
-
-        _.forEach(caches, async(cache) => {
-            const len = _.size(cache.clusters);
-
-            switch (len) {
-                case 0:
-                    console.log(`${LOST_FOUND}: ${cache.name}`);
-
-                    if (_.isNil(clusterLostFound))
-                        clusterLostFound = await getClusterForMigration(clusterModel, cache.space);
-
-                    await linkCacheToCluster(clusterModel, clusterLostFound._id, cachesModel, cache._id);
-
-                    break;
-
-                case 1:
-                    console.log(`Nothing to migrate: ${cache.name}`);
-                    break;
-
-                default:
-                    console.log(`One-to-many links found: n= ${len}, name= ${cache.name}`);
-
-                    await cloneCache(clusterModel, cachesModel, cache);
-            }
-        });
-
-        console.log('Caches migration finished.');
+        return getClusterForMigration(clusterModel, cache.space)
+            .then((clusterLostFound) => linkCacheToCluster(clusterModel, clusterLostFound._id, cachesModel, cache._id));
     }
-    catch (err) {
-        console.log('Caches migration failed!', err);
+
+    if (len > 1) {
+        _log(`One-to-many links found: n=${len}, cache=${cache.name}`);
+
+        return cloneCache(clusterModel, cachesModel, cache);
     }
+
+    // Nothing to migrate, cache linked to cluster 1-to-1.
+    return Promise.resolve(true);
+}
+
+function migrateCaches(clusterModel, cachesModel) {
+    _log('Caches migration started...');
+
+    return cachesModel.find({}).lean().exec()
+        .then((caches) => {
+            _log(`Caches to migrate: ${_.size(caches)}`);
+
+            return Promise.all(_.map(caches, (cache) => migrateCache(clusterModel, cachesModel, cache)))
+                .then(() => _log('Caches migration finished.'));
+        })
+        .catch((err) => _log('Caches migration failed: ' + err));
 }
 
 function linkIgfsToCluster(clusterModel, clusterId, igfsModel, igfsId) {
@@ -120,82 +124,73 @@ function linkIgfsToCluster(clusterModel, clusterId, igfsModel, igfsId) {
         .then(() => igfsModel.update({_id: igfsId}, {clusters: [clusterId]}).exec());
 }
 
-async function cloneIgfs(clusterModel, igfsModel, igfs) {
+function cloneIgfs(clusterModel, igfsModel, igfs) {
     const igfsId = igfs._id;
     const clusters = igfs.clusters;
 
     delete igfs._id;
     igfs.clusters = [];
 
-    _.forEach(clusters, async(cluster, idx) => {
+    return Promise.all(clusters, (cluster, idx) => {
         igfs.clusters = [cluster];
 
         if (idx > 0) {
-            const clone = await igfsModel.create(igfs);
+            const clone = igfsModel.create(igfs);
 
-            await clusterModel.update({_id: {$in: igfs.clusters}}, {$addToSet: {igfss: clone._id}}, {multi: true}).exec();
-            await clusterModel.update({_id: {$in: igfs.clusters}}, {$pull: {igfs: igfsId}}, {multi: true}).exec();
+            return clusterModel.update({_id: {$in: igfs.clusters}}, {$addToSet: {igfss: clone._id}}, {multi: true}).exec()
+                .then(() => clusterModel.update({_id: {$in: igfs.clusters}}, {$pull: {igfs: igfsId}}, {multi: true}).exec());
         }
-        else
-            await igfsModel.update({_id: igfsId}, {clusters: [cluster]}).exec();
 
+        return igfsModel.update({_id: igfsId}, {clusters: [cluster]}).exec();
     });
 }
 
-async function migrateIgfs(clusterModel, igfsModel) {
-    console.log('IGFS migration started...');
+function migrateIgfs(clusterModel, igfsModel, igfs) {
+    const len = _.size(igfs.clusters);
 
-    try {
-        const igfss = await igfsModel.find({}).lean().exec();
+    if (len < 1) {
+        _log(`${LOST_FOUND}: IGFS=${igfs.name}`);
 
-        let clusterLostFound = null;
-
-        _.forEach(igfss, async(igfs) => {
-            const len = _.size(igfs.clusters);
-
-            switch (len) {
-                case 0:
-                    console.log(`${LOST_FOUND}: ${igfs.name}`);
-
-                    if (_.isNil(clusterLostFound))
-                        clusterLostFound = await getClusterForMigration(clusterModel, igfs.space);
-
-                    await linkIgfsToCluster(clusterModel, clusterLostFound._id, igfsModel, igfs._id);
-
-                    break;
-
-                case 1:
-                    console.log(`Nothing to migrate: ${igfs.name}`);
-                    break;
-
-                default:
-                    console.log(`One-to-many links found: n= ${len}, name= ${igfs.name}`);
-
-                    await cloneIgfs(clusterModel, igfsModel, igfs);
-            }
-        });
-
-        console.log('IGFS migration finished.');
+        return getClusterForMigration(clusterModel, igfs.space)
+            .then((clusterLostFound) => linkIgfsToCluster(clusterModel, clusterLostFound._id, igfsModel, igfs._id));
     }
-    catch (err) {
-        console.log('IGFS migration failed!', err);
+
+    if (len > 1) {
+        _log(`One-to-many links found: n=${len}, IGFS=${igfs.name}`);
+
+        return cloneIgfs(clusterModel, igfsModel, igfs);
     }
+
+    // Nothing to migrate, IGFS linked to cluster 1-to-1.
+    return Promise.resolve(true);
 }
 
+function migrateIgfss(clusterModel, igfsModel) {
+    _log('IGFS migration started...');
+
+    return igfsModel.find({}).lean().exec()
+        .then((igfss) => {
+            _log(`IGFS to migrate: ${_.size(igfss)}`);
+
+            return Promise.all(_.map(igfss, (igfs) => migrateIgfs(clusterModel, igfsModel, igfs)))
+                .then(() => _log('IGFS migration finished.'));
+        })
+        .catch((err) => _log('IGFS migration failed: ' + err));
+}
 
 exports.up = function up(done) {
     const clustersModel = this('Cluster');
     const cachesModel = this('Cache');
     const igfsModel = this('Igfs');
 
-    migrateCaches(clustersModel, cachesModel);
-    migrateIgfs(clustersModel, igfsModel);
-
-    done();
+    migrateCaches(clustersModel, cachesModel)
+        .then(() => migrateIgfss(clustersModel, igfsModel))
+        .then(() => done())
+        .catch(done);
 };
 
 exports.down = function down(done) {
-    console.log('Model migration can not be reverted');
+    _log('Model migration can not be reverted');
 
     done();
 };
