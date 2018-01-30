@@ -75,6 +75,7 @@ include /app/helpers/jade/mixins
                                     tip: "List of packages from the system classpath that need to be peer-to-peer loaded from task originating node<br/>
                                     '*' is supported at the end of the package name which means that all sub-packages and their classes are included like in Java package import clause"
                                 }]`
+                                ng-disabled=enabledToDisabled(enabled)
                             )
                                 list-editable-item-view {{ $item }}
 
