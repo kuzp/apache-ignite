@@ -18,9 +18,15 @@
 const recreateIndex = require('./recreate-index');
 
 exports.up = function up(done) {
-    recreateIndex(done, this('Cache').collection, {name: 1, space: 1}, {name: 1, space: 1, clusters: 1});
+    recreateIndex(done, this('Cache').collection,
+        'name_1_space_1',
+        {name: 1, space: 1},
+        {name: 1, space: 1, clusters: 1});
 };
 
 exports.down = function down(done) {
-    recreateIndex(done, this('Cache').collection, {name: 1, space: 1, clusters: 1}, {name: 1, space: 1});
+    recreateIndex(done, this('Cache').collection,
+        'name_1_space_1_clusters_1',
+        {name: 1, space: 1, clusters: 1},
+        {name: 1, space: 1});
 };
