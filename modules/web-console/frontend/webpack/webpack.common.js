@@ -29,11 +29,10 @@ import ProgressBarPlugin from 'progress-bar-webpack-plugin';
 
 import eslintFormatter from 'eslint-friendly-formatter';
 
-const basedir = 'C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend';
-const contentBase = 'C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend\\public';
-const node_modules = 'C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend\\node_modules';
-
-const app = 'C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend\\app';
+const basedir = path.join(__dirname, '../');
+const contentBase = path.join(basedir, 'public');
+const node_modules = path.join(basedir, 'node_modules');
+const app = path.join(basedir, 'app');
 
 export default {
     node: {

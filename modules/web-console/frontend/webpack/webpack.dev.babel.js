@@ -53,7 +53,7 @@ export default merge(commonCfg, {
                             loader: 'sass',
                             options: {
                                 sourceMap: true,
-                                includePaths: ['C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend']
+                                includePaths: [ path.join(__dirname, '../') ]
                             }
                         }
                     ]
