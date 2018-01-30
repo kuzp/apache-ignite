@@ -68,6 +68,9 @@ function cloneCache(clusterModel, cachesModel, cache) {
     delete cache._id;
     cache.clusters = [];
 
+    if (cache.cacheStoreFactory && cache.cacheStoreFactory.kind === null)
+        delete cache.cacheStoreFactory.kind;
+
     return Promise.all(_.map(clusters, (cluster, idx) => {
         cache.clusters = [cluster];
 
