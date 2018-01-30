@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Interactive Web console for configuration, executing SQL queries and monitoring of Apache Ignite Cluster",
   "private": true,
+  "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --config ./webpack/webpack.dev.babel.js",
     "dev": "npm start",
