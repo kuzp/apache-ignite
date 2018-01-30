@@ -87,7 +87,7 @@ include /app/helpers/jade/mixins
 
                                 list-editable-no-items
                                     list-editable-add-item-button(
-                                        add-item=`$ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model})`
+                                        add-item=`$editLast($ctrl.Clusters.addPeerClassLoadingLocalClassPathExclude(${model}))`
                                         label-single='package'
                                         label-multiple='packages'
                                     )
@@ -139,7 +139,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`(${items} = ${items} || []).push('')`
+                                            add-item=`$editLast((${items} = ${items} || []).push(''))`
                                             label-single='URI'
                                             label-multiple='URIs'
                                         )
@@ -170,7 +170,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`(${items} = ${items} || []).push('')`
+                                            add-item=`$editLast((${items} = ${items} || []).push(''))`
                                             label-single='scanner'
                                             label-multiple='scanners'
                                         )

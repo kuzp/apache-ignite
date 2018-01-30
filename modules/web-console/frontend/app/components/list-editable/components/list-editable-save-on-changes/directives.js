@@ -29,19 +29,23 @@ export function ngModel() {
          * @param {JQLite} el
          * @param {ng.INgModelController} ngModel
          */
-        link(scope, el, attr, ngModel) {
+        link(scope, el, attr, {ngModel, list}) {
+            if (!list) return;
             ngModel.$viewChangeListeners.push(() => {
                 el[0].dispatchEvent(new CustomEvent(CUSTOM_EVENT_TYPE, {bubbles: true, cancelable: true}));
             });
         },
-        require: 'ngModel'
+        require: {
+            ngModel: 'ngModel',
+            list: '?^listEditable'
+        }
     };
 }
 /** 
  * Triggers $ctrl.save when any ngModel emits $ngModel.change event
  * @type {ng.IDirectiveFactory}
  */
-export function listEditableItemEdit() {
+export function listEditableTransclude() {
     return {
         /**
          * @param {ng.IScope} scope
@@ -49,12 +53,13 @@ export function listEditableItemEdit() {
          * @param {ng.IAttributes} attr
          * @param {ListEditableController} list
          */
-        link(scope, el, attr, list) {
+        link(scope, el, attr, {list, transclude}) {
+            if (attr.listEditableTransclude !== 'itemEdit') return;
             if (!list) return;
             let listener = (e) => {
                 e.stopPropagation();
                 scope.$evalAsync(() => {
-                    if (scope.$parent.form.$valid) list.save(scope.$parent.item, scope.$parent.$index);
+                    if (scope.form.$valid) list.save(scope.item, transclude.$index);
                 });
             };
             el[0].addEventListener(CUSTOM_EVENT_TYPE, listener);
@@ -63,6 +68,9 @@ export function listEditableItemEdit() {
                 listener = null;
             });
         },
-        require: '?^listEditable'
+        require: {
+            list: '?^listEditable',
+            transclude: 'listEditableTransclude'
+        }
     };
 }

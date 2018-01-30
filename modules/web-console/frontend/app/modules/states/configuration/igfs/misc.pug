@@ -102,7 +102,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`(${items} = ${items} || []).push({})`
+                                            add-item=`$editLast((${items} = ${items} || []).push({}))`
                                             label-single='path mode'
                                             label-multiple='path modes'
                                         )

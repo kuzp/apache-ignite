@@ -70,7 +70,7 @@ mixin list-db-field-edit({ items, itemName, itemsName })
 
         list-editable-no-items
             list-editable-add-item-button(
-                add-item=`(${items} = ${items} || []).push({})`
+                add-item=`$editLast((${items} = ${items} || []).push({}))`
                 label-single=itemName
                 label-multiple=itemsName
             )

@@ -319,7 +319,7 @@ mixin list-text-field({ items, lbl, name, itemName, itemsName })
 
         list-editable-no-items
             list-editable-add-item-button(
-                add-item=`(${items} = ${items} || []).push('')`
+                add-item=`$editLast((${items} = ${items} || []).push(''))`
                 label-single=itemName
                 label-multiple=itemsName
             )
@@ -391,7 +391,7 @@ mixin list-addresses({ items, name, tip, withPortRange = true })
 
         list-editable-no-items
             list-editable-add-item-button(
-                add-item=`(${items} = ${items} || []).push("")`
+                add-item=`$editLast((${items} = ${items} || []).push(""))`
                 label-multiple='addresses'
                 label-single='address'
             )
@@ -538,7 +538,7 @@ mixin list-pair-edit({ items, keyLbl, valLbl, itemName, itemsName })
 
         list-editable-no-items
             list-editable-add-item-button(
-                add-item=`(${items} = ${items} || []).push({})`
+                add-item=`$editLast((${items} = ${items} || []).push({}))`
                 label-single=itemName
                 label-multiple=itemsName
             )

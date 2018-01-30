@@ -81,7 +81,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`(${items} = ${items} || []).push({})`
+                                            add-item=`$editLast((${items} = ${items} || []).push({}))`
                                             label-single='field to query'
                                             label-multiple='fields'
                                         )
@@ -128,7 +128,7 @@ include /app/helpers/jade/mixins
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
-                                            add-item=`(${items} = ${items} || []).push({})`
+                                            add-item=`$editLast((${items} = ${items} || []).push({}))`
                                             label-single='alias to query'
                                             label-multiple='aliases'
                                         )

@@ -16,9 +16,9 @@
  */
 
 import angular from 'angular';
-import {ngModel, listEditableItemEdit} from './directives';
+import {ngModel, listEditableTransclude} from './directives';
 
 export default angular
 .module('list-editable.save-on-changes', [])
 .directive(ngModel.name, ngModel)
-.directive(listEditableItemEdit.name, listEditableItemEdit);
+.directive(listEditableTransclude.name, listEditableTransclude);

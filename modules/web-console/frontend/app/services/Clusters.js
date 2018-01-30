@@ -564,7 +564,7 @@ export default class Clusters {
 
     addPeerClassLoadingLocalClassPathExclude(cluster) {
         if (!cluster.peerClassLoadingLocalClassPathExclude) cluster.peerClassLoadingLocalClassPathExclude = [];
-        cluster.peerClassLoadingLocalClassPathExclude.push('');
+        return cluster.peerClassLoadingLocalClassPathExclude.push('');
     }
 
     addBinaryTypeConfiguration(cluster) {

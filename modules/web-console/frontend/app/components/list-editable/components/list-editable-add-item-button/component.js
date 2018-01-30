@@ -65,7 +65,10 @@ export class ListEditableAddItemButton {
     }
 
     addItem() {
-        return this._addItem({$edit: this._listEditable.ngModel.editListItem.bind(this._listEditable)});
+        return this._addItem({
+            $edit: this._listEditable.ngModel.editListItem.bind(this._listEditable),
+            $editLast: (length) => this._listEditable.ngModel.editListIndex(length - 1)
+        });
     }
 }
 

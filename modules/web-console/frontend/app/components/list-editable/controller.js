@@ -63,6 +63,14 @@ export default class {
                 this.ngModel.$validate();
             });
         };
+        this.ngModel.editListIndex = (index) => {
+            this.$timeout(() => {
+                this.startEditView(index);
+                // For some reason required validator does not re-run after adding an item,
+                // the $validate call fixes the issue.
+                this.ngModel.$validate();
+            });
+        };
     }
 
     save(data, idx) {
@@ -78,7 +86,7 @@ export default class {
     }
 
     isEditView(idx) {
-        return this._cache.hasOwnProperty(idx) || _.isEmpty(this.ngModel.$viewValue[idx]);
+        return this._cache.hasOwnProperty(idx);
     }
 
     getEditView(idx) {
@@ -90,17 +98,12 @@ export default class {
     }
 
     stopEditView(data, idx, form) {
-        delete this._cache[idx];
-
-        if (form.$pristine)
-            return;
-
         // By default list-editable saves only valid values, but if you specify {allowInvalid: true}
         // ng-model-option, then it will always save. Be careful and pay extra attention to validation
         // when doing so, it's an easy way to miss invalid values this way.
-        if (this.ngModel.$options.getOption('allowInvalid') || form.$valid)
-            this.save(data, idx);
-        else
-            this.revert(idx);
+        if (!form.$valid || this.ngModel.$options.getOption('allowInvalid')) return;
+
+        delete this._cache[idx];
+        this.save(data, idx);
     }
 }
