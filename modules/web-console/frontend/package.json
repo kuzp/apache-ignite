@@ -11,7 +11,8 @@
     "test": "karma start ./test/karma.conf.js",
     "enve2e": "node ./test/e2e/envtools.js start",
     "teste2e": "node ./test/e2e/testcafe.js --env=true",
-    "eslint": "eslint --format node_modules/eslint-friendly-formatter app/ controllers/ ignite_modules/ -- --eff-by-issue"
+    "eslint": "eslint --format node_modules/eslint-friendly-formatter app/ controllers/ ignite_modules/ -- --eff-by-issue",
+    "postinstall": "npm link"
   },
   "author": "",
   "contributors": [

@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
+import path from 'path';
+
 import webpack from 'webpack';
 import merge from 'webpack-merge';
 
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
 
 import commonCfg from './webpack.common';
+
+const basedir = path.join(__dirname, '../');
 
 export default merge(commonCfg, {
     bail: true, // Cancel build on error.
@@ -41,7 +45,7 @@ export default merge(commonCfg, {
                     use: ['css', {
                         loader: 'sass',
                         options: {
-                            includePaths: ['C:\\Users\\verba\\gg\\incubator-ignite\\modules\\web-console\\frontend']
+                            includePaths: [basedir]
                         }
                     }]
                 })
