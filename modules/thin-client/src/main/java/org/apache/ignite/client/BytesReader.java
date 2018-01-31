@@ -17,49 +17,62 @@
 
 package org.apache.ignite.client;
 
-import java.io.*;
+import java.util.*;
 
 /**
- * Implements {@link BinaryReader} for reading {@link InputStream}.
+ * Implements {@link BinaryReader} for reading a byte array.
  */
-public class BinaryStreamReader implements BinaryReader {
+class BytesReader implements BinaryReader {
     /** Stream. */
-    private final InputStream stream;
+    private final byte[] bytes;
+
+    /** Reading position. */
+    private int pos = 0;
 
     /** Constructor. */
-    public BinaryStreamReader(InputStream stream) {
-        if (stream == null)
-            throw new IllegalArgumentException("Input stream must be specified.");
+    BytesReader(byte[] bytes) {
+        if (bytes == null || bytes.length == 0)
+            throw new IllegalArgumentException("Not-empty bytes array must be specified.");
 
-        this.stream = stream;
+        this.bytes = bytes;
     }
 
     /** {@inheritDoc} */
-    @Override public void close() throws Exception {
-        stream.close();
+    @Override public int readInt() {
+        if (bytes.length - pos < 4)
+            throw new IllegalStateException("Not enough bytes to read an integer");
+
+        return ((bytes[pos++] & 0xff) << 24) |
+            ((bytes[pos++] & 0xff) << 16) |
+            ((bytes[pos++] & 0xff) << 8) |
+            (bytes[pos++] & 0xff);
     }
 
     /** {@inheritDoc} */
-    @Override public int readInt() throws IOException {
-        byte[] bytes = new byte[4];
+    @Override public byte[] readBytes(int size) {
+        if (bytes.length - pos < size)
+            throw new IllegalStateException(String.format("Not enough bytes to read %s bytes", size));
 
-        int bytesRead = stream.read(bytes, 0, 4);
-
-        if (bytesRead != 4)
-            throw new IOException("Blocking int read received less data than expected.");
-
-        return ((bytes[0] & 0xff) << 24) | ((bytes[1] & 0xff) << 16) | ((bytes[2] & 0xff) << 8) | (bytes[0] & 0xff);
+        return Arrays.copyOfRange(bytes, pos, pos += size);
     }
 
     /** {@inheritDoc} */
-    @Override public byte[] readBytes(int size) throws IOException {
-        byte[] bytes = new byte[size];
+    @Override public boolean readBoolean() {
+        if (bytes.length - pos < 1)
+            throw new IllegalStateException("Not enough bytes to read an boolean");
 
-        int bytesRead = stream.read(bytes, 0, size);
+        boolean res = bytes[pos] != 0;
 
-        if (bytesRead != size)
-            throw new IOException("Blocking bytes read received less data than expected.");
+        pos++;
 
-        return bytes;
+        return res;
+    }
+
+    /** {@inheritDoc} */
+    @Override public short readShort() {
+        if (bytes.length - pos < 2)
+            throw new IllegalStateException("Not enough bytes to read a short");
+
+        return (short)(((bytes[pos++] & 0xff) << 8) | (bytes[pos++] & 0xff));
     }
 }

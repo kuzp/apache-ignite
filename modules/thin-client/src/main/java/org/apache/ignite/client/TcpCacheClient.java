@@ -18,27 +18,22 @@
 package org.apache.ignite.client;
 
 /**
- * Thin client cache.
+ * Implementation of {@link CacheClient} over TCP protocol.
  */
-public interface CacheClient<K, V> {
+class TcpCacheClient<K, V> implements CacheClient<K, V> {
     /**
-     * Gets an entry from the cache.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the element, or null, if it does not exist.
-     * @throws NullPointerException if the key is null.
+     * Private constructor. Use {@link IgniteClient#getOrCreateCache(String)} to create an instance of
+     * {@link TcpCacheClient}.
      */
-    public V get(K key);
+    private TcpCacheClient() {
+    }
 
-    /**
-     * Associates the specified value with the specified key in the cache.
-     * <p>
-     * If the {@link CacheClient} previously contained a mapping for the key, the old
-     * value is replaced by the specified value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param val value to be associated with the specified key.
-     * @throws NullPointerException  if key is null or if value is null.
-     */
-    public void put(K key, V val);
+    /** {@inheritDoc} */
+    public V get(K key) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    public void put(K key, V val) {
+    }
 }

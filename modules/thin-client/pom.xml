@@ -35,11 +35,14 @@
 
     <dependencies>
         <dependency>
-            <!-- The module does not require ignite-core or any other Ignite dependencies. This is for tests only. -->
+            <!--
+            TODO: think about getting rid of the ignite-core dependency.
+            The only thing we need from ignite-core is serialization - may be we need to create a really small
+            ignite-common module shared by ignite-core and ignite clients.
+            -->
             <groupId>org.apache.ignite</groupId>
             <artifactId>ignite-core</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
