@@ -91,6 +91,7 @@
     "pug-html-loader": "1.1.0",
     "pug-loader": "2.3.0",
     "raleway-webfont": "3.0.1",
+    "raw-loader": "^0.5.1",
     "resolve-url-loader": "2.1.0",
     "roboto-font": "0.1.0",
     "rxjs": "5.4.2",

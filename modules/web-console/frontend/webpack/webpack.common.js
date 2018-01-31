@@ -43,8 +43,7 @@ export default {
         polyfill: 'babel-polyfill',
         vendor: path.join(app, 'vendor.js'),
         app: path.join(app, 'app.js'),
-        browserUpdate: path.join(app, 'browserUpdate', 'index.js'),
-        igniteModules: path.join(basedir, 'ignite_modules', 'index.js')
+        browserUpdate: path.join(app, 'browserUpdate', 'index.js')
     },
 
     // Output system.
@@ -83,7 +82,13 @@ export default {
             // Exclude tpl.pug files to import in bundle.
             {
                 test: /^(?:(?!tpl\.pug$).)*\.pug$/, // TODO: check this regexp for correct.
-                loader: `pug-html?basedir=${basedir}`
+                loader: 'pug-html',
+                query: {
+                    basedir,
+                    data: {
+                        bootstrapModuleName: 'ignite-console'
+                    }
+                }
             },
 
             // Render .tpl.pug files to assets folder.

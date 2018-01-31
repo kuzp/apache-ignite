@@ -214,8 +214,7 @@ angular.module('ignite-console', [
     listEditable.name,
     clusterSelector.name,
     connectedClusters.name,
-    igniteListOfRegisteredUsers.name,
-    'ignite-console.modules'
+    igniteListOfRegisteredUsers.name
 ])
 // Directives.
 .directive(...igniteAutoFocus)
