@@ -71,11 +71,24 @@ function cloneCache(clusterModel, cachesModel, cache) {
     if (cache.cacheStoreFactory && cache.cacheStoreFactory.kind === null)
         delete cache.cacheStoreFactory.kind;
 
+    let dup = 1;
+
     return Promise.all(_.map(clusters, (cluster, idx) => {
         cache.clusters = [cluster];
 
         if (idx > 0) {
             return cachesModel.create(cache)
+                .catch((err) => {
+                    if (err.code === 11000) {
+                        cache.name += dup.toString();
+
+                        dup++;
+
+                        return cachesModel.create(cache);
+                    }
+
+                    throw err;
+                })
                 .then((clone) => clusterModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec())
                 .then(() => clusterModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec())
                 .catch((err) => {
