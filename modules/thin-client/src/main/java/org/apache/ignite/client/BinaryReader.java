@@ -1,4 +1,4 @@
 package org.apache.ignite.client;
 
-public interface IgniteClient {
+public class BinaryReader {
 }
