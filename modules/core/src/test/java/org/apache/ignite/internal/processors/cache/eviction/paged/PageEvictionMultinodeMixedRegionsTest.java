@@ -25,7 +25,7 @@ import org.apache.ignite.testframework.GridTestUtils;
 /**
  *
  */
-public class PageEvictionMultinodeMixedRegionsTest extends PageEvictionMultinodeTest {
+public class PageEvictionMultinodeMixedRegionsTest extends PageEvictionMultinodeAbstractTest {
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration cfg = super.getConfiguration(gridName);
