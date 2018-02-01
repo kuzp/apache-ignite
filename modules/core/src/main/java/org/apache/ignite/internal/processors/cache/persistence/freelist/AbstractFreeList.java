@@ -379,11 +379,11 @@ public abstract class AbstractFreeList<T extends Storable> extends PagesList imp
         long loadSize = 0;
 
         for (int b = BUCKETS - 2; b > 0; b--) {
-            long bsize = pageSize - ((REUSE_BUCKET - b) << shift);
+            long freeSize = b << shift;
 
             long pages = bucketsSize[b].longValue();
 
-            loadSize += pages * (pageSize - bsize);
+            loadSize += pages * (pageSize - freeSize);
 
             totalSize += pages * pageSize;
         }

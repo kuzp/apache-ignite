@@ -21,6 +21,7 @@ import org.apache.ignite.DataRegionMetrics;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.processors.cache.ratemetrics.HitRateMetrics;
+import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteOutClosure;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class DataRegionMetricsImpl implements DataRegionMetrics, AllocatedPageTracker {
     /** */
-    private final IgniteOutClosure<Float> fillFactorProvider;
+    private final IgniteOutClosure<T2<Long, Long>> fillFactorProvider;
 
     /** */
     private final LongAdder totalAllocatedPages = new LongAdder();
@@ -80,7 +81,8 @@ public class DataRegionMetricsImpl implements DataRegionMetrics, AllocatedPageTr
     /**
      * @param memPlcCfg DataRegionConfiguration.
      */
-    public DataRegionMetricsImpl(DataRegionConfiguration memPlcCfg, @Nullable IgniteOutClosure<Float> fillFactorProvider) {
+    public DataRegionMetricsImpl(DataRegionConfiguration memPlcCfg,
+        @Nullable IgniteOutClosure<T2<Long, Long>> fillFactorProvider) {
         this.memPlcCfg = memPlcCfg;
         this.fillFactorProvider = fillFactorProvider;
 
@@ -139,7 +141,11 @@ public class DataRegionMetricsImpl implements DataRegionMetrics, AllocatedPageTr
         if (!metricsEnabled || fillFactorProvider == null)
             return 0;
 
-        return fillFactorProvider.apply();
+        T2<Long, Long> fillFactor = fillFactorProvider.apply();
+
+        long totalAllocated = Math.max(fillFactor.get2(), (getPageSize() * totalAllocatedPages.longValue()));
+
+        return (float) (totalAllocated - (fillFactor.get2() - fillFactor.get1())) / totalAllocated;
     }
 
     /** {@inheritDoc} */

@@ -670,14 +670,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     }
 
     /** {@inheritDoc} */
-    @Override protected IgniteOutClosure<Float> fillFactorProvider(final DataRegionConfiguration dataRegCfg) {
+    @Override protected IgniteOutClosure<T2<Long, Long>> fillFactorProvider(final DataRegionConfiguration dataRegCfg) {
         if (!dataRegCfg.isPersistenceEnabled())
             return super.fillFactorProvider(dataRegCfg);
 
         final String dataRegName = dataRegCfg.getName();
 
-        return new IgniteOutClosure<Float>() {
-            @Override public Float apply() {
+        return new IgniteOutClosure<T2<Long, Long>>() {
+            @Override public T2<Long, Long> apply() {
                 long loadSize = 0L;
                 long totalSize = 0L;
 
@@ -693,10 +693,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     totalSize += fillFactor.get2();
                 }
 
-                if (totalSize == 0)
-                    return (float)0;
-
-                return (float)loadSize / totalSize;
+                return new T2<>(loadSize, totalSize);
             }
         };
     }

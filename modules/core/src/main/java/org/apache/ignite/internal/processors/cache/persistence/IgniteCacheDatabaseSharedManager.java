@@ -289,28 +289,23 @@ public class IgniteCacheDatabaseSharedManager extends GridCacheSharedManagerAdap
      * @param dataRegCfg Data region configuration.
      * @return Closure.
      */
-    protected IgniteOutClosure<Float> fillFactorProvider(final DataRegionConfiguration dataRegCfg) {
+    protected IgniteOutClosure<T2<Long, Long>> fillFactorProvider(final DataRegionConfiguration dataRegCfg) {
         final String dataRegName = dataRegCfg.getName();
 
-        return new IgniteOutClosure<Float>() {
+        return new IgniteOutClosure<T2<Long, Long>>() {
             private CacheFreeListImpl freeList;
 
-            @Override public Float apply() {
+            @Override public T2<Long, Long> apply() {
                 if (freeList == null) {
                     CacheFreeListImpl freeList0 = freeListMap.get(dataRegName);
 
                     if (freeList0 == null)
-                        return (float) 0;
+                        return new T2<>(0L, 0L);
 
                     freeList = freeList0;
                 }
 
-                T2<Long, Long> fillFactor = freeList.fillFactor();
-
-                if (fillFactor.get2() == 0)
-                    return (float) 0;
-
-                return (float) fillFactor.get1() / fillFactor.get2();
+                return freeList.fillFactor();
             }
         };
     }
