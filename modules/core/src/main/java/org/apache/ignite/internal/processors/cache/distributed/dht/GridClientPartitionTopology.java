@@ -256,9 +256,9 @@ public class GridClientPartitionTopology implements GridDhtPartitionTopology {
     }
 
     /** {@inheritDoc} */
-    @Override public void initPartitionsWhenAffinityReady(AffinityTopologyVersion affVer,
+    @Override public boolean initPartitionsWhenAffinityReady(AffinityTopologyVersion affVer,
         GridDhtPartitionsExchangeFuture exchFut) {
-        // No-op.
+        return false;
     }
 
     /** {@inheritDoc} */

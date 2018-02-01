@@ -21,7 +21,10 @@ import org.apache.ignite.events.DiscoveryEvent;
 import org.apache.ignite.internal.managers.discovery.DiscoveryCustomMessage;
 import org.apache.ignite.internal.managers.discovery.GridDiscoveryManager;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.cache.persistence.snapshot.SnapshotDiscoveryMessage;
+import org.apache.ignite.internal.processors.cluster.ChangeGlobalStateMessage;
 import org.apache.ignite.internal.util.typedef.internal.S;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Custom event.
@@ -84,5 +87,28 @@ public class DiscoveryCustomEvent extends DiscoveryEvent {
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(DiscoveryCustomEvent.class, this, super.toString());
+    }
+
+    public static boolean requiresCentralizedAffinityCalculation(DiscoveryEvent evt) {
+        if (!(evt instanceof DiscoveryCustomEvent))
+            return false;
+
+        return requiresCentralizedAffinityCalculation(((DiscoveryCustomEvent)evt).customMessage());
+    }
+
+    public static boolean requiresCentralizedAffinityCalculation(@Nullable DiscoveryCustomMessage msg) {
+        if (msg == null)
+            return false;
+
+        if (msg instanceof ChangeGlobalStateMessage)
+            return true;
+
+        if (msg instanceof SnapshotDiscoveryMessage) {
+            SnapshotDiscoveryMessage snapMsg = (SnapshotDiscoveryMessage) msg;
+
+            return snapMsg.needExchange() && snapMsg.needAssignPartitions();
+        }
+
+        return false;
     }
 }

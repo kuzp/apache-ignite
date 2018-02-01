@@ -2410,7 +2410,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         ChangeGlobalStateMessage msg,
         AffinityTopologyVersion topVer,
         DiscoveryDataClusterState curState
-    ) throws IgniteCheckedException {
+    )throws IgniteCheckedException {
         return cachesInfo.onStateChangeRequest(msg, topVer, curState);
     }
 

@@ -589,6 +589,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                 DiscoveryCustomMessage msg = ((DiscoveryCustomEvent)firstDiscoEvt).customMessage();
 
+                centralizedAff = DiscoveryCustomEvent.requiresCentralizedAffinityCalculation(msg);
+
                 if (msg instanceof ChangeGlobalStateMessage) {
                     assert exchActions != null && !exchActions.empty();
 
@@ -896,8 +898,6 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
         else if (req.activate()) {
             // TODO: BLT changes on inactive cluster can't be handled easily because persistent storage hasn't been initialized yet.
             try {
-                cctx.affinity().onBaselineTopologyChanged(this, crd);
-
                 if (CU.isPersistenceEnabled(cctx.kernalContext().config()) && !cctx.kernalContext().clientNode())
                     cctx.kernalContext().state().onBaselineTopologyChanged(req.baselineTopology(),
                         req.prevBaselineTopologyHistoryItem());
@@ -934,7 +934,8 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
      * @return Exchange type.
      */
     private ExchangeType onCustomMessageNoAffinityChange(boolean crd) {
-        cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
+        if (!centralizedAff)
+            cctx.affinity().onCustomMessageNoAffinityChange(this, crd, exchActions);
 
         return cctx.kernalContext().clientNode() ? ExchangeType.CLIENT : ExchangeType.ALL;
     }
@@ -1480,12 +1481,17 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                     if (grp.isLocal())
                         continue;
 
+                    boolean needRefresh = false;
+
                     try {
-                        grp.topology().initPartitionsWhenAffinityReady(res, this);
+                        needRefresh = grp.topology().initPartitionsWhenAffinityReady(res, this);
                     }
                     catch (IgniteInterruptedCheckedException e) {
                         U.error(log, "Failed to initialize partitions.", e);
                     }
+
+                    if (needRefresh)
+                        cctx.exchange().refreshPartitions();
                 }
             }
 
@@ -2488,55 +2494,11 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                         nodes.addAll(sndResNodes);
                 }
 
-                IgniteCheckedException err = null;
-
-                if (stateChangeExchange()) {
-                    StateChangeRequest req = exchActions.stateChangeRequest();
-
-                    assert req != null : exchActions;
-
-                    boolean stateChangeErr = false;
-
-                    if (!F.isEmpty(changeGlobalStateExceptions)) {
-                        stateChangeErr = true;
-
-                        err = new IgniteCheckedException("Cluster state change failed.");
-
-                        cctx.kernalContext().state().onStateChangeError(changeGlobalStateExceptions, req);
-                    }
-                    else {
-                        boolean hasMoving = !partsToReload.isEmpty();
-
-                        Set<Integer> waitGrps = cctx.affinity().waitGroups();
-
-                        if (!hasMoving) {
-                            for (CacheGroupContext grpCtx : cctx.cache().cacheGroups()) {
-                                if (waitGrps.contains(grpCtx.groupId()) && grpCtx.topology().hasMovingPartitions()) {
-                                    hasMoving = true;
-
-                                    break;
-                                }
-
-                            }
-                        }
-
-                        cctx.kernalContext().state().onExchangeFinishedOnCoordinator(this, hasMoving);
-                    }
-
-                    boolean active = !stateChangeErr && req.activate();
-
-                    ChangeGlobalStateFinishMessage stateFinishMsg = new ChangeGlobalStateFinishMessage(
-                        req.requestId(),
-                        active,
-                        !stateChangeErr);
-
-                    cctx.discovery().sendCustomEvent(stateFinishMsg);
-                }
-
                 if (!nodes.isEmpty())
                     sendAllPartitions(msg, nodes, mergedJoinExchMsgs0, joinedNodeAff);
 
-                onDone(exchCtx.events().topologyVersion(), err);
+                if (!stateChangeExchange())
+                    onDone(exchCtx.events().topologyVersion(), null);
 
                 for (Map.Entry<UUID, GridDhtPartitionsSingleMessage> e : pendingSingleMsgs.entrySet()) {
                     if (log.isInfoEnabled()) {
@@ -2547,6 +2509,54 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
 
                     processSingleMessage(e.getKey(), e.getValue());
                 }
+            }
+
+            if (stateChangeExchange()) {
+                IgniteCheckedException err = null;
+
+                StateChangeRequest req = exchActions.stateChangeRequest();
+
+                assert req != null : exchActions;
+
+                boolean stateChangeErr = false;
+
+                if (!F.isEmpty(changeGlobalStateExceptions)) {
+                    stateChangeErr = true;
+
+                    err = new IgniteCheckedException("Cluster state change failed.");
+
+                    cctx.kernalContext().state().onStateChangeError(changeGlobalStateExceptions, req);
+                }
+                else {
+                    boolean hasMoving = !partsToReload.isEmpty();
+
+                    Set<Integer> waitGrps = cctx.affinity().waitGroups();
+
+                    if (!hasMoving) {
+                        for (CacheGroupContext grpCtx : cctx.cache().cacheGroups()) {
+                            if (waitGrps.contains(grpCtx.groupId()) && grpCtx.topology().hasMovingPartitions()) {
+                                hasMoving = true;
+
+                                break;
+                            }
+
+                        }
+                    }
+
+                    cctx.kernalContext().state().onExchangeFinishedOnCoordinator(this, hasMoving);
+                }
+
+                boolean active = !stateChangeErr && req.activate();
+
+                ChangeGlobalStateFinishMessage stateFinishMsg = new ChangeGlobalStateFinishMessage(
+                    req.requestId(),
+                    active,
+                    !stateChangeErr);
+
+                cctx.discovery().sendCustomEvent(stateFinishMsg);
+
+                if (!centralizedAff)
+                    onDone(exchCtx.events().topologyVersion(), err);
             }
         }
         catch (IgniteCheckedException e) {
@@ -3012,6 +3022,9 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                             crd.isLocal(),
                             msg);
 
+                        IgniteCheckedException err = !F.isEmpty(msg.partitionsMessage().getErrorsMap()) ?
+                            new IgniteCheckedException("Cluster state change failed.") : null;
+
                         if (!crd.isLocal()) {
                             GridDhtPartitionsFullMessage partsMsg = msg.partitionsMessage();
 
@@ -3019,9 +3032,12 @@ public class GridDhtPartitionsExchangeFuture extends GridDhtTopologyFutureAdapte
                             assert partsMsg.lastVersion() != null : partsMsg;
 
                             updatePartitionFullMap(resTopVer, partsMsg);
+
+                            if (exchActions != null && exchActions.stateChangeRequest() != null && err != null)
+                                cctx.kernalContext().state().onStateChangeError(msg.partitionsMessage().getErrorsMap(), exchActions.stateChangeRequest());
                         }
 
-                        onDone(resTopVer);
+                        onDone(resTopVer, err);
                     }
                     else {
                         if (log.isDebugEnabled()) {
