@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-const path = require('path');
 const { Selector } = require('testcafe');
 const { AngularJSSelector } = require('testcafe-angular-selectors');
 
-const igniteSignUp = async(t) => {
+const signUp = async(t) => {
     await t.navigateTo(`${process.env.APP_URL || 'http://localhost:9001/'}`);
 
     await t.click(Selector('a').withText('Sign Up'));
@@ -41,7 +40,7 @@ const igniteSignUp = async(t) => {
 };
 
 
-const igniteSignIn = async(t) => {
+const signIn = async(t) => {
     await t.navigateTo(`${process.env.APP_URL || 'http://localhost:9001/'}`);
 
     await t
@@ -52,8 +51,5 @@ const igniteSignIn = async(t) => {
     // close modal window
     await t.click('.modal-header button.close');
 };
-
-const signIn = process.env.IGNITE_MODULES ? require(path.join(process.env.IGNITE_MODULES, 'e2e/testcafe/roles.js')).igniteSignIn : igniteSignIn;
-const signUp = process.env.IGNITE_MODULES ? require(path.join(process.env.IGNITE_MODULES, 'e2e/testcafe/roles.js')).igniteSignUp : igniteSignUp;
 
 module.exports = { signUp, signIn };

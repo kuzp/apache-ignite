@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "E2E tests for Apache Ignite Web console",
   "private": true,
+  "main": "index.js",
   "scripts": {
     "env": "node envtools.js start",
     "test": "node testcafe.js --env=true"

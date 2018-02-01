@@ -46,41 +46,43 @@ const resolveFixturesPaths = () => {
     return fixturesPaths;
 };
 
-createTestCafe('localhost', 1337, 1338)
-    .then(async(tc) => {
-        try {
+const startTestCafe = () => {
+    createTestCafe('localhost', 1337, 1338)
+        .then(async(tc) => {
+            try {
+                if (envEnabled)
+                    await startEnv();
+
+                await removeData();
+
+                testcafe = tc;
+
+                const runner = testcafe.createRunner();
+                const reporter = process.env.TEAMCITY ? 'teamcity' : 'spec';
+
+                console.log('Start E2E testing!');
+
+                return runner
+                    .src(resolveFixturesPaths())
+                    .browsers(BROWSERS)
+                    .reporter(reporter)
+                    .run({ skipJsErrors: true });
+            } catch (err) {
+                console.log(err);
+
+                process.exit(1);
+            }
+        })
+        .then(async(failedCount) => {
+            console.log('Cleaning after tests...');
+
+            testcafe.close();
+
             if (envEnabled)
-                await startEnv();
+                await removeData();
 
-            await removeData();
+            console.log('Tests failed: ' + failedCount);
 
-            testcafe = tc;
-
-            const runner = testcafe.createRunner();
-            const reporter = process.env.TEAMCITY ? 'teamcity' : 'spec';
-
-            console.log('Start E2E testing!');
-
-            return runner
-                .src(resolveFixturesPaths())
-                .browsers(BROWSERS)
-                .reporter(reporter)
-                .run({ skipJsErrors: true });
-        } catch (err) {
-            console.log(err);
-
-            process.exit(1);
-        }
-    })
-    .then(async(failedCount) => {
-        console.log('Cleaning after tests...');
-
-        testcafe.close();
-
-        if (envEnabled)
-            await removeData();
-
-        console.log('Tests failed: ' + failedCount);
-
-        process.exit(0);
-    });
+            process.exit(0);
+        });
+};
