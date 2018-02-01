@@ -35,7 +35,7 @@ const insertTestUser = ({userId = '000000000000000000000001', token = 'ppw4tPI3J
                     throw err;
                 }
 
-                // add user
+                // Add test user.
                 const user = {
                     _id: objectid(userId),
                     salt: 'ca8b49c2eacd498a0973de30c0873c166ed99fa0605981726aedcc85bee17832',
@@ -54,7 +54,7 @@ const insertTestUser = ({userId = '000000000000000000000001', token = 'ppw4tPI3J
                 };
                 db.collection('accounts').insert(user);
 
-                // add spaces
+                // Add  test spaces.
 
                 const spaces = [
                     {
@@ -143,7 +143,7 @@ const exec = (command, onResolveString, cwd, env) => {
     });
 };
 
-const startEnv = () => {
+const startEnv = (webConsoleRootDirectoryPath = '../../') => {
     return new Promise(async(resolve) => {
         const command = `${process.platform === 'win32' ? 'npm.cmd' : 'npm'} start`;
 
@@ -152,8 +152,8 @@ const startEnv = () => {
             port = parseInt(url.parse(process.env.APP_URL).port) || 80;
         }
 
-        const backendInstanceLaunch = exec(command, 'Start listening', '../../backend', {server_port: 3001, mongodb_url: mongoUrl});
-        const frontendInstanceLaunch = exec(command, 'Compiled successfully', '../../frontend', {BACKEND_PORT: 3001, PORT: port});
+        const backendInstanceLaunch = exec(command, 'Start listening', '../../backend', {server_port: 3001, mongodb_url: mongoUrl}); // Todo: refactor cwd for backend when it's linked
+        const frontendInstanceLaunch = exec(command, 'Compiled successfully', `${webConsoleRootDirectoryPath}frontend`, {BACKEND_PORT: 3001, PORT: port});
 
         console.log('Building backend in progress...');
         await backendInstanceLaunch;

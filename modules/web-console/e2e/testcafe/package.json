@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "env": "node envtools.js start",
-    "test": "node testcafe.js --env=true"
+    "test": "node index.js --env=true"
   },
   "author": "",
   "contributors": [
