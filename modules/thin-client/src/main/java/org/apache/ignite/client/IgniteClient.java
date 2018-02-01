@@ -39,5 +39,5 @@ public interface IgniteClient extends AutoCloseable {
      * @param name Cache name.
      * @return Instance of {@link CacheClient}.
      */
-    public <K, V> CacheClient<K, V> getOrCreateCache(String name);
+    public <K, V> CacheClient<K, V> getOrCreateCache(String name) throws IgniteClientException;
 }

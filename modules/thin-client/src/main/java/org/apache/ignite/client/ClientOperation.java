@@ -17,31 +17,23 @@
 
 package org.apache.ignite.client;
 
-/** Binary reader. */
-interface BinaryReader {
-    /**
-     * @return An {@link Integer}.
-     */
-    public int readInt() throws IgniteClientException;
+/** Operation codes. */
+enum ClientOperation {
+    /** Handshake. */ HANDSHAKE(1),
+    /** Cache get or create with name. */ CACHE_GET_OR_CREATE_WITH_NAME(1052);
+
+    /** Code. */
+    private final int code;
+
+    /** Constructor. */
+    ClientOperation(int code) {
+        this.code = code;
+    }
 
     /**
-     * @param size Number of bytes to read.
-     * @return Bytes.
+     * @return Code.
      */
-    public byte[] readBytes(int size) throws IgniteClientException;
-
-    /**
-     * @return A {@link Boolean}.
-     */
-    public boolean readBoolean() throws IgniteClientException;
-
-    /**
-     * @return A {@link Short}.
-     */
-    public short readShort() throws IgniteClientException;
-
-    /**
-     * @return A typed object deserialized from Ignite Binary Object format.
-     */
-    public <T> T readIgniteBinary() throws IgniteClientException;
+    public byte code() {
+        return (byte)code;
+    }
 }

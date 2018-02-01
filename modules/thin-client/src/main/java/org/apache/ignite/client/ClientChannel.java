@@ -17,30 +17,22 @@
 
 package org.apache.ignite.client;
 
-/** Binary writer interface. */
-interface BinaryWriter {
+import org.apache.ignite.internal.binary.streams.*;
+
+import java.util.function.*;
+
+/**
+ * Processing thin client requests and responses.
+ */
+interface ClientChannel extends AutoCloseable {
     /**
-     * Flush written data.
+     * @param op Operation.
+     * @param payloadWriter Payload writer.
      */
-    public void flush() throws IgniteClientException;
+    public void send(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter) throws IgniteClientException;
 
     /**
-     * @param val Value.
+     * @return Received bytes.
      */
-    public void writeBytes(byte[] val) throws IgniteClientException;
-
-    /**
-     * @param val Value.
-     */
-    public void writeByte(byte val) throws IgniteClientException;
-
-    /**
-     * @param val Value.
-     */
-    public void writeShort(short val) throws IgniteClientException;
-
-    /**
-     * @param val Value.
-     */
-    public void writeInt(int val) throws IgniteClientException;
+    public byte[] receive() throws IgniteClientException;
 }
