@@ -564,13 +564,3 @@ mixin dialect(lbl, model, name, required, tipTitle, genericDialectName, placehol
             <li>PostgreSQL</li>\
             <li>H2 database</li>\
         </ul>')
-
-//- Mixin for show/hide links.
-mixin showHideLink(name, text)
-    span(ng-init='__ = {};')
-        a.customize(ng-show=`__.${name}` ng-click=`__.${name} = false`) Hide #{text}
-        a.customize(ng-hide=`__.${name}` ng-click=`__.${name} = true; ui.loadPanel('${name}');`) Show #{text}
-        div(ng-if=`ui.isPanelLoaded('${name}')`)
-            .panel-details(ng-show=`__.${name}`)
-                if block
-                    block
