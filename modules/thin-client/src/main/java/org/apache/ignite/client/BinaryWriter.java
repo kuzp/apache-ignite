@@ -17,27 +17,30 @@
 
 package org.apache.ignite.client;
 
-import java.io.*;
-
 /** Binary writer interface. */
 interface BinaryWriter {
     /**
      * Flush written data.
      */
-    public void flush() throws IOException;
+    public void flush() throws IgniteClientException;
 
     /**
      * @param val Value.
      */
-    public void writeByte(byte val) throws IOException;
+    public void writeBytes(byte[] val) throws IgniteClientException;
 
     /**
      * @param val Value.
      */
-    public void writeShort(short val) throws IOException;
+    public void writeByte(byte val) throws IgniteClientException;
 
     /**
      * @param val Value.
      */
-    public void writeInt(int val) throws IOException;
+    public void writeShort(short val) throws IgniteClientException;
+
+    /**
+     * @param val Value.
+     */
+    public void writeInt(int val) throws IgniteClientException;
 }

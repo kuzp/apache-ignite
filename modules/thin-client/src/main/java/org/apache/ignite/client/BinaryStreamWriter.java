@@ -17,10 +17,13 @@
 
 package org.apache.ignite.client;
 
+import org.apache.ignite.internal.binary.streams.*;
+
 import java.io.*;
 
 /**
  * Implementation of {@link BinaryWriter} for {@link OutputStream}.
+ * TODO: get rid of ignite-core dependency used for binary serializer abd Ignite Binary Object serializer.
  */
 class BinaryStreamWriter implements BinaryWriter {
     /** Stream. */
@@ -37,27 +40,51 @@ class BinaryStreamWriter implements BinaryWriter {
     }
 
     /** {@inheritDoc} */
-    @Override public void flush() throws IOException {
-        stream.flush();
+    @Override public void flush() throws IgniteClientException {
+        try {
+            stream.flush();
+        }
+        catch (IOException e) {
+            throw new IgniteClientException("Binary stream writer failed flushing data");
+        }
     }
 
     /** {@inheritDoc} */
-    @Override public void writeByte(byte val) throws IOException {
-        stream.write(new byte[] {val});
+    @Override public void writeBytes(byte[] val) throws IgniteClientException {
+        if (val != null && val.length > 0)
+            writeBytes(val, val.length);
     }
 
     /** {@inheritDoc} */
-    @Override public void writeShort(short val) throws IOException {
-        stream.write(new byte[] {(byte)(val & 0xff), (byte)(val >> 8 & 0xff)});
+    @Override public void writeByte(byte val) throws IgniteClientException {
+        writeBytes(new byte[] {val});
     }
 
     /** {@inheritDoc} */
-    @Override public void writeInt(int val) throws IOException {
-        stream.write(new byte[] {
-            (byte)(val & 0xff),
-            (byte)(val >> 8 & 0xff),
-            (byte)(val >> 16 & 0xff),
-            (byte)(val >> 24 & 0xff)
-        });
+    @Override public void writeShort(short val) throws IgniteClientException {
+        BinaryOutputStream s = new BinaryHeapOutputStream(2);
+
+        s.writeShort(val);
+
+        writeBytes(s.array(), s.position());
+    }
+
+    /** {@inheritDoc} */
+    @Override public void writeInt(int val) throws IgniteClientException {
+        BinaryOutputStream s = new BinaryHeapOutputStream(4);
+
+        s.writeInt(val);
+
+        writeBytes(s.array(), s.position());
+    }
+
+    /** Write bytes. */
+    private void writeBytes(byte[] val, int len) throws IgniteClientException {
+        try {
+            stream.write(val, 0, len);
+        }
+        catch (IOException e) {
+            throw new IgniteClientException("Binary stream writer failed writing data", e);
+        }
     }
 }

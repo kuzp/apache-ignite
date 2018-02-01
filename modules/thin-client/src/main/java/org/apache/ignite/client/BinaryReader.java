@@ -17,28 +17,31 @@
 
 package org.apache.ignite.client;
 
-import java.io.*;
-
 /** Binary reader. */
 interface BinaryReader {
     /**
      * @return An {@link Integer}.
      */
-    public int readInt() throws IOException;
+    public int readInt() throws IgniteClientException;
 
     /**
      * @param size Number of bytes to read.
      * @return Bytes.
      */
-    public byte[] readBytes(int size) throws IOException;
+    public byte[] readBytes(int size) throws IgniteClientException;
 
     /**
      * @return A {@link Boolean}.
      */
-    public boolean readBoolean() throws IOException;
+    public boolean readBoolean() throws IgniteClientException;
 
     /**
      * @return A {@link Short}.
      */
-    public short readShort() throws IOException;
+    public short readShort() throws IgniteClientException;
+
+    /**
+     * @return A typed object deserialized from Ignite Binary Object format.
+     */
+    public <T> T readIgniteBinary() throws IgniteClientException;
 }

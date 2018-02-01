@@ -17,12 +17,21 @@
 
 package org.apache.ignite.client;
 
+import org.apache.ignite.*;
+import org.apache.ignite.internal.binary.*;
+import org.apache.ignite.internal.binary.streams.*;
+import org.apache.ignite.marshaller.*;
+
 import java.io.*;
 
 /**
  * Implements {@link BinaryReader} for reading {@link InputStream}.
+ * TODO: get rid of ignite-core dependency used for binary deserializer abd Ignite Binary Object deserializer.
  */
-public class BinaryStreamReader implements BinaryReader {
+class BinaryStreamReader implements BinaryReader {
+    /** Ignite Binary Object serializer/deserializer. */
+    private static final Marshaller igniteBinDes = new BinaryMarshaller();
+
     /** Stream. */
     private final InputStream stream;
 
@@ -35,50 +44,54 @@ public class BinaryStreamReader implements BinaryReader {
     }
 
     /** {@inheritDoc} */
-    @Override public int readInt() throws IOException {
-        byte[] bytes = new byte[4];
-
-        int bytesRead = stream.read(bytes, 0, 4);
-
-        if (bytesRead != 4)
-            throw new IOException("Blocking int read received less data than expected.");
-
-        return new BytesReader(bytes).readInt();
+    @Override public int readInt() throws IgniteClientException {
+        return new BinaryHeapInputStream(readBytes(4)).readInt();
     }
 
     /** {@inheritDoc} */
-    @Override public byte[] readBytes(int size) throws IOException {
-        byte[] bytes = new byte[size];
+    @Override public byte[] readBytes(int size) throws IgniteClientException {
+        if (size == 0)
+            return new byte[0];
 
-        int bytesRead = stream.read(bytes, 0, size);
+        byte[] bytes = new byte[size];
+        int bytesRead;
+
+        try {
+            bytesRead = stream.read(bytes, 0, size);
+        }
+        catch (IOException e) {
+            throw new IgniteClientException("Binary stream reader failed reading data", e);
+        }
 
         if (bytesRead != size)
-            throw new IOException("Blocking bytes read received less data than expected.");
+            throw new IgniteClientException(
+                bytesRead < 0 ?
+                    "Binary stream reader unexpectedly reached end of stream" :
+                    String.format("Binary stream reader received %s bytes but expected %s bytes", bytesRead, size)
+            );
 
         return bytes;
     }
 
     /** {@inheritDoc} */
-    @Override public boolean readBoolean() throws IOException {
-        byte[] bytes = new byte[1];
-
-        int bytesRead = stream.read(bytes, 0, 1);
-
-        if (bytesRead != 1)
-            throw new IOException("Blocking boolean read received less data than expected.");
+    @Override public boolean readBoolean() throws IgniteClientException {
+        byte[] bytes = readBytes(1);
 
         return bytes[0] != 0;
     }
 
     /** {@inheritDoc} */
-    @Override public short readShort() throws IOException {
-        byte[] bytes = new byte[2];
+    @Override public short readShort() throws IgniteClientException {
+        return new BinaryHeapInputStream(readBytes(2)).readShort();
+    }
 
-        int bytesRead = stream.read(bytes, 0, 2);
-
-        if (bytesRead != 2)
-            throw new IOException("Blocking short read received less data than expected.");
-
-        return new BytesReader(bytes).readShort();
+    /** {@inheritDoc} */
+    @Override public <T> T readIgniteBinary() throws IgniteClientException {
+        try {
+            return igniteBinDes.unmarshal(stream, null);
+        }
+        catch (IgniteCheckedException e) {
+            throw new IgniteClientException("Binary stream reader failed deserializing Ignite binary object", e);
+        }
     }
 }

@@ -94,4 +94,9 @@ final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
         return patch - other.patch;
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return String.format("%s.%s.%s", major, minor, patch);
+    }
 }

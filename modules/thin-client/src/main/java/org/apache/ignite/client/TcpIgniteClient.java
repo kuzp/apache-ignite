@@ -135,29 +135,28 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
     /** Client handshake. */
     private void handshake() throws IgniteClientException {
-        try {
-            // Handshake request
-            writer.writeInt(1 + 2 + 2 + 2 + 1); // message size
-            writer.writeByte((byte)1); // handshake code, always 1
-            writer.writeShort(ver.major());
-            writer.writeShort(ver.minor());
-            writer.writeShort(ver.patch());
-            writer.writeByte((byte)2); // client code, always 2
-            writer.flush();
+        // Handshake request
 
-            // Handshake response
-            BinaryReader res = new BytesReader(reader.readBytes(reader.readInt()));
+        writer.writeInt(1 + 2 + 2 + 2 + 1); // message size
+        writer.writeByte((byte)1); // handshake code, always 1
+        writer.writeShort(ver.major());
+        writer.writeShort(ver.minor());
+        writer.writeShort(ver.patch());
+        writer.writeByte((byte)2); // client code, always 2
+        writer.flush();
 
-            if (res.readBoolean()) // success flag
-                return;
+        // Handshake response
+        int resSize = reader.readInt();
 
-            ProtocolVersion srvVer = new ProtocolVersion(res.readShort(), res.readShort(), res.readShort());
+        if (reader.readBoolean()) // Success flag
+            reader.readBytes(resSize - 1); // skip the rest of response
+        else {
+            ProtocolVersion srvVer = new ProtocolVersion(reader.readShort(), reader.readShort(), reader.readShort());
+            String err = reader.readIgniteBinary();
 
-
-
-        }
-        catch (Exception e) {
-            throw new IgniteClientException("Ignite client failed to communicate with server node", e);
+            throw new IgniteClientException(
+                String.format("Client handshake failed: %s. Client version: %s. Server version: %s", err, ver, srvVer)
+            );
         }
     }
 }

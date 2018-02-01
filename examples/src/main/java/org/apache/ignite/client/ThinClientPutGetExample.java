@@ -23,10 +23,10 @@ package org.apache.ignite.client;
 public class ThinClientPutGetExample {
     /** Entry point. */
     public static void main(String[] args) {
-        IgniteClientConfiguration cfg = new IgniteClientConfiguration("127.0.0.1");
+        /*IgniteClientConfiguration cfg = new IgniteClientConfiguration("127.0.0.1");
 
         try (IgniteClient igniteClient = IgniteClient.start(cfg)) {
 
-        }
+        }*/
     }
 }
