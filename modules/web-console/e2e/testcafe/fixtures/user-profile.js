@@ -16,7 +16,7 @@
  */
 
 const { Selector } = require('testcafe');
-const { removeData, insertTestUser } = require('../envtools');
+const { removeData, insertTestUser } = require('../environment/envtools');
 const { signIn, signUp } = require('../roles');
 
 fixture('Checking user profile')

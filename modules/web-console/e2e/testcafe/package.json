@@ -5,7 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "env": "node envtools.js start",
+    "env": "node environment/launch-env.js",
     "test": "node index.js --env=true"
   },
   "author": "",

@@ -16,7 +16,7 @@
  */
 
 const { Selector } = require('testcafe');
-const { removeData } = require('../envtools');
+const { removeData } = require('../environment/envtools');
 const { signUp } = require('../roles');
 
 fixture('Checking Ingite main menu')

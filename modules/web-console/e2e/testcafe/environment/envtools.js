@@ -20,10 +20,6 @@ const objectid = require('objectid');
 const { spawn } = require('child_process');
 const url = require('url');
 
-const argv = require('minimist')(process.argv.slice(2));
-const start = argv._.includes('start');
-const stop = argv._.includes('stop');
-
 const mongoUrl = process.env.DB_URL || 'mongodb://localhost/console-e2e';
 
 const insertTestUser = ({userId = '000000000000000000000001', token = 'ppw4tPI3JUOGHva8CODO' } = options = {}) => {
@@ -166,21 +162,5 @@ const startEnv = (webConsoleRootDirectoryPath = '../../') => {
         resolve();
     });
 };
-
-if (start) {
-    startEnv();
-
-    process.on('SIGINT', async() => {
-        await removeData();
-
-        process.exit(0);
-    });
-}
-
-if (stop) {
-    removeData();
-
-    console.log('Cleaning done...');
-}
 
 module.exports = { startEnv, removeData, insertTestUser };

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-const { startEnv, removeData } = require('./envtools');
+const { startEnv, removeData } = require('./environment/envtools');
 
 const createTestCafe = require('testcafe');
 

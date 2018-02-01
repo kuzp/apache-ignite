@@ -18,7 +18,7 @@
 const { Selector, Role } = require('testcafe');
 const { signUp } = require('../roles');
 const { AngularJSSelector } = require('testcafe-angular-selectors');
-const { removeData, insertTestUser } = require('../envtools');
+const { removeData, insertTestUser } = require('../environment/envtools');
 
 fixture('Checking Ignite auth screen')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}`
