@@ -27,6 +27,7 @@ import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
+import org.apache.ignite.testframework.GridTestUtils;
 
 /**
  * Testing logging via {@link IgniteUtils#warnDevOnly(IgniteLogger, Object)}.
@@ -68,6 +69,9 @@ public class IgniteDevOnlyLogTest extends TestCase {
     public void testDevOnlyDisabledProperty() throws IOException {
         String oldDevOnlyVal = System.setProperty(IgniteSystemProperties.IGNITE_DEV_ONLY_LOGGING_DISABLED, "true");
 
+        Boolean oldDevOnlyFieldVal = GridTestUtils.getFieldValue(IgniteUtils.class, "devOnlyLogDisabled");
+        GridTestUtils.setFieldValue(IgniteUtils.class, "devOnlyLogDisabled", true);
+
         try (Ignite ignite = startNode()) {
             String msg = getMessage(ignite);
             IgniteUtils.warnDevOnly(ignite.log(), msg);
@@ -75,6 +79,8 @@ public class IgniteDevOnlyLogTest extends TestCase {
         }
         finally {
             setOrClearProperty(IgniteSystemProperties.IGNITE_DEV_ONLY_LOGGING_DISABLED, oldDevOnlyVal);
+
+            GridTestUtils.setFieldValue(IgniteUtils.class, "devOnlyLogDisabled", oldDevOnlyFieldVal);
         }
 
     }
@@ -88,7 +94,7 @@ public class IgniteDevOnlyLogTest extends TestCase {
     }
 
     /** Starts an Ignite node. */
-    private Ignite startNode() throws IOException {
+    private Ignite startNode() {
         IgniteConfiguration configuration = new IgniteConfiguration()
             .setIgniteInstanceName(IgniteDevOnlyLogTest.class.getName() + "Instance")
             .setDiscoverySpi(new TcpDiscoverySpi()
