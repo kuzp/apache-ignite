@@ -17,6 +17,7 @@
 
 package org.apache.ignite.console.demo;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
@@ -107,7 +108,8 @@ public class AgentClusterDemo {
         cfg.setIgniteInstanceName((client ? CLN_NODE_NAME : SRV_NODE_NAME) + gridIdx);
         cfg.setLocalHost("127.0.0.1");
         cfg.setEventStorageSpi(new MemoryEventStorageSpi());
-        cfg.setWorkDirectory(U.workDirectory(null, null));
+
+        cfg.setWorkDirectory(U.workDirectory(new File(System.getProperty("user.dir"), "demo-work").getAbsolutePath(), null));
 
         int[] evts = new int[EVTS_DISCOVERY.length + VISOR_TASK_EVTS.length];
 
