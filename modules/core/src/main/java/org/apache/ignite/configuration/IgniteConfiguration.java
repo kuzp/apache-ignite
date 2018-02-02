@@ -199,6 +199,9 @@ public class IgniteConfiguration {
     /** Default value for active on start flag. */
     public static final boolean DFLT_ACTIVE_ON_START = true;
 
+    /** Default value for auto-activation flag. */
+    public static final boolean DFLT_AUTO_ACTIVATION = true;
+
     /** Default failure detection timeout in millis. */
     @SuppressWarnings("UnnecessaryBoxing")
     public static final Long DFLT_FAILURE_DETECTION_TIMEOUT = new Long(10_000);
@@ -470,6 +473,9 @@ public class IgniteConfiguration {
     /** Active on start flag. */
     private boolean activeOnStart = DFLT_ACTIVE_ON_START;
 
+    /** Auto-activation flag. */
+    private boolean autoActivation = DFLT_AUTO_ACTIVATION;
+
     /** */
     private long longQryWarnTimeout = DFLT_LONG_QRY_WARN_TIMEOUT;
 
@@ -517,6 +523,7 @@ public class IgniteConfiguration {
         addrRslvr = cfg.getAddressResolver();
         allResolversPassReq = cfg.isAllSegmentationResolversPassRequired();
         atomicCfg = cfg.getAtomicConfiguration();
+        autoActivation = cfg.isAutoActivationEnabled();
         binaryCfg = cfg.getBinaryConfiguration();
         dsCfg = cfg.getDataStorageConfiguration();
         memCfg = cfg.getMemoryConfiguration();
@@ -2279,6 +2286,36 @@ public class IgniteConfiguration {
     }
 
     /**
+     * Get the flag indicating that cluster is enabled to activate automatically.
+     *
+     * If it is set to {@code true} and BaselineTopology is set as well than cluster activates automatically
+     * when all nodes from the BaselineTopology join the cluster.
+     *
+     * <p>
+     * Default value is {@link #DFLT_AUTO_ACTIVATION}.
+     * <p>
+     *
+     * @return Auto activation enabled flag value.
+     */
+    public boolean isAutoActivationEnabled() {
+        return autoActivation;
+    }
+
+    /**
+     * Sets flag indicating whether the cluster is enabled to activate automatically.
+     * This value should be the same on all nodes in the cluster.
+     *
+     * @param autoActivation Auto activation enabled flag value.
+     * @return {@code this} instance.
+     * @see #isAutoActivationEnabled()
+     */
+    public IgniteConfiguration setAutoActivationEnabled(boolean autoActivation) {
+        this.autoActivation = autoActivation;
+
+        return this;
+    }
+
+    /**
      * Gets flag indicating whether cache sanity check is enabled. If enabled, then Ignite
      * will perform the following checks and throw an exception if check fails:
      * <ul>
@@ -2895,7 +2932,7 @@ public class IgniteConfiguration {
     }
 
     /**
-     * TODO IGNITE-3478
+     * Whether or not MVCC is enabled.
      *
      * @return {@code True} if MVCC is enabled.
      */
@@ -2904,7 +2941,7 @@ public class IgniteConfiguration {
     }
 
     /**
-     * TODO IGNITE-3478
+     * Sets MVCC enabled flag.
      *
      * @param mvccEnabled MVCC enabled flag.
      * @return {@code this} for chaining.

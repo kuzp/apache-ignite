@@ -42,8 +42,8 @@ import org.apache.ignite.internal.processors.cache.GridCacheOperation;
 import org.apache.ignite.internal.processors.cache.GridCacheVersionedFuture;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.GridDistributedLockCancelledException;
-import org.apache.ignite.internal.processors.cache.distributed.near.GridNearTxLocal;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearTxQueryEnlistResponse;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccLongList;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.query.IgniteQueryErrorCode;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
@@ -51,6 +51,7 @@ import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.query.GridQueryCancel;
 import org.apache.ignite.internal.processors.query.IgniteSQLException;
 import org.apache.ignite.internal.processors.timeout.GridTimeoutObjectAdapter;
+import org.apache.ignite.internal.transactions.IgniteTxTimeoutCheckedException;
 import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.tostring.GridToStringExclude;
 import org.apache.ignite.internal.util.typedef.F;
@@ -368,14 +369,12 @@ public final class GridDhtTxQueryEnlistFuture extends GridCacheFutureAdapter<Gri
         try {
             top.readLock();
 
-            List<GridDhtLocalPartition> parts = top.localPartitions();
-
             for (int i = 0; i < parts0.length; i++) {
-                GridDhtLocalPartition p = parts.get(i);
+                GridDhtLocalPartition p = top.localPartition(parts0[i]);
 
                 if (p == null || p.state() != GridDhtPartitionState.OWNING)
                     throw new ClusterTopologyCheckedException("Cannot run update query. " +
-                        "Node must own all the necessary partitions."); // TODO IGNITE-4191 Send retry instead.
+                        "Node must own all the necessary partitions."); // TODO IGNITE-7185 Send retry instead.
             }
         }
         finally {
@@ -580,9 +579,6 @@ public final class GridDhtTxQueryEnlistFuture extends GridCacheFutureAdapter<Gri
         txEntry.markValid();
         txEntry.queryEnlisted(true);
 
-        if (tx.local() && !tx.dht())
-            ((GridNearTxLocal)tx).colocatedLocallyMapped(true);
-
         GridCacheMvccCandidate c = entry.addDhtLocal(
             nearNodeId,
             nearLockVer,
@@ -729,8 +725,16 @@ public final class GridDhtTxQueryEnlistFuture extends GridCacheFutureAdapter<Gri
 
         int cmp = Long.compare(ver.coordinatorVersion(), mvccVer.coordinatorVersion());
 
-        if (cmp == 0)
+        if (cmp == 0) {
             cmp = Long.compare(ver.counter(), mvccVer.counter());
+
+            if (cmp < 0) {
+                MvccLongList txs = mvccVer.activeTransactions();
+
+                if (txs != null && txs.contains(ver.counter()))
+                    cmp = 1;
+            }
+        }
 
         if (cmp > 0) {
             onDone(new IgniteCheckedException("Mvcc version mismatch."));
@@ -804,7 +808,8 @@ public final class GridDhtTxQueryEnlistFuture extends GridCacheFutureAdapter<Gri
             if (log.isDebugEnabled())
                 log.debug("Timed out waiting for lock response: " + this);
 
-            onDone(new GridCacheLockTimeoutException(lockVer));
+            onDone(new IgniteTxTimeoutCheckedException("Failed to acquire lock within provided timeout for " +
+                "transaction [timeout=" + tx.timeout() + ", tx=" + tx + ']'));
         }
 
         /** {@inheritDoc} */

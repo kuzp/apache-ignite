@@ -44,11 +44,13 @@ import org.apache.ignite.configuration.NearCacheConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
+import org.apache.ignite.internal.processors.cache.mvcc.MvccQueryTracker;
 import org.apache.ignite.internal.processors.cache.mvcc.MvccVersion;
 import org.apache.ignite.internal.processors.cache.persistence.CacheDataRow;
 import org.apache.ignite.internal.processors.query.GridQueryCancel;
 import org.apache.ignite.internal.processors.query.GridQueryIndexing;
 import org.apache.ignite.internal.processors.query.GridQueryProcessor;
+import org.apache.ignite.internal.processors.query.GridQueryRowCacheCleaner;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.processors.query.GridRunningQueryInfo;
 import org.apache.ignite.internal.processors.query.QueryField;
@@ -245,14 +247,13 @@ public class IgniteClientCacheInitializationFailTest extends GridCommonAbstractT
 
         /** {@inheritDoc} */
         @Override public <K, V> QueryCursor<Cache.Entry<K, V>> queryDistributedSql(String schemaName, String cacheName,
-            SqlQuery qry, boolean keepBinary, int mainCacheId) throws IgniteCheckedException {
+            SqlQuery qry, boolean keepBinary) throws IgniteCheckedException {
             return null;
         }
 
         /** {@inheritDoc} */
-        @Override public List<FieldsQueryCursor<List<?>>> queryDistributedSqlFields(String schemaName,
-            SqlFieldsQuery qry, boolean keepBinary, GridQueryCancel cancel, @Nullable Integer mainCacheId,
-            boolean failOnMultipleStmts) throws IgniteCheckedException {
+        @Override public List<FieldsQueryCursor<List<?>>> querySqlFields(String schemaName, SqlFieldsQuery qry,
+                                                                         boolean keepBinary, boolean failOnMultipleStmts, MvccQueryTracker tracker, GridQueryCancel cancel) {
             return null;
         }
 
@@ -300,6 +301,12 @@ public class IgniteClientCacheInitializationFailTest extends GridCommonAbstractT
         }
 
         /** {@inheritDoc} */
+        @Override public void dynamicDropColumn(String schemaName, String tblName, List<String> cols,
+            boolean ifTblExists, boolean ifColExists) throws IgniteCheckedException {
+            // No-op
+        }
+
+        /** {@inheritDoc} */
         @Override public void registerCache(String cacheName, String schemaName,
             GridCacheContext<?, ?> cctx) throws IgniteCheckedException {
             if (FAILED_CACHES.contains(cctx.name()) && cctx.kernalContext().clientNode())
@@ -307,7 +314,7 @@ public class IgniteClientCacheInitializationFailTest extends GridCommonAbstractT
         }
 
         /** {@inheritDoc} */
-        @Override public void unregisterCache(String spaceName, boolean rmvIdx) throws IgniteCheckedException {
+        @Override public void unregisterCache(GridCacheContext cctx, boolean rmvIdx) throws IgniteCheckedException {
             // No-op
         }
 
@@ -386,6 +393,11 @@ public class IgniteClientCacheInitializationFailTest extends GridCommonAbstractT
         /** {@inheritDoc} */
         @Override public boolean isInsertStatement(PreparedStatement nativeStmt) {
             return false;
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridQueryRowCacheCleaner rowCacheCleaner(int cacheGroupId) {
+            return null;
         }
     }
 }
