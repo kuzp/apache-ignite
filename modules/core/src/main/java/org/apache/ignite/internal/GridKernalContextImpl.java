@@ -108,6 +108,9 @@ public class GridKernalContextImpl implements GridKernalContext, Externalizable 
     /** */
     private static final ThreadLocal<String> stash = new ThreadLocal<>();
 
+    /** */
+    private static final boolean IS_DAEMON = "true".equalsIgnoreCase(System.getProperty(IGNITE_DAEMON));
+
     /*
      * Managers.
      * ========
@@ -869,7 +872,7 @@ public class GridKernalContextImpl implements GridKernalContext, Externalizable 
 
     /** {@inheritDoc} */
     @Override public boolean isDaemon() {
-        return config().isDaemon() || "true".equalsIgnoreCase(System.getProperty(IGNITE_DAEMON));
+        return config().isDaemon() || IS_DAEMON;
     }
 
     /** {@inheritDoc} */
