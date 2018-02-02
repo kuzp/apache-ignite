@@ -270,7 +270,7 @@ public class AgentClusterDemo {
                             Ignite ignite = Ignition.ignite(SRV_NODE_NAME + 0);
 
                             if (ignite != null) {
-                                ignite.active(true);
+                                ignite.cluster().active(true);
 
                                 deployServices(ignite.services(ignite.cluster().forServers()));
                             }
