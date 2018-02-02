@@ -1677,50 +1677,45 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                     // TODO: https://issues.apache.org/jira/browse/IGNITE-6097
                     grp.offheap().onPartitionInitialCounterUpdated(i, 0);
 
-                    checkpointReadLock();
+                    long partMetaId = pageMem.partitionMetaPageId(grpId, i);
+                    long partMetaPage = pageMem.acquirePage(grpId, partMetaId);
 
                     try {
-                        long partMetaId = pageMem.partitionMetaPageId(grpId, i);
-                        long partMetaPage = pageMem.acquirePage(grpId, partMetaId);
+                        long pageAddr = pageMem.writeLock(grpId, partMetaId, partMetaPage);
+
+                        boolean changed = false;
 
                         try {
-                            long pageAddr = pageMem.writeLock(grpId, partMetaId, partMetaPage);
+                            PagePartitionMetaIO io = PagePartitionMetaIO.VERSIONS.forPage(pageAddr);
 
-                            boolean changed = false;
+                            T2<Integer, Long> fromWal = partStates.get(new T2<>(grpId, i));
 
-                            try {
-                                PagePartitionMetaIO io = PagePartitionMetaIO.VERSIONS.forPage(pageAddr);
-
-                            T2<Integer, Long> fromWal = partStates.get(new T2<>(grpId, i));if (fromWal != null) {
+                            if (fromWal != null) {
                                 int stateId = fromWal.get1();
 
-                                    io.setPartitionState(pageAddr, (byte)stateId);
+                                io.setPartitionState(pageAddr, (byte)stateId);
 
-                                    changed = updateState(part, stateId);
+                                changed = updateState(part, stateId);
 
-                                if (stateId ==  GridDhtPartitionState.OWNING.ordinal()) {grp.offheap().onPartitionInitialCounterUpdated(i, fromWal.get2());
+                                if (stateId == GridDhtPartitionState.OWNING.ordinal()) {
+                                    grp.offheap().onPartitionInitialCounterUpdated(i, fromWal.get2());
 
-                                    if (part.initialUpdateCounter() < fromWal.get2() ) {
-
+                                    if (part.initialUpdateCounter() < fromWal.get2()) {
                                         part.initialUpdateCounter(fromWal.get2());
 
-                                            changed = true;
-                                        }
+                                        changed = true;
                                     }
                                 }
-                                else
-                                    changed = updateState(part, (int)io.getPartitionState(pageAddr));
                             }
-                            finally {
-                                pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
-                            }
+                            else
+                                changed = updateState(part, (int)io.getPartitionState(pageAddr));
                         }
                         finally {
-                            pageMem.releasePage(grpId, partMetaId, partMetaPage);
+                            pageMem.writeUnlock(grpId, partMetaId, partMetaPage, null, changed);
                         }
                     }
                     finally {
-                        checkpointReadUnlock();
+                        pageMem.releasePage(grpId, partMetaId, partMetaPage);
                     }
                 }
             }

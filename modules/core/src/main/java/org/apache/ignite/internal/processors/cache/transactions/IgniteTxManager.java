@@ -1589,8 +1589,6 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
             GridCacheContext cacheCtx = txEntry1.context();
 
             while (true) {
-                cctx.database().checkpointReadLock();
-
                 try {
                     GridCacheEntryEx entry1 = txEntry1.cached();
 
@@ -1642,9 +1640,6 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
                     tx.setRollbackOnly();
 
                     throw new IgniteCheckedException("Entry lock has been cancelled for transaction: " + tx);
-                }
-                finally {
-                    cctx.database().checkpointReadUnlock();
                 }
             }
         }
