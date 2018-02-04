@@ -53,7 +53,7 @@ public class ThinClientPutGetExample {
             System.out.format(">>> Loaded address [%s] from the cache.\n", cachedVal);
         }
         catch (IgniteClientException e) {
-            System.err.format("Thin client failed: %s\n", e);
+            System.err.println(e.getMessage());
         }
         catch (Exception e) {
             System.err.format("Unexpected failure: %s\n", e);

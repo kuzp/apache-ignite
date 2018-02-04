@@ -19,6 +19,7 @@ package org.apache.ignite.client;
 
 import org.apache.ignite.internal.binary.*;
 import org.apache.ignite.internal.binary.streams.*;
+import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
 
 /**
  * Implementation of {@link IgniteClient} over TCP protocol.
@@ -26,6 +27,9 @@ import org.apache.ignite.internal.binary.streams.*;
 class TcpIgniteClient implements IgniteClient, AutoCloseable {
     /** Channel. */
     private final ClientChannel ch;
+
+    /** Ignite Binary Object serializer/deserializer. */
+    private final GridBinaryMarshaller marsh = PlatformUtils.marshaller();
 
     /**
      * Private constructor. Use {@link IgniteClient#start(IgniteClientConfiguration)} to create an instance of
@@ -68,10 +72,7 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
         final ClientOperation OP = ClientOperation.CACHE_GET_OR_CREATE_WITH_NAME;
 
         long id = ch.send(OP, req -> {
-            try (BinaryRawWriterEx ser = new BinaryWriterExImpl(null, new BinaryHeapOutputStream(128), null, null)) {
-                ser.writeString(name);
-                req.writeByteArray(ser.out().array());
-            }
+            req.writeByteArray(marsh.marshal(name));
         });
 
         ch.receive(OP, id); // ignore empty response

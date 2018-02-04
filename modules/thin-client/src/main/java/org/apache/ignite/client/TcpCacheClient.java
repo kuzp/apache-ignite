@@ -32,14 +32,13 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
     /** Channel. */
     private final ClientChannel ch;
 
-    /** Binary Context. */
-    private final GridBinaryMarshaller marsh;
+    /** Ignite Binary Object serializer/deserializer. */
+    private final GridBinaryMarshaller marsh = PlatformUtils.marshaller();
 
     /** Constructor. */
     TcpCacheClient(String name, ClientChannel ch) {
         this.cacheId = cacheId(name);
         this.ch = ch;
-        this.marsh = PlatformUtils.marshaller();
     }
 
     /** {@inheritDoc} */
