@@ -19,8 +19,9 @@ package org.apache.ignite.client;
 
 /** Operation codes. */
 enum ClientOperation {
-    /** Handshake. */ HANDSHAKE(1),
-    /** Cache get or create with name. */ CACHE_GET_OR_CREATE_WITH_NAME(1052);
+    /** Cache get or create with name. */CACHE_GET_OR_CREATE_WITH_NAME(1052),
+    /** Cache put. */CACHE_PUT(1001),
+    /** Cache get. */CACHE_GET(1000);
 
     /** Code. */
     private final int code;
@@ -33,7 +34,7 @@ enum ClientOperation {
     /**
      * @return Code.
      */
-    public byte code() {
-        return (byte)code;
+    public short code() {
+        return (short)code;
     }
 }

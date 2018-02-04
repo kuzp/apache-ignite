@@ -40,4 +40,23 @@ public class Person {
     public String getName() {
         return name;
     }
+
+    /** {@inheritDoc} */
+    @Override public int hashCode() {
+        int res = 11;
+        res = 31 * res + id;
+        res = 31 * res + name.hashCode();
+
+        return res;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean equals(Object obj) {
+        if (!(obj instanceof Person))
+            return false;
+
+        Person other = (Person)obj;
+
+        return other.id.equals(id) && other.name.equals(name);
+    }
 }

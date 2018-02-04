@@ -28,7 +28,7 @@ public interface CacheClient<K, V> {
      * @return the element, or null, if it does not exist.
      * @throws NullPointerException if the key is null.
      */
-    public V get(K key);
+    public V get(K key) throws IgniteClientException;
 
     /**
      * Associates the specified value with the specified key in the cache.
@@ -40,5 +40,5 @@ public interface CacheClient<K, V> {
      * @param val value to be associated with the specified key.
      * @throws NullPointerException  if key is null or if value is null.
      */
-    public void put(K key, V val);
+    public void put(K key, V val) throws IgniteClientException;
 }

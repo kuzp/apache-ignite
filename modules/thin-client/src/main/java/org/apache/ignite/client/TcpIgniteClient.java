@@ -48,16 +48,9 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
         if (name.length() == 0)
             throw new IllegalArgumentException("Cache name must not be empty.");
 
-        ch.send(ClientOperation.CACHE_GET_OR_CREATE_WITH_NAME, req -> {
-            try (BinaryRawWriterEx ser = new BinaryWriterExImpl(null, new BinaryHeapOutputStream(128), null, null)) {
-                ser.writeString(name);
-                req.writeByteArray(ser.out().array());
-            }
-        });
+        createCacheIfNotExists(name);
 
-        BinaryInputStream res = new BinaryHeapInputStream(ch.receive());
-
-        return null;
+        return new TcpCacheClient<>(name, ch);
     }
 
     /**
@@ -68,5 +61,19 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
      */
     static IgniteClient start(IgniteClientConfiguration cfg) throws IgniteClientException {
         return new TcpIgniteClient(cfg);
+    }
+
+    /** */
+    private void createCacheIfNotExists(String name) throws IgniteClientException {
+        final ClientOperation OP = ClientOperation.CACHE_GET_OR_CREATE_WITH_NAME;
+
+        long id = ch.send(OP, req -> {
+            try (BinaryRawWriterEx ser = new BinaryWriterExImpl(null, new BinaryHeapOutputStream(128), null, null)) {
+                ser.writeString(name);
+                req.writeByteArray(ser.out().array());
+            }
+        });
+
+        ch.receive(OP, id); // ignore empty response
     }
 }

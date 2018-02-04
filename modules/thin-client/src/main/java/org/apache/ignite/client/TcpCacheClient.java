@@ -17,23 +17,78 @@
 
 package org.apache.ignite.client;
 
+import org.apache.ignite.binary.BinaryObject;
+import org.apache.ignite.internal.binary.GridBinaryMarshaller;
+import org.apache.ignite.internal.binary.streams.BinaryOutputStream;
+import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
+
 /**
  * Implementation of {@link CacheClient} over TCP protocol.
  */
 class TcpCacheClient<K, V> implements CacheClient<K, V> {
-    /**
-     * Private constructor. Use {@link IgniteClient#getOrCreateCache(String)} to create an instance of
-     * {@link TcpCacheClient}.
-     */
-    private TcpCacheClient() {
+    /** Cache id. */
+    private final int cacheId;
+
+    /** Channel. */
+    private final ClientChannel ch;
+
+    /** Binary Context. */
+    private final GridBinaryMarshaller marsh;
+
+    /** Constructor. */
+    TcpCacheClient(String name, ClientChannel ch) {
+        this.cacheId = cacheId(name);
+        this.ch = ch;
+        this.marsh = PlatformUtils.marshaller();
     }
 
     /** {@inheritDoc} */
-    public V get(K key) {
-        return null;
+    public V get(K key) throws IgniteClientException {
+        if (key == null)
+            throw new NullPointerException("key");
+
+        final ClientOperation OP = ClientOperation.CACHE_GET;
+
+        long id = ch.send(OP, req -> {
+            req.writeInt(cacheId);
+            req.writeByte((byte)0); // TODO: support for KEEP_BINARY
+            writeObject(req, key);
+        });
+
+        byte[] valBytes = ch.receive(OP, id);
+
+        Object val = marsh.unmarshal(valBytes, null);
+
+        return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
     }
 
     /** {@inheritDoc} */
-    public void put(K key, V val) {
+    public void put(K key, V val) throws IgniteClientException {
+        if (key == null)
+            throw new NullPointerException("key");
+
+        if (val == null)
+            throw new NullPointerException("val");
+
+        final ClientOperation OP = ClientOperation.CACHE_PUT;
+
+        long id = ch.send(OP, req -> {
+            req.writeInt(cacheId);
+            req.writeByte((byte)0); // presently flags are not supported
+            writeObject(req, key);
+            writeObject(req, val);
+        });
+
+        ch.receive(OP, id); // ignore empty response
+    }
+
+    /** Get cache ID by cache name. */
+    private static int cacheId(String name) {
+        return name.hashCode();
+    }
+
+    /** Write Ignite binary object to output stream. */
+    private void writeObject(BinaryOutputStream out, Object obj) {
+        out.writeByteArray(marsh.marshal(obj));
     }
 }

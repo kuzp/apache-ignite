@@ -268,7 +268,7 @@ public class MarshallerContextImpl implements MarshallerContext {
             }
         }
         else {
-            if (transport.stopping())
+            if (transport == null || transport.stopping())
                 return false;
 
             IgniteInternalFuture<MappingExchangeResult> fut = transport.proposeMapping(new MarshallerMappingItem(platformId, typeId, clsName), cache);

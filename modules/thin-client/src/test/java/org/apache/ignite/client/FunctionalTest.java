@@ -30,14 +30,14 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 /** System tests for {@link IgniteClient} */
-public class IgniteClientTest {
+public class FunctionalTest {
     /** Host. */
     private static final String HOST = "127.0.0.1";
 
     /** Name of the cache created by default in the cluster. */
     private static final String DEFAULT_CACHE_NAME = "default";
 
-    /** Test put/get operations */
+    /** Test put/get with primitive key and object value */
     @Test
     public void testPutGet() throws Exception {
         try (Ignite ignored = Ignition.start(getServerConfiguration());
@@ -56,6 +56,26 @@ public class IgniteClientTest {
             assertNotNull(cachedVal);
             assertEquals(key, cachedVal.getId());
             assertEquals(val.getName(), cachedVal.getName());
+        }
+    }
+
+    /** Test put/get with object key and primitive value */
+    @Test
+    public void testPutGet2() throws Exception {
+        try (Ignite ignored = Ignition.start(getServerConfiguration());
+             IgniteClient client = IgniteClient.start(getClientConfiguration())
+        ) {
+            CacheClient<Person, Integer> cache = client.getOrCreateCache(DEFAULT_CACHE_NAME);
+
+            Integer val = 1;
+
+            Person key = new Person(val, "Joe");
+
+            cache.put(key, val);
+
+            Integer cachedVal = cache.get(key);
+
+            assertEquals(val, cachedVal);
         }
     }
 

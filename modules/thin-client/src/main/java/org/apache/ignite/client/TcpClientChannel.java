@@ -41,6 +41,7 @@ class TcpClientChannel implements ClientChannel {
     /** Version. */
     private final ProtocolVersion ver = new ProtocolVersion((short)1, (short)0, (short)0);
 
+    /** Request id. */
     private final AtomicLong reqId = new AtomicLong(1);
 
     /** Constructor. */
@@ -75,15 +76,14 @@ class TcpClientChannel implements ClientChannel {
     }
 
     /** {@inheritDoc} */
-    @Override public void send(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter)
+    @Override public long send(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter)
         throws IgniteClientException {
+        long id = reqId.getAndIncrement();
+
         try (BinaryOutputStream req = new BinaryOffheapOutputStream(1024)) {
             req.writeInt(0); // reserve an integer for the request size
-
-            req.writeByte(op.code());
-
-            if (op != ClientOperation.HANDSHAKE)
-                req.writeLong(reqId.getAndIncrement());
+            req.writeShort(op.code());
+            req.writeLong(id);
 
             payloadWriter.accept(req);
 
@@ -94,60 +94,44 @@ class TcpClientChannel implements ClientChannel {
         catch (IOException e) {
             throw new IgniteClientException("TCP Ignite client failed to send data", e);
         }
+
+        return id;
     }
 
     /** {@inheritDoc} */
-    @Override public byte[] receive() throws IgniteClientException {
-        byte[] sizeBytes = new byte[4];
-        int sizeBytesNum;
+    @Override public byte[] receive(ClientOperation op, long reqId) throws IgniteClientException {
+        final int MIN_RES_SIZE = 8 + 4; // minimal response size: long (8 bytes) ID + int (4 bytes) status
 
-        try {
-            sizeBytesNum = in.read(sizeBytes, 0, 4);
-        }
-        catch (IOException e) {
-            throw new IgniteClientException("TCP Ignite client failed to receive response size", e);
-        }
-
-        if (sizeBytesNum < 0)
-            throw new IgniteClientException("TCP Ignite client unexpectedly received no response size");
-
-        if (sizeBytesNum < 4)
-            throw new IgniteClientException(String.format(
-                "TCP Ignite client received only %s bytes of response size but 4 bytes were expected",
-                sizeBytesNum
-            ));
-
-        int resSize = new BinaryHeapInputStream(sizeBytes).readInt();
+        int resSize = new BinaryHeapInputStream(read(4)).readInt();
 
         if (resSize < 0)
             throw new IgniteClientException(
                 String.format("TCP Ignite client received invalid response size: %s", resSize)
-            ); 
-     
+            );
+
         if (resSize == 0)
             return new byte[0];
 
-        byte[] payloadBytes = new byte[resSize];
-        int payloadBytesNum;
+        BinaryInputStream resIn = new BinaryHeapInputStream(read(MIN_RES_SIZE));
 
-        try {
-            payloadBytesNum = in.read(payloadBytes, 0, resSize);
+        long resId = resIn.readLong();
+
+        if (resId != reqId)
+            throw new IgniteClientException(
+                String.format("Unexpected response [%s] received, [%s] was expected", resId, reqId)
+            );
+
+        int status = resIn.readInt();
+
+        if (status != 0) {
+            String err = new BinaryReaderExImpl(null, resIn, null, true).readString();
+
+            throw new IgniteClientException(
+                String.format("Ignite failed to process client request [%s]: %s", reqId, err)
+            );
         }
-        catch (IOException e) {
-            throw new IgniteClientException("TCP Ignite client failed to receive response payload", e);
-        }
 
-        if (payloadBytesNum < 0)
-            throw new IgniteClientException("TCP Ignite client unexpectedly received no response payload");
-
-        if (payloadBytesNum < resSize)
-            throw new IgniteClientException(String.format(
-                "TCP Ignite client received only %s bytes of response payload but %s bytes were expected",
-                payloadBytesNum,
-                resSize
-            ));
-
-        return payloadBytes;
+        return resSize > MIN_RES_SIZE ? read(resSize - MIN_RES_SIZE) : new byte[0];
     }
 
     /** Validate {@link IgniteClientConfiguration}. */
@@ -185,25 +169,73 @@ class TcpClientChannel implements ClientChannel {
 
     /** Client handshake. */
     private void handshake() throws IgniteClientException {
-        send(ClientOperation.HANDSHAKE, req -> {
+        handshakeReq();
+        handshakeRes();
+    }
+
+    /** Send handshake request. */
+    private void handshakeReq() throws IgniteClientException {
+        try (BinaryOutputStream req = new BinaryOffheapOutputStream(32)) {
+            req.writeInt(0); // reserve an integer for the request size
+            req.writeByte((byte)1); // handshake code, always 1
             req.writeShort(ver.major());
             req.writeShort(ver.minor());
             req.writeShort(ver.patch());
             req.writeByte((byte)2); // client code, always 2
-        });
+            req.writeInt(0, req.position() - 4); // actual size
 
-        // Response
-        BinaryInputStream res = new BinaryHeapInputStream(receive());
+            out.write(req.array(), 0, req.position());
+        }
+        catch (IOException e) {
+            throw new IgniteClientException("TCP Ignite client failed to send handshake request", e);
+        }
+    }
 
-        if (!res.readBoolean()) { // Success flag
+    /** Receive and handle handshake response. */
+    private void handshakeRes() throws IgniteClientException {
+        int resSize = new BinaryHeapInputStream(read(4)).readInt();
+
+        if (resSize <= 0)
+            throw new IgniteClientException(
+                String.format("TCP Ignite client received invalid handshake response size: %s", resSize)
+            );
+
+
+        BinaryInputStream res = new BinaryHeapInputStream(read(resSize));
+
+        if (!res.readBoolean()) { // success flag
             ProtocolVersion srvVer = new ProtocolVersion(res.readShort(), res.readShort(), res.readShort());
 
-            BinaryReaderExImpl reader = new BinaryReaderExImpl(null, res, null, true);
-            String err = reader.readString();
+            String err = new BinaryReaderExImpl(null, res, null, true).readString();
 
             throw new IgniteClientException(
                 String.format("Client handshake failed: %s. Client version: %s. Server version: %s", err, ver, srvVer)
             );
         }
+    }
+
+    /** Read bytes from the input stream. */
+    private byte[] read(int len) throws IgniteClientException {
+        byte[] bytes = new byte[len];
+        int bytesNum;
+
+        try {
+            bytesNum = in.read(bytes, 0, len);
+        }
+        catch (IOException e) {
+            throw new IgniteClientException("TCP Ignite client failed to read response", e);
+        }
+
+        if (bytesNum < 0)
+            throw new IgniteClientException("TCP Ignite client received no response");
+
+        if (bytesNum < len)
+            throw new IgniteClientException(String.format(
+                    "TCP Ignite client received only %s bytes of response data but %s bytes were expected",
+                    bytesNum,
+                    len
+            ));
+
+        return bytes;
     }
 }
