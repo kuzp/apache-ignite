@@ -1099,6 +1099,13 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
                 if (state != ACTIVE && state != SUSPENDED)
                     seal();
 
+                if (state == PREPARED)
+                    cctx.tm().pendingTxsTracker().onTxPrepared(nearXidVersion());
+                else if (state == ROLLED_BACK)
+                    cctx.tm().pendingTxsTracker().onTxRolledBack(nearXidVersion());
+                else if (state == COMMITTED)
+                    cctx.tm().pendingTxsTracker().onTxCommited(nearXidVersion());
+
                 if (cctx.wal() != null && cctx.tm().logTxRecords()) {
                     // Log tx state change to WAL.
                     if (state == PREPARED || state == COMMITTED || state == ROLLED_BACK) {
@@ -1116,8 +1123,12 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter implement
                             participatingNodes
                         );
 
+
+
                         try {
                             ptr = cctx.wal().log(txRecord);
+
+                            // todo GG-13416: notify tracker about new prepared/commited/rolled back tx
                         }
                         catch (IgniteCheckedException e) {
                             U.error(log, "Failed to log TxRecord: " + txRecord, e);

@@ -41,6 +41,7 @@ import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.managers.communication.GridIoPolicy;
 import org.apache.ignite.internal.managers.communication.GridMessageListener;
 import org.apache.ignite.internal.managers.eventstorage.GridLocalEventListener;
+import org.apache.ignite.internal.pagemem.wal.WALPointer;
 import org.apache.ignite.internal.pagemem.wal.record.TxRecord;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.CacheObjectsReleaseFuture;
@@ -54,6 +55,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheVersionedFuture;
 import org.apache.ignite.internal.processors.cache.GridCacheReturnCompletableWrapper;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedManagerAdapter;
 import org.apache.ignite.internal.processors.cache.GridDeferredAckMessageSender;
+import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.GridCacheMappedVersion;
 import org.apache.ignite.internal.processors.cache.distributed.GridCacheTxFinishSync;
 import org.apache.ignite.internal.processors.cache.distributed.GridCacheTxRecoveryFuture;
@@ -75,6 +77,7 @@ import org.apache.ignite.internal.transactions.IgniteTxOptimisticCheckedExceptio
 import org.apache.ignite.internal.transactions.IgniteTxTimeoutCheckedException;
 import org.apache.ignite.internal.util.GridBoundedConcurrentOrderedMap;
 import org.apache.ignite.internal.util.future.GridCompoundFuture;
+import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.lang.IgnitePair;
 import org.apache.ignite.internal.util.typedef.CI1;
@@ -207,6 +210,9 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     /** Flag indicates that {@link TxRecord} records will be logged to WAL. */
     private boolean logTxRecords;
 
+    /** Pending transactions tracker. */
+    private LocalPendingTransactionsTracker pendingTracker;
+
     /** {@inheritDoc} */
     @Override protected void onKernalStop0(boolean cancel) {
         cctx.gridIO().removeMessageListener(TOPIC_TX);
@@ -283,6 +289,8 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         cctx.gridIO().addMessageListener(TOPIC_TX, new DeadlockDetectionListener());
 
         this.logTxRecords = IgniteSystemProperties.getBoolean(IGNITE_WAL_LOG_TX_RECORDS, false);
+
+        this.pendingTracker = new LocalPendingTransactionsTracker();
     }
 
     /**
@@ -2361,6 +2369,13 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     }
 
     /**
+     *
+     */
+    public LocalPendingTransactionsTracker pendingTxsTracker() {
+        return pendingTracker;
+    }
+
+    /**
      * Timeout object for node failure handler.
      */
     private final class NodeFailureTimeoutObject extends GridTimeoutObjectAdapter {
@@ -2712,5 +2727,81 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
                     throw e;
             }
         }
+    }
+
+    /**
+     * Tracks pending transactions for purposes of consistent cut algorithm.
+     */
+    public class LocalPendingTransactionsTracker {
+        public Map<GridCacheVersion, WALPointer> currentPendingTxs() {
+            return Collections.emptyMap();
+        }
+
+        public void startTrackingPrepared() {
+
+        }
+
+        /**
+         * @return nearXidVer -> prepared WAL ptr
+         */
+        public Set<GridCacheVersion> stopTrackingPrepared() {
+            return Collections.emptySet();
+        }
+
+        public void startTrackingCommited() {
+
+        }
+
+        /**
+         * @return nearXidVer -> prepared WAL ptr
+         */
+        public Map<GridCacheVersion, WALPointer> stopTrackingCommited() {
+            return Collections.emptyMap();
+        }
+
+        /**
+         * @return Future with collection of transactions that failed to finish within timeout.
+         */
+        public IgniteInternalFuture<List<GridCacheVersion>> awaitFinishOfPreparedTxs() {
+            return new GridFinishedFuture<>(Collections.emptyList());
+        }
+
+        /**
+         * Freezes state of all tracker collections. Any active transactions that modify collections will
+         * wait on readLock().
+         * Can be used to obtain consistent snapshot of several collections.
+         */
+        public void writeLockState() {
+
+        }
+
+        /**
+         * Unfreezes state of all tracker collections, releases waiting transactions.
+         */
+        public void writeUnlockState() {
+
+        }
+
+        public void onTxPrepared(GridCacheVersion nearXidVer) {
+
+        }
+
+        public void onTxCommited(GridCacheVersion nearXidVer) {
+
+        }
+
+        public void onTxRolledBack(GridCacheVersion nearXidVer) {
+
+        }
+
+        public void onKeysWritten(GridCacheVersion nearXidVer, List<KeyCacheObject> keys) {
+
+        }
+
+        public void onKeysRead(GridCacheVersion nearXidVer, List<KeyCacheObject> keys) {
+
+        }
+
+
     }
 }
