@@ -2782,7 +2782,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
 
         }
 
-        public void onTxPrepared(GridCacheVersion nearXidVer) {
+        public void onTxPrepared(GridCacheVersion nearXidVer, WALPointer preparedMarkerPtr) {
 
         }
 
