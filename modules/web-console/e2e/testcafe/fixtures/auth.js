@@ -20,7 +20,7 @@ const { signUp } = global;
 const { AngularJSSelector } = require('testcafe-angular-selectors');
 const { removeData, insertTestUser } = require('../environment/envtools');
 
-fixture('Checking Ignite auth screen')
+fixture.only('Checking Ignite auth screen')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}`
     .beforeEach(async(t) => {
         await removeData();

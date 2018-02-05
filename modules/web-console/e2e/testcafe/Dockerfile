@@ -29,4 +29,4 @@ RUN npm install --production && \
  npm cache verify --force && \
  rm -rf /tmp/*
 
-ENTRYPOINT ["node", "./testcafe.js"]
+ENTRYPOINT ["node", "./testcafe-runner.js"]

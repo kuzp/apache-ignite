@@ -1,6 +1,6 @@
 const glob = require('glob');
 const argv = require('minimist')(process.argv.slice(2));
-const { startTestcafe } = require('./testcafe');
+const { startTestcafe } = require('./testcafe-runner');
 
 const enableEnvironment = argv.env;
 
