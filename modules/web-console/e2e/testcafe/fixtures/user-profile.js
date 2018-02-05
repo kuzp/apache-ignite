@@ -17,7 +17,7 @@
 
 const { Selector } = require('testcafe');
 const { removeData, insertTestUser } = require('../environment/envtools');
-const { signIn, signUp } = require('../roles');
+const { signIn } = global;
 
 fixture('Checking user profile')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}settings/profile`

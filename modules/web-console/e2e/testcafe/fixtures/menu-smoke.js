@@ -17,7 +17,7 @@
 
 const { Selector } = require('testcafe');
 const { removeData } = require('../environment/envtools');
-const { signUp } = require('../roles');
+const { signUp } = global;
 
 fixture('Checking Ingite main menu')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}`

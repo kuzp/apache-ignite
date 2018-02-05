@@ -16,7 +16,7 @@
  */
 
 const { Selector, Role } = require('testcafe');
-const { signUp } = require('../roles');
+const { signUp } = global;
 const { AngularJSSelector } = require('testcafe-angular-selectors');
 const { removeData, insertTestUser } = require('../environment/envtools');
 

@@ -19,6 +19,7 @@ const MongoClient = require('mongodb').MongoClient;
 const objectid = require('objectid');
 const { spawn } = require('child_process');
 const url = require('url');
+const path = require('path');
 
 const mongoUrl = process.env.DB_URL || 'mongodb://localhost/console-e2e';
 
@@ -148,7 +149,7 @@ const startEnv = (webConsoleRootDirectoryPath = '../../') => {
             port = parseInt(url.parse(process.env.APP_URL).port) || 80;
         }
 
-        const backendInstanceLaunch = exec(command, 'Start listening', '../../backend', {server_port: 3001, mongodb_url: mongoUrl}); // Todo: refactor cwd for backend when it's linked
+        const backendInstanceLaunch = exec(command, 'Start listening', `${webConsoleRootDirectoryPath}backend`, {server_port: 3001, mongodb_url: mongoUrl}); // Todo: refactor cwd for backend when it's linked
         const frontendInstanceLaunch = exec(command, 'Compiled successfully', `${webConsoleRootDirectoryPath}frontend`, {BACKEND_PORT: 3001, PORT: port});
 
         console.log('Building backend in progress...');
