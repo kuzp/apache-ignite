@@ -17,18 +17,26 @@
 
 package org.apache.ignite.client;
 
-import org.apache.ignite.*;
-import org.apache.ignite.cache.*;
-import org.apache.ignite.configuration.*;
-import org.apache.ignite.spi.discovery.tcp.*;
-import org.apache.ignite.spi.discovery.tcp.ipfinder.*;
-import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.*;
-import org.junit.*;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.TreeSet;
+import java.util.UUID;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.CacheWriteSynchronizationMode;
+import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
+import org.junit.Test;
 
-import java.net.*;
-import java.util.*;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /** System tests for {@link IgniteClient} */
 public class FunctionalTest {
@@ -100,8 +108,7 @@ public class FunctionalTest {
      * <ul>
      * <li>{@link IgniteClient#cache(String)}</li>
      * <li>{@link IgniteClient#getOrCreateCache(CacheClientConfiguration)} with non-existing cache</li>
-     * <li></li>
-     * <li></li>
+     * <li>{@link IgniteClient#cacheNames()}</li>
      * </ul>
      */
     @Test
@@ -129,6 +136,10 @@ public class FunctionalTest {
             Person cachedVal = cache.get(key);
 
             assertEquals(val, cachedVal);
+
+            Object[] cacheNames = new TreeSet<>(client.cacheNames()).toArray();
+
+            assertArrayEquals(new TreeSet<>(Arrays.asList(DEFAULT_CACHE_NAME, CACHE_NAME)).toArray(), cacheNames);
         }
     }
 

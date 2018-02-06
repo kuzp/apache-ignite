@@ -17,6 +17,8 @@
 
 package org.apache.ignite.client;
 
+import java.util.Collection;
+
 /**
  * Ignite thin client.
  * <p>
@@ -55,4 +57,9 @@ public interface IgniteClient extends AutoCloseable {
      * @param name Cache name.
      */
     public <K, V> CacheClient<K, V> cache(String name);
+
+    /**
+     * @return Collection of names of currently available caches or an empty collection if no caches are available.
+     */
+    public Collection<String> cacheNames() throws IgniteClientException;
 }

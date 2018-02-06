@@ -17,13 +17,17 @@
 
 package org.apache.ignite.client;
 
-import org.apache.ignite.binary.*;
-import org.apache.ignite.internal.binary.*;
-import org.apache.ignite.internal.binary.streams.*;
-import org.apache.ignite.internal.processors.platform.utils.*;
-
-import java.util.concurrent.atomic.*;
-import java.util.function.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import org.apache.ignite.binary.BinaryRawWriter;
+import org.apache.ignite.internal.binary.BinaryRawWriterEx;
+import org.apache.ignite.internal.binary.BinaryUtils;
+import org.apache.ignite.internal.binary.GridBinaryMarshaller;
+import org.apache.ignite.internal.binary.streams.BinaryOutputStream;
+import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
 
 /**
  * Implementation of {@link IgniteClient} over TCP protocol.
@@ -80,6 +84,15 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
         return new TcpCacheClient<>(name, ch);
     }
 
+    /** {@inheritDoc} */
+    @Override public Collection<String> cacheNames() throws IgniteClientException {
+        final ClientOperation OP = ClientOperation.CACHE_GET_NAMES;
+
+        long id = ch.send(OP, null);
+
+        return Arrays.asList(BinaryUtils.doReadStringArray(ch.receive(OP, id)));
+    }
+
     /**
      * Open thin client connection to the Ignite cluster.
      *
@@ -101,7 +114,7 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
     /** */
     private void createCacheIfNotExists(CacheClientConfiguration cfg) throws IgniteClientException {
-        final ClientOperation OP = ClientOperation.OP_CACHE_CREATE_WITH_CONFIGURATION;
+        final ClientOperation OP = ClientOperation.CACHE_CREATE_WITH_CONFIGURATION;
 
         long id = ch.send(OP, req -> writeClientConfiguration(req, cfg));
 

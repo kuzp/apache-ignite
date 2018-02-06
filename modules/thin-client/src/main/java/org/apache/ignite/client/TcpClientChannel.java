@@ -85,7 +85,8 @@ class TcpClientChannel implements ClientChannel {
             req.writeShort(op.code());
             req.writeLong(id);
 
-            payloadWriter.accept(req);
+            if (payloadWriter != null)
+                payloadWriter.accept(req);
 
             req.writeInt(0, req.position() - 4); // actual size
 
@@ -99,7 +100,7 @@ class TcpClientChannel implements ClientChannel {
     }
 
     /** {@inheritDoc} */
-    @Override public byte[] receive(ClientOperation op, long reqId) throws IgniteClientException {
+    @Override public BinaryInputStream receive(ClientOperation op, long reqId) throws IgniteClientException {
         final int MIN_RES_SIZE = 8 + 4; // minimal response size: long (8 bytes) ID + int (4 bytes) status
 
         int resSize = new BinaryHeapInputStream(read(4)).readInt();
@@ -110,7 +111,7 @@ class TcpClientChannel implements ClientChannel {
             );
 
         if (resSize == 0)
-            return new byte[0];
+            return BinaryHeapInputStream.create(new byte[0], 0);
 
         BinaryInputStream resIn = new BinaryHeapInputStream(read(MIN_RES_SIZE));
 
@@ -131,7 +132,9 @@ class TcpClientChannel implements ClientChannel {
             );
         }
 
-        return resSize > MIN_RES_SIZE ? read(resSize - MIN_RES_SIZE) : new byte[0];
+        byte[] payload = resSize > MIN_RES_SIZE ? read(resSize - MIN_RES_SIZE) : new byte[0];
+
+        return BinaryHeapInputStream.create(payload, 0);
     }
 
     /** Validate {@link IgniteClientConfiguration}. */
@@ -200,7 +203,6 @@ class TcpClientChannel implements ClientChannel {
                 String.format("TCP Ignite client received invalid handshake response size: %s", resSize)
             );
 
-
         BinaryInputStream res = new BinaryHeapInputStream(read(resSize));
 
         if (!res.readBoolean()) { // success flag
@@ -231,9 +233,9 @@ class TcpClientChannel implements ClientChannel {
 
         if (bytesNum < len)
             throw new IgniteClientException(String.format(
-                    "TCP Ignite client received only %s bytes of response data but %s bytes were expected",
-                    bytesNum,
-                    len
+                "TCP Ignite client received only %s bytes of response data but %s bytes were expected",
+                bytesNum,
+                len
             ));
 
         return bytes;

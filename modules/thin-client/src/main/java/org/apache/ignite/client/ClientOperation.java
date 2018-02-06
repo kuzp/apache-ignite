@@ -22,7 +22,8 @@ enum ClientOperation {
     /** Cache get or create with name. */CACHE_GET_OR_CREATE_WITH_NAME(1052),
     /** Cache put. */CACHE_PUT(1001),
     /** Cache get. */CACHE_GET(1000),
-    /** Op cache create with configuration. */OP_CACHE_CREATE_WITH_CONFIGURATION(1053);
+    /** Cache create with configuration. */CACHE_CREATE_WITH_CONFIGURATION(1053),
+    /** Cache get names. */CACHE_GET_NAMES(1050);
 
     /** Code. */
     private final int code;

@@ -26,14 +26,14 @@ import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
  * Implementation of {@link CacheClient} over TCP protocol.
  */
 class TcpCacheClient<K, V> implements CacheClient<K, V> {
+    /** Ignite Binary Object serializer/deserializer. */
+    private static final GridBinaryMarshaller marsh = PlatformUtils.marshaller();
+
     /** Cache id. */
     private final int cacheId;
 
     /** Channel. */
     private final ClientChannel ch;
-
-    /** Ignite Binary Object serializer/deserializer. */
-    private final GridBinaryMarshaller marsh = PlatformUtils.marshaller();
 
     /** Constructor. */
     TcpCacheClient(String name, ClientChannel ch) {
@@ -54,9 +54,7 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
             writeObject(req, key);
         });
 
-        byte[] valBytes = ch.receive(OP, id);
-
-        Object val = marsh.unmarshal(valBytes, null);
+        Object val = marsh.unmarshal(ch.receive(OP, id));
 
         return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
     }

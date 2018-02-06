@@ -26,16 +26,16 @@ import java.util.function.*;
  */
 interface ClientChannel extends AutoCloseable {
     /**
-     * @param op            Operation.
+     * @param op Operation.
      * @param payloadWriter Payload writer.
      * @return Request ID.
      */
     public long send(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter) throws IgniteClientException;
 
     /**
-     * @param op        Operation.
+     * @param op Operation.
      * @param reqId ID of the request to receive the response for.
-     * @return Received operation payload bytes.
+     * @return Received operation payload stream.
      */
-    public byte[] receive(ClientOperation op, long reqId) throws IgniteClientException;
+    public BinaryInputStream receive(ClientOperation op, long reqId) throws IgniteClientException;
 }
