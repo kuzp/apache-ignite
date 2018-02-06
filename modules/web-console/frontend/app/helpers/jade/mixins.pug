@@ -177,7 +177,7 @@ mixin java-class(lbl, model, name, enabled, required, tip, validationActive)
 mixin java-class-typeahead(lbl, model, name, options, enabled, required, placeholder, tip, validationActive)
     -var errLbl = lbl.substring(0, lbl.length - 1)
 
-    +form-field-datalist(lbl, model, name, enabledToDisabled(enabled), required, placeholder, options, tip)(
+    +form-field-datalist(lbl, model, name, enabledToDisabled(enabled), required, placeholder, options, tip)&attributes(attributes)(
         data-java-identifier='true'
         data-java-package-specified='allow-built-in'
         data-java-keywords='true'

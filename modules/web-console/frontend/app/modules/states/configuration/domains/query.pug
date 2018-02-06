@@ -77,7 +77,10 @@ include /app/helpers/jade/mixins
                                                 )
                                                     +unique-feedback('"name"', 'Property with such name already exists!')
                                             .pc-form-grid-col-30
-                                                +java-class-typeahead('Field full class name:', `$item.className`, '"className"', 'javaBuiltInClasses', true, true, 'Enter field full class name')
+                                                +java-class-typeahead('Field full class name:', `$item.className`, '"className"', '$ctrl.queryFieldTypes', true, true, 'Enter field full class name')(
+                                                    ng-model-options='{allowInvalid: true}'
+                                                    extra-valid-java-identifiers='$ctrl.queryFieldTypes'
+                                                )
 
                                     list-editable-no-items
                                         list-editable-add-item-button(
