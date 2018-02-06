@@ -34,7 +34,7 @@ public final class BinaryHeapInputStream extends BinaryAbstractInputStream {
      * @return Stream.
      */
     public static BinaryHeapInputStream create(byte[] data, int pos) {
-        assert pos <= data.length;
+        assert pos < data.length;
 
         BinaryHeapInputStream stream = new BinaryHeapInputStream(data);
 

@@ -80,7 +80,7 @@ class TcpClientChannel implements ClientChannel {
         throws IgniteClientException {
         long id = reqId.getAndIncrement();
 
-        try (BinaryOutputStream req = new BinaryOffheapOutputStream(1024)) {
+        try (BinaryOutputStream req = new BinaryHeapOutputStream(1024)) {
             req.writeInt(0); // reserve an integer for the request size
             req.writeShort(op.code());
             req.writeLong(id);
@@ -100,7 +100,8 @@ class TcpClientChannel implements ClientChannel {
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryInputStream receive(ClientOperation op, long reqId) throws IgniteClientException {
+    public <T> T receive(ClientOperation op, long reqId, Function<BinaryInputStream, T> payloadReader)
+        throws IgniteClientException {
         final int MIN_RES_SIZE = 8 + 4; // minimal response size: long (8 bytes) ID + int (4 bytes) status
 
         int resSize = new BinaryHeapInputStream(read(4)).readInt();
@@ -111,7 +112,7 @@ class TcpClientChannel implements ClientChannel {
             );
 
         if (resSize == 0)
-            return BinaryHeapInputStream.create(new byte[0], 0);
+            return null;
 
         BinaryInputStream resIn = new BinaryHeapInputStream(read(MIN_RES_SIZE));
 
@@ -132,9 +133,12 @@ class TcpClientChannel implements ClientChannel {
             );
         }
 
-        byte[] payload = resSize > MIN_RES_SIZE ? read(resSize - MIN_RES_SIZE) : new byte[0];
+        if (resSize <= MIN_RES_SIZE || payloadReader == null)
+            return null;
 
-        return BinaryHeapInputStream.create(payload, 0);
+        BinaryInputStream payload = new BinaryHeapInputStream(read(resSize - MIN_RES_SIZE));
+
+        return payloadReader.apply(payload);
     }
 
     /** Validate {@link IgniteClientConfiguration}. */

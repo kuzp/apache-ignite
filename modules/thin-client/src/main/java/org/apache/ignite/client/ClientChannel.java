@@ -27,7 +27,7 @@ import java.util.function.*;
 interface ClientChannel extends AutoCloseable {
     /**
      * @param op Operation.
-     * @param payloadWriter Payload writer.
+     * @param payloadWriter Payload writer to stream or {@code null} if request has no payload.
      * @return Request ID.
      */
     public long send(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter) throws IgniteClientException;
@@ -35,7 +35,9 @@ interface ClientChannel extends AutoCloseable {
     /**
      * @param op Operation.
      * @param reqId ID of the request to receive the response for.
-     * @return Received operation payload stream.
+     * @param payloadReader Payload reader from stream.
+     * @return Received operation payload or {@code null} if response has no payload.
      */
-    public BinaryInputStream receive(ClientOperation op, long reqId) throws IgniteClientException;
+    public <T> T receive(ClientOperation op, long reqId, Function<BinaryInputStream, T> payloadReader)
+        throws IgniteClientException;
 }

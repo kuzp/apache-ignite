@@ -54,9 +54,10 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
             writeObject(req, key);
         });
 
-        Object val = marsh.unmarshal(ch.receive(OP, id));
-
-        return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
+        return ch.receive(OP, id, res -> {
+            Object val = marsh.unmarshal(res);
+            return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
+        });
     }
 
     /** {@inheritDoc} */
@@ -76,7 +77,7 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
             writeObject(req, val);
         });
 
-        ch.receive(OP, id); // ignore empty response
+        ch.receive(OP, id, null); // ignore empty response
     }
 
     /** Get cache ID by cache name. */

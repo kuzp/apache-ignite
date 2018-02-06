@@ -90,7 +90,7 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
         long id = ch.send(OP, null);
 
-        return Arrays.asList(BinaryUtils.doReadStringArray(ch.receive(OP, id)));
+        return ch.receive(OP, id, res -> Arrays.asList(BinaryUtils.doReadStringArray(res)));
     }
 
     /**
@@ -109,7 +109,7 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
         long id = ch.send(OP, req -> req.writeByteArray(marsh.marshal(name)));
 
-        ch.receive(OP, id); // ignore empty response
+        ch.receive(OP, id, null);
     }
 
     /** */
@@ -118,7 +118,7 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
         long id = ch.send(OP, req -> writeClientConfiguration(req, cfg));
 
-        ch.receive(OP, id); // ignore empty response
+        ch.receive(OP, id, null);
     }
 
     /** */
