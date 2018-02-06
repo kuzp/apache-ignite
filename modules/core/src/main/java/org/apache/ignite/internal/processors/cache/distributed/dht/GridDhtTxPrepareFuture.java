@@ -347,7 +347,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
 
             ExpiryPolicy expiry = cacheCtx.expiryForTxEntry(txEntry);
 
-            cctx.database().checkpointReadLock();
+//            cctx.database().checkpointReadLock();
 
             try {
                 if ((txEntry.op() == CREATE || txEntry.op() == UPDATE) &&
@@ -512,7 +512,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 assert false : "Got entry removed exception while holding transactional lock on entry [e=" + e + ", cached=" + cached + ']';
             }
             finally {
-                cctx.database().checkpointReadUnlock();
+//                cctx.database().checkpointReadUnlock();
             }
         }
     }
