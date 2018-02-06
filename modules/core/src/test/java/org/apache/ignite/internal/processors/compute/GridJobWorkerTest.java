@@ -28,6 +28,15 @@ import org.jetbrains.annotations.Nullable;
  * https://issues.apache.org/jira/browse/IGNITE-7309
  */
 public class GridJobWorkerTest extends GridCommonAbstractTest {
+    /** */
+    private static final boolean USE_TWO_SERVER_NODES = false;
+
+    /** */
+    private static final boolean THROW_MARSHAL_EX = false;
+
+    /** */
+    private static final boolean DEBUG_IS_ENABLED = false;
+
     /**
      * Custom class (used as a compute job result type).
      */
@@ -61,24 +70,39 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
         private final CountDownLatch serverIsStoppingLatch;
 
         /** */
+        private final CountDownLatch allowServer2ToStart;
+
+        /** */
+        private final CountDownLatch server2IsStarted;
+
+        /** */
         CustomMarshaller() {
             super();
 
             this.allowServerToStopLatch = null;
 
             this.serverIsStoppingLatch = null;
+
+            this.allowServer2ToStart = null;
+
+            this.server2IsStarted = null;
         }
 
         /**
          * @param allowServerToStopLatch Latch for stopping server node once client job run is started.
          * @param serverIsStoppingLatch Latch for awaiting server node state is 'stopping'.
          */
-        CustomMarshaller(CountDownLatch allowServerToStopLatch, CountDownLatch serverIsStoppingLatch) {
+        CustomMarshaller(CountDownLatch allowServerToStopLatch, CountDownLatch serverIsStoppingLatch,
+            CountDownLatch allowServer2ToStart, CountDownLatch server2IsStarted) {
             super();
 
             this.allowServerToStopLatch = allowServerToStopLatch;
 
             this.serverIsStoppingLatch = serverIsStoppingLatch;
+
+            this.allowServer2ToStart = allowServer2ToStart;
+
+            this.server2IsStarted = server2IsStarted;
         }
 
         /**
@@ -93,6 +117,18 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
                 String clsName = obj.getClass().getName();
 
                 if (clsName.endsWith("$CustomInteger")) {
+                    if ((allowServer2ToStart != null) && (server2IsStarted != null)) {
+                        allowServer2ToStart.countDown();
+
+                        // Await for second server node is started
+                        try {
+                            server2IsStarted.await();
+                        }
+                        catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     // Await for node stopping.
                     allowServerToStopLatch.countDown();
 
@@ -104,7 +140,8 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
                     }
 
                     // Simulate marshal exception.
-                    throw new IgniteCheckedException(String.format("Marshalling %s object fails.", clsName));
+                    if (THROW_MARSHAL_EX)
+                        throw new IgniteCheckedException(String.format("Marshalling %s object fails.", clsName));
                 }
             }
 
@@ -120,7 +157,7 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
     private IgniteLogger createServerLogger(final Collection<Throwable> errors) {
         return new JavaLogger() {
             @Override public boolean isDebugEnabled() {
-                return true;
+                return DEBUG_IS_ENABLED;
             }
 
             @Override public void error(String msg, @Nullable Throwable e) {
@@ -144,7 +181,8 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
      * @param nodesAreStoppedLatch Latch for checking that all nodes are stopped.
      */
     private void runServerNode(final Collection<Throwable> errors, final CountDownLatch allowServerToStopLatch,
-        final CountDownLatch serverIsStoppingLatch, final CountDownLatch nodesAreStoppedLatch) {
+        final CountDownLatch serverIsStoppingLatch, final CountDownLatch nodesAreStoppedLatch,
+        final CountDownLatch allowServer2ToStart, final CountDownLatch server2IsStarted) {
 
         new Thread(new Runnable() {
             @Override public void run() {
@@ -153,7 +191,9 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
 
                     conf.setGridLogger(createServerLogger(errors));
 
-                    conf.setMarshaller(new CustomMarshaller(allowServerToStopLatch, serverIsStoppingLatch));
+                    conf.setMarshaller(new CustomMarshaller(
+                        allowServerToStopLatch, serverIsStoppingLatch, allowServer2ToStart, server2IsStarted
+                    ));
 
                     conf.setLifecycleBeans(new LifecycleBean() {
                         @Override public void onLifecycleEvent(LifecycleEventType evt) throws IgniteException {
@@ -185,6 +225,42 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
         }).start();
     }
 
+    /** */
+    private void runServerNode2(final CountDownLatch allowServer2ToStart, final CountDownLatch server2IsStarted,
+        final CountDownLatch allowServer2ToStop, final CountDownLatch server2IsStopped) {
+
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    IgniteConfiguration conf = getConfiguration("server-node-2");
+
+                    conf.setMarshaller(new CustomMarshaller());
+
+                    allowServer2ToStart.await();
+
+                    try (Ignite ignite = Ignition.start(conf)) {
+                        log().info("Second server node started: " + ignite.name());
+                        server2IsStarted.countDown();
+                        allowServer2ToStop.await();
+                    }
+                    catch (Throwable e) {
+                        e.printStackTrace();
+
+                        fail("Run server node fail.");
+                    }
+                }
+                catch (Throwable e) {
+                    e.printStackTrace();
+
+                    fail("Prepare second server node configuration fail.");
+                }
+                finally {
+                    server2IsStopped.countDown();
+                }
+            }
+        }).start();
+    }
+
     /**
      * Run client node.
      *
@@ -205,15 +281,18 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
 
                         IgniteCompute compute = ignite.compute();
 
-                        compute.call(new IgniteCallable<CustomInteger>() {
+                        CustomInteger res = compute.call(new IgniteCallable<CustomInteger>() {
                             @Override public CustomInteger call() {
-                                return new CustomInteger(0);
+                                System.out.println("# Start running job...");
+                                return new CustomInteger(1);
                             }
                         });
+
+                        log.info("Job result is " + ((res != null) ? res.getValue() : null));
                     }
                 }
                 catch (Throwable e) {
-                    e.printStackTrace();
+                    log.warning("Failed to run job.", e);
                 }
                 finally {
                     nodesAreStoppedLatch.countDown();
@@ -231,16 +310,48 @@ public class GridJobWorkerTest extends GridCommonAbstractTest {
         CountDownLatch serverIsStoppingLatch = new CountDownLatch(1);
         CountDownLatch nodesAreStoppedLatch = new CountDownLatch(2);
 
+        // Sync latches of second server node states
+        CountDownLatch allowServer2ToStart = null;
+        CountDownLatch server2IsStarted = null;
+        CountDownLatch allowServer2ToStop = null;
+        CountDownLatch server2IsStopped = null;
+
         Collection<Throwable> serverErrors = new ConcurrentLinkedQueue<>();
 
         try {
             GridJobWorker.useStaticLog = false;
 
-            runServerNode(serverErrors, allowServerToStopLatch, serverIsStoppingLatch, nodesAreStoppedLatch);
+            if (USE_TWO_SERVER_NODES) {
+                allowServer2ToStart = new CountDownLatch(1);
+
+                server2IsStarted = new CountDownLatch(1);
+
+                allowServer2ToStop = new CountDownLatch(1);
+
+                server2IsStopped = new CountDownLatch(1);
+            }
+
+            runServerNode(
+                serverErrors,
+                allowServerToStopLatch,
+                serverIsStoppingLatch,
+                nodesAreStoppedLatch,
+                allowServer2ToStart,
+                server2IsStarted
+            );
+
+            if (USE_TWO_SERVER_NODES)
+                runServerNode2(allowServer2ToStart, server2IsStarted, allowServer2ToStop, server2IsStopped);
 
             runClientNode(nodesAreStoppedLatch);
 
             assertTrue("Server or client node was not stopped.", nodesAreStoppedLatch.await(30000, TimeUnit.MILLISECONDS));
+
+            if (USE_TWO_SERVER_NODES) {
+                allowServer2ToStop.countDown();
+
+                assertTrue("Server node 2 was not stopped.", server2IsStopped.await(30000, TimeUnit.MILLISECONDS));
+            }
 
             // Check for NodeStoppingException
             boolean found = false;
