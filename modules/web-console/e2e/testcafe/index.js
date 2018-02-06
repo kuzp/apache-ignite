@@ -9,11 +9,6 @@ const BROWSERS = ['chromium:headless --no-sandbox']; // For example: ['chrome', 
 
 const FIXTURES_PATHS = glob.sync('./fixtures/*.js');
 
-// Set auth and session stuff to globals to allow extension.
-const { signUp, signIn } = require('./roles');
-global.signUp = signUp;
-global.signIn = signIn;
-
 const testcafeRunnerConfig = {
     browsers: BROWSERS,
     enableEnvironment: enableEnvironment || false,

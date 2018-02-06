@@ -46,7 +46,7 @@ const insertTestUser = ({userId = '000000000000000000000001', token = 'ppw4tPI3J
                     admin: true,
                     token,
                     attempts: 0,
-                    lastLogin: '2016-06-28T10:41:07.463Z',
+                    lastLogin: '2018-01-28T10:41:07.463Z',
                     resetPasswordToken: '892rnLbEnVp1FP75Jgpi'
                 };
                 db.collection('accounts').insert(user);
@@ -82,10 +82,36 @@ const removeData = () => {
             if (err)
                 return reject(err);
 
+            db.listCollections().toArray((err, collections) => {
+                const collectionDroppingPromiseArray = [];
+
+                collections.forEach(collection => {
+                    if (collection.name !== 'sessions' && collection.name !== 'accounts') {
+                        const collectionDroppingPromise = db.collection(collection.name).drop((err) => {
+                            if (err)
+                                reject();
+                        });
+                        collectionDroppingPromiseArray.push(collectionDroppingPromise);
+                    }
+                });
+
+                Promise.all(collectionDroppingPromiseArray)
+                    .then(() => resolve())
+                    .catch(() => reject());
+            });
+        });
+    });
+};
+
+const dropTestDB = () => {
+    return new Promise((resolve, reject) => {
+        MongoClient.connect(mongoUrl, async(err, db) => {
+            if (err)
+                return reject(err);
+
             db.dropDatabase((err) => {
                 if (err)
                     return reject(err);
-
                 resolve();
             });
         });
@@ -149,11 +175,11 @@ const startEnv = (webConsoleRootDirectoryPath = '../../') => {
             port = parseInt(url.parse(process.env.APP_URL).port) || 80;
         }
 
-        //const backendInstanceLaunch = exec(command, 'Start listening', `${webConsoleRootDirectoryPath}backend`, {server_port: 3001, mongodb_url: mongoUrl}); // Todo: refactor cwd for backend when it's linked
+        const backendInstanceLaunch = exec(command, 'Start listening', `${webConsoleRootDirectoryPath}backend`, {server_port: 3001, mongodb_url: mongoUrl}); // Todo: refactor cwd for backend when it's linked
         const frontendInstanceLaunch = exec(command, 'Compiled successfully', `${webConsoleRootDirectoryPath}frontend`, {BACKEND_PORT: 3001, PORT: port});
 
         console.log('Building backend in progress...');
-        //await backendInstanceLaunch;
+        await backendInstanceLaunch;
         console.log('Building backend done!');
 
         console.log('Building frontend in progress...');
@@ -164,4 +190,4 @@ const startEnv = (webConsoleRootDirectoryPath = '../../') => {
     });
 };
 
-module.exports = { startEnv, removeData, insertTestUser };
+module.exports = { startEnv, removeData, insertTestUser, dropTestDB };

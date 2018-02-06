@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-const { startEnv, removeData } = require('./environment/envtools');
+const { startEnv, removeData, dropTestDB, insertTestUser } = require('./environment/envtools');
 
 const createTestCafe = require('testcafe');
 
@@ -28,7 +28,8 @@ const startTestcafe = (config) => {
                 if (config.enableEnvironment)
                     await startEnv();
 
-                await removeData();
+                await dropTestDB();
+                await insertTestUser();
 
                 testcafe = tc;
 
@@ -52,8 +53,7 @@ const startTestcafe = (config) => {
 
             testcafe.close();
 
-            if (config.enableEnvironment)
-                await removeData();
+            await dropTestDB();
 
             console.log('Tests failed: ' + failedCount);
 

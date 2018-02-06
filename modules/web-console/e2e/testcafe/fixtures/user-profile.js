@@ -17,16 +17,16 @@
 
 const { Selector } = require('testcafe');
 const { removeData, insertTestUser } = require('../environment/envtools');
-const { signIn } = global;
+const { regularUser } = require('../roles.js');
 
-fixture('Checking user profile')
+fixture.only('Checking user profile')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}settings/profile`
-    .beforeEach(async(t) => {
-        await t.setNativeDialogHandler(() => true);
-        await removeData();
-        await insertTestUser();
-        await signIn(t);
+    .before(async() => {
 
+    })
+    .beforeEach(async(t) => {
+        await removeData();
+        await t.useRole(regularUser);
         await t.navigateTo(`${process.env.APP_URL || 'http://localhost:9001/'}settings/profile`);
     })
     .after(async() => {
@@ -34,7 +34,6 @@ fixture('Checking user profile')
     });
 
 test('Testing user data change', async(t) => {
-
     const newUserData = {
         firstName: {
             selector: '#profile-firstname',
