@@ -22,17 +22,19 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.internal.binary.BinaryRawWriterEx;
 import org.apache.ignite.internal.binary.BinaryUtils;
 import org.apache.ignite.internal.binary.GridBinaryMarshaller;
+import org.apache.ignite.internal.binary.streams.BinaryInputStream;
 import org.apache.ignite.internal.binary.streams.BinaryOutputStream;
 import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
 
 /**
  * Implementation of {@link IgniteClient} over TCP protocol.
  */
-class TcpIgniteClient implements IgniteClient, AutoCloseable {
+class TcpIgniteClient implements IgniteClient {
     /** Channel. */
     private final ClientChannel ch;
 
@@ -54,10 +56,9 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
 
     /** {@inheritDoc} */
     @Override public <K, V> CacheClient<K, V> getOrCreateCache(String name) throws IgniteClientException {
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Cache name must be specified");
+        ensureCacheName(name);
 
-        createCacheIfNotExists(name);
+        request(ClientOperation.CACHE_GET_OR_CREATE_WITH_NAME, req -> req.writeByteArray(marsh.marshal(name)));
 
         return new TcpCacheClient<>(name, ch);
     }
@@ -65,32 +66,48 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
     /** {@inheritDoc} */
     @Override public <K, V> CacheClient<K, V> getOrCreateCache(
         CacheClientConfiguration cfg) throws IgniteClientException {
-        if (cfg == null)
-            throw new IllegalArgumentException("Cache configuration must be specified");
+        ensureCacheConfiguration(cfg);
 
-        if (cfg.getName() == null || cfg.getName().length() == 0)
-            throw new IllegalArgumentException("Cache name must be specified");
-
-        createCacheIfNotExists(cfg);
+        request(ClientOperation.CACHE_GET_OR_CREATE_WITH_CONFIGURATION, req -> writeClientConfiguration(req, cfg));
 
         return new TcpCacheClient<>(cfg.getName(), ch);
     }
 
     /** {@inheritDoc} */
     @Override public <K, V> CacheClient<K, V> cache(String name) {
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Cache name must be specified");
+        ensureCacheName(name);
 
         return new TcpCacheClient<>(name, ch);
     }
 
     /** {@inheritDoc} */
     @Override public Collection<String> cacheNames() throws IgniteClientException {
-        final ClientOperation OP = ClientOperation.CACHE_GET_NAMES;
+        return service(ClientOperation.CACHE_GET_NAMES, res -> Arrays.asList(BinaryUtils.doReadStringArray(res)));
+    }
 
-        long id = ch.send(OP, null);
+    /** {@inheritDoc} */
+    @Override public void destroyCache(String name) throws IgniteClientException {
+        ensureCacheName(name);
 
-        return ch.receive(OP, id, res -> Arrays.asList(BinaryUtils.doReadStringArray(res)));
+        request(ClientOperation.CACHE_DESTROY, req -> req.writeInt(CacheClient.cacheId(name)));
+    }
+
+    /** {@inheritDoc} */
+    @Override public <K, V> CacheClient<K, V> createCache(String name) throws IgniteClientException {
+        ensureCacheName(name);
+
+        request(ClientOperation.CACHE_CREATE_WITH_NAME, req -> req.writeByteArray(marsh.marshal(name)));
+
+        return new TcpCacheClient<>(name, ch);
+    }
+
+    /** {@inheritDoc} */
+    @Override public <K, V> CacheClient<K, V> createCache(CacheClientConfiguration cfg) throws IgniteClientException {
+        ensureCacheConfiguration(cfg);
+
+        request(ClientOperation.CACHE_CREATE_WITH_CONFIGURATION, req -> writeClientConfiguration(req, cfg));
+
+        return new TcpCacheClient<>(cfg.getName(), ch);
     }
 
     /**
@@ -103,22 +120,40 @@ class TcpIgniteClient implements IgniteClient, AutoCloseable {
         return new TcpIgniteClient(cfg);
     }
 
-    /** */
-    private void createCacheIfNotExists(String name) throws IgniteClientException {
-        final ClientOperation OP = ClientOperation.CACHE_GET_OR_CREATE_WITH_NAME;
-
-        long id = ch.send(OP, req -> req.writeByteArray(marsh.marshal(name)));
-
-        ch.receive(OP, id, null);
+    /** @throws IllegalArgumentException if the specified cache name is invalid. */
+    private static void ensureCacheName(String name) {
+        if (name == null || name.length() == 0)
+            throw new IllegalArgumentException("Cache name must be specified");
     }
 
-    /** */
-    private void createCacheIfNotExists(CacheClientConfiguration cfg) throws IgniteClientException {
-        final ClientOperation OP = ClientOperation.CACHE_CREATE_WITH_CONFIGURATION;
+    /** @throws IllegalArgumentException if the specified cache name is invalid. */
+    private static void ensureCacheConfiguration(CacheClientConfiguration cfg) {
+        if (cfg == null)
+            throw new IllegalArgumentException("Cache configuration must be specified");
 
-        long id = ch.send(OP, req -> writeClientConfiguration(req, cfg));
+        ensureCacheName(cfg.getName());
+    }
 
-        ch.receive(OP, id, null);
+    /** Send request and handle response. */
+    private <T> T service(
+        ClientOperation op,
+        Consumer<BinaryOutputStream> payloadWriter,
+        Function<BinaryInputStream, T> payloadReader
+    ) throws IgniteClientException {
+        long id = ch.send(op, payloadWriter);
+
+        return ch.receive(op, id, payloadReader);
+    }
+
+    /** Send request and handle response without payload. */
+    private void request(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter) throws IgniteClientException {
+        service(op, payloadWriter, null);
+    }
+
+    /** Send request without payload and handle response. */
+    private <T> T service(ClientOperation op, Function<BinaryInputStream, T> payloadReader)
+        throws IgniteClientException {
+        return service(op, null, payloadReader);
     }
 
     /** */

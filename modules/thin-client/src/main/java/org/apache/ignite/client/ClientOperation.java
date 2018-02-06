@@ -23,7 +23,10 @@ enum ClientOperation {
     /** Cache put. */CACHE_PUT(1001),
     /** Cache get. */CACHE_GET(1000),
     /** Cache create with configuration. */CACHE_CREATE_WITH_CONFIGURATION(1053),
-    /** Cache get names. */CACHE_GET_NAMES(1050);
+    /** Cache get names. */CACHE_GET_NAMES(1050),
+    /** Cache destroy. */CACHE_DESTROY(1056),
+    /** Cache get or create with configuration. */CACHE_GET_OR_CREATE_WITH_CONFIGURATION(1054),
+    /** Cache create with name. */CACHE_CREATE_WITH_NAME(1051);
 
     /** Code. */
     private final int code;

@@ -21,6 +21,11 @@ package org.apache.ignite.client;
  * Thin client cache.
  */
 public interface CacheClient<K, V> {
+    /** Get cache ID by cache name. */
+    public static int cacheId(String name) {
+        return name.hashCode();
+    }
+
     /**
      * Gets an entry from the cache.
      *

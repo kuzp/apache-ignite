@@ -37,7 +37,7 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
 
     /** Constructor. */
     TcpCacheClient(String name, ClientChannel ch) {
-        this.cacheId = cacheId(name);
+        this.cacheId = CacheClient.cacheId(name);
         this.ch = ch;
     }
 
@@ -78,11 +78,6 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
         });
 
         ch.receive(OP, id, null); // ignore empty response
-    }
-
-    /** Get cache ID by cache name. */
-    private static int cacheId(String name) {
-        return name.hashCode();
     }
 
     /** Write Ignite binary object to output stream. */

@@ -126,6 +126,8 @@ class TcpClientChannel implements ClientChannel {
         int status = resIn.readInt();
 
         if (status != 0) {
+            resIn = new BinaryHeapInputStream(read(resSize - MIN_RES_SIZE));
+
             String err = new BinaryReaderExImpl(null, resIn, null, true).readString();
 
             throw new IgniteClientException(

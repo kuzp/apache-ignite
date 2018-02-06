@@ -109,6 +109,8 @@ public class FunctionalTest {
      * <li>{@link IgniteClient#cache(String)}</li>
      * <li>{@link IgniteClient#getOrCreateCache(CacheClientConfiguration)} with non-existing cache</li>
      * <li>{@link IgniteClient#cacheNames()}</li>
+     * <li>{@link IgniteClient#createCache(String)}</li>
+     * <li>{@link IgniteClient#createCache(CacheClientConfiguration)}</li>
      * </ul>
      */
     @Test
@@ -118,14 +120,15 @@ public class FunctionalTest {
         ) {
             final String CACHE_NAME = "testCacheManagement";
 
+            CacheClientConfiguration cacheCfg = new CacheClientConfiguration(CACHE_NAME)
+                .setCacheMode(CacheMode.REPLICATED)
+                .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+
             int key = 1;
             Person val = new Person(key, Integer.toString(key));
 
+            // Run 2nd instance to make the test more real
             try (Ignite ignored2 = Ignition.start(getServerConfiguration())) {
-                CacheClientConfiguration cacheCfg = new CacheClientConfiguration(CACHE_NAME)
-                    .setCacheMode(CacheMode.REPLICATED)
-                    .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
-
                 CacheClient<Integer, Person> cache = client.getOrCreateCache(cacheCfg);
 
                 cache.put(key, val);
@@ -138,6 +141,24 @@ public class FunctionalTest {
             assertEquals(val, cachedVal);
 
             Object[] cacheNames = new TreeSet<>(client.cacheNames()).toArray();
+
+            assertArrayEquals(new TreeSet<>(Arrays.asList(DEFAULT_CACHE_NAME, CACHE_NAME)).toArray(), cacheNames);
+
+            client.destroyCache(CACHE_NAME);
+
+            cacheNames = client.cacheNames().toArray();
+
+            assertArrayEquals(new Object[] {DEFAULT_CACHE_NAME}, cacheNames);
+
+            client.createCache(CACHE_NAME);
+
+            cacheNames = client.cacheNames().toArray();
+
+            assertArrayEquals(new TreeSet<>(Arrays.asList(DEFAULT_CACHE_NAME, CACHE_NAME)).toArray(), cacheNames);
+
+            client.destroyCache(CACHE_NAME);
+
+            client.createCache(cacheCfg);
 
             assertArrayEquals(new TreeSet<>(Arrays.asList(DEFAULT_CACHE_NAME, CACHE_NAME)).toArray(), cacheNames);
         }

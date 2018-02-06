@@ -62,4 +62,23 @@ public interface IgniteClient extends AutoCloseable {
      * @return Collection of names of currently available caches or an empty collection if no caches are available.
      */
     public Collection<String> cacheNames() throws IgniteClientException;
+
+    /**
+     * Destroy cache.
+     */
+    public void destroyCache(String name) throws IgniteClientException;
+
+    /**
+     * Create cache.
+     *
+     * @param name Cache name.
+     */
+    public <K, V> CacheClient<K, V> createCache(String name) throws IgniteClientException;
+
+    /**
+     * Create cache.
+     *
+     * @param cfg Cache configuration.
+     */
+    public <K, V> CacheClient<K, V> createCache(CacheClientConfiguration cfg) throws IgniteClientException;
 }
