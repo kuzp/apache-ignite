@@ -28,7 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteClientDisconnectedException;
 import org.apache.ignite.IgniteSystemProperties;
@@ -2733,30 +2736,70 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
      * Tracks pending transactions for purposes of consistent cut algorithm.
      */
     public class LocalPendingTransactionsTracker {
+        /** Currently pending transactions. */
+        private volatile ConcurrentHashMap<GridCacheVersion, WALPointer> currentlyPreparedTxs = new ConcurrentHashMap<>();
+
+        /**
+         * Transactions that were transitioned to pending state since last {@link #startTrackingPrepared()} call.
+         * Transaction remains in this map after commit/rollback.
+         */
+        private volatile ConcurrentHashMap<GridCacheVersion, WALPointer> trackedPreparedTxs = new ConcurrentHashMap<>();
+
+        /**
+         * Transactions that were transitioned to commited state since last {@link #startTrackingCommited()} call.
+         */
+        private volatile ConcurrentHashMap<GridCacheVersion, WALPointer> trackedCommitedTxs = new ConcurrentHashMap<>();
+
+        private volatile ConcurrentHashMap<KeyCacheObject, GridCacheVersion> trackedCommitedKeysToNearXidVer = new ConcurrentHashMap<>();
+
+        /** State rw-lock. */
+        private final ReentrantReadWriteLock stateLock = new ReentrantReadWriteLock();
+
+        /** Track prepared flag. */
+        private final AtomicBoolean trackPrepared = new AtomicBoolean(false);
+
+        /** Track commited flag. */
+        private final AtomicBoolean trackCommited = new AtomicBoolean(false);
+
+        /**
+         *
+         */
         public Map<GridCacheVersion, WALPointer> currentPendingTxs() {
-            return Collections.emptyMap();
+            return U.sealMap(currentlyPreparedTxs);
         }
 
         public void startTrackingPrepared() {
-
+            trackPrepared.set(true);
         }
 
         /**
          * @return nearXidVer -> prepared WAL ptr
          */
-        public Set<GridCacheVersion> stopTrackingPrepared() {
-            return Collections.emptySet();
+        public Map<GridCacheVersion, WALPointer> stopTrackingPrepared() {
+            trackPrepared.set(false);
+
+            Map<GridCacheVersion, WALPointer> res = U.sealMap(trackedPreparedTxs);
+
+            trackedPreparedTxs = new ConcurrentHashMap<>();
+
+            return res;
         }
 
         public void startTrackingCommited() {
-
+            trackCommited.set(true);
         }
 
         /**
          * @return nearXidVer -> prepared WAL ptr
          */
         public Map<GridCacheVersion, WALPointer> stopTrackingCommited() {
-            return Collections.emptyMap();
+            trackCommited.set(false);
+
+            Map<GridCacheVersion, WALPointer> res = U.sealMap(trackedCommitedTxs);
+
+            trackedCommitedTxs = new ConcurrentHashMap<>();
+
+            return res;
         }
 
         /**
@@ -2783,15 +2826,27 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         }
 
         public void onTxPrepared(GridCacheVersion nearXidVer, WALPointer preparedMarkerPtr) {
+            currentlyPreparedTxs.put(nearXidVer, preparedMarkerPtr);
 
+            if (trackPrepared.get())
+                trackedPreparedTxs.put(nearXidVer, preparedMarkerPtr);
         }
 
         public void onTxCommited(GridCacheVersion nearXidVer) {
+            WALPointer preparedPtr = currentlyPreparedTxs.remove(nearXidVer);
+
+            assert preparedPtr != null;
+
+            if (trackCommited.get())
+                trackedCommitedTxs.put(nearXidVer, preparedPtr);
 
         }
 
         public void onTxRolledBack(GridCacheVersion nearXidVer) {
+            currentlyPreparedTxs.remove(nearXidVer);
 
+            if (trackPrepared.get())
+                trackedPreparedTxs.remove(nearXidVer);
         }
 
         public void onKeysWritten(GridCacheVersion nearXidVer, List<KeyCacheObject> keys) {

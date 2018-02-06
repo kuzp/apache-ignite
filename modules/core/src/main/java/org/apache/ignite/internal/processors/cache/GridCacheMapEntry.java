@@ -1046,8 +1046,6 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
             if (updateCntr != null && updateCntr != 0)
                 updateCntr0 = updateCntr;
 
-            cctx.tm().pendingTxsTracker().onKeysWritten(tx.nearXidVersion(), Collections.singletonList(key));
-
             if (tx != null && cctx.group().persistenceEnabled() && cctx.group().walEnabled())
                 logPtr = logTxUpdate(tx, val, expireTime, updateCntr0);
 
@@ -1236,8 +1234,6 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
 
             if (updateCntr != null && updateCntr != 0)
                 updateCntr0 = updateCntr;
-
-            cctx.tm().pendingTxsTracker().onKeysWritten(tx.nearXidVersion(), Collections.singletonList(key));
 
             if (tx != null && cctx.group().persistenceEnabled() && cctx.group().walEnabled())
                 logPtr = logTxUpdate(tx, null, 0, updateCntr0);
@@ -3579,6 +3575,8 @@ public abstract class GridCacheMapEntry extends GridMetadataAwareAdapter impleme
                 op = GridCacheOperation.DELETE;
             else
                 op = this.val == null ? GridCacheOperation.CREATE : GridCacheOperation.UPDATE;
+
+            cctx.tm().pendingTxsTracker().onKeysWritten(tx.nearXidVersion(), Collections.singletonList(key));
 
             return cctx.shared().wal().log(new DataRecord(new DataEntry(
                 cctx.cacheId(),
