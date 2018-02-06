@@ -20,7 +20,7 @@ package org.apache.ignite.client;
 /**
  * {@link TcpIgniteClient} configuration.
  */
-public class IgniteClientConfiguration {
+public final class IgniteClientConfiguration {
     /** Host. */
     private String host;
 
@@ -60,8 +60,10 @@ public class IgniteClientConfiguration {
     /**
      * @param host name or IP address of an Ignite server node to connect to.
      */
-    public void setHost(String host) {
+    public IgniteClientConfiguration setHost(String host) {
         this.host = host;
+
+        return this;
     }
 
     /**
@@ -74,8 +76,10 @@ public class IgniteClientConfiguration {
     /**
      * @param port Ignite server port to connect to. Port 10800 is used by default.
      */
-    public void setPort(int port) {
+    public IgniteClientConfiguration setPort(int port) {
         this.port = port;
+
+        return this;
     }
 
     /**
@@ -88,8 +92,10 @@ public class IgniteClientConfiguration {
     /**
      * @param tcpNoDelay whether Nagle's algorithm is enabled.
      */
-    public void tcpNoDelay(boolean tcpNoDelay) {
+    public IgniteClientConfiguration tcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;
+
+        return this;
     }
 
     /**
@@ -102,8 +108,10 @@ public class IgniteClientConfiguration {
     /**
      * @param timeout Send/receive timeout in milliseconds.
      */
-    public void setTimeout(int timeout) {
+    public IgniteClientConfiguration setTimeout(int timeout) {
         this.timeout = timeout;
+
+        return this;
     }
 
     /**
@@ -116,8 +124,10 @@ public class IgniteClientConfiguration {
     /**
      * @param sndBufSize Send buffer size.
      */
-    public void setSendBufferSize(int sndBufSize) {
+    public IgniteClientConfiguration setSendBufferSize(int sndBufSize) {
         this.sndBufSize = sndBufSize;
+
+        return this;
     }
 
     /**
@@ -130,7 +140,9 @@ public class IgniteClientConfiguration {
     /**
      * @param rcvBufSize Send buffer size.
      */
-    public void setReceiveBufferSize(int rcvBufSize) {
+    public IgniteClientConfiguration setReceiveBufferSize(int rcvBufSize) {
         this.rcvBufSize = rcvBufSize;
+
+        return this;
     }
 }

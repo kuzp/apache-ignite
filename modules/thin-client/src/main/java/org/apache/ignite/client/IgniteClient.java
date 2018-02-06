@@ -27,6 +27,7 @@ package org.apache.ignite.client;
 public interface IgniteClient extends AutoCloseable {
     /**
      * Open thin client connection to the Ignite cluster.
+     *
      * @param cfg Thin client configuration.
      * @return Successfully opened thin client connection.
      */
@@ -35,9 +36,23 @@ public interface IgniteClient extends AutoCloseable {
     }
 
     /**
-     * Get thin client cache or create the cache if it does not exist.
+     * Get existing cache or create the cache if it does not exist.
+     *
      * @param name Cache name.
-     * @return Instance of {@link CacheClient}.
      */
     public <K, V> CacheClient<K, V> getOrCreateCache(String name) throws IgniteClientException;
+
+    /**
+     * Get existing cache or create the cache if it does not exist.
+     *
+     * @param cfg Cache configuration.
+     */
+    public <K, V> CacheClient<K, V> getOrCreateCache(CacheClientConfiguration cfg) throws IgniteClientException;
+
+    /**
+     * Get existing cache.
+     *
+     * @param name Cache name.
+     */
+    public <K, V> CacheClient<K, V> cache(String name);
 }

@@ -18,6 +18,7 @@
 package org.apache.ignite.client;
 
 import org.apache.ignite.*;
+import org.apache.ignite.cache.*;
 import org.apache.ignite.configuration.*;
 import org.apache.ignite.spi.discovery.tcp.*;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.*;
@@ -37,7 +38,15 @@ public class FunctionalTest {
     /** Name of the cache created by default in the cluster. */
     private static final String DEFAULT_CACHE_NAME = "default";
 
-    /** Test put/get with primitive key and object value */
+    /**
+     * Tested API:
+     * <ul>
+     * <li>{@link IgniteClient#start(IgniteClientConfiguration)}</li>
+     * <li>{@link IgniteClient#getOrCreateCache(String)}</li> with existing cache
+     * <li>{@link IgniteCache#put(Object, Object)} with primitive key and object value</li>
+     * <li>{@link IgniteCache#get(Object)} primitive key and object value</li>
+     * </ul>
+     */
     @Test
     public void testPutGet() throws Exception {
         try (Ignite ignored = Ignition.start(getServerConfiguration());
@@ -59,13 +68,20 @@ public class FunctionalTest {
         }
     }
 
-    /** Test put/get with object key and primitive value */
+    /**
+     * Tested API:
+     * <ul>
+     * <li>{@link IgniteClient#getOrCreateCache(String)}</li> with non-existing cache
+     * <li>{@link IgniteCache#put(Object, Object)} with object key and primitive value</li>
+     * <li>{@link IgniteCache#get(Object)} object key and primitive value</li>
+     * </ul>
+     */
     @Test
     public void testPutGet2() throws Exception {
         try (Ignite ignored = Ignition.start(getServerConfiguration());
              IgniteClient client = IgniteClient.start(getClientConfiguration())
         ) {
-            CacheClient<Person, Integer> cache = client.getOrCreateCache(DEFAULT_CACHE_NAME);
+            CacheClient<Person, Integer> cache = client.getOrCreateCache("testPutGet2");
 
             Integer val = 1;
 
@@ -74,6 +90,43 @@ public class FunctionalTest {
             cache.put(key, val);
 
             Integer cachedVal = cache.get(key);
+
+            assertEquals(val, cachedVal);
+        }
+    }
+
+    /**
+     * Tested API:
+     * <ul>
+     * <li>{@link IgniteClient#cache(String)}</li>
+     * <li>{@link IgniteClient#getOrCreateCache(CacheClientConfiguration)} with non-existing cache</li>
+     * <li></li>
+     * <li></li>
+     * </ul>
+     */
+    @Test
+    public void testCacheManagement() throws Exception {
+        try (Ignite ignored = Ignition.start(getServerConfiguration());
+             IgniteClient client = IgniteClient.start(getClientConfiguration())
+        ) {
+            final String CACHE_NAME = "testCacheManagement";
+
+            int key = 1;
+            Person val = new Person(key, Integer.toString(key));
+
+            try (Ignite ignored2 = Ignition.start(getServerConfiguration())) {
+                CacheClientConfiguration cacheCfg = new CacheClientConfiguration(CACHE_NAME)
+                    .setCacheMode(CacheMode.REPLICATED)
+                    .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+
+                CacheClient<Integer, Person> cache = client.getOrCreateCache(cacheCfg);
+
+                cache.put(key, val);
+            }
+
+            CacheClient<Integer, Person> cache = client.cache(CACHE_NAME);
+
+            Person cachedVal = cache.get(key);
 
             assertEquals(val, cachedVal);
         }
@@ -96,6 +149,8 @@ public class FunctionalTest {
         CacheConfiguration<Integer, Person> dfltCacheCfg = new CacheConfiguration<>(DEFAULT_CACHE_NAME);
 
         igniteCfg.setCacheConfiguration(dfltCacheCfg);
+
+        igniteCfg.setIgniteInstanceName(UUID.randomUUID().toString());
 
         return igniteCfg;
     }
