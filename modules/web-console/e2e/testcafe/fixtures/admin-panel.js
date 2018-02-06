@@ -16,16 +16,15 @@
  */
 
 const { Selector } = require('testcafe');
-const { removeData, insertTestUser } = require('../environment/envtools');
-const { signIn } = global;
+const { removeData } = require('../environment/envtools');
+const { regularUser } = require('../roles.js');
 
 fixture('Checking admin panel')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}settings/admin`
     .beforeEach(async(t) => {
         await t.setNativeDialogHandler(() => true);
         await removeData();
-        await insertTestUser();
-        await signIn(t);
+        await t.useRole(regularUser);
 
         await t.navigateTo(`${process.env.APP_URL || 'http://localhost:9001/'}settings/admin`);
     })

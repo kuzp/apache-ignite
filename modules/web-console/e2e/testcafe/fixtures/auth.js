@@ -16,7 +16,7 @@
  */
 
 const { Selector, Role } = require('testcafe');
-const { signUp } = global;
+const { regularUser } = require('../roles.js');
 const { AngularJSSelector } = require('testcafe-angular-selectors');
 const { removeData, insertTestUser } = require('../environment/envtools');
 
@@ -24,7 +24,6 @@ fixture('Checking Ignite auth screen')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}`
     .beforeEach(async(t) => {
         await removeData();
-
         await t.setNativeDialogHandler(() => true);
         await t.useRole(Role.anonymous());
     })
@@ -174,7 +173,7 @@ test('Test Ignite password reset', async(t) => {
 });
 
 test('Testing Ignite loguout', async(t) => {
-    await signUp(t);
+    await t.useRole(regularUser);
 
     await t.click(Selector('div').withAttribute('bs-dropdown', 'userbar.items'));
     await t

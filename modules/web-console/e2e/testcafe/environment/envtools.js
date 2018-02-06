@@ -86,7 +86,8 @@ const removeData = () => {
                 const collectionDroppingPromiseArray = [];
 
                 collections.forEach(collection => {
-                    if (collection.name !== 'sessions' && collection.name !== 'accounts') {
+                    const collectionsToOmitWhileDropping = new Set(['accounts', 'activities', 'sessions', 'spaces']);
+                    if (!collectionsToOmitWhileDropping.has(collection.name)) {
                         const collectionDroppingPromise = db.collection(collection.name).drop((err) => {
                             if (err)
                                 reject();

@@ -16,14 +16,11 @@
  */
 
 const { Selector } = require('testcafe');
-const { removeData, insertTestUser } = require('../environment/envtools');
+const { removeData } = require('../environment/envtools');
 const { regularUser } = require('../roles.js');
 
-fixture.only('Checking user profile')
+fixture('Checking user profile')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}settings/profile`
-    .before(async() => {
-
-    })
     .beforeEach(async(t) => {
         await removeData();
         await t.useRole(regularUser);

@@ -17,14 +17,14 @@
 
 const { Selector } = require('testcafe');
 const { removeData } = require('../environment/envtools');
-const { signUp } = global;
+const { regularUser } = require('../roles.js');
 
 fixture('Checking Ingite main menu')
     .page `${process.env.APP_URL || 'http://localhost:9001/'}`
     .beforeEach(async(t) => {
         await t.setNativeDialogHandler(() => true);
         await removeData();
-        await signUp(t);
+        await t.useRole(regularUser);
     })
     .after(async() => {
         await removeData();
