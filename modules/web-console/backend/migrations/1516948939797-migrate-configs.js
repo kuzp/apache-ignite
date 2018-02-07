@@ -95,7 +95,7 @@ function migrateCaches(clustersModel, cachesModel, domainsModel) {
         .then((caches) => {
             log(`Caches to migrate: ${_.size(caches)}`);
 
-            return Promise.all(_.map(caches, (cache) => migrateCache(clustersModel, cachesModel, domainsModel, cache)))
+            _.reduce(caches, (start, cache) => start.then(() => migrateCache(clustersModel, cachesModel, domainsModel, cache)), Promise.resolve(true))
                 .then(() => log('Caches migration finished.'));
         })
         .catch((err) => log('Caches migration failed: ' + err));
@@ -155,7 +155,7 @@ function migrateIgfss(clustersModel, igfsModel) {
         .then((igfss) => {
             log(`IGFS to migrate: ${_.size(igfss)}`);
 
-            return Promise.all(_.map(igfss, (igfs) => migrateIgfs(clustersModel, igfsModel, igfs)))
+            return _.reduce(igfss, (start, igfs) => migrateIgfs(clustersModel, igfsModel, igfs), Promise.resolve(true))
                 .then(() => log('IGFS migration finished.'));
         })
         .catch((err) => log('IGFS migration failed: ' + err));
@@ -192,7 +192,7 @@ function migrateDomains(clustersModel, cachesModel, domainsModel) {
         .then((domains) => {
             log(`Domain models to migrate: ${_.size(domains)}`);
 
-            return Promise.all(_.map(domains, (domain) => migrateDomain(clustersModel, cachesModel, domainsModel, domain)))
+            return _.reduce(domains, (start, domain) => migrateDomain(clustersModel, cachesModel, domainsModel, domain), Promise.resolve(true))
                 .then(() => log('Domain models migration finished.'));
         })
         .catch((err) => log('Domain models migration failed: ' + err));
