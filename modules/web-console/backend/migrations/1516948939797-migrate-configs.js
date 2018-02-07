@@ -17,44 +17,7 @@
 
 const _ = require('lodash');
 
-const LOST_FOUND = 'LOST+FOUND';
-
-function _log(msg) {
-    console.log(`[${new Date().toISOString()}] ${msg}`);
-}
-
-function getClusterForMigration(clusterModel, space) {
-    return clusterModel.findOne({name: LOST_FOUND}).lean().exec()
-        .then((cluster) => {
-            if (!cluster) {
-                return clusterModel.create({
-                    space,
-                    name: LOST_FOUND,
-                    connector: {noDelay: true},
-                    communication: {tcpNoDelay: true},
-                    igfss: [],
-                    caches: [],
-                    binaryConfiguration: {
-                        compactFooter: true,
-                        typeConfigurations: []
-                    },
-                    discovery: {
-                        kind: 'Multicast',
-                        Multicast: {addresses: ['127.0.0.1:47500..47510']},
-                        Vm: {addresses: ['127.0.0.1:47500..47510']}
-                    }
-                })
-                    .catch((err) => {
-                        if (err.code === 11000)
-                            return clusterModel.findOne({name: LOST_FOUND}).lean().exec();
-
-                        throw err;
-                    });
-            }
-
-            return cluster;
-        });
-}
+const {log, LOST_FOUND, getClusterForMigration} = require('./migration-utils');
 
 function linkCacheToCluster(clusterModel, clusterId, cachesModel, cacheId) {
     return clusterModel.update({_id: clusterId}, {$addToSet: {caches: cacheId}}).exec()
@@ -92,7 +55,7 @@ function cloneCache(clusterModel, cachesModel, cache) {
                 .then((clone) => clusterModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec())
                 .then(() => clusterModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec())
                 .catch((err) => {
-                    _log(`Failed to clone cache: id=${cacheId}, name=${cache.name}, err=${err}`);
+                    log(`Failed to clone cache: id=${cacheId}, name=${cache.name}, err=${err}`);
                 });
         }
 
@@ -106,14 +69,14 @@ function migrateCache(clusterModel, cachesModel, cache) {
     const len = _.size(cache.clusters);
 
     if (len < 1) {
-        _log(`${LOST_FOUND}: cache=${cache.name}`);
+        log(`${LOST_FOUND}: cache=${cache.name}`);
 
         return getClusterForMigration(clusterModel, cache.space)
             .then((clusterLostFound) => linkCacheToCluster(clusterModel, clusterLostFound._id, cachesModel, cache._id));
     }
 
     if (len > 1) {
-        _log(`One-to-many links found: n=${len}, cache=${cache.name}`);
+        log(`One-to-many links found: n=${len}, cache=${cache.name}`);
 
         return cloneCache(clusterModel, cachesModel, cache);
     }
@@ -123,16 +86,16 @@ function migrateCache(clusterModel, cachesModel, cache) {
 }
 
 function migrateCaches(clusterModel, cachesModel) {
-    _log('Caches migration started...');
+    log('Caches migration started...');
 
     return cachesModel.find({}).lean().exec()
         .then((caches) => {
-            _log(`Caches to migrate: ${_.size(caches)}`);
+            log(`Caches to migrate: ${_.size(caches)}`);
 
             return Promise.all(_.map(caches, (cache) => migrateCache(clusterModel, cachesModel, cache)))
-                .then(() => _log('Caches migration finished.'));
+                .then(() => log('Caches migration finished.'));
         })
-        .catch((err) => _log('Caches migration failed: ' + err));
+        .catch((err) => log('Caches migration failed: ' + err));
 }
 
 function linkIgfsToCluster(clusterModel, clusterId, igfsModel, igfsId) {
@@ -165,14 +128,14 @@ function migrateIgfs(clusterModel, igfsModel, igfs) {
     const len = _.size(igfs.clusters);
 
     if (len < 1) {
-        _log(`${LOST_FOUND}: IGFS=${igfs.name}`);
+        log(`${LOST_FOUND}: IGFS=${igfs.name}`);
 
         return getClusterForMigration(clusterModel, igfs.space)
             .then((clusterLostFound) => linkIgfsToCluster(clusterModel, clusterLostFound._id, igfsModel, igfs._id));
     }
 
     if (len > 1) {
-        _log(`One-to-many links found: n=${len}, IGFS=${igfs.name}`);
+        log(`One-to-many links found: n=${len}, IGFS=${igfs.name}`);
 
         return cloneIgfs(clusterModel, igfsModel, igfs);
     }
@@ -182,31 +145,37 @@ function migrateIgfs(clusterModel, igfsModel, igfs) {
 }
 
 function migrateIgfss(clusterModel, igfsModel) {
-    _log('IGFS migration started...');
+    log('IGFS migration started...');
 
     return igfsModel.find({}).lean().exec()
         .then((igfss) => {
-            _log(`IGFS to migrate: ${_.size(igfss)}`);
+            log(`IGFS to migrate: ${_.size(igfss)}`);
 
             return Promise.all(_.map(igfss, (igfs) => migrateIgfs(clusterModel, igfsModel, igfs)))
-                .then(() => _log('IGFS migration finished.'));
+                .then(() => log('IGFS migration finished.'));
         })
-        .catch((err) => _log('IGFS migration failed: ' + err));
+        .catch((err) => log('IGFS migration failed: ' + err));
+}
+
+function migrateModels(cachesModel, domainsModel) {
+    return Promise.resolve(true); // TODO
 }
 
 exports.up = function up(done) {
     const clustersModel = this('Cluster');
     const cachesModel = this('Cache');
+    const domainsModel = this('DomainModel');
     const igfsModel = this('Igfs');
 
     migrateCaches(clustersModel, cachesModel)
+        .then(() => migrateModels(cachesModel, domainsModel))
         .then(() => migrateIgfss(clustersModel, igfsModel))
         .then(() => done())
         .catch(done);
 };
 
 exports.down = function down(done) {
-    _log('Model migration can not be reverted');
+    log('Model migration can not be reverted');
 
     done();
 };
