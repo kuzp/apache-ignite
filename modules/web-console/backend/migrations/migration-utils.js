@@ -15,21 +15,46 @@
  * limitations under the License.
  */
 
-'use strict';
-
 function log(msg) {
     console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-const LOST_FOUND = 'LOST+FOUND';
+function recreateIndex0(done, model, oldIdxName, oldIdx, newIdx) {
+    return model.indexExists(oldIdxName)
+        .then((exists) => {
+            if (exists) {
+                return model.dropIndex(oldIdx)
+                    .then(() => model.createIndex(newIdx, {unique: true, background: false}));
+            }
+        })
+        .then(() => done())
+        .catch((err) => {
+            if (err.code === 12587) {
+                console.log(`Background operation in progress for: ${oldIdxName}, will retry in 3 seconds.`);
+
+                setTimeout(() => recreateIndex0(done, model, oldIdxName, oldIdx, newIdx), 3000);
+            }
+            else {
+                console.log(err);
+
+                done();
+            }
+        });
+}
+
+function recreateIndex(done, model, oldIdxName, oldIdx, newIdx) {
+    setTimeout(() => recreateIndex0(done, model, oldIdxName, oldIdx, newIdx), 1000);
+}
 
 function getClusterForMigration(clusterModel, space) {
-    return clusterModel.findOne({name: LOST_FOUND}).lean().exec()
+    const LOST_AND_FOUND = 'LOST_AND_FOUND';
+
+    return clusterModel.findOne({name: LOST_AND_FOUND}).lean().exec()
         .then((cluster) => {
             if (!cluster) {
                 return clusterModel.create({
                     space,
-                    name: LOST_FOUND,
+                    name: LOST_AND_FOUND,
                     connector: {noDelay: true},
                     communication: {tcpNoDelay: true},
                     igfss: [],
@@ -46,7 +71,7 @@ function getClusterForMigration(clusterModel, space) {
                 })
                     .catch((err) => {
                         if (err.code === 11000)
-                            return clusterModel.findOne({name: LOST_FOUND}).lean().exec();
+                            return clusterModel.findOne({name: LOST_AND_FOUND}).lean().exec();
 
                         throw err;
                     });
@@ -58,7 +83,7 @@ function getClusterForMigration(clusterModel, space) {
 
 module.exports = {
     log,
-    LOST_FOUND,
+    recreateIndex,
     getClusterForMigration
 };
 

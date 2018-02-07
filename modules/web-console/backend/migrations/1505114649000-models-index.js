@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-const recreateIndex = require('./recreate-index');
+const recreateIndex = require('./migration-utils').recreateIndex;
 
 exports.up = function up(done) {
     recreateIndex(done, this('DomainModel').collection,
