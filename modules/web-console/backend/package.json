@@ -37,7 +37,6 @@
     "assets": [
       "app/*.js",
       "errors/*.js",
-      "ignite_modules/*",
       "injector.js",
       "middlewares/*.js",
       "migrations/*",
