@@ -1,5 +1,5 @@
 {
-  "name": "ignite-web-console",
+  "name": "ignite-web-console-backend",
   "version": "1.0.0",
   "description": "Interactive Web console for configuration, executing SQL queries and monitoring of Apache Ignite Cluster",
   "private": true,
