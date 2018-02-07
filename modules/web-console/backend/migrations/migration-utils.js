@@ -30,12 +30,12 @@ function recreateIndex0(done, model, oldIdxName, oldIdx, newIdx) {
         .then(() => done())
         .catch((err) => {
             if (err.code === 12587) {
-                console.log(`Background operation in progress for: ${oldIdxName}, will retry in 3 seconds.`);
+                log(`Background operation in progress for: ${oldIdxName}, will retry in 3 seconds.`);
 
                 setTimeout(() => recreateIndex0(done, model, oldIdxName, oldIdx, newIdx), 3000);
             }
             else {
-                console.log(err);
+                log(`Failed to recreate index: ${err}`);
 
                 done();
             }
