@@ -19,6 +19,8 @@ package org.apache.ignite.client;
 
 import org.apache.ignite.cache.*;
 
+import java.util.*;
+
 /** Cache configuration. */
 public final class CacheClientConfiguration {
     /** Cache name. */
@@ -389,9 +391,66 @@ public final class CacheClientConfiguration {
     /**
      * @param writeSynchronizationMode Write synchronization mode.
      */
-    public CacheClientConfiguration setWriteSynchronizationMode(CacheWriteSynchronizationMode writeSynchronizationMode) {
+    public CacheClientConfiguration setWriteSynchronizationMode(
+        CacheWriteSynchronizationMode writeSynchronizationMode) {
         this.writeSynchronizationMode = writeSynchronizationMode;
 
         return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean equals(Object obj) {
+        if (!(obj instanceof CacheClientConfiguration))
+            return false;
+
+        CacheClientConfiguration other = (CacheClientConfiguration)obj;
+
+        return Objects.equals(name, other.name) &&
+            atomicityMode == other.atomicityMode &&
+            backups == other.backups &&
+            cacheMode == other.cacheMode &&
+            eagerTtl == other.eagerTtl &&
+            Objects.equals(grpName, other.grpName) &&
+            dfltLockTimeout == other.dfltLockTimeout &&
+            partLossPlc == other.partLossPlc &&
+            readFromBackup == other.readFromBackup &&
+            rebalanceBatchSize == other.rebalanceBatchSize &&
+            rebalanceBatchesPrefetchCnt == other.rebalanceBatchesPrefetchCnt &&
+            rebalanceDelay == other.rebalanceDelay &&
+            rebalanceMode == other.rebalanceMode &&
+            rebalanceOrder == other.rebalanceOrder &&
+            rebalanceThrottle == other.rebalanceThrottle &&
+            rebalanceTimeout == other.rebalanceTimeout &&
+            writeSynchronizationMode == other.writeSynchronizationMode;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int hashCode() {
+        int res = 11;
+
+        if (name != null)
+            res = 31 * res + name.hashCode();
+
+        res = 31 * res + atomicityMode.ordinal();
+        res = 31 * res + backups;
+        res = 31 * res + cacheMode.ordinal();
+        res = 31 * res + (eagerTtl ? 1 : 0);
+
+        if (grpName != null)
+            res = 31 * res + grpName.hashCode();
+
+        res = 31 * res + (int)(dfltLockTimeout ^ (dfltLockTimeout >>> 32));
+        res = 31 * res + partLossPlc.ordinal();
+        res = 31 * res + (readFromBackup ? 1 : 0);
+        res = 31 * res + rebalanceBatchSize;
+        res = 31 * res + (int)(rebalanceBatchesPrefetchCnt ^ (rebalanceBatchesPrefetchCnt >>> 32));
+        res = 31 * res + (int)(rebalanceDelay ^ (rebalanceDelay >>> 32));
+        res = 31 * res + rebalanceMode.ordinal();
+        res = 31 * res + rebalanceOrder;
+        res = 31 * res + (int)(rebalanceThrottle ^ (rebalanceThrottle >>> 32));
+        res = 31 * res + (int)(rebalanceTimeout ^ (rebalanceTimeout >>> 32));
+        res = 31 * res + writeSynchronizationMode.ordinal();
+
+        return res;
     }
 }

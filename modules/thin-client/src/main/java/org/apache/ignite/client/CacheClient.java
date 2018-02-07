@@ -58,4 +58,14 @@ public interface CacheClient<K, V> {
      * @return <tt>true</tt> if this map contains a mapping for the specified key.
      */
     public boolean containsKey(K key) throws IgniteClientException;
+
+    /**
+     * @return The name of the cache.
+     */
+    public String getName();
+
+    /**
+     * @return The cache configuration.
+     */
+    public CacheClientConfiguration getConfiguration() throws IgniteClientException;
 }

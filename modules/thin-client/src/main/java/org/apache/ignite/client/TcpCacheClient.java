@@ -37,8 +37,12 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
     /** Channel. */
     private final ClientChannel ch;
 
+    /** Cache name. */
+    private final String name;
+
     /** Constructor. */
     TcpCacheClient(String name, ClientChannel ch) {
+        this.name = name;
         this.cacheId = CacheClient.cacheId(name);
         this.ch = ch;
     }
@@ -94,6 +98,23 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
                 writeObject(req, key);
             },
             BinaryInputStream::readBoolean
+        );
+    }
+
+    /** {@inheritDoc} */
+    @Override public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    @Override public CacheClientConfiguration getConfiguration() throws IgniteClientException {
+        return service(
+            ClientOperation.CACHE_GET_CONFIGURATION,
+            req -> {
+                req.writeInt(cacheId);
+                req.writeByte((byte)0); // presently flags are not supported
+            },
+            res -> new CacheClientConfigurationSerdes(marsh).read(res)
         );
     }
 

@@ -17,19 +17,12 @@
 
 package org.apache.ignite.client;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import org.apache.ignite.binary.BinaryRawWriter;
-import org.apache.ignite.internal.binary.BinaryRawWriterEx;
-import org.apache.ignite.internal.binary.BinaryUtils;
-import org.apache.ignite.internal.binary.GridBinaryMarshaller;
-import org.apache.ignite.internal.binary.streams.BinaryInputStream;
-import org.apache.ignite.internal.binary.streams.BinaryOutputStream;
-import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
+import org.apache.ignite.internal.binary.*;
+import org.apache.ignite.internal.binary.streams.*;
+import org.apache.ignite.internal.processors.platform.utils.*;
+
+import java.util.*;
+import java.util.function.*;
 
 /**
  * Implementation of {@link IgniteClient} over TCP protocol.
@@ -40,6 +33,9 @@ class TcpIgniteClient implements IgniteClient {
 
     /** Ignite Binary Object serializer/deserializer. */
     private final GridBinaryMarshaller marsh = PlatformUtils.marshaller();
+
+    /** Config serializer/deserializer. */
+    private final CacheClientConfigurationSerdes cfgSerdes = new CacheClientConfigurationSerdes(marsh);
 
     /**
      * Private constructor. Use {@link IgniteClient#start(IgniteClientConfiguration)} to create an instance of
@@ -68,7 +64,7 @@ class TcpIgniteClient implements IgniteClient {
         CacheClientConfiguration cfg) throws IgniteClientException {
         ensureCacheConfiguration(cfg);
 
-        request(ClientOperation.CACHE_GET_OR_CREATE_WITH_CONFIGURATION, req -> writeClientConfiguration(req, cfg));
+        request(ClientOperation.CACHE_GET_OR_CREATE_WITH_CONFIGURATION, req -> cfgSerdes.write(cfg, req));
 
         return new TcpCacheClient<>(cfg.getName(), ch);
     }
@@ -105,7 +101,7 @@ class TcpIgniteClient implements IgniteClient {
     @Override public <K, V> CacheClient<K, V> createCache(CacheClientConfiguration cfg) throws IgniteClientException {
         ensureCacheConfiguration(cfg);
 
-        request(ClientOperation.CACHE_CREATE_WITH_CONFIGURATION, req -> writeClientConfiguration(req, cfg));
+        request(ClientOperation.CACHE_CREATE_WITH_CONFIGURATION, req -> cfgSerdes.write(cfg, req));
 
         return new TcpCacheClient<>(cfg.getName(), ch);
     }
@@ -154,80 +150,5 @@ class TcpIgniteClient implements IgniteClient {
     private <T> T service(ClientOperation op, Function<BinaryInputStream, T> payloadReader)
         throws IgniteClientException {
         return service(op, null, payloadReader);
-    }
-
-    /** */
-    private void writeClientConfiguration(BinaryOutputStream out, CacheClientConfiguration cfg) {
-        BinaryRawWriterEx writer = marsh.writer(out);
-
-        int origPos = out.position();
-
-        writer.writeInt(0); // configuration length is to be assigned in the end
-        writer.writeShort((short)0); // properties count is to be assigned in the end
-
-        AtomicInteger propCnt = new AtomicInteger(0);
-
-        BiConsumer<ClientConfigurationItem, Consumer<BinaryRawWriter>> itemWriter = (cfgItem, cfgWriter) -> {
-            writer.writeShort(cfgItem.code());
-
-            cfgWriter.accept(writer);
-
-            propCnt.incrementAndGet();
-        };
-
-        itemWriter.accept(ClientConfigurationItem.NAME, w -> w.writeString(cfg.getName()));
-        itemWriter.accept(ClientConfigurationItem.CACHE_MODE, w -> w.writeInt(cfg.getCacheMode().ordinal()));
-        itemWriter.accept(ClientConfigurationItem.ATOMICITY_MODE, w -> w.writeInt(cfg.getAtomicityMode().ordinal()));
-        itemWriter.accept(ClientConfigurationItem.BACKUPS, w -> w.writeInt(cfg.getBackups()));
-        itemWriter.accept(ClientConfigurationItem.WRITE_SYNCHRONIZATION_MODE, w -> w.writeInt(cfg.getWriteSynchronizationMode().ordinal()));
-        itemWriter.accept(ClientConfigurationItem.READ_FROM_BACKUP, w -> w.writeBoolean(cfg.isReadFromBackup()));
-        itemWriter.accept(ClientConfigurationItem.EAGER_TTL, w -> w.writeBoolean(cfg.isEagerTtl()));
-        itemWriter.accept(ClientConfigurationItem.GROUP_NAME, w -> w.writeString(cfg.getGroupName()));
-        itemWriter.accept(ClientConfigurationItem.DEFAULT_LOCK_TIMEOUT, w -> w.writeLong(cfg.getDefaultLockTimeout()));
-        itemWriter.accept(ClientConfigurationItem.PARTITION_LOSS_POLICY, w -> w.writeInt(cfg.getPartitionLossPolicy().ordinal()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_BATCH_SIZE, w -> w.writeInt(cfg.getRebalanceBatchSize()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_BATCHES_PREFETCH_COUNT, w -> w.writeLong(cfg.getRebalanceBatchesPrefetchCount()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_DELAY, w -> w.writeLong(cfg.getRebalanceDelay()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_MODE, w -> w.writeInt(cfg.getRebalanceMode().ordinal()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_ORDER, w -> w.writeInt(cfg.getRebalanceOrder()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_THROTTLE, w -> w.writeLong(cfg.getRebalanceThrottle()));
-        itemWriter.accept(ClientConfigurationItem.REBALANCE_TIMEOUT, w -> w.writeLong(cfg.getRebalanceTimeout()));
-
-        writer.writeInt(origPos, out.position() - origPos - 4); // configuration length
-        writer.writeInt(origPos + 4, propCnt.get()); // properties count
-    }
-
-    /** Thin client protocol cache configuration item codes. */
-    private enum ClientConfigurationItem {
-        /** Name. */NAME(0),
-        /** Cache mode. */CACHE_MODE(1),
-        /** Atomicity mode. */ATOMICITY_MODE(2),
-        /** Backups. */BACKUPS(3),
-        /** Write synchronization mode. */WRITE_SYNCHRONIZATION_MODE(4),
-        /** Read from backup. */READ_FROM_BACKUP(6),
-        /** Eager ttl. */EAGER_TTL(405),
-        /** Group name. */GROUP_NAME(400),
-        /** Default lock timeout. */DEFAULT_LOCK_TIMEOUT(402),
-        /** Partition loss policy. */PARTITION_LOSS_POLICY(404),
-        /** Rebalance batch size. */REBALANCE_BATCH_SIZE(303),
-        /** Rebalance batches prefetch count. */REBALANCE_BATCHES_PREFETCH_COUNT(304),
-        /** Rebalance delay. */REBALANCE_DELAY(301),
-        /** Rebalance mode. */REBALANCE_MODE(300),
-        /** Rebalance order. */REBALANCE_ORDER(305),
-        /** Rebalance throttle. */REBALANCE_THROTTLE(306),
-        /** Rebalance timeout. */REBALANCE_TIMEOUT(302);
-
-        /** Code. */
-        private final short code;
-
-        /** */
-        ClientConfigurationItem(int code) {
-            this.code = (short)code;
-        }
-
-        /** @return Code. */
-        short code() {
-            return code;
-        }
     }
 }

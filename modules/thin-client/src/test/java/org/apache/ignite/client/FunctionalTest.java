@@ -30,7 +30,7 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
-/** System tests for {@link IgniteClient} */
+/** Thin client functional tests */
 public class FunctionalTest {
     /** Host. */
     private static final String HOST = "127.0.0.1";
@@ -43,9 +43,9 @@ public class FunctionalTest {
      * <ul>
      * <li>{@link IgniteClient#start(IgniteClientConfiguration)}</li>
      * <li>{@link IgniteClient#getOrCreateCache(String)}</li> with existing cache
-     * <li>{@link IgniteCache#put(Object, Object)} with primitive key and object value</li>
-     * <li>{@link IgniteCache#get(Object)} primitive key and object value</li>
-     * <li>{@link IgniteCache#containsKey(Object)}</li>
+     * <li>{@link CacheClient#put(Object, Object)} with primitive key and object value</li>
+     * <li>{@link CacheClient#get(Object)} primitive key and object value</li>
+     * <li>{@link CacheClient#containsKey(Object)}</li>
      * </ul>
      */
     @Test
@@ -75,8 +75,8 @@ public class FunctionalTest {
      * Tested API:
      * <ul>
      * <li>{@link IgniteClient#getOrCreateCache(String)}</li> with non-existing cache
-     * <li>{@link IgniteCache#put(Object, Object)} with object key and primitive value</li>
-     * <li>{@link IgniteCache#get(Object)} object key and primitive value</li>
+     * <li>{@link CacheClient#put(Object, Object)} with object key and primitive value</li>
+     * <li>{@link CacheClient#get(Object)} object key and primitive value</li>
      * </ul>
      */
     @Test
@@ -145,7 +145,9 @@ public class FunctionalTest {
 
             assertArrayEquals(new Object[] {DEFAULT_CACHE_NAME}, cacheNames);
 
-            client.createCache(CACHE_NAME);
+            cache = client.createCache(CACHE_NAME);
+
+            assertFalse(cache.containsKey(key));
 
             cacheNames = client.cacheNames().toArray();
 
@@ -153,9 +155,51 @@ public class FunctionalTest {
 
             client.destroyCache(CACHE_NAME);
 
-            client.createCache(cacheCfg);
+            cache = client.createCache(cacheCfg);
+
+            assertFalse(cache.containsKey(key));
 
             assertArrayEquals(new TreeSet<>(Arrays.asList(DEFAULT_CACHE_NAME, CACHE_NAME)).toArray(), cacheNames);
+        }
+    }
+
+    /**
+     * Tested API:
+     * <ul>
+     * <li>{@link CacheClient#getName()}</li>
+     * <li>{@link CacheClient#getConfiguration()}</li>
+     * </ul>
+     */
+    @Test
+    public void testCacheConfiguration() throws Exception {
+        try (Ignite ignored = Ignition.start(getServerConfiguration());
+             IgniteClient client = IgniteClient.start(getClientConfiguration())
+        ) {
+            final String CACHE_NAME = "testCacheConfiguration";
+
+            CacheClientConfiguration cacheCfg = new CacheClientConfiguration(CACHE_NAME)
+                .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
+                .setBackups(3)
+                .setCacheMode(CacheMode.PARTITIONED)
+                .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC)
+                .setEagerTtl(false)
+                .setGroupName("FunctionalTest")
+                .setDefaultLockTimeout(12345)
+                .setPartitionLossPolicy(PartitionLossPolicy.READ_WRITE_ALL)
+                .setReadFromBackup(true)
+                .setRebalanceBatchSize(67890)
+                .setRebalanceBatchesPrefetchCount(102938)
+                .setRebalanceDelay(54321)
+                .setRebalanceMode(CacheRebalanceMode.SYNC)
+                .setRebalanceOrder(2)
+                .setRebalanceThrottle(564738)
+                .setRebalanceTimeout(142536);
+
+            CacheClient cache = client.createCache(cacheCfg);
+
+            assertEquals(CACHE_NAME, cache.getName());
+
+            assertEquals(cacheCfg, cache.getConfiguration());
         }
     }
 

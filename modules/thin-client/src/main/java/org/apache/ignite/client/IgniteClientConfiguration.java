@@ -17,6 +17,8 @@
 
 package org.apache.ignite.client;
 
+import java.util.*;
+
 /**
  * {@link TcpIgniteClient} configuration.
  */
@@ -41,6 +43,7 @@ public final class IgniteClientConfiguration {
 
     /**
      * Constructor.
+     *
      * @param host name or IP address of an Ignite server node to connect to.
      */
     public IgniteClientConfiguration(String host) {
@@ -144,5 +147,35 @@ public final class IgniteClientConfiguration {
         this.rcvBufSize = rcvBufSize;
 
         return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean equals(Object obj) {
+        if (!(obj instanceof IgniteClientConfiguration))
+            return false;
+
+        IgniteClientConfiguration other = (IgniteClientConfiguration)obj;
+
+        return Objects.equals(host, other.host) &&
+            port == other.port &&
+            tcpNoDelay == other.tcpNoDelay &&
+            timeout == other.timeout &&
+            sndBufSize == other.sndBufSize &&
+            rcvBufSize == other.rcvBufSize;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int hashCode() {
+        int res = 11;
+
+        if (host != null)
+            res = 31 * res + host.hashCode();
+
+        res = 31 * res + (tcpNoDelay ? 1 : 0);
+        res = 31 * res + timeout;
+        res = 31 * res + sndBufSize;
+        res = 31 * res + rcvBufSize;
+
+        return res;
     }
 }
