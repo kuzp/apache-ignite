@@ -18,15 +18,19 @@
 const _ = require('lodash');
 
 const log = require('./migration-utils').log;
-const getClusterForMigration = require('./migration-utils').getClusterForMigration;
 
-function linkCacheToCluster(clusterModel, cluster, cachesModel, cache) {
-    return clusterModel.update({_id: cluster._id}, {$addToSet: {caches: cache._id}}).exec()
+const createClusterForMigration = require('./migration-utils').createClusterForMigration;
+const getClusterForMigration = require('./migration-utils').getClusterForMigration;
+const createCacheForMigration = require('./migration-utils').createCacheForMigration;
+const getCacheForMigration = require('./migration-utils').getCacheForMigration;
+
+function linkCacheToCluster(clustersModel, cluster, cachesModel, cache) {
+    return clustersModel.update({_id: cluster._id}, {$addToSet: {caches: cache._id}}).exec()
         .then(() => cachesModel.update({_id: cache._id}, {clusters: [cluster._id]}).exec())
         .catch((err) => log(`Failed link cache to cluster [cache=${cache.name}, cluster=${cluster.name}, err=${err}]`));
 }
 
-function cloneCache(clusterModel, cachesModel, cache) {
+function cloneCache(clustersModel, cachesModel, domainsModel, cache) {
     const cacheId = cache._id;
     const clusters = cache.clusters;
 
@@ -36,75 +40,74 @@ function cloneCache(clusterModel, cachesModel, cache) {
     if (cache.cacheStoreFactory && cache.cacheStoreFactory.kind === null)
         delete cache.cacheStoreFactory.kind;
 
-    let dup = 1;
-
     return Promise.all(_.map(clusters, (cluster, idx) => {
         cache.clusters = [cluster];
 
         if (idx > 0) {
-            return cachesModel.create(cache)
-                .catch((err) => {
-                    if (err.code === 11000) {
-                        cache.name += dup.toString();
+            return clustersModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec()
+                .then(() => cachesModel.create(cache))
+                .then((clone) => clustersModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec())
+                .then(() => {
+                    const domainIds = cache.domains;
 
-                        dup++;
+                    if (_.isEmpty(domainIds))
+                        return Promise.resolve(true);
 
-                        return cachesModel.create(cache);
-                    }
-
-                    throw err;
+                    return Promise.all(_.map(domainIds, (domainId) => {
+                        return domainsModel.findOne({_id: domainId})
+                            .then((domain) => {
+                                log(`Domain to duplicate: ${domain._id}`);
+                                return Promise.resolve(true);
+                            });
+                    }));
                 })
-                .then((clone) => clusterModel.update({_id: {$in: cache.clusters}}, {$addToSet: {caches: clone._id}}, {multi: true}).exec())
-                .then(() => clusterModel.update({_id: {$in: cache.clusters}}, {$pull: {caches: cacheId}}, {multi: true}).exec())
                 .catch((err) => log(`Failed to clone cache: id=${cacheId}, name=${cache.name}, err=${err}`));
         }
 
         return cachesModel.update({_id: cacheId}, {clusters: [cluster]}).exec();
-
-        // TODO IGNITE-5737 domainsModel.update({caches: {$in: ids}}, {$pull: {caches: {$in: ids}}}, {multi: true}).exec())
     }));
 }
 
-function migrateCache(clusterModel, cachesModel, cache) {
+function migrateCache(clustersModel, cachesModel, domainsModel, cache) {
     const len = _.size(cache.clusters);
 
     if (len < 1) {
         log(`Found cache not linked to cluster [cache=${cache.name}]`);
 
-        return getClusterForMigration(clusterModel, cache.space)
-            .then((clusterLostFound) => linkCacheToCluster(clusterModel, clusterLostFound, cachesModel, cache));
+        return getClusterForMigration(clustersModel)
+            .then((clusterLostFound) => linkCacheToCluster(clustersModel, clusterLostFound, cachesModel, cache));
     }
 
     if (len > 1) {
         log(`Found cache linked to many clusters [cache=${cache.name}, cnt=${len}]`);
 
-        return cloneCache(clusterModel, cachesModel, cache);
+        return cloneCache(clustersModel, cachesModel, domainsModel, cache);
     }
 
     // Nothing to migrate, cache linked to cluster 1-to-1.
     return Promise.resolve(true);
 }
 
-function migrateCaches(clusterModel, cachesModel) {
+function migrateCaches(clustersModel, cachesModel, domainsModel) {
     log('Caches migration started...');
 
     return cachesModel.find({}).lean().exec()
         .then((caches) => {
             log(`Caches to migrate: ${_.size(caches)}`);
 
-            return Promise.all(_.map(caches, (cache) => migrateCache(clusterModel, cachesModel, cache)))
+            return Promise.all(_.map(caches, (cache) => migrateCache(clustersModel, cachesModel, domainsModel, cache)))
                 .then(() => log('Caches migration finished.'));
         })
         .catch((err) => log('Caches migration failed: ' + err));
 }
 
-function linkIgfsToCluster(clusterModel, cluster, igfsModel, igfs) {
-    return clusterModel.update({_id: cluster._id}, {$addToSet: {igfss: igfs._id}}).exec()
+function linkIgfsToCluster(clustersModel, cluster, igfsModel, igfs) {
+    return clustersModel.update({_id: cluster._id}, {$addToSet: {igfss: igfs._id}}).exec()
         .then(() => igfsModel.update({_id: igfs._id}, {clusters: [cluster._id]}).exec())
         .catch((err) => log(`Failed link IGFS to cluster [IGFS=${igfs.name}, cluster=${cluster.name}, err=${err}]`));
 }
 
-function cloneIgfs(clusterModel, igfsModel, igfs) {
+function cloneIgfs(clustersModel, igfsModel, igfs) {
     const igfsId = igfs._id;
     const clusters = igfs.clusters;
 
@@ -115,9 +118,9 @@ function cloneIgfs(clusterModel, igfsModel, igfs) {
         igfs.clusters = [cluster];
 
         if (idx > 0) {
-            return igfsModel.create(igfs)
-                .then((clone) => clusterModel.update({_id: {$in: igfs.clusters}}, {$addToSet: {igfss: clone._id}}, {multi: true}).exec())
-                .then(() => clusterModel.update({_id: {$in: igfs.clusters}}, {$pull: {igfss: igfsId}}, {multi: true}).exec())
+            return clustersModel.update({_id: {$in: igfs.clusters}}, {$pull: {igfss: igfsId}}, {multi: true}).exec()
+                .then(() => igfsModel.create(igfs))
+                .then((clone) => clustersModel.update({_id: {$in: igfs.clusters}}, {$addToSet: {igfss: clone._id}}, {multi: true}).exec())
                 .catch((err) => log(`Failed to clone IGFS: id=${igfsId}, name=${igfs.name}, err=${err}`));
         }
 
@@ -125,41 +128,74 @@ function cloneIgfs(clusterModel, igfsModel, igfs) {
     }));
 }
 
-function migrateIgfs(clusterModel, igfsModel, igfs) {
+function migrateIgfs(clustersModel, igfsModel, igfs) {
     const len = _.size(igfs.clusters);
 
     if (len < 1) {
         log(`Found IGFS not linked to cluster [IGFS=${igfs.name}]`);
 
-        return getClusterForMigration(clusterModel, igfs.space)
-            .then((clusterLostFound) => linkIgfsToCluster(clusterModel, clusterLostFound, igfsModel, igfs));
+        return getClusterForMigration(clustersModel)
+            .then((clusterLostFound) => linkIgfsToCluster(clustersModel, clusterLostFound, igfsModel, igfs));
     }
 
     if (len > 1) {
         log(`Found IGFS linked to many clusters [IGFS=${igfs.name}, cnt=${len}]`);
 
-        return cloneIgfs(clusterModel, igfsModel, igfs);
+        return cloneIgfs(clustersModel, igfsModel, igfs);
     }
 
     // Nothing to migrate, IGFS linked to cluster 1-to-1.
     return Promise.resolve(true);
 }
 
-function migrateIgfss(clusterModel, igfsModel) {
+function migrateIgfss(clustersModel, igfsModel) {
     log('IGFS migration started...');
 
     return igfsModel.find({}).lean().exec()
         .then((igfss) => {
             log(`IGFS to migrate: ${_.size(igfss)}`);
 
-            return Promise.all(_.map(igfss, (igfs) => migrateIgfs(clusterModel, igfsModel, igfs)))
+            return Promise.all(_.map(igfss, (igfs) => migrateIgfs(clustersModel, igfsModel, igfs)))
                 .then(() => log('IGFS migration finished.'));
         })
         .catch((err) => log('IGFS migration failed: ' + err));
 }
 
-function migrateModels(cachesModel, domainsModel) {
-    return Promise.resolve(true); // TODO
+function linkDomainToCache(cachesModel, cache, domainsModel, domain) {
+    log(`Cache: ${cache.name}, domain: ${domain._id}`);
+
+    return Promise.resolve(true);
+}
+
+function migrateDomain(clustersModel, cachesModel, domainsModel, domain) {
+    const len = _.size(domain.caches);
+
+    if (len < 1) {
+        log(`Found domain model not linked to cache [domain=${domain._id}]`);
+
+        return getCacheForMigration(cachesModel)
+            .then((cacheLostFound) => {
+                log(cacheLostFound);
+
+                linkDomainToCache(cachesModel, cacheLostFound, domainsModel, domain)
+            });
+    }
+
+    // Nothing to migrate, other domains will be migrated with caches.
+    return Promise.resolve(true);
+}
+
+function migrateDomains(clustersModel, cachesModel, domainsModel) {
+    log('Domain models migration started...');
+
+    return domainsModel.find({}).lean().exec()
+        .then((domains) => {
+            log(`Domain models to migrate: ${_.size(domains)}`);
+
+            return Promise.all(_.map(domains, (domain) => migrateDomain(clustersModel, cachesModel, domainsModel, domain)))
+                .then(() => log('Domain models migration finished.'));
+        })
+        .catch((err) => log('Domain models migration failed: ' + err));
 }
 
 exports.up = function up(done) {
@@ -168,8 +204,10 @@ exports.up = function up(done) {
     const domainsModel = this('DomainModel');
     const igfsModel = this('Igfs');
 
-    migrateCaches(clustersModel, cachesModel)
-        .then(() => migrateModels(cachesModel, domainsModel))
+    createClusterForMigration(clustersModel, cachesModel)
+        .then(() => createCacheForMigration(clustersModel, cachesModel, domainsModel))
+        .then(() => migrateCaches(clustersModel, cachesModel, domainsModel))
+        .then(() => migrateDomains(clustersModel, cachesModel, domainsModel))
         .then(() => migrateIgfss(clustersModel, igfsModel))
         .then(() => done())
         .catch(done);

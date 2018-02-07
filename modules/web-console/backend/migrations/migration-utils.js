@@ -46,14 +46,14 @@ function recreateIndex(done, model, oldIdxName, oldIdx, newIdx) {
     setTimeout(() => recreateIndex0(done, model, oldIdxName, oldIdx, newIdx), 1000);
 }
 
-function getClusterForMigration(clusterModel, space) {
-    const LOST_AND_FOUND = 'LOST_AND_FOUND';
+const LOST_AND_FOUND = 'LOST_AND_FOUND';
 
-    return clusterModel.findOne({name: LOST_AND_FOUND}).lean().exec()
-        .then((cluster) => {
-            if (!cluster) {
-                return clusterModel.create({
-                    space,
+function createClusterForMigration(clustersModel, cachesModel) {
+    return cachesModel.findOne({clusters: []})
+        .then((cache) => {
+            if (cache) {
+                clustersModel.create({
+                    space: cache.space,
                     name: LOST_AND_FOUND,
                     connector: {noDelay: true},
                     communication: {tcpNoDelay: true},
@@ -68,23 +68,52 @@ function getClusterForMigration(clusterModel, space) {
                         Multicast: {addresses: ['127.0.0.1:47500..47510']},
                         Vm: {addresses: ['127.0.0.1:47500..47510']}
                     }
-                })
-                    .catch((err) => {
-                        if (err.code === 11000)
-                            return clusterModel.findOne({name: LOST_AND_FOUND}).lean().exec();
-
-                        throw err;
-                    });
+                });
             }
-
-            return cluster;
         });
+}
+
+function getClusterForMigration(clustersModel) {
+    return clustersModel.findOne({name: LOST_AND_FOUND}).lean().exec();
+}
+
+function createCacheForMigration(clustersModel, cachesModel, domainsModels) {
+    return domainsModels.findOne({caches: []})
+        .then((domain) => getClusterForMigration(clustersModel)
+            .then((cluster) => cachesModel.create({
+                space: domain.space,
+                name: LOST_AND_FOUND,
+                clusters: [cluster._id],
+                domains: [],
+                cacheMode: 'PARTITIONED',
+                atomicityMode: 'ATOMIC',
+                readFromBackup: true,
+                copyOnRead: true,
+                readThrough: false,
+                writeThrough: false,
+                sqlFunctionClasses: [],
+                writeBehindCoalescing: true,
+                cacheStoreFactory: {
+                    CacheHibernateBlobStoreFactory: {hibernateProperties: []},
+                    CacheJdbcBlobStoreFactory: {connectVia: 'DataSource'}
+                },
+                nearConfiguration: {},
+                evictionPolicy: {}
+            }))
+        );
+}
+
+function getCacheForMigration(cachesModel) {
+    return cachesModel.findOne({name: LOST_AND_FOUND});
 }
 
 module.exports = {
     log,
     recreateIndex,
-    getClusterForMigration
+    createClusterForMigration,
+    getClusterForMigration,
+    createCacheForMigration,
+    getCacheForMigration
 };
 
 
