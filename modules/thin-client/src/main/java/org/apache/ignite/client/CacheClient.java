@@ -43,7 +43,19 @@ public interface CacheClient<K, V> {
      *
      * @param key key with which the specified value is to be associated
      * @param val value to be associated with the specified key.
-     * @throws NullPointerException  if key is null or if value is null.
+     * @throws NullPointerException if key is null or if value is null.
      */
     public void put(K key, V val) throws IgniteClientException;
+
+    /**
+     * Determines if the {@link CacheClient} contains an entry for the specified key.
+     * <p>
+     * More formally, returns <tt>true</tt> if and only if this cache contains a
+     * mapping for a key <tt>k</tt> such that <tt>key.equals(k)</tt>.
+     * (There can be at most one such mapping)
+     *
+     * @param key key whose presence in this cache is to be tested.
+     * @return <tt>true</tt> if this map contains a mapping for the specified key.
+     */
+    public boolean containsKey(K key) throws IgniteClientException;
 }
