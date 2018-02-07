@@ -724,6 +724,8 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         if (serializer == null || mode == WALMode.NONE)
             return;
 
+        ptr = null;
+
         FileWriteHandle cur = currentHandle();
 
         // WAL manager was not started (client node).
