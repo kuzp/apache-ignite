@@ -3119,8 +3119,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         @Override public void run() {
             while (!shutdown && !Thread.currentThread().isInterrupted()) {
                 while (waiters.isEmpty()) {
-                    if (!shutdown)
-                        LockSupport.park();
+                    if (!shutdown) {
+                        // spin
+//                        LockSupport.park();
+                    }
                     else {
                         unparkWaiters(Long.MAX_VALUE);
 
@@ -3197,7 +3199,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
         public void shutdown() throws IgniteInterruptedCheckedException {
             shutdown = true;
 
-            LockSupport.unpark(this);
+//            LockSupport.unpark(this);
 
             U.join(this);
         }
@@ -3217,7 +3219,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
                     if (val != Long.MIN_VALUE)
                         waiters.put(e.getKey(), Long.MIN_VALUE);
 
-                    LockSupport.unpark(e.getKey());
+//                    LockSupport.unpark(e.getKey());
                 }
             }
         }
@@ -3263,7 +3265,7 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
             waiters.put(t, expPos);
 
-            LockSupport.unpark(walWriter);
+//            LockSupport.unpark(walWriter);
 
             while (true) {
                 Long val = waiters.get(t);
@@ -3275,8 +3277,10 @@ public class FileWriteAheadLogManager extends GridCacheSharedManagerAdapter impl
 
                     return;
                 }
-                else
-                    LockSupport.park();
+                else {
+//                    LockSupport.park();
+                    // spin
+                }
             }
         }
 
