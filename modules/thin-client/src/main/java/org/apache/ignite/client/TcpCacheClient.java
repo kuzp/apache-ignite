@@ -19,8 +19,10 @@ package org.apache.ignite.client;
 
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.internal.binary.GridBinaryMarshaller;
-import org.apache.ignite.internal.binary.streams.BinaryOutputStream;
+import org.apache.ignite.internal.binary.streams.*;
 import org.apache.ignite.internal.processors.platform.utils.PlatformUtils;
+
+import java.util.function.*;
 
 /**
  * Implementation of {@link CacheClient} over TCP protocol.
@@ -46,18 +48,18 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
         if (key == null)
             throw new NullPointerException("key");
 
-        final ClientOperation OP = ClientOperation.CACHE_GET;
-
-        long id = ch.send(OP, req -> {
-            req.writeInt(cacheId);
-            req.writeByte((byte)0); // TODO: support for KEEP_BINARY
-            writeObject(req, key);
-        });
-
-        return ch.receive(OP, id, res -> {
-            Object val = marsh.unmarshal(res);
-            return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
-        });
+        return service(
+            ClientOperation.CACHE_GET,
+            req -> {
+                req.writeInt(cacheId);
+                req.writeByte((byte)0); // TODO: support for KEEP_BINARY
+                writeObject(req, key);
+            },
+            res -> {
+                Object val = marsh.unmarshal(res);
+                return (V)(val instanceof BinaryObject ? ((BinaryObject)val).deserialize() : val);
+            }
+        );
     }
 
     /** {@inheritDoc} */
@@ -68,16 +70,47 @@ class TcpCacheClient<K, V> implements CacheClient<K, V> {
         if (val == null)
             throw new NullPointerException("val");
 
-        final ClientOperation OP = ClientOperation.CACHE_PUT;
+        request(
+            ClientOperation.CACHE_PUT,
+            req -> {
+                req.writeInt(cacheId);
+                req.writeByte((byte)0); // presently flags are not supported
+                writeObject(req, key);
+                writeObject(req, val);
+            }
+        );
+    }
 
-        long id = ch.send(OP, req -> {
-            req.writeInt(cacheId);
-            req.writeByte((byte)0); // presently flags are not supported
-            writeObject(req, key);
-            writeObject(req, val);
-        });
+    /** {@inheritDoc} */
+    @Override public boolean containsKey(K key) throws IgniteClientException {
+        if (key == null)
+            throw new NullPointerException("key");
 
-        ch.receive(OP, id, null); // ignore empty response
+        return service(
+            ClientOperation.CACHE_CONTAINS_KEY,
+            req -> {
+                req.writeInt(cacheId);
+                req.writeByte((byte)0); // presently flags are not supported
+                writeObject(req, key);
+            },
+            BinaryInputStream::readBoolean
+        );
+    }
+
+    /** Send request and handle response. */
+    private <T> T service(
+        ClientOperation op,
+        Consumer<BinaryOutputStream> payloadWriter,
+        Function<BinaryInputStream, T> payloadReader
+    ) throws IgniteClientException {
+        long id = ch.send(op, payloadWriter);
+
+        return ch.receive(op, id, payloadReader);
+    }
+
+    /** Send request and handle response without payload. */
+    private void request(ClientOperation op, Consumer<BinaryOutputStream> payloadWriter) throws IgniteClientException {
+        service(op, payloadWriter, null);
     }
 
     /** Write Ignite binary object to output stream. */

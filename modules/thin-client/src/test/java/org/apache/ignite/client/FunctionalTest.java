@@ -17,26 +17,18 @@
 
 package org.apache.ignite.client;
 
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.TreeSet;
-import java.util.UUID;
-import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.cache.CacheWriteSynchronizationMode;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
-import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
-import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
-import org.junit.Test;
+import org.apache.ignite.*;
+import org.apache.ignite.cache.*;
+import org.apache.ignite.configuration.*;
+import org.apache.ignite.spi.discovery.tcp.*;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.*;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.*;
+import org.junit.*;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /** System tests for {@link IgniteClient} */
 public class FunctionalTest {
@@ -53,6 +45,7 @@ public class FunctionalTest {
      * <li>{@link IgniteClient#getOrCreateCache(String)}</li> with existing cache
      * <li>{@link IgniteCache#put(Object, Object)} with primitive key and object value</li>
      * <li>{@link IgniteCache#get(Object)} primitive key and object value</li>
+     * <li>{@link IgniteCache#containsKey(Object)}</li>
      * </ul>
      */
     @Test
@@ -67,6 +60,8 @@ public class FunctionalTest {
             Person val = new Person(key, "Joe");
 
             cache.put(key, val);
+
+            assertTrue(cache.containsKey(key));
 
             Person cachedVal = cache.get(key);
 
